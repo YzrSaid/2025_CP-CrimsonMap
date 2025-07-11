@@ -1,0 +1,23 @@
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+obj/
+
+# OS generated files
+.DS_Store
+*.swp
+
+# IDE folders
+.vscode/
+.idea/
+
+# Crash logs
+sysinfo.txt
+
+# Other
+*.apk
+*.ipa
