@@ -1,6 +1,6 @@
-# CrimsonMap
+# Crimson Map
 
-**CrimsonMap** is a capstone project developed for **Western Mindanao State University (WMSU) MAIN CAMPUS**. The application delivers an Augmented Reality (AR)–based indoor/outdoor navigation system designed to guide new students and campus visitors across WMSU’s Main Campus. 
+**Crimson Map** is a capstone project developed for **Western Mindanao State University (WMSU)**. The application delivers an Augmented Reality (AR)–based indoor/outdoor navigation system designed to guide new students and campus visitors across WMSU’s Main Campus. 
 
 It includes AN **Admin Web App** that allows easy configuration of building positions, routes, and connections.
 
