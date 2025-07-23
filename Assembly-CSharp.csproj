@@ -67,6 +67,7 @@
     <Compile Include="Assets/Scripts/AnswerButtons.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/SaveData.cs" />
     <Compile Include="Assets/Scripts/RotationBackground.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/MainAppManager.cs" />
     <Compile Include="Assets/Scripts/QuestionDisplay.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/PageIndicator.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/GlobalManager.cs" />

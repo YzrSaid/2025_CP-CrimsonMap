@@ -8,7 +8,13 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/QuizScene.unity
     guid: b36e92227fe8968cdbf51463d8b14eaa
+  - enabled: 1
+    path: Assets/Scenes/OnboardingScreensScene.unity
+    guid: d4618d042a5d38cf88eb32e158f10261
+  - enabled: 1
+    path: Assets/Scenes/MainAppScene.unity
+    guid: da846dd4f59a5e339a36876a24d45ea5
   m_configObjects: {}
