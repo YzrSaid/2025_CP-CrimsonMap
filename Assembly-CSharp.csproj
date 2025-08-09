@@ -66,9 +66,11 @@
   <ItemGroup>
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionManager.cs" />
     <Compile Include="Assets/Scripts/AnswerButtons.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/MapButtonsAndControlsScript.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionItem.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/SaveData.cs" />
     <Compile Include="Assets/Scripts/RotationBackground.cs" />
+    <Compile Include="Assets/CanvasHelper.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MainAppManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionSpawner.cs" />
     <Compile Include="Assets/Scripts/QuestionDisplay.cs" />
