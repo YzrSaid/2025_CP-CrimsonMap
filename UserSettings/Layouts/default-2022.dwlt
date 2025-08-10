@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 1920
     height: 980
   m_ShowMode: 4
-  m_Title: Simulator
+  m_Title: Hierarchy
   m_RootView: {fileID: 7}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -67,7 +67,7 @@ MonoBehaviour:
     serializedVersion: 2
     x: 1068
     y: 0
-    width: 398
+    width: 399
     height: 562
   m_MinSize: {x: 202, y: 221}
   m_MaxSize: {x: 4002, y: 4021}
@@ -100,7 +100,7 @@ MonoBehaviour:
   m_MinSize: {x: 400, y: 100}
   m_MaxSize: {x: 32384, y: 16192}
   vertical: 0
-  controlID: 40
+  controlID: 32
   draggingID: 0
 --- !u!114 &5
 MonoBehaviour:
@@ -117,9 +117,9 @@ MonoBehaviour:
   m_Children: []
   m_Position:
     serializedVersion: 2
-    x: 1466
+    x: 1467
     y: 0
-    width: 454
+    width: 453
     height: 930
   m_MinSize: {x: 276, y: 71}
   m_MaxSize: {x: 4001, y: 4021}
@@ -145,7 +145,7 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 562
-    width: 1466
+    width: 1467
     height: 368
   m_MinSize: {x: 231, y: 271}
   m_MaxSize: {x: 10001, y: 10021}
@@ -245,12 +245,12 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 1466
+    width: 1467
     height: 930
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 1
-  controlID: 41
+  controlID: 33
   draggingID: 0
 --- !u!114 &11
 MonoBehaviour:
@@ -272,12 +272,12 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 1466
+    width: 1467
     height: 562
   m_MinSize: {x: 300, y: 50}
   m_MaxSize: {x: 24288, y: 8096}
   vertical: 0
-  controlID: 42
+  controlID: 34
   draggingID: 0
 --- !u!114 &12
 MonoBehaviour:
@@ -327,7 +327,7 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 652
-    width: 1465
+    width: 1466
     height: 347
   m_SerializedDataModeController:
     m_DataMode: 0
@@ -365,9 +365,9 @@ MonoBehaviour:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: 9c5f0000
-    m_LastClickedID: 24476
-    m_ExpandedIDs: 000000009c5f00009e5f000000ca9a3bffffff7f
+    m_SelectedIDs: e05f0000
+    m_LastClickedID: 24544
+    m_ExpandedIDs: 00000000e05f0000e25f00009860000000ca9a3bffffff7f
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -395,7 +395,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 000000009c5f00009e5f0000
+    m_ExpandedIDs: 00000000e05f0000e25f0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -423,7 +423,7 @@ MonoBehaviour:
     m_SelectedInstanceIDs: 
     m_LastClickedInstanceID: 0
     m_HadKeyboardFocusLastEvent: 1
-    m_ExpandedInstanceIDs: c62300005e5b0000205f000000000000
+    m_ExpandedInstanceIDs: c62300005e5b0000205f00008a5e000000000000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -471,9 +471,9 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 1466
+    x: 1467
     y: 90
-    width: 453
+    width: 452
     height: 909
   m_SerializedDataModeController:
     m_DataMode: 0
@@ -520,7 +520,7 @@ MonoBehaviour:
     serializedVersion: 2
     x: 1068
     y: 90
-    width: 396
+    width: 397
     height: 541
   m_SerializedDataModeController:
     m_DataMode: 0
@@ -534,26 +534,26 @@ MonoBehaviour:
     m_OverlaysVisible: 1
   m_SceneHierarchy:
     m_TreeViewState:
-      scrollPos: {x: 0, y: 360}
-      m_SelectedIDs: 3a81000044810000
-      m_LastClickedID: 33092
-      m_ExpandedIDs: 72aefdff5ed0fdff6ad0fdff9201ffff9801ffff54a4ffff9aa4fffffca9ffff60aaffffdeabffff08acffff2cfbffff3c5a0000725a0000a65a0000ba5a0000f45a00000e5b0000205b0000285b0000365b0000645b00006a5b00007c5b0000a45b0000c05b0000ca5b0000e25b00002e5c0000405c00005c5c0000625c0000945c0000c45c0000dc5c0000ea5c0000405d0000485d00005c5d0000685d0000765d00007c5d0000945d0000ba5d0000c85d00007a7d0000e47d0000e87d0000f87d0000a27e0000a87e0000e27e0000087f0000207f0000807f0000867f0000d47f00001c8000002a8000003a800000768000007e8000009a8000009e800000ac800000b2800000bc800000ca800000fe80000002810000
+      scrollPos: {x: 0, y: 0}
+      m_SelectedIDs: 8662ffff
+      m_LastClickedID: -40314
+      m_ExpandedIDs: ea65ffff00d0ffff2cfbffff425a00000c5c0000ae5c0000105d00007e5d0000fc5d0000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
-        m_Name: Accordion_Container
-        m_OriginalName: Accordion_Container
+        m_Name: 
+        m_OriginalName: 
         m_EditFieldRect:
           serializedVersion: 2
           x: 0
           y: 0
           width: 0
           height: 0
-        m_UserData: 32826
+        m_UserData: 0
         m_IsWaitingForDelay: 0
         m_IsRenaming: 0
-        m_OriginalEventType: 0
+        m_OriginalEventType: 11
         m_IsRenamingFilename: 0
-        m_ClientGUIView: {fileID: 3}
+        m_ClientGUIView: {fileID: 0}
       m_SearchString: 
     m_ExpandedScenes: []
     m_CurrenRootInstanceID: 0
@@ -891,9 +891,9 @@ MonoBehaviour:
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: 444.92294, y: 600.5854, z: -0.25282562}
+    m_Target: {x: 579.12067, y: 919.079, z: 2.0686965}
     speed: 2
-    m_Value: {x: 444.92294, y: 600.5854, z: -0.25282562}
+    m_Value: {x: 579.12067, y: 919.079, z: 2.0686965}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -943,9 +943,9 @@ MonoBehaviour:
     speed: 2
     m_Value: {x: 0.0020214955, y: 0.013445749, z: 0.000027227417, w: -0.99990755}
   m_Size:
-    m_Target: 675.33795
+    m_Target: 295.78284
     speed: 2
-    m_Value: 675.33795
+    m_Value: 295.78284
   m_Ortho:
     m_Target: 1
     speed: 2
@@ -992,7 +992,7 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 652
-    width: 1465
+    width: 1466
     height: 347
   m_SerializedDataModeController:
     m_DataMode: 0
@@ -1046,7 +1046,7 @@ MonoBehaviour:
   m_ShowGizmos: 0
   m_TargetDisplay: 0
   m_ClearColor: {r: 0, g: 0, b: 0, a: 1}
-  m_TargetSize: {x: 1080, y: 2280}
+  m_TargetSize: {x: 1440, y: 2880}
   m_TextureFilterMode: 0
   m_TextureHideFlags: 61
   m_RenderIMGUI: 1
@@ -1062,11 +1062,11 @@ MonoBehaviour:
     - UnityEditor.DeviceSimulation.ApplicationSettingsPlugin
     pluginStates:
     - '{}'
-    scale: 20
-    fitToScreenEnabled: 1
+    scale: 16
+    fitToScreenEnabled: 0
     rotationDegree: 0
     highlightSafeAreaEnabled: 0
-    friendlyName: Xiaomi Redmi 6 Pro
+    friendlyName: Google Pixel 2 XL
     screenIndex: 0
     networkReachability: 1
     systemLanguage: 10
