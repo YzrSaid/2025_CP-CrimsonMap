@@ -1,0 +1,24 @@
+[
+  {
+    "building_id": 1,
+    "name": "College of Engineering",
+    "category_id": 1,
+    "location": "North Campus near Gate 1",
+    "latitude": 6.912345,
+    "longitude": 122.078901,
+    "image_url": "images/engineering.png",
+    "email": "engg@university.edu",
+    "phone": "+63 912 345 6789"
+  },
+  {
+    "building_id": 4,
+    "name": "University Health Clinic",
+    "category_id": 2,
+    "location": "Main Campus, beside the Library",
+    "latitude": 6.913456,
+    "longitude": 122.079012,
+    "image_url": "images/clinic.png",
+    "email": "clinic@university.edu",
+    "phone": "+63 923 456 7890"
+  }
+]

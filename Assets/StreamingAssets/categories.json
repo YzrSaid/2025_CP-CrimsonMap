@@ -1,0 +1,13 @@
+[
+  {
+    "category_id": 1,
+    "name": "Academics",
+    "icon": "icons/academics.png",
+    "building_id": [1, 2, 3]
+  },
+  {
+    "category_id": 2,
+    "name": "Clinics",
+    "icon": "icons/clinics.png",
+    "building_id": [4]
+  }

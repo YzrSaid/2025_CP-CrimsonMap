@@ -1,0 +1,16 @@
+[
+  {
+    "recent_id": 1,
+    "from_node_id": 101,
+    "to_node_id": 205,
+    "paths": [101, 110, 120, 205],
+    "timestamp": "2025-08-14T09:45:00Z"
+  },
+  {
+    "recent_id": 2,
+    "from_node_id": 205,
+    "to_node_id": 305,
+    "paths": [205, 220, 230, 305],
+    "timestamp": "2025-08-14T10:12:00Z"
+  }
+]

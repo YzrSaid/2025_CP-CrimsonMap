@@ -1,0 +1,20 @@
+[
+  {
+    "node_id": 101,
+    "name": "Gate 1 Entrance",
+    "latitude": 6.911234,
+    "longitude": 122.078456,
+    "linked_building": false,
+    "connected_nodes": [110, 150],
+    "is_active": true
+  },
+  {
+    "node_id": 205,
+    "name": "College of Engineering Entrance",
+    "latitude": 6.912345,
+    "longitude": 122.078901,
+    "linked_building": true,
+    "connected_nodes": [120, 220],
+    "is_active": true
+  }
+]
