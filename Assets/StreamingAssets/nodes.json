@@ -1,20 +1,92 @@
 [
   {
-    "node_id": 101,
+    "node_id": "N-001",
     "name": "Gate 1 Entrance",
     "latitude": 6.911234,
     "longitude": 122.078456,
     "linked_building": false,
-    "connected_nodes": [110, 150],
+    "is_barrier": false,
     "is_active": true
   },
   {
-    "node_id": 205,
+    "node_id": "N-002",
     "name": "College of Engineering Entrance",
     "latitude": 6.912345,
     "longitude": 122.078901,
     "linked_building": true,
-    "connected_nodes": [120, 220],
+    "is_barrier": false,
+    "is_active": true
+  },
+  {
+    "node_id": "N-003",
+    "name": "Barrier Top Left",
+    "latitude": 6.923000,
+    "longitude": 122.077000,
+    "linked_building": false,
+    "is_barrier": true,
+    "is_active": true
+  },
+  {
+    "node_id": "N-007",
+    "name": "Barrier Top Middle",
+    "latitude": 6.923500,
+    "longitude": 122.079500,
+    "linked_building": false,
+    "is_barrier": true,
+    "is_active": true
+  },
+  {
+    "node_id": "N-004",
+    "name": "Barrier Top Right",
+    "latitude": 6.923000,
+    "longitude": 122.081000,
+    "linked_building": false,
+    "is_barrier": true,
+    "is_active": true
+  },
+  {
+    "node_id": "N-008",
+    "name": "Barrier Middle Right",
+    "latitude": 6.921500,
+    "longitude": 122.082000,
+    "linked_building": false,
+    "is_barrier": true,
+    "is_active": true
+  },
+  {
+    "node_id": "N-005",
+    "name": "Barrier Bottom Right",
+    "latitude": 6.920000,
+    "longitude": 122.081000,
+    "linked_building": false,
+    "is_barrier": true,
+    "is_active": true
+  },
+  {
+    "node_id": "N-009",
+    "name": "Barrier Bottom Middle",
+    "latitude": 6.919500,
+    "longitude": 122.079500,
+    "linked_building": false,
+    "is_barrier": true,
+    "is_active": true
+  },
+  {
+    "node_id": "N-006",
+    "name": "Barrier Bottom Left",
+    "latitude": 6.920000,
+    "longitude": 122.077000,
+    "linked_building": false,
+    "is_barrier": true,
+    "is_active": true
+  },
+  {
+    "node_id": "N-010",
+    "name": "Barrier Middle Left",
+    "latitude": 6.921500,
+    "longitude": 122.076000,
+    "linked_building": false,
+    "is_barrier": true,
     "is_active": true
   }
 ]

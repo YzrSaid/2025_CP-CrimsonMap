@@ -1,20 +1,83 @@
 [
   {
-    "edge_id": 1,
-    "from_node": 101,
-    "to_node": 110,
-    "distance": 15.2,
+    "edge_id": "EDG-001",
+    "from_node": "N-001",
+    "to_node": "N-002",
+    "distance": 10,
     "path_type": "paved",
-    "elevations": [0, 0, 0],
+    "elevations": [0, 0],
     "is_active": true
   },
   {
-    "edge_id": 2,
-    "from_node": 110,
-    "to_node": 120,
-    "distance": 12.5,
-    "path_type": "stairs",
-    "elevations": [0, 3, 0],
+    "edge_id": "EDG-002",
+    "from_node": "N-003",
+    "to_node": "N-007",
+    "distance": 0,
+    "path_type": "barrier",
+    "elevations": [0, 0],
+    "is_active": true
+  },
+  {
+    "edge_id": "EDG-003",
+    "from_node": "N-007",
+    "to_node": "N-004",
+    "distance": 0,
+    "path_type": "barrier",
+    "elevations": [0, 0],
+    "is_active": true
+  },
+  {
+    "edge_id": "EDG-004",
+    "from_node": "N-004",
+    "to_node": "N-008",
+    "distance": 0,
+    "path_type": "barrier",
+    "elevations": [0, 0],
+    "is_active": true
+  },
+  {
+    "edge_id": "EDG-005",
+    "from_node": "N-008",
+    "to_node": "N-005",
+    "distance": 0,
+    "path_type": "barrier",
+    "elevations": [0, 0],
+    "is_active": true
+  },
+  {
+    "edge_id": "EDG-006",
+    "from_node": "N-005",
+    "to_node": "N-009",
+    "distance": 0,
+    "path_type": "barrier",
+    "elevations": [0, 0],
+    "is_active": true
+  },
+  {
+    "edge_id": "EDG-007",
+    "from_node": "N-009",
+    "to_node": "N-006",
+    "distance": 0,
+    "path_type": "barrier",
+    "elevations": [0, 0],
+    "is_active": true
+  },
+  {
+    "edge_id": "EDG-008",
+    "from_node": "N-006",
+    "to_node": "N-010",
+    "distance": 0,
+    "path_type": "barrier",
+    "elevations": [0, 0],
+    "is_active": true
+  },
+  {
+    "edge_id": "EDG-009",
+    "from_node": "N-010",
+    "to_node": "N-003",
+    "distance": 0,
+    "path_type": "barrier",
+    "elevations": [0, 0],
     "is_active": true
   }
 ]
