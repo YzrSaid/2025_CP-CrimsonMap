@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Main</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+body {
+    display: flex;
+    background-color: #ffffff;
+    height: 100vh;
+}
+.container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+/* Sidebar */
+.left {
+    width: 300px;
+    background-color: #f6f6f6;
+    border-right: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    /* Make it stick */
+    position: sticky;
+    top: 0;
+    height: 100vh; /* fill screen height */
+    overflow-y: auto; /* allow sidebar scroll if content too long */
+}
+
+
+.logo {
+    padding: 20px 0;
+}
+
+.logo img {
+    width: 140px;
+}
+
+.time {
+    font-size: 13px;
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.welcome {
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.welcome span {
+    color: #000;
+}
+
+.sidebar {
+    width: 100%;
+    height: 100vh; /* Make it full height */
+    position: sticky; /* Stick when scrolling */
+    top: 0; /* Keep it fixed to top */
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar ul .fas {
+    font-size: 22px;
+}
+
+.sidebar li {
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    align-items: center;
+    gap: 8px; /* space between icon and text */
+    color: #333;
+    border-left: 4px solid transparent;
+    transition: all 0.3s ease;
+    display: flex;
+}
+
+.sidebar li a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: inherit;
+    width: 100%;
+}
+
+.sidebar li i {
+    font-size: 16px;
+    min-width: 20px;
+    text-align: center;
+    padding: 10px;
+}
+
+.sidebar li.active {
+    background-color: #b30000;
+    color: #fff;
+    border-left: 4px solid #800000; /* darker red for accent */
+}
+
+.sidebar li.active i {
+    color: #fff;
+}
+
+.sidebar li:hover {
+    background-color: #e8e8e8;
+    color: black;
+}
+
+.sidebar li:hover i {
+    color: #b30000;
+}
+
+
+
+/* Right content */
+.right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Top Bar */
+.topbar {
+    background-color: #fff;
+    padding: 15px 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.menu-icon {
+    font-size: 22px;
+    cursor: pointer;
+}
+.topbar-title {
+    font-size: 18px;
+    font-weight: 700;
+}
+.add-btn {
+    background-color: #f1b62e;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 4px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 150px;
+    margin-left: auto;
+
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    padding: 10px 25px;
+    font-size: 13px;
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Main Content Layout */
+.main-content {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 20px;
+    margin-top: -20px;
+}
+
+/* Stats + Recent Activity Row */
+.stats-row {
+    display: flex;
+    gap: 20px;
+}
+
+.stats,
+.recent-activity {
+    flex: 1;
+
+}
+.stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    background: #f6f6f6;
+    padding: 20px;
+}
+
+.card {
+    display: flex;
+    align-items: center;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.icon-box {
+    background: #f5d17b; /* yellow background */
+    color: #b22222; /* crimson red icon */
+    width: 100px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.icon-box .fas {
+    font-size: 34px;
+}
+
+.info {
+    flex: 1;
+    padding: 10px;
+}
+
+.info h2 {
+    margin: 0;
+    font-size: 20px;
+    color: black;
+    font-weight: bold;
+}
+
+.info p {
+    margin: 0;
+    font-size: 14px;
+    color: black;
+}
+
+
+.recent-activity {
+    flex: 1;
+    background-color: #f6f6f6;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.recent-activity h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.activity-table {
+    flex: 1;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #ddd;
+}
+
+.activity-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.activity-table thead th {
+    background-color: #b22222; /* crimson red */
+    color: white;
+    text-align: center;
+    font-size: 14px;
+    padding: 10px;
+    border-right: 1px solid #fff; /* vertical divider in header */
+}
+
+.activity-table thead th:last-child {
+    border-right: none;
+}
+
+.activity-table tbody td {
+    text-align: center; /* center all contents */
+    padding: 10px;
+    border-bottom: 1px solid #ddd; /* horizontal divider between rows */
+    border-right: 1px solid #ddd; /* vertical divider between columns */
+    font-size: 14px;
+}
+
+.activity-table tbody td:last-child {
+    border-right: none; /* no divider on last column */
+}
+
+.activity-table tbody tr:last-child td {
+    border-bottom: none; /* remove border from last row */
+}
+
+
+/* Map Overview */
+.map-overview {
+    background-color: #fff;
+
+}
+.map-placeholder {
+    background-color: #f5f5f5;
+    height: 250px;
+    margin-top: 10px;
+}
+
+.map-placeholder h2 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+    font-size: 150px;
+    color: #333;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <!-- Sidebar -->
+    <div class="left">
+        <div class="logo">
+            <img src="/assets/imgs/CrimsonMap Logo 1.png" alt="CrimsonMap Logo">
+        </div>
+        <div class="time">11:11:05 PM | 12-12-25</div>
+        <div class="welcome">WELCOME, <span>ADMIN!</span></div> 
+
+        <div class="sidebar"> 
+    <ul> 
+        <li class="active">
+            <a href="/dashboard_main.html">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+        </li>
+        <li>
+            <a href="/buildings.html">
+                <i class="fas fa-building"></i> Manage Buildings
+            </a>
+        </li> 
+        <li>
+            <a href="/map_editor.html">
+                <i class="fas fa-map"></i> Map Editor
+            </a>
+        </li> 
+        <li>
+            <a href="/recent_activity.html">
+                <i class="fas fa-history"></i> Recent Activity
+            </a>
+        </li> 
+        <li>
+            <a href="/reports.html">
+                <i class="fas fa-chart-bar"></i> Reports
+            </a>
+        </li> 
+        <li>
+            <a href="/account.html">
+                <i class="fas fa-user-cog"></i> Account
+            </a>
+        </li> 
+    </ul> 
+</div>
+
+    </div>
+
+
+    <!-- Main Content -->
+    <div class="right">
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="menu-icon">&#9776;</div>
+                <div class="topbar-title">CrimsonMap | WMSU</div>
+            </div>
+            
+        </div>
+
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+            <h2>Dashboard</h2> Main / Dashboard
+        </div>
+        
+
+        <!-- Main content -->
+        <div class="main-content">
+            <button class="add-btn">Add Building</button>
+            <div class="stats-row">
+                <div class="stats">
+                    <div class="card">
+                        <div class="icon-box">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="info">
+                            <h2>14</h2>
+                            <p>Buildings</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon-box">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <div class="info">
+                            <h2>14</h2>
+                            <p>Categories</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon-box">
+                            <i class="fas fa-sync-alt"></i>
+                        </div>
+                        <div class="info">
+                            <h2>v1.5</h2>
+                            <p>Current Map</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="icon-box">
+                            <i class="fas fa-door-open"></i>
+                        </div>
+                        <div class="info">
+                            <h2>8</h2>
+                            <p>Rooms & Offices</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-activity">
+                    <h3>Recent Activity</h3>
+                    <div class="activity-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Activity</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>Edited building <i>College of Education</i></td>
+                                    <td>2025-06-29 3:12PM</td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Edited building <i>College of Engineering</i></td>
+                                    <td>2025-06-28 3:45PM</td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>Edited building <i>Library</i></td>
+                                    <td>2025-06-20 2:30PM</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Overview -->
+            <div class="map-overview">
+                <h3>Current Map Overview</h3>
+                <div class="map-placeholder" ><h2>MAP HERE!</h2></div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
