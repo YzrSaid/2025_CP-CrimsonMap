@@ -183,7 +183,51 @@ body {
     gap: 10px;
 }
 
+
+
 /* Main Content Layout */
+.main-content {
+    display: flex;
+    justify-content: center;
+    margin: 20px; 
+    background: #f6f6f6;        
+}
+
+.activity-table {
+    width: 100%;
+    margin: 20px;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    text-align: left;
+}
+
+
+.activity-table th, 
+.activity-table td {
+    border: 1px solid #ddd;
+    padding: 12px 15px;
+    vertical-align: middle;
+}
+
+.activity-table th {
+    background-color: #b80000; /* Crimson red */
+    color: white;
+    font-weight: bold;
+    text-align: center;
+}
+
+.activity-table td {
+    background-color: #fff;
+}
+
+.activity-table tr:nth-child(even) td {
+    background-color: #f9f9f9; /* subtle zebra effect */
+}
+
+.activity-table tr:hover td {
+    background-color: #f1f1f1;
+}
 
 
 
@@ -254,9 +298,36 @@ body {
         </div>
 
         <!-- Main content -->
-        <div class="main-content">
-            
-        </div>
+<div class="main-content">
+    <table class="activity-table">
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Timestamp</th>
+                <th>Activity</th>
+                <th>Item Affected</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>2025-06-29<br>3:31PM</td>
+                <td>Added Node</td>
+                <td>Node ND-045</td>
+                <td>Added new node at Campus A entrance</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>2025-06-28<br>3:34PM</td>
+                <td>Updated Building</td>
+                <td>College of Law</td>
+                <td>Changed contact number</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
     </div>
 
 
