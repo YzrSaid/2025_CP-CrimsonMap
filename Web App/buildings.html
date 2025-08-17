@@ -457,7 +457,7 @@ label {
 input, select {
   width: 100%;
   height: 38px;                 /* taller field like in screenshot */
-  padding-left: 14px;       /* pushes text lower */
+  padding-left: 14px;           /* pushes text lower */
   border: 1px solid #ccc;
   border-radius: 5px;
   font-size: 14px;
@@ -509,6 +509,43 @@ h3 {
   color: #555;
   cursor: pointer;
 }
+
+/* ===== Upload Image Styles ===== */
+.upload-box {
+  border: 2px dashed #bbb;
+  border-radius: 8px;
+  text-align: center;
+  padding: 30px;
+  cursor: pointer;
+  transition: border 0.3s ease;
+}
+
+.upload-box:hover {
+  border-color: #333;
+}
+
+.upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.plus-icon {
+  font-size: 28px;
+  font-weight: bold;
+  background: #000;
+  color: #fff;
+  border-radius: 50%;
+  padding: 8px 14px;
+  margin-bottom: 8px;
+}
+
+.upload-label p {
+  font-size: 12px;
+  color: #777;
+}
+
 
 /* Bigger modal for Add Category */
 #addCategoryModal .modal {
@@ -734,17 +771,8 @@ h3 {
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>Canteens</td>
-                            <td><i class="fas fa-eye"></i></td>
-                            <td>3</td>
-                            <td class="actions">
-                                <button class="edit"><i class="fas fa-edit"></i></button>
-                                <button class="delete"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
+                    <tbody id="categoriesTableBody">
+                        <!-- rows will be inserted here -->
                     </tbody>
                 </table>
             </div>
@@ -810,6 +838,18 @@ h3 {
                 </div>
             </div>
 
+            <!-- Upload Image -->
+            <div class="form-group">
+                <label>Upload Image</label>
+                <div class="upload-box">
+                    <input type="file" id="uploadImage" accept=".jpg,.jpeg,.png" hidden>
+                    <label for="uploadImage" class="upload-label">
+                        <span class="plus-icon">+</span>
+                        <p>(Accepted Formats: jpeg, png, jpg)</p>
+                    </label>
+                </div>
+            </div>
+
             <div class="modal-actions">
                 <button type="submit" class="save-btn">Save</button>
                 <button type="button" class="cancel-btn">Cancel</button>
@@ -826,9 +866,9 @@ h3 {
     <div class="modal">
         <h2>Add a Room</h2>
 
-        <form>
-            <!-- Room Name + Room ID (same row) -->
-            <div class="form-row">
+        <form> 
+            <!-- Room Name + Room ID (same row) --> 
+            <div class="form-row"> 
                 <div class="form-group">
                     <label>Room Name</label>
                     <input type="text" placeholder="e.g. Lecture Room 1">
@@ -878,45 +918,161 @@ h3 {
                 </div>
             </div>
 
-            <!-- Actions -->
-            <div class="modal-actions">
-                <button type="submit" class="save-btn">Save</button> 
-                <button type="button" class="cancel-btn">Cancel</button> 
-            </div> 
-        </form> 
-    </div> 
+            <!-- Upload Image -->
+            <div class="form-group">
+                <label>Upload Image</label>
+                <div class="upload-box">
+                    <input type="file" id="uploadImage" accept=".jpg,.jpeg,.png" hidden>
+                    <label for="uploadImage" class="upload-label">
+                        <span class="plus-icon">+</span>
+                        <p>(Accepted Formats: jpeg, png, jpg)</p>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Actions --> 
+            <div class="modal-actions"> 
+                <button type="submit" class="save-btn">Save</button>  
+                <button type="button" class="cancel-btn">Cancel</button>  
+            </div>  
+        </form>  
+    </div>  
 </div>
 
 
-<!-- Add Category Modal Overlay -->
+<!-- Add Category Modal Overlay --> 
 <div id="addCategoryModal" class="modal-overlay" style="display:none;">
     <div class="modal">
         <h2>Add Category</h2>
 
-        <form>
+        <form id="categoryForm">
             <!-- Name/Label -->
             <div class="form-group">
                 <label>Name/Label</label>
-                <input type="text" placeholder="">
+                <input type="text" id="categoryName" placeholder="Category Name" required>
             </div>
 
             <!-- Icon -->
             <div class="form-group">
                 <label>Icon (.ico/.png)</label>
-                <div class="icon-input">
-                    <input type="text" placeholder="">
-                    <button type="button" class="plus-btn">+</button>
-                </div>
+                <input type="file" id="categoryIcon" accept=".png,.ico">
             </div>
 
             <!-- Actions -->
             <div class="modal-actions">
                 <button type="submit" class="save-btn">Save</button>
-                <button type="button" class="cancel-btn">Cancel</button>
-            </div>
-        </form>
-    </div>
+                <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
+            </div> 
+        </form> 
+    </div> 
 </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyC_o1vK92tOz-v6yLlF-QCff6J5ojB2_Qo",
+  authDomain: "crimsonmap-d05e5.firebaseapp.com",
+  projectId: "crimsonmap-d05e5",
+  storageBucket: "crimsonmap-d05e5.appspot.com",
+  messagingSenderId: "396668100672",
+  appId: "1:396668100672:web:26d56e1b5dad4903fabfa5",
+  measurementId: "G-ENJWWP4GNY"
+};
+
+// Init Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Modal open/close
+function openModal() { document.getElementById('addCategoryModal').style.display = 'block'; }
+function closeModal() { document.getElementById('addCategoryModal').style.display = 'none'; }
+window.openModal = openModal;
+window.closeModal = closeModal;
+
+// Convert file to Base64
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+    });
+}
+
+// Load categories into table 
+async function loadCategories() { 
+    const tbody = document.getElementById("categoriesTableBody");
+    tbody.innerHTML = ""; // clear old rows
+
+    try {
+        const querySnapshot = await getDocs(collection(db, "Categories"));
+        
+        // Convert snapshot to array of data
+        const categories = querySnapshot.docs.map(doc => doc.data());
+
+        // Sort by createdAt ascending (oldest first)
+        categories.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
+
+        // Render table rows
+        categories.forEach((data, index) => {
+            const tr = document.createElement("tr");
+
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${data.name}</td>
+                <td>${data.icon ? `<img src="${data.icon}" alt="${data.name}" style="width:24px;height:24px;">` : ""}</td>
+                <td>${data.buildings || 0}</td>
+                <td class="actions">
+                    <button class="edit"><i class="fas fa-edit"></i></button>
+                    <button class="delete"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+    } catch (err) {
+        console.error("Error loading categories: ", err);
+    }
+}
+
+
+// Handle form submit
+document.getElementById('categoryForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const name = document.getElementById('categoryName').value;
+    const iconFile = document.getElementById('categoryIcon').files[0];
+
+    let iconBase64 = '';
+    if (iconFile) iconBase64 = await fileToBase64(iconFile);
+
+    try {
+        await addDoc(collection(db, "Categories"), {
+            category_id: Date.now().toString(),
+            name: name,
+            icon: iconBase64,
+            buildings: 0, // default
+            is_deleted: false,
+            createdAt: new Date()
+        });
+
+        alert("Category saved!");
+        document.getElementById('categoryForm').reset();
+        closeModal();
+        loadCategories(); // refresh table
+    } catch (err) {
+        alert("Error adding category: " + err);
+    }
+});
+
+// Load table on page load
+window.onload = loadCategories;
+</script>
+
+
 
 
 
