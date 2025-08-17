@@ -8379,6 +8379,7 @@ GameObject:
   - component: {fileID: 1465186273}
   - component: {fileID: 1465186274}
   - component: {fileID: 1465186275}
+  - component: {fileID: 1465186276}
   m_Layer: 0
   m_Name: MainAppManager
   m_TagString: Untagged
@@ -8454,6 +8455,25 @@ MonoBehaviour:
   paddingBottom: 20
   paddingLeft: 20
   paddingRight: 20
+--- !u!114 &1465186276
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1465186272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a79ff44ff6021bf09433c19c5adc6b0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mapContainer: {fileID: 1355149758}
+  buildingPrefab: {fileID: 2307077774241801851, guid: a6201cd9c8c0db76894d84b96de22b42, type: 3}
+  mapImage: {fileID: 1603567644}
+  paddingLeft: 0
+  paddingRight: 0
+  paddingTop: 0
+  paddingBottom: 0
 --- !u!1 &1485144181
 GameObject:
   m_ObjectHideFlags: 0

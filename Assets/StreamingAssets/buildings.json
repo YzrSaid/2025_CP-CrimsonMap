@@ -11,14 +11,47 @@
     "phone": "+63 912 345 6789"
   },
   {
-    "building_id": 4,
-    "name": "University Health Clinic",
-    "category_id": 2,
-    "location": "Main Campus, beside the Library",
-    "latitude": 6.913456,
-    "longitude": 122.079012,
-    "image_url": "images/clinic.png",
-    "email": "clinic@university.edu",
-    "phone": "+63 923 456 7890"
+    "building_id": 5,
+    "name": "Main Library",
+    "category_id": 3,
+    "location": "Central Campus, near the Administration Building",
+    "latitude": 6.914200,
+    "longitude": 122.079800,
+    "image_url": "images/library.png",
+    "email": "library@university.edu",
+    "phone": "+63 934 567 8901"
+  },
+  {
+    "building_id": 6,
+    "name": "Student Dormitory A",
+    "category_id": 4,
+    "location": "North Campus, behind College of Engineering",
+    "latitude": 6.912900,
+    "longitude": 122.079400,
+    "image_url": "images/dormitory.png",
+    "email": "dormA@university.edu",
+    "phone": "+63 945 678 9012"
+  },
+  {
+    "building_id": 7,
+    "name": "Cafeteria",
+    "category_id": 5,
+    "location": "Main Campus, beside the Gymnasium",
+    "latitude": 6.915000,
+    "longitude": 122.078500,
+    "image_url": "images/cafeteria.png",
+    "email": "cafeteria@university.edu",
+    "phone": "+63 956 789 0123"
+  },
+  {
+    "building_id": 8,
+    "name": "Auditorium",
+    "category_id": 6,
+    "location": "Central Campus, near Main Library",
+    "latitude": 6.914800,
+    "longitude": 122.080200,
+    "image_url": "images/auditorium.png",
+    "email": "auditorium@university.edu",
+    "phone": "+63 967 890 1234"
   }
 ]

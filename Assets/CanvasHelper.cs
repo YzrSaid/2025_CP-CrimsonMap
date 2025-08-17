@@ -39,7 +39,7 @@ public class CanvasHelper : MonoBehaviour
 
     void Update()
     {
-        if (helpers[0] != this)
+        if (helpers.Count == 0 || helpers[0] != this)
             return;
 
         if (Screen.orientation != lastOrientation)
@@ -51,6 +51,7 @@ public class CanvasHelper : MonoBehaviour
         if (Screen.width != lastResolution.x || Screen.height != lastResolution.y)
             ResolutionChanged();
     }
+
 
     private void ApplySafeArea()
     {
