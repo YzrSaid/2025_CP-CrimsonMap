@@ -766,7 +766,7 @@ h3 {
                         <tr>
                             <th>No</th>
                             <th>Name/Label</th>
-                            <th>Icon</th>
+                            <th>Icon (Icon, PNG)</th>
                             <th>Buildings</th>
                             <th>Actions</th>
                         </tr>
@@ -971,16 +971,8 @@ h3 {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyC_o1vK92tOz-v6yLlF-QCff6J5ojB2_Qo",
-  authDomain: "crimsonmap-d05e5.firebaseapp.com",
-  projectId: "crimsonmap-d05e5",
-  storageBucket: "crimsonmap-d05e5.appspot.com",
-  messagingSenderId: "396668100672",
-  appId: "1:396668100672:web:26d56e1b5dad4903fabfa5",
-  measurementId: "G-ENJWWP4GNY"
-};
+// Import config from another file
+import { firebaseConfig } from "./firebaseConfig.js";
 
 // Init Firebase
 const app = initializeApp(firebaseConfig);
