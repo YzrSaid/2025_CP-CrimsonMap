@@ -917,17 +917,18 @@ body {
             <div class="form-row">
                 <div class="form-group">
                     <label>Start Node</label>
-                    <select>
+                    <select id="startNode">
                         <option value="">Select start node</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>End Node</label>
-                    <select>
+                    <select id="endNode">
                         <option value="">Select end node</option>
                     </select>
                 </div>
             </div>
+
 
             <!-- Additional Information -->
             <h3>Additional Information:</h3>
@@ -1071,7 +1072,7 @@ async function loadNodes() {
     } 
 }
 
-// =============== HANDLE FORM SUBMIT ===============
+// =============== HANDLE NODE FORM SUBMIT ===============
 document.getElementById("nodeForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -1103,9 +1104,168 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
     }
 });
 
-// Load table on page load
-window.onload = loadNodes; 
+
+
+// =============== AUTO INCREMENT EDGE ID ===============
+async function generateNextEdgeId() {
+    const q = query(collection(db, "Edges"));
+    const snapshot = await getDocs(q);
+
+    let maxNum = 0;
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.edge_id) {
+            const num = parseInt(data.edge_id.replace("EDG-", ""));
+            if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+    });
+
+    const nextId = `EDG-${String(maxNum + 1).padStart(3, "0")}`;
+    document.querySelector("#addEdgeModal input[type='text']").value = nextId;
+    return nextId;
+}
+
+// =============== LOAD NODES INTO DROPDOWNS ===============
+async function loadNodesIntoDropdowns() {
+    const startNodeSelect = document.getElementById("startNode");
+    const endNodeSelect   = document.getElementById("endNode");
+
+    startNodeSelect.innerHTML = `<option value="">Select start node</option>`;
+    endNodeSelect.innerHTML   = `<option value="">Select end node</option>`;
+
+    // ✅ Order nodes by created_at ascending
+    const q = query(collection(db, "Nodes"), orderBy("created_at", "asc"));
+    const snapshot = await getDocs(q);
+
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.node_id) {
+            const option1 = document.createElement("option");
+            option1.value = data.node_id;
+            option1.textContent = `${data.node_id} - ${data.name}`;
+            startNodeSelect.appendChild(option1);
+
+            const option2 = document.createElement("option");
+            option2.value = data.node_id;
+            option2.textContent = `${data.node_id} - ${data.name}`;
+            endNodeSelect.appendChild(option2);
+        }
+    });
+}
+
+
+// =============== HANDLE EDGE FORM SUBMIT ===============
+document.querySelector("#addEdgeModal form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const edgeId    = document.querySelector("#addEdgeModal input[type='text']").value;
+    const startNode = document.getElementById("startNode").value;
+    const endNode   = document.getElementById("endNode").value;
+
+    // Handle pathType (select OR custom input)
+    let pathTypeEl = document.getElementById("pathType") || document.querySelector("input[name='pathType']");
+    let pathType = pathTypeEl ? pathTypeEl.value.trim() : "";
+
+    // Handle elevation (select OR custom input)
+    let elevationEl = document.getElementById("elevation") || document.querySelector("input[name='elevation']");
+    let elevation = elevationEl ? elevationEl.value.trim() : "";
+
+    // Convert custom inputs into snake_case for DB storage
+    const toSnakeCase = str =>
+        str.toLowerCase().replace(/\s+/g, "_");
+
+    if (pathType && !["via_overpass","via_underpass","stairs","ramp"].includes(pathType)) {
+        pathType = toSnakeCase(pathType);
+    }
+    if (elevation && !["slope_up","slope_down","flat"].includes(elevation)) {
+        elevation = toSnakeCase(elevation);
+    }
+
+    try {
+        await addDoc(collection(db, "Edges"), {
+            edge_id: edgeId,
+            from_node: startNode,
+            to_node: endNode,
+            distance: null, // to be added later
+            path_type: pathType || null,
+            elevations: elevation || null,
+            is_active: true,
+            is_deleted: false,
+            created_at: new Date()
+        });
+
+        alert("Edge saved!");
+        document.getElementById("addEdgeModal").style.display = "none";
+        loadEdges();
+
+    } catch (err) {
+        alert("Error adding edge: " + err);
+    }
+});
+
+
+// =============== LOAD EDGES INTO TABLE ===============
+async function loadEdges() {
+    const tbody = document.querySelector(".edgetbl tbody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    const q = query(collection(db, "Edges"), orderBy("created_at", "asc"));
+    const snapshot = await getDocs(q);
+
+    snapshot.forEach(doc => {
+        const data = doc.data();
+
+        // --- Formatter helper ---
+        const formatText = (value, prefix = "") => {
+            if (!value) return "-";
+            // replace underscores with spaces, capitalize each word
+            const formatted = value
+                .split("_")
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(" ");
+            return prefix ? `${prefix} ${formatted}` : formatted;
+        };
+
+        // Format path_type and elevations
+        const formattedPathType = formatText(data.path_type);
+        const formattedElevation = formatText(data.elevations);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${data.edge_id}</td>
+            <td>${data.from_node} > ${data.to_node}</td>
+            <td>${data.distance || "-"}</td>
+            <td>${formattedPathType}</td>
+            <td>${formattedElevation}</td>
+            <td class="actions">
+                <i class="fas fa-edit"></i>
+                <i class="fas fa-trash"></i>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+
+// =============== MAKE FUNCTIONS GLOBAL FOR MODALS ===============
+window.openEdgeModal = async function () {
+    document.getElementById("addEdgeModal").style.display = "block";
+    await generateNextEdgeId();
+    await loadNodesIntoDropdowns();
+};
+
+window.closeEdgeModal = function () {
+    document.getElementById("addEdgeModal").style.display = "none";
+};
+
+// =============== LOAD DATA ON PAGE LOAD ===============
+window.onload = () => {
+    loadNodes();
+    loadEdges();
+};
 </script>
+
 
 
 
@@ -1150,6 +1310,7 @@ document.addEventListener("DOMContentLoaded", function () {
             window.openNodeModal(); // <-- use the function from your module script
             addNodeModal.style.display = "flex";
         } else if (addButton.textContent === "Add Edge") {
+            window.openEdgeModal();
             addEdgeModal.style.display = "flex";
         }
     });
