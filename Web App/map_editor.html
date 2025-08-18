@@ -790,7 +790,6 @@ body {
                                     <th>Name/Label</th>
                                     <th>Coordinates (lat, long)</th>
                                     <th>Linked Building</th>
-                                    <th>Connected Nodes</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -850,23 +849,24 @@ body {
     <div class="modal">
         <h2>Add Node</h2>
 
-        <form>
+        <form id="nodeForm">
             <!-- Node Name/Label + Node ID -->
             <div class="form-row">
                 <div class="form-group">
                     <label>Node Name/Label</label>
-                    <input type="text" placeholder="eg. College of Nursing">
+                    <input id="nodeName" type="text" placeholder="eg. College of Nursing" required>
                 </div>
                 <div class="form-group">
-                    <label >Node ID</label>
-                    <input type="text" value="eg. ND-003" disabled>
+                    <label>Node ID</label>
+                    <input id="nodeId" type="text" disabled>
                 </div>
+
             </div>
 
             <!-- Linked Building -->
             <div class="form-group">
                 <label>Linked Building</label>
-                <select>
+                <select id="linkedBuilding">
                     <option value="">Select a building</option>
                 </select>
             </div>
@@ -876,33 +876,25 @@ body {
                 <label>Coordinates</label>
                 <div class="form-row">
                     <div class="form-group">
-                        <input type="text" placeholder="Latitude">
+                        <input id="latitude" type="text" placeholder="Latitude">
                     </div>
                     <div class="form-group">
-                        <input type="text" placeholder="Longitude">
+                        <input id="longitude" type="text" placeholder="Longitude">
                     </div>
                 </div>
-            </div>
-
-            <!-- Connected Nodes -->
-            <div class="form-group">
-                <label>Connected Nodes</label>
-                <select>
-                    <option value="">Select connected node(s)</option>
-                </select>
             </div>
 
             <!-- Additional Information -->
             <h3>Additional Information (Optional):</h3>
             <div class="form-group checkbox-row">
                 <label>Used for QR Code Placement</label>
-                <input type="checkbox">
+                <input id="qrAnchor" type="checkbox">
             </div>
 
             <!-- Actions -->
             <div class="modal-actions">
                 <button type="submit" class="save-btn">Save</button>
-                <button type="button" class="cancel-btn">Cancel</button>
+                <button type="button" class="cancel-btn" onclick="closeNodeModal()">Cancel</button>
             </div>
         </form>
     </div>
@@ -916,9 +908,9 @@ body {
 
         <form>
             <!-- Edge ID -->
-            <div class="form-group">
-                <label>Edge ID</label>
-                <input type="text" value="EDG-003" disabled>
+            <div class="form-group"> 
+                <label>Edge ID</label> 
+                <input type="text" value="EDG-003" disabled> 
             </div>
 
             <!-- Start & End Node -->
@@ -944,31 +936,178 @@ body {
                 <input type="checkbox">
             </div>
 
-
             <!-- Path Type & Elevation -->
             <div class="form-row">
                 <div class="form-group">
                     <label>Path Type</label>
-                    <select>
+                    <select id="pathType">
                         <option value="">Select path type</option>
+                        <option value="via_gate">Via Gate</option>
+                        <option value="via_overpass">Via Overpass</option>
+                        <option value="walkway">Walkway</option>
+                        <option value="other">Other</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>Elevation</label>
-                    <select>
+                    <select id="elevation">
                         <option value="">Select elevation</option>
+                        <option value="flat">Flat</option>
+                        <option value="slope_up">Slope (Up)</option>
+                        <option value="slope_down">Slope (Down)</option>
+                        <option value="stairs">Stairs</option>
+                        <option value="steep_up">Steep (Up)</option>
+                        <option value="steep_down">Steep (Down)</option>
+                        <option value="mixed">Mixed</option>
+                        <option value="other">Other</option>
                     </select>
                 </div>
             </div>
 
-            <!-- Actions -->
-            <div class="modal-actions">
-                <button type="submit" class="save-btn">Save</button>
-                <button type="button" class="cancel-btn">Cancel</button>
-            </div>
-        </form>
-    </div>
+            <!-- Actions --> 
+            <div class="modal-actions"> 
+                <button type="submit" class="save-btn">Save</button> 
+                <button type="button" class="cancel-btn">Cancel</button> 
+            </div> 
+        </form> 
+    </div> 
 </div>
+
+
+
+
+
+
+
+
+<!-- ================== SCRIPT ================== --> 
+<script type="module"> 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js"; 
+import { 
+    getFirestore, collection, addDoc, getDocs, query, orderBy 
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+// ✅ Firebase config (better: put in firebaseConfig.js and gitignore it!) 
+const firebaseConfig = { 
+  apiKey: "YOUR_API_KEY", 
+  authDomain: "crimsonmap-d05e5.firebaseapp.com",
+  projectId: "crimsonmap-d05e5",
+  storageBucket: "crimsonmap-d05e5.appspot.com",
+  messagingSenderId: "396668100672",
+  appId: "1:396668100672:web:26d56e1b5dad4903fabfa5",
+  measurementId: "G-ENJWWP4GNY"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// =============== MODAL CONTROL ===============
+function openNodeModal() {
+    document.getElementById('addNodeModal').style.display = 'block';
+    generateNextNodeId(); // auto-generate ID every time modal opens
+}
+
+function closeNodeModal() {
+    document.getElementById('addNodeModal').style.display = 'none';
+
+    // Reset all form fields EXCEPT nodeId
+    document.getElementById("nodeName").value = "";
+    document.getElementById("latitude").value = "";
+    document.getElementById("longitude").value = "";
+    document.getElementById("linkedBuilding").value = "";
+    document.getElementById("qrAnchor").checked = false;
+}
+window.openNodeModal = openNodeModal;
+window.closeNodeModal = closeNodeModal;
+
+// =============== AUTO INCREMENT NODE ID ===============
+async function generateNextNodeId() {
+    const q = query(collection(db, "Nodes"));
+    const snapshot = await getDocs(q);
+
+    let maxNum = 0;
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.node_id) {
+            const num = parseInt(data.node_id.replace("ND-", ""));
+            if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+    });
+
+    const nextId = `ND-${String(maxNum + 1).padStart(3, "0")}`;
+    document.getElementById("nodeId").value = nextId;
+}
+
+// =============== LOAD NODES INTO TABLE ===============
+async function loadNodes() { 
+    const tbody = document.querySelector(".nodetbl tbody");
+    tbody.innerHTML = "";
+
+    try {
+        const q = query(collection(db, "Nodes"), orderBy("created_at", "asc"));
+        const querySnapshot = await getDocs(q);
+
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${data.node_id}</td>
+                <td>${data.name}</td>
+                <td>${data.coordinates ? 
+                    `${data.coordinates.latitude}, ${data.coordinates.longitude}` 
+                    : "-"}</td>
+                <td>${data.linked_building || "-"}</td>
+                <td class="actions">
+                    <i class="fas fa-edit"></i>
+                    <i class="fas fa-trash"></i>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+    } catch (err) { 
+        console.error("Error loading nodes: ", err); 
+    } 
+}
+
+// =============== HANDLE FORM SUBMIT ===============
+document.getElementById("nodeForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const nodeId = document.getElementById("nodeId").value;
+    const nodeName = document.getElementById("nodeName").value;
+    const latitude = document.getElementById("latitude").value;
+    const longitude = document.getElementById("longitude").value;
+    const linkedBuilding = document.getElementById("linkedBuilding").value;
+    const qrAnchor = document.getElementById("qrAnchor").checked;
+
+    try {
+        await addDoc(collection(db, "Nodes"), {
+            node_id: nodeId,
+            name: nodeName,
+            coordinates: { latitude, longitude },
+            linked_building: linkedBuilding,
+            qr_anchor: qrAnchor,
+            is_active: true,
+            is_deleted: false,
+            created_at: new Date()
+        });
+
+        alert("Node saved!");
+        closeNodeModal();
+        loadNodes();
+
+    } catch (err) { 
+        alert("Error adding node: " + err); 
+    }
+});
+
+// Load table on page load
+window.onload = loadNodes; 
+</script>
+
+
 
 
 
@@ -993,21 +1132,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Tab switching
     tabs.forEach((tab, index) => {
-        tab.addEventListener("click", () => { 
-            tabs.forEach(t => t.classList.remove("active")); 
+        tab.addEventListener("click", () => {
+            tabs.forEach(t => t.classList.remove("active"));
             tables.forEach(tbl => tbl.style.display = "none");
             tab.classList.add("active");
             tables[index].style.display = "block";
 
             if (buttonTexts[index]) {
-                addButton.textContent = buttonTexts[index]; 
+                addButton.textContent = buttonTexts[index];
             }
-        }); 
+        });
     });
 
-    // Open modal
+    // ✅ Open modal
     addButton.addEventListener("click", () => {
         if (addButton.textContent === "Add Node") {
+            window.openNodeModal(); // <-- use the function from your module script
             addNodeModal.style.display = "flex";
         } else if (addButton.textContent === "Add Edge") {
             addEdgeModal.style.display = "flex";
@@ -1015,27 +1155,61 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Close Node modal
-    cancelNodeBtn.addEventListener("click", () => { 
-        addNodeModal.style.display = "none"; 
+    cancelNodeBtn.addEventListener("click", () => {
+        window.closeNodeModal();
     });
     addNodeModal.addEventListener("click", (e) => {
-        if (e.target === addNodeModal) { 
-            addNodeModal.style.display = "none"; 
-        } 
+        if (e.target === addNodeModal) {
+            window.closeNodeModal();
+        }
     });
 
     // Close Edge modal
-    cancelEdgeBtn.addEventListener("click", () => { 
-        addEdgeModal.style.display = "none"; 
+    cancelEdgeBtn.addEventListener("click", () => {
+        addEdgeModal.style.display = "none";
     });
     addEdgeModal.addEventListener("click", (e) => {
-        if (e.target === addEdgeModal) { 
-            addEdgeModal.style.display = "none"; 
-        } 
+        if (e.target === addEdgeModal) {
+            addEdgeModal.style.display = "none";
+        }
     });
 });
 </script>
 
 
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    function handleOther(selectId) {
+        const select = document.getElementById(selectId);
+
+        select.addEventListener("change", function () {
+            if (this.value === "other") {
+                // Create input element
+                const input = document.createElement("input");
+                input.type = "text";
+                input.name = selectId;
+                input.placeholder = "Enter your own value";
+                input.classList.add("custom-input");
+
+                // Replace select with input
+                this.parentNode.replaceChild(input, this);
+
+                // Allow switching back (if user clears input)
+                input.addEventListener("blur", function () {
+                    if (input.value.trim() === "") {
+                        input.parentNode.replaceChild(select, input);
+                        select.value = "";
+                    }
+                });
+            }
+        });
+    }
+
+    handleOther("pathType");
+    handleOther("elevation");
+});
+</script>
 </body>
 </html>
