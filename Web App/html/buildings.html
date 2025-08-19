@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Main</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="/styles/buildings.css">
+</head>
+<body>
+<div class="container">
+    <!-- Sidebar -->
+    <div class="left">
+        <div class="logo">
+            <img src="/assets/imgs/CrimsonMap Logo 1.png" alt="CrimsonMap Logo">
+        </div>
+        <div class="time">11:11:05 PM | 12-12-25</div>
+        <div class="welcome">WELCOME, <span>ADMIN!</span></div> 
+
+        <div class="sidebar"> 
+            <ul> 
+                <li>
+                    <a href="/html/dashboard_main.html">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li class="active">
+                    <a href="/html/buildings.html">
+                        <i class="fas fa-building"></i> Manage Buildings
+                    </a>
+                </li> 
+                <li>
+                    <a href="/html/map_editor.html">
+                        <i class="fas fa-map"></i> Map Editor
+                    </a>
+                </li> 
+                <li>
+                    <a href="/html/recent_activity.html">
+                        <i class="fas fa-history"></i> Recent Activity
+                    </a>
+                </li> 
+                <li>
+                    <a href="/html/reports.html">
+                        <i class="fas fa-chart-bar"></i> Reports
+                    </a>
+                </li> 
+                <li>
+                    <a href="/html/account.html">
+                        <i class="fas fa-user-cog"></i> Account
+                    </a>
+                </li> 
+            </ul> 
+        </div>
+
+    </div>
+
+
+    <!-- Main Content -->
+    <div class="right">
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="menu-icon">&#9776;</div>
+                <div class="topbar-title">CrimsonMap | WMSU</div>
+            </div>
+        </div>
+
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+            <h2>Manage Buildings</h2>
+            <span>Main / Manage Buildings</span>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-target="buildtbl">Buildings</button>
+                <button class="tab" data-target="roomstbl">Rooms</button>
+                <button class="tab" data-target="categoriestbl">Categories</button>
+            </div>
+
+            <!-- Search, Sort, Add Button -->
+            <div class="controls">
+                <div class="g1">
+                    <div class="searchbar">
+                        <input type="text" placeholder="Search...">
+                    </div>
+                    <div class="sort">
+                        <select>
+                            <option>Sort</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="g2">
+                    <div class="addbtn">
+                        <button>Add Building</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tables -->
+            <div class="buildtbl">
+                <table class="building-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Location</th>
+                            <th>Coordinates</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>BLD-001</td>
+                            <td>College of Nursing</td>
+                            <td>Academic</td>
+                            <td>Near Gymnasium (Campus A)</td>
+                            <td>6.92012, 122.07910</td>
+                            <td class="actions">
+                                <button class="edit"><i class="fas fa-edit"></i></button>
+                                <button class="delete"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="roomstbl" style="display:none;">
+                <table class="rooms-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Building</th>
+                            <th>Location</th>
+                            <th>Coordinates</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>RM-001</td>
+                            <td>Lecture Room 1</td>
+                            <td>College of Computing Studies</td>
+                            <td>Near Gymnasium (Campus A)</td>
+                            <td>6.92012, 122.07910</td>
+                            <td class="actions">
+                                <button class="edit"><i class="fas fa-edit"></i></button>
+                                <button class="delete"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="categoriestbl" style="display:none;">
+                <table class="categories-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Name/Label</th>
+                            <th>Icon (Icon, PNG)</th>
+                            <th>Buildings</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoriesTableBody">
+                        <!-- rows will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal Overlay -->
+<div id="addBuildingModal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+        <h2>Add a Building</h2>
+
+        <form>
+            <!-- Building Name + Building ID (same row) -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Building Name</label>
+                    <input type="text" placeholder="e.g. College of Nursing">
+                </div>
+                <div class="form-group"> 
+                    <label>Building ID</label> 
+                    <input id="buildingId" type="text" disabled> 
+                </div>
+
+
+            </div>
+
+            <!-- Category -->
+            <div class="form-group">
+                <label>Category</label>
+                <select>
+                    <option value="">Select a category</option>
+                </select>
+            </div>
+
+            <!-- Coordinates title + row with Latitude / Longitude -->
+            <div class="form-group">
+                <label class="section-title">Coordinates</label>
+                <div class="form-row">
+                    <div class="form-group">
+                        <input type="text" placeholder="Latitude">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" placeholder="Longitude">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location Description -->
+            <div class="form-group">
+                <label>Location Description</label>
+                <input type="text" placeholder="e.g. Near Gate 6 and College of Engineering">
+            </div>
+
+            <!-- Additional Info -->
+            <h3>Additional Information (Optional):</h3>
+            <div class="form-group">
+                <label>Contact Info</label>
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <input type="text" placeholder="">
+                    <button type="button" class="plus-btn">+</button>
+                </div>
+            </div>
+
+            <!-- Upload Image -->
+            <div class="form-group">
+                <label>Upload Image</label>
+                <div class="upload-box">
+                    <input type="file" id="uploadImage" accept=".jpg,.jpeg,.png" hidden>
+                    <label for="uploadImage" class="upload-label">
+                        <span class="plus-icon">+</span>
+                        <p>(Accepted Formats: jpeg, png, jpg)</p>
+                    </label>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="submit" class="save-btn">Save</button>
+                <button type="button" class="cancel-btn">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+
+<!-- Add Room Modal Overlay -->
+<div id="addRoomModal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+        <h2>Add a Room</h2>
+
+        <form> 
+            <!-- Room Name + Room ID (same row) --> 
+            <div class="form-row"> 
+                <div class="form-group">
+                    <label>Room Name</label>
+                    <input type="text" placeholder="e.g. Lecture Room 1">
+                </div>
+                <div class="form-group">
+                    <label>Room ID</label>
+                    <input type="text" id="roomId" name="room_id" disabled>
+                </div>
+
+
+            </div>
+
+            <!-- Building Dropdown -->
+            <div class="form-group">
+                <label>Building</label>
+                <select>
+                    <option value="">Select a building</option>
+                </select>
+            </div>
+
+            <!-- Coordinates -->
+            <div class="form-group">
+                <label class="section-title">
+                    Coordinates <a href="#" style="font-size: 12px; color: #666; text-decoration: underline; margin-left: 5px;">Use Relative Measurement (m)</a>
+                </label>
+                <div class="form-row">
+                    <div class="form-group">
+                        <input type="text" placeholder="Latitude">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" placeholder="Longitude">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location Description -->
+            <div class="form-group">
+                <label>Location Description</label>
+                <input type="text" placeholder="e.g. Near Gate 6 and College of Engineering">
+            </div>
+
+            <!-- Additional Info -->
+            <h3>Additional Information (Optional):</h3>
+            <div class="form-group">
+                <label>Contact Info</label>
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <input type="text" placeholder="">
+                    <button type="button" class="plus-btn">+</button>
+                </div>
+            </div>
+
+            <!-- Upload Image -->
+            <div class="form-group">
+                <label>Upload Image</label>
+                <div class="upload-box">
+                    <input type="file" id="uploadImage" accept=".jpg,.jpeg,.png" hidden>
+                    <label for="uploadImage" class="upload-label">
+                        <span class="plus-icon">+</span>
+                        <p>(Accepted Formats: jpeg, png, jpg)</p>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Actions --> 
+            <div class="modal-actions"> 
+                <button type="submit" class="save-btn">Save</button>  
+                <button type="button" class="cancel-btn">Cancel</button>  
+            </div>  
+        </form>  
+    </div>  
+</div>
+
+
+
+<!-- Add Category Modal Overlay --> 
+<div id="addCategoryModal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+        <h2>Add Category</h2>
+
+        <form id="categoryForm">
+            <!-- Name/Label -->
+            <div class="form-group">
+                <label>Name/Label</label>
+                <input type="text" id="categoryName" placeholder="Category Name" required>
+            </div>
+
+            <!-- Icon -->
+            <div class="form-group">
+                <label>Icon (.ico/.png)</label>
+                <input type="file" id="categoryIcon" accept=".png,.ico">
+            </div>
+
+            <!-- Actions -->
+            <div class="modal-actions">
+                <button type="submit" class="save-btn">Save</button>
+                <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
+            </div> 
+        </form> 
+    </div> 
+</div>
+
+<script type="module" src="/js/buildings.js "></script>
+
+
+
+
+
+
+
+
+
+</body>
+</html>
