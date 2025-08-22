@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using System.IO;
+using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 
 [Serializable]
@@ -35,18 +37,29 @@ public class AccordionSpawner : MonoBehaviour
             SpawnAccordionItem(name);
         }
 
-        // Now load the dynamic categories from Firebase
         LoadDynamicCategoriesFromFirebase();
     }
 
     void LoadDynamicCategoriesFromFirebase()
     {
-        // 🔥 EXAMPLE ONLY — you’ll replace this with actual Firebase fetching
-        List<string> dynamicCategoriesFromFirebase = new List<string> { "Academics", "Clinics", "Offices" };
+        string filePath = Path.Combine(Application.streamingAssetsPath, "categories.json");
 
-        foreach (string name in dynamicCategoriesFromFirebase)
+        if (File.Exists(filePath))
         {
-            SpawnAccordionItem(name);
+            string jsonData = File.ReadAllText(filePath);
+            // Create a wrapper for this json utility, we will manually create wrapper for this
+            string wrappedJson = "{\"categories\":" + jsonData + "}";
+            CategoryList categoryList = JsonUtility.FromJson<CategoryList>(wrappedJson);
+
+            // We will now iterate the categories and show it for each accordion item
+            foreach (Category cat in categoryList.categories)
+            {
+                SpawnAccordionItem(cat.name);
+            }   
+        }
+        else
+        {
+            Debug.LogError("Categories.json not found in StreamingAssets!");
         }
     }
 
@@ -63,10 +76,9 @@ public class AccordionSpawner : MonoBehaviour
 
         manager.accordionItems.Add(item);
 
-        // Optional: preload or tag static items
         if (categoryName == "Saved" || categoryName == "Recent")
         {
-            // e.g., change icon, preload content, etc.
+         
         }
     }
 }
