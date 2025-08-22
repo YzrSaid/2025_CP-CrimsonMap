@@ -8380,6 +8380,8 @@ GameObject:
   - component: {fileID: 1465186274}
   - component: {fileID: 1465186275}
   - component: {fileID: 1465186276}
+  - component: {fileID: 1465186277}
+  - component: {fileID: 1465186278}
   m_Layer: 0
   m_Name: MainAppManager
   m_TagString: Untagged
@@ -8441,20 +8443,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mapContainer: {fileID: 1355149758}
-  mapImage: {fileID: 1603567644}
   nodePrefab: {fileID: 6949168087274628404, guid: 648d6d767a76502cbbbe443ff5fc9822, type: 3}
   connectingLinePrefab: {fileID: 6949168087274628404, guid: d1ba9699f9e836fc19cf6739f91970cf, type: 3}
   lineThickness: 5
   nodesFileName: nodes.json
   edgesFileName: edges.json
-  minLatitude: 6.911234
-  maxLatitude: 6.923
-  minLongitude: 122.077
-  maxLongitude: 122.081
-  paddingTop: 100
-  paddingBottom: 20
-  paddingLeft: 20
-  paddingRight: 20
 --- !u!114 &1465186276
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8469,11 +8462,46 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mapContainer: {fileID: 1355149758}
   buildingPrefab: {fileID: 2307077774241801851, guid: a6201cd9c8c0db76894d84b96de22b42, type: 3}
+--- !u!114 &1465186277
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1465186272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf2530a8d87bbe2db94ca15ff3b9de85, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mapContainer: {fileID: 1355149758}
+  pavedRoadColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.9}
+  walkwayColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.8}
+  barrierColor: {r: 0.8, g: 0.8, b: 0.8, a: 0.5}
+  pathMaterial: {fileID: 0}
+  pavedWidth: 30
+  walkwayWidth: 20
+  barrierWidth: 5
+  showPathwayNodes: 0
+  pathwayNodePrefab: {fileID: 0}
+--- !u!114 &1465186278
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1465186272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64d05fc3da1841d57a8e55c660f086ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   mapImage: {fileID: 1603567644}
-  paddingLeft: 0
-  paddingRight: 0
-  paddingTop: 0
-  paddingBottom: 0
+  paddingLeft: 20
+  paddingRight: 20
+  paddingTop: 50
+  paddingBottom: 20
+  showDebugInfo: 1
 --- !u!1 &1485144181
 GameObject:
   m_ObjectHideFlags: 0

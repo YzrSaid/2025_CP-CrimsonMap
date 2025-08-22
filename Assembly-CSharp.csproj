@@ -67,9 +67,12 @@
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionManager.cs" />
     <Compile Include="Assets/Scripts/AnswerButtons.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MapButtonsAndControlsScript.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/MapUtils.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/MapCoordinateSystem.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/CampusBounds.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionItem.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/SaveData.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/PathRenderer.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/BarrierSpawner.cs" />
     <Compile Include="Assets/Scripts/RotationBackground.cs" />
     <Compile Include="Assets/CanvasHelper.cs" />

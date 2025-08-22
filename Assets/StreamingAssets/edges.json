@@ -2,14 +2,95 @@
   {
     "edge_id": "EDG-001",
     "from_node": "N-001",
-    "to_node": "N-002",
-    "distance": 10,
+    "to_node": "P-001",
+    "distance": 25,
     "path_type": "paved",
     "elevations": [0, 0],
     "is_active": true
   },
   {
     "edge_id": "EDG-002",
+    "from_node": "P-001",
+    "to_node": "P-002",
+    "distance": 30,
+    "path_type": "paved",
+    "elevations": [0, 0],
+    "is_active": true
+  },
+  {
+    "edge_id": "EDG-003",
+    "from_node": "P-002",
+    "to_node": "P-003",
+    "distance": 35,
+    "path_type": "paved",
+    "elevations": [0, 0],
+    "is_active": true
+  },
+  {
+    "edge_id": "EDG-004",
+    "from_node": "P-003",
+    "to_node": "N-002",
+    "distance": 15,
+    "path_type": "walkway",
+    "elevations": [0, 0],
+    "is_active": true
+  },
+  {
+    "edge_id": "EDG-005",
+    "from_node": "P-003",
+    "to_node": "P-004",
+    "distance": 40,
+    "path_type": "paved",
+    "elevations": [0, 0],
+    "is_active": true
+  },
+  {
+    "edge_id": "EDG-006",
+    "from_node": "P-004",
+    "to_node": "P-005",
+    "distance": 40,
+    "path_type": "paved",
+    "elevations": [0, 0],
+    "is_active": true
+  },
+  {
+    "edge_id": "EDG-007",
+    "from_node": "P-005",
+    "to_node": "N-011",
+    "distance": 15,
+    "path_type": "walkway",
+    "elevations": [0, 0],
+    "is_active": true
+  },
+  {
+    "edge_id": "EDG-008",
+    "from_node": "P-003",
+    "to_node": "P-006",
+    "distance": 35,
+    "path_type": "walkway",
+    "elevations": [0, 0],
+    "is_active": true
+  },
+  {
+    "edge_id": "EDG-009",
+    "from_node": "P-006",
+    "to_node": "P-007",
+    "distance": 20,
+    "path_type": "walkway",
+    "elevations": [0, 0],
+    "is_active": true
+  },
+  {
+    "edge_id": "EDG-010",
+    "from_node": "P-007",
+    "to_node": "N-012",
+    "distance": 20,
+    "path_type": "walkway",
+    "elevations": [0, 0],
+    "is_active": true
+  },
+  {
+    "edge_id": "EDG-011",
     "from_node": "N-003",
     "to_node": "N-007",
     "distance": 0,
@@ -18,7 +99,7 @@
     "is_active": true
   },
   {
-    "edge_id": "EDG-003",
+    "edge_id": "EDG-012",
     "from_node": "N-007",
     "to_node": "N-004",
     "distance": 0,
@@ -27,7 +108,7 @@
     "is_active": true
   },
   {
-    "edge_id": "EDG-004",
+    "edge_id": "EDG-013",
     "from_node": "N-004",
     "to_node": "N-008",
     "distance": 0,
@@ -36,7 +117,7 @@
     "is_active": true
   },
   {
-    "edge_id": "EDG-005",
+    "edge_id": "EDG-014",
     "from_node": "N-008",
     "to_node": "N-005",
     "distance": 0,
@@ -45,7 +126,7 @@
     "is_active": true
   },
   {
-    "edge_id": "EDG-006",
+    "edge_id": "EDG-015",
     "from_node": "N-005",
     "to_node": "N-009",
     "distance": 0,
@@ -54,7 +135,7 @@
     "is_active": true
   },
   {
-    "edge_id": "EDG-007",
+    "edge_id": "EDG-016",
     "from_node": "N-009",
     "to_node": "N-006",
     "distance": 0,
@@ -63,7 +144,7 @@
     "is_active": true
   },
   {
-    "edge_id": "EDG-008",
+    "edge_id": "EDG-017",
     "from_node": "N-006",
     "to_node": "N-010",
     "distance": 0,
@@ -72,7 +153,7 @@
     "is_active": true
   },
   {
-    "edge_id": "EDG-009",
+    "edge_id": "EDG-018",
     "from_node": "N-010",
     "to_node": "N-003",
     "distance": 0,

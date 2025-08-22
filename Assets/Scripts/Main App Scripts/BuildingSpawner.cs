@@ -1,26 +1,228 @@
+// using System.Collections.Generic;
+// using System.IO;
+// using UnityEngine;
+// using UnityEngine.UI;
+// using TMPro;
+// using System.Linq;
+
+// public class BuildingSpawner : MonoBehaviour
+// {
+//     [Header("References")]
+//     public RectTransform mapContainer;
+//     public GameObject buildingPrefab;
+//     public RectTransform mapImage;
+//     public BarrierSpawner barrierSpawner; // Reference to get bounds
+
+//     [Header("Map Padding")]
+//     public float paddingLeft = 20f;
+//     public float paddingRight = 20f;
+//     public float paddingTop = 50f;
+//     public float paddingBottom = 20f;
+
+//     [System.Serializable]
+//     public class Infrastructure
+//     {
+//         public int infra_id;
+//         public int category_id;
+//         public string name;
+//         public float latitude;
+//         public float longitude;
+//         public string image_url;
+//     }
+
+//     [System.Serializable]
+//     public class InfrastructureList
+//     {
+//         public List<Infrastructure> infrastructures;
+//     }
+
+//     [System.Serializable]
+//     public class NodeList
+//     {
+//         public List<Node> nodes;
+//     }
+
+//     [System.Serializable]
+//     public class Category
+//     {
+//         public int category_id;
+//         public string name;
+//         public string icon;
+//         public List<int> building_id;
+//     }
+
+//     [System.Serializable]
+//     public class CategoryList
+//     {
+//         public List<Category> categories;
+//     }
+
+//     void Start()
+//     {
+//         // Wait for BarrierSpawner to finish first
+//         Invoke(nameof(LoadAndSpawnBuildings), 0.1f);
+//     }
+
+//     void LoadAndSpawnBuildings()
+//     {
+//         // Load categories.json
+//         string categoryPath = Path.Combine(Application.streamingAssetsPath, "categories.json");
+//         if (!File.Exists(categoryPath)) { Debug.LogError("Categories JSON not found!"); return; }
+//         string categoryRaw = File.ReadAllText(categoryPath);
+//         CategoryList categoryList = JsonUtility.FromJson<CategoryList>("{\"categories\":" + categoryRaw + "}");
+
+//         // Load infrastructures.json
+//         string infraPath = Path.Combine(Application.streamingAssetsPath, "infrastructures.json");
+//         if (!File.Exists(infraPath)) { Debug.LogError("Infrastructures JSON not found!"); return; }
+//         string infraRaw = File.ReadAllText(infraPath);
+//         InfrastructureList infraList = JsonUtility.FromJson<InfrastructureList>("{\"infrastructures\":" + infraRaw + "}");
+
+//         // Load nodes.json for barrier nodes AND all nodes for bounds calculation
+//         string nodePath = Path.Combine(Application.streamingAssetsPath, "nodes.json");
+//         if (!File.Exists(nodePath)) { Debug.LogError("Nodes JSON not found!"); return; }
+//         string nodeRaw = File.ReadAllText(nodePath);
+//         NodeList allNodes = JsonUtility.FromJson<NodeList>("{\"nodes\":" + nodeRaw + "}");
+
+//         // Calculate dynamic bounds from ALL data (nodes + infrastructures)
+//         var allLatitudes = allNodes.nodes.Select(n => n.latitude).Concat(infraList.infrastructures.Select(i => i.latitude));
+//         var allLongitudes = allNodes.nodes.Select(n => n.longitude).Concat(infraList.infrastructures.Select(i => i.longitude));
+
+//         float minLatitude = allLatitudes.Min();
+//         float maxLatitude = allLatitudes.Max();
+//         float minLongitude = allLongitudes.Min();
+//         float maxLongitude = allLongitudes.Max();
+
+//         // Add small buffer
+//         float latBuffer = (maxLatitude - minLatitude) * 0.05f;
+//         float lonBuffer = (maxLongitude - minLongitude) * 0.05f;
+
+//         minLatitude -= latBuffer;
+//         maxLatitude += latBuffer;
+//         minLongitude -= lonBuffer;
+//         maxLongitude += lonBuffer;
+
+//         Debug.Log($"🏢 Building bounds: Lat [{minLatitude:F6}, {maxLatitude:F6}], Lon [{minLongitude:F6}, {maxLongitude:F6}]");
+
+//         // Filter only active barrier nodes
+//         List<Node> barrierNodes = allNodes.nodes.FindAll(n => n.is_barrier && n.is_active);
+//         if (barrierNodes.Count == 0) { Debug.LogError("No active barrier nodes!"); return; }
+
+//         // Convert barrier nodes to XY using consistent projection
+//         List<Vector2> barrierXY = new List<Vector2>();
+//         foreach (var node in barrierNodes)
+//         {
+//             Vector2 pos = BarrierSpawner.LatLonToMapPositionStatic(
+//                 node.latitude, node.longitude, mapImage,
+//                 paddingLeft, paddingRight, paddingTop, paddingBottom,
+//                 minLatitude, maxLatitude, minLongitude, maxLongitude);
+//             barrierXY.Add(pos);
+//             Debug.Log($"🚧 Barrier node {node.name}: ({node.latitude:F6}, {node.longitude:F6}) -> {pos}");
+//         }
+
+//         // Initialize polygon
+//         CampusBounds.InitializePolygon(barrierXY);
+//         Debug.Log($"🗺️ Barrier polygon initialized with {barrierXY.Count} points.");
+
+//         // Spawn buildings using the SAME bounds
+//         foreach (var building in infraList.infrastructures)
+//         {
+//             Vector2 pos = BarrierSpawner.LatLonToMapPositionStatic(
+//                 building.latitude, building.longitude, mapImage,
+//                 paddingLeft, paddingRight, paddingTop, paddingBottom,
+//                 minLatitude, maxLatitude, minLongitude, maxLongitude);
+
+//             bool isInside = CampusBounds.IsPointInPolygon(pos);
+//             Vector2 finalPos = pos;
+
+//             if (!isInside)
+//             {
+//                 finalPos = CampusBounds.ClampPointToPolygon(pos);
+//                 Debug.Log($"🏢 {building.name}: ({building.latitude:F6}, {building.longitude:F6}) -> {pos} ❌ OUTSIDE -> Clamped to {finalPos}");
+//             }
+//             else
+//             {
+//                 Debug.Log($"🏢 {building.name}: ({building.latitude:F6}, {building.longitude:F6}) -> {pos} ✅ INSIDE");
+//             }
+
+//             Category cat = categoryList.categories.Find(c => c.category_id == building.category_id);
+//             SpawnBuildingAtPosition(finalPos, building, cat);
+//         }
+
+//         // Debug: Test the specific cafeteria case
+//         var cafeteria = infraList.infrastructures.Find(b => b.name == "Cafeteria");
+//         if (cafeteria != null)
+//         {
+//             Vector2 cafeteriaPos = BarrierSpawner.LatLonToMapPositionStatic(
+//                 cafeteria.latitude, cafeteria.longitude, mapImage,
+//                 paddingLeft, paddingRight, paddingTop, paddingBottom,
+//                 minLatitude, maxLatitude, minLongitude, maxLongitude);
+
+//             Debug.Log($"🍽️ CAFETERIA DEBUG:");
+//             Debug.Log($"   Coordinates: ({cafeteria.latitude:F6}, {cafeteria.longitude:F6})");
+//             Debug.Log($"   UI Position: {cafeteriaPos}");
+//             Debug.Log($"   Inside polygon: {CampusBounds.IsPointInPolygon(cafeteriaPos)}");
+//         }
+//     }
+
+//     void SpawnBuildingAtPosition(Vector2 pos, Infrastructure building, Category cat)
+//     {
+//         GameObject buildingObj = Instantiate(buildingPrefab, mapContainer);
+//         RectTransform rt = buildingObj.GetComponent<RectTransform>();
+//         rt.anchoredPosition = pos;
+
+//         // Set building name
+//         TextMeshProUGUI label = buildingObj.GetComponentInChildren<TextMeshProUGUI>();
+//         if (label != null)
+//             label.text = building.name;
+
+//         // Set icon if available
+//         Image icon = null;
+//         foreach (var img in buildingObj.GetComponentsInChildren<Image>(true))
+//         {
+//             if (img.name == "Image_Icon")
+//             {
+//                 icon = img;
+//                 break;
+//             }
+//         }
+
+//         if (icon != null && cat != null && !string.IsNullOrEmpty(cat.icon))
+//         {
+//             string iconPath = Path.Combine(Application.dataPath, "Images", "icons", Path.GetFileName(cat.icon));
+//             if (File.Exists(iconPath))
+//             {
+//                 byte[] imgData = File.ReadAllBytes(iconPath);
+//                 Texture2D tex = new Texture2D(2, 2);
+//                 tex.LoadImage(imgData);
+//                 icon.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+//             }
+//             else
+//             {
+//                 Debug.LogWarning($"⚠️ Icon not found: {iconPath}");
+//             }
+//         }
+//     }
+// }
+
+
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections;
 
 public class BuildingSpawner : MonoBehaviour
 {
     [Header("References")]
     public RectTransform mapContainer;
     public GameObject buildingPrefab;
-    public RectTransform mapImage;
-
-    [Header("Map Padding")]
-    public float paddingLeft = 20f;
-    public float paddingRight = 20f;
-    public float paddingTop = 50f;
-    public float paddingBottom = 20f;
 
     [System.Serializable]
-    public class Building
+    public class Infrastructure
     {
-        public int building_id;
+        public int infra_id;
+        public int category_id;
         public string name;
         public float latitude;
         public float longitude;
@@ -28,9 +230,9 @@ public class BuildingSpawner : MonoBehaviour
     }
 
     [System.Serializable]
-    public class BuildingList
+    public class InfrastructureList
     {
-        public List<Building> buildings;
+        public List<Infrastructure> infrastructures;
     }
 
     [System.Serializable]
@@ -56,94 +258,148 @@ public class BuildingSpawner : MonoBehaviour
 
     void Start()
     {
+        StartCoroutine(LoadAndSpawnBuildingsCoroutine());
+    }
+
+    IEnumerator LoadAndSpawnBuildingsCoroutine()
+    {
+        // Wait for MapCoordinateSystem to be ready
+        if (MapCoordinateSystem.Instance == null)
+        {
+            Debug.LogError("❌ MapCoordinateSystem not found! Please add it to the scene first.");
+            yield break;
+        }
+
+        yield return StartCoroutine(MapCoordinateSystem.Instance.WaitForBoundsReady());
+
         LoadAndSpawnBuildings();
     }
 
     void LoadAndSpawnBuildings()
     {
-        // --- Load the categories.json --
+        // Load categories.json
         string categoryPath = Path.Combine(Application.streamingAssetsPath, "categories.json");
         if (!File.Exists(categoryPath)) { Debug.LogError("Categories JSON not found!"); return; }
         string categoryRaw = File.ReadAllText(categoryPath);
         CategoryList categoryList = JsonUtility.FromJson<CategoryList>("{\"categories\":" + categoryRaw + "}");
 
+        // Load infrastructures.json
+        string infraPath = Path.Combine(Application.streamingAssetsPath, "infrastructures.json");
+        if (!File.Exists(infraPath)) { Debug.LogError("Infrastructures JSON not found!"); return; }
+        string infraRaw = File.ReadAllText(infraPath);
+        InfrastructureList infraList = JsonUtility.FromJson<InfrastructureList>("{\"infrastructures\":" + infraRaw + "}");
 
-        // --- Load buildings.json ---
-        string buildingPath = Path.Combine(Application.streamingAssetsPath, "buildings.json");
-        if (!File.Exists(buildingPath)) { Debug.LogError("Buildings JSON not found!"); return; }
-
-        string buildingRaw = File.ReadAllText(buildingPath);
-        BuildingList buildingList = JsonUtility.FromJson<BuildingList>("{\"buildings\":" + buildingRaw + "}");
-
-        // --- Load nodes.json for barrier nodes ---
+        // Load nodes.json for barrier polygon
         string nodePath = Path.Combine(Application.streamingAssetsPath, "nodes.json");
         if (!File.Exists(nodePath)) { Debug.LogError("Nodes JSON not found!"); return; }
         string nodeRaw = File.ReadAllText(nodePath);
         NodeList allNodes = JsonUtility.FromJson<NodeList>("{\"nodes\":" + nodeRaw + "}");
 
-        // --- Filter only active barrier nodes ---
+        // Filter only active barrier nodes
         List<Node> barrierNodes = allNodes.nodes.FindAll(n => n.is_barrier && n.is_active);
         if (barrierNodes.Count == 0) { Debug.LogError("No active barrier nodes!"); return; }
 
-        // --- Convert barrier nodes to XY using BarrierSpawner projection ---
+        // Convert barrier nodes to XY using centralized coordinate system
         List<Vector2> barrierXY = new List<Vector2>();
         foreach (var node in barrierNodes)
-            barrierXY.Add(BarrierSpawner.LatLonToMapPositionStatic(node.latitude, node.longitude, mapImage, paddingLeft, paddingRight, paddingTop, paddingBottom));
+        {
+            Vector2 pos = MapCoordinateSystem.Instance.LatLonToMapPosition(node.latitude, node.longitude);
+            barrierXY.Add(pos);
+            Debug.Log($"🚧 Barrier node {node.name}: ({node.latitude:F6}, {node.longitude:F6}) -> {pos}");
+        }
 
-        // --- Initialize polygon ---
+        // Initialize polygon
         CampusBounds.InitializePolygon(barrierXY);
+        Debug.Log($"🗺️ Barrier polygon initialized with {barrierXY.Count} points.");
 
-        // --- Spawn buildings ---
-        foreach (var b in buildingList.buildings)
+        // Spawn buildings using the centralized coordinate system
+        foreach (var building in infraList.infrastructures)
         {
-            Vector2 pos = BarrierSpawner.LatLonToMapPositionStatic(b.latitude, b.longitude, mapImage, paddingLeft, paddingRight, paddingTop, paddingBottom);
+            Vector2 pos = MapCoordinateSystem.Instance.LatLonToMapPosition(building.latitude, building.longitude);
 
-            if (!CampusBounds.IsPointInPolygon(pos))
-                pos = CampusBounds.ClampPointToPolygon(pos);
+            bool isInside = CampusBounds.IsPointInPolygon(pos);
+            Vector2 finalPos = pos;
 
-            // Apply non-overlapping adjustment
-            // pos = GetNonOverlappingPosition(pos, minDistance: 25f);
+            if (!isInside)
+            {
+                finalPos = CampusBounds.ClampPointToPolygon(pos);
+                Debug.Log($"🏢 {building.name}: ({building.latitude:F6}, {building.longitude:F6}) -> {pos} ❌ OUTSIDE -> Clamped to {finalPos}");
+            }
+            else
+            {
+                Debug.Log($"🏢 {building.name}: ({building.latitude:F6}, {building.longitude:F6}) -> {pos} ✅ INSIDE");
+            }
 
-            Category cat = categoryList.categories.Find(c => c.building_id.Contains(b.building_id));
-
-            SpawnBuildingAtPosition(pos, b, cat);
-        }
-    }
-
-    Vector2 GetNonOverlappingPosition(Vector2 originalPos, float minDistance = 20f)
-    {
-        // Keep a static list of used positions
-        if (_usedPositions == null) _usedPositions = new List<Vector2>();
-
-        Vector2 newPos = originalPos;
-
-        // Try to find a position not too close to existing ones
-        int tries = 0;
-        while (_usedPositions.Exists(p => Vector2.Distance(p, newPos) < minDistance) && tries < 10)
-        {
-            newPos += new Vector2(Random.Range(-minDistance, minDistance), Random.Range(-minDistance, minDistance));
-            tries++;
+            Category cat = categoryList.categories.Find(c => c.category_id == building.category_id);
+            SpawnBuildingAtPosition(finalPos, building, cat);
         }
 
-        _usedPositions.Add(newPos);
-        return newPos;
+        // Debug: Test the specific cafeteria case
+        var cafeteria = infraList.infrastructures.Find(b => b.name == "Cafeteria");
+        if (cafeteria != null)
+        {
+            Vector2 cafeteriaPos = MapCoordinateSystem.Instance.LatLonToMapPosition(cafeteria.latitude, cafeteria.longitude);
+
+            Debug.Log($"🍽️ CAFETERIA DEBUG:");
+            Debug.Log($"   Coordinates: ({cafeteria.latitude:F6}, {cafeteria.longitude:F6})");
+            Debug.Log($"   UI Position: {cafeteriaPos}");
+            Debug.Log($"   Inside polygon: {CampusBounds.IsPointInPolygon(cafeteriaPos)}");
+        }
+
+        Debug.Log($"✅ BuildingSpawner completed: {infraList.infrastructures.Count} buildings processed");
     }
 
-    private static List<Vector2> _usedPositions;
+    // void SpawnBuildingAtPosition(Vector2 pos, Infrastructure building, Category cat)
+    // {
+    //     GameObject buildingObj = Instantiate(buildingPrefab, mapContainer);
+    //     RectTransform rt = buildingObj.GetComponent<RectTransform>();
+    //     rt.anchoredPosition = pos;
 
-    void SpawnBuildingAtPosition(Vector2 pos, Building b, Category cat)
+    //     // Set building name
+    //     TextMeshProUGUI label = buildingObj.GetComponentInChildren<TextMeshProUGUI>();
+    //     if (label != null)
+    //         label.text = building.name;
+
+    //     // Set icon if available
+    //     Image icon = null;
+    //     foreach (var img in buildingObj.GetComponentsInChildren<Image>(true))
+    //     {
+    //         if (img.name == "Image_Icon")
+    //         {
+    //             icon = img;
+    //             break;
+    //         }
+    //     }
+
+    //     if (icon != null && cat != null && !string.IsNullOrEmpty(cat.icon))
+    //     {
+    //         string iconPath = Path.Combine(Application.dataPath, "Images", "icons", Path.GetFileName(cat.icon));
+    //         if (File.Exists(iconPath))
+    //         {
+    //             byte[] imgData = File.ReadAllBytes(iconPath);
+    //             Texture2D tex = new Texture2D(2, 2);
+    //             tex.LoadImage(imgData);
+    //             icon.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+    //         }
+    //         else
+    //         {
+    //             Debug.LogWarning($"⚠️ Icon not found: {iconPath}");
+    //         }
+    //     }
+    // }
+
+    void SpawnBuildingAtPosition(Vector2 pos, Infrastructure building, Category cat)
     {
-        // Instantiate building prefab
         GameObject buildingObj = Instantiate(buildingPrefab, mapContainer);
         RectTransform rt = buildingObj.GetComponent<RectTransform>();
         rt.anchoredPosition = pos;
 
-        // Set label
+        // Set building name
         TextMeshProUGUI label = buildingObj.GetComponentInChildren<TextMeshProUGUI>();
         if (label != null)
-            label.text = b.name;
+            label.text = building.name;
 
-        // Find Image_Icon child anywhere in prefab (including inactive)
+        // Set icon if available
         Image icon = null;
         foreach (var img in buildingObj.GetComponentsInChildren<Image>(true))
         {
@@ -156,9 +412,7 @@ public class BuildingSpawner : MonoBehaviour
 
         if (icon != null && cat != null && !string.IsNullOrEmpty(cat.icon))
         {
-            // Build path to icon in Assets/Images/icons
             string iconPath = Path.Combine(Application.dataPath, "Images", "icons", Path.GetFileName(cat.icon));
-
             if (File.Exists(iconPath))
             {
                 byte[] imgData = File.ReadAllBytes(iconPath);
@@ -168,52 +422,22 @@ public class BuildingSpawner : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning("Icon not found: " + iconPath);
+                Debug.LogWarning($"⚠️ Icon not found: {iconPath}");
             }
+        }
+
+        // Set sorting order to ensure buildings are in front
+        Canvas canvas = buildingObj.GetComponent<Canvas>();
+        if (canvas != null)
+        {
+            canvas.sortingOrder = 0; // Default or higher than paths (-2)
         }
         else
         {
-            Debug.LogWarning("Image_Icon child not found in prefab or category icon missing.");
+            // If using SpriteRenderer or other renderers
+            SpriteRenderer sr = buildingObj.GetComponent<SpriteRenderer>();
+            if (sr != null)
+                sr.sortingOrder = 0;
         }
     }
-
-
-    // void SpawnBuildingAtPosition(Vector2 pos, Building b, Category cat)
-    // {
-    //     GameObject buildingObj = Instantiate(buildingPrefab, mapContainer);
-    //     RectTransform rt = buildingObj.GetComponent<RectTransform>();
-    //     rt.anchoredPosition = pos;
-
-    //     // Set label
-    //     TextMeshProUGUI label = buildingObj.GetComponentInChildren<TextMeshProUGUI>();
-    //     if (label != null) label.text = b.name;
-
-    //     // Find the Image_icon child explicitly
-    //     Transform iconTransform = buildingObj.transform.Find("Image_Icon");
-    //     if (iconTransform != null && cat != null && !string.IsNullOrEmpty(cat.icon))
-    //     {
-    //         Image icon = iconTransform.GetComponent<Image>();
-    //         if (icon != null)
-    //         {
-    //             // Load icon from Assets/images/icons
-    //             string iconPath = Path.Combine(Application.dataPath, "Images", "icons", Path.GetFileName(cat.icon));
-    //             if (File.Exists(iconPath))
-    //             {
-    //                 byte[] imgData = File.ReadAllBytes(iconPath);
-    //                 Texture2D tex = new Texture2D(2, 2);
-    //                 tex.LoadImage(imgData);
-    //                 icon.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
-    //             }
-    //             else
-    //             {
-    //                 Debug.LogWarning("Icon not found: " + iconPath);
-    //             }
-    //         }
-    //     }
-    //     else
-    //     {
-    //         Debug.LogWarning("Image_icon child not found in prefab or category icon missing.");
-    //     }
-    // }
-
 }

@@ -2,21 +2,115 @@
   {
     "node_id": "N-001",
     "name": "Gate 1 Entrance",
-    "latitude": 6.911234,
-    "longitude": 122.078456,
-    "linked_building": false,
+    "latitude": 6.922200,
+    "longitude": 122.077500,
+    "linked_building": true,
     "is_barrier": false,
+    "is_pathway": false,
     "is_active": true
   },
   {
     "node_id": "N-002",
     "name": "College of Engineering Entrance",
-    "latitude": 6.912345,
-    "longitude": 122.078901,
+    "latitude": 6.922200,
+    "longitude": 122.079000,
     "linked_building": true,
     "is_barrier": false,
+    "is_pathway": false,
     "is_active": true
   },
+  {
+    "node_id": "N-011",
+    "name": "Main Library Entrance",
+    "latitude": 6.922200,
+    "longitude": 122.080500,
+    "linked_building": true,
+    "is_barrier": false,
+    "is_pathway": false,
+    "is_active": true
+  },
+  {
+    "node_id": "N-012",
+    "name": "Cafeteria Entrance",
+    "latitude": 6.921000,
+    "longitude": 122.079000,
+    "linked_building": true,
+    "is_barrier": false,
+    "is_pathway": false,
+    "is_active": true
+  },
+
+  {
+    "node_id": "P-001",
+    "name": "Main Road Junction 1",
+    "latitude": 6.922150,
+    "longitude": 122.078000,
+    "linked_building": false,
+    "is_barrier": false,
+    "is_pathway": true,
+    "is_active": true
+  },
+  {
+    "node_id": "P-002",
+    "name": "Main Road Junction 2",
+    "latitude": 6.922150,
+    "longitude": 122.078500,
+    "linked_building": false,
+    "is_barrier": false,
+    "is_pathway": true,
+    "is_active": true
+  },
+  {
+    "node_id": "P-003",
+    "name": "Engineering Junction",
+    "latitude": 6.922150,
+    "longitude": 122.079000,
+    "linked_building": false,
+    "is_barrier": false,
+    "is_pathway": true,
+    "is_active": true
+  },
+  {
+    "node_id": "P-004",
+    "name": "Central Junction",
+    "latitude": 6.922150,
+    "longitude": 122.079750,
+    "linked_building": false,
+    "is_barrier": false,
+    "is_pathway": true,
+    "is_active": true
+  },
+  {
+    "node_id": "P-005",
+    "name": "Library Junction",
+    "latitude": 6.922150,
+    "longitude": 122.080500,
+    "linked_building": false,
+    "is_barrier": false,
+    "is_pathway": true,
+    "is_active": true
+  },
+  {
+    "node_id": "P-006",
+    "name": "Cafeteria Branch Point",
+    "latitude": 6.921600,
+    "longitude": 122.079000,
+    "linked_building": false,
+    "is_barrier": false,
+    "is_pathway": true,
+    "is_active": true
+  },
+  {
+    "node_id": "P-007",
+    "name": "Cafeteria Approach",
+    "latitude": 6.921300,
+    "longitude": 122.079000,
+    "linked_building": false,
+    "is_barrier": false,
+    "is_pathway": true,
+    "is_active": true
+  },
+
   {
     "node_id": "N-003",
     "name": "Barrier Top Left",
@@ -24,6 +118,7 @@
     "longitude": 122.077000,
     "linked_building": false,
     "is_barrier": true,
+    "is_pathway": false,
     "is_active": true
   },
   {
@@ -33,6 +128,7 @@
     "longitude": 122.079500,
     "linked_building": false,
     "is_barrier": true,
+    "is_pathway": false,
     "is_active": true
   },
   {
@@ -42,6 +138,7 @@
     "longitude": 122.081000,
     "linked_building": false,
     "is_barrier": true,
+    "is_pathway": false,
     "is_active": true
   },
   {
@@ -51,6 +148,7 @@
     "longitude": 122.082000,
     "linked_building": false,
     "is_barrier": true,
+    "is_pathway": false,
     "is_active": true
   },
   {
@@ -60,6 +158,7 @@
     "longitude": 122.081000,
     "linked_building": false,
     "is_barrier": true,
+    "is_pathway": false,
     "is_active": true
   },
   {
@@ -69,6 +168,7 @@
     "longitude": 122.079500,
     "linked_building": false,
     "is_barrier": true,
+    "is_pathway": false,
     "is_active": true
   },
   {
@@ -78,6 +178,7 @@
     "longitude": 122.077000,
     "linked_building": false,
     "is_barrier": true,
+    "is_pathway": false,
     "is_active": true
   },
   {
@@ -87,6 +188,7 @@
     "longitude": 122.076000,
     "linked_building": false,
     "is_barrier": true,
+    "is_pathway": false,
     "is_active": true
   }
 ]

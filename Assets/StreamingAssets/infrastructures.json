@@ -1,0 +1,50 @@
+[
+  {
+    "infra_id": 1,
+    "name": "College of Engineering",
+    "category_id": 1,
+    "type": "building",
+    "location": "North Campus near Gate 1",
+    "latitude": 6.922200,
+    "longitude": 122.079000,
+    "image_url": "images/engineering.png",
+    "email": "engg@university.edu",
+    "phone": "+63 912 345 6789"
+  },
+  {
+    "infra_id": 2,
+    "name": "Main Library",
+    "category_id": 1,
+    "type": "building",
+    "location": "Central Campus, near the Administration Building",
+    "latitude": 6.922200,
+    "longitude": 122.080500,
+    "image_url": "images/library.png",
+    "email": "library@university.edu",
+    "phone": "+63 934 567 8901"
+  },
+  {
+    "infra_id": 3,
+    "name": "Cafeteria",
+    "category_id": 4,
+    "type": "building",
+    "location": "Main Campus, beside the Gymnasium",
+    "latitude": 6.921000,
+    "longitude": 122.079000,
+    "image_url": "images/cafeteria.png",
+    "email": "cafeteria@university.edu",
+    "phone": "+63 956 789 0123"
+  },
+  {
+    "infra_id": 4,
+    "name": "Gate 1 Entrance",
+    "category_id": 3,
+    "type": "gate",
+    "location": "Main Entrance of the Campus",
+    "latitude": 6.922200,
+    "longitude": 122.077500,
+    "image_url": "images/gate.png",
+    "email": "gate@university.edu",
+    "phone": "+63 900 000 0000"
+  }
+]
