@@ -377,12 +377,46 @@ body {
     border-right: none; /* remove last border */
 }
 
-/* Actions buttons */
-.actions button {
-    border: none;
+/* Actions column smaller */
+.bottom-tbl th:last-child,
+.bottom-tbl td:last-child {
+    width: 100px;
+    text-align: center;
+    border-right: none;
+}
+
+.bottom-tbl th {
+    background: #b80f0a;
+    color: white;
+    font-weight: bold;
+}
+
+/* Actions container */
+table td.actions {
+    display: flex;
+    justify-content: center; /* horizontal center */
+    align-items: center;     /* vertical center */
+    gap: 10px;
+    height: 100%;
+}
+
+/* Font Awesome icons in actions */
+.bottom-tbl .actions i { 
+    cursor: pointer;  
+}
+
+.bottom-tbl .actions .fa-trash {  
+    color: red;  
+} 
+
+
+/* Action buttons */
+.actions button { 
+    border: none; 
     background: none;
     cursor: pointer;
     padding: 5px;
+    font-size: 22px;
 }
 
 .actions .view {
@@ -393,9 +427,10 @@ body {
     color: #f5a623;
 }
 
-.actions .delete {
-    color: #d9534f;
+.actions .delete { 
+    color: red; 
 }
+
 
 
 

@@ -1,9 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js"; 
 import { 
-    getFirestore, collection, addDoc, getDocs, query, orderBy 
+    getFirestore, collection, addDoc, getDocs, query, orderBy, where, updateDoc, doc   // ⬅️ added `where`
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-// ✅ Firebase config (better: put in firebaseConfig.js and gitignore it!) 
+// ✅ Firebase config
 import { firebaseConfig } from "./../firebaseConfig.js";
 
 const app = initializeApp(firebaseConfig);
@@ -12,7 +12,8 @@ const db = getFirestore(app);
 // =============== MODAL CONTROL ===============
 function openNodeModal() {
     document.getElementById('addNodeModal').style.display = 'block';
-    generateNextNodeId(); // auto-generate ID every time modal opens
+    generateNextNodeId();
+    loadBuildingsIntoDropdown();
 }
 
 function closeNodeModal() {
@@ -46,6 +47,58 @@ async function generateNextNodeId() {
     document.getElementById("nodeId").value = nextId;
 }
 
+
+// =============== LOAD BUILDINGS INTO NODE MODAL DROPDOWN ===============
+async function loadBuildingsIntoDropdown() {
+    const buildingSelect = document.getElementById("linkedBuilding");
+    if (!buildingSelect) return;
+
+    buildingSelect.innerHTML = `<option value="">Select a building</option>`;
+
+    try {
+        const q = query(collection(db, "Buildings"), orderBy("createdAt", "asc"));
+        const snapshot = await getDocs(q);
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.building_id && data.name) {
+                const option = document.createElement("option");
+                option.value = data.building_id;
+                option.textContent = `${data.building_id} - ${data.name}`;
+                buildingSelect.appendChild(option);
+            }
+        });
+    } catch (err) {
+        console.error("Error loading buildings into dropdown:", err);
+    }
+}
+
+// ✅ NEW: load buildings into *edit modal* dropdown
+async function loadBuildingsIntoDropdownById(selectId) {
+    const buildingSelect = document.getElementById(selectId);
+    if (!buildingSelect) return;
+
+    buildingSelect.innerHTML = `<option value="">Select a building</option>`;
+
+    try {
+        const q = query(collection(db, "Buildings"), orderBy("createdAt", "asc"));
+        const snapshot = await getDocs(q);
+
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            if (data.building_id && data.name) {
+                const option = document.createElement("option");
+                option.value = data.building_id;
+                option.textContent = `${data.building_id} - ${data.name}`;
+                buildingSelect.appendChild(option);
+            }
+        });
+    } catch (err) {
+        console.error("Error loading buildings into dropdown:", err);
+    }
+}
+
+
 // =============== LOAD NODES INTO TABLE ===============
 async function loadNodes() { 
     const tbody = document.querySelector(".nodetbl tbody");
@@ -65,7 +118,7 @@ async function loadNodes() {
                 <td>${data.coordinates ? 
                     `${data.coordinates.latitude}, ${data.coordinates.longitude}` 
                     : "-"}</td>
-                <td>${data.linked_building || "-"}</td>
+                <td>${data.linked_building_name || "-"}</td>
                 <td class="actions">
                     <i class="fas fa-edit"></i>
                     <i class="fas fa-trash"></i>
@@ -79,6 +132,7 @@ async function loadNodes() {
     } 
 }
 
+
 // =============== HANDLE NODE FORM SUBMIT ===============
 document.getElementById("nodeForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -87,7 +141,9 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
     const nodeName = document.getElementById("nodeName").value;
     const latitude = document.getElementById("latitude").value;
     const longitude = document.getElementById("longitude").value;
-    const linkedBuilding = document.getElementById("linkedBuilding").value;
+    const linkedBuildingSelect = document.getElementById("linkedBuilding");
+    const linkedBuildingId = linkedBuildingSelect.value;
+    const linkedBuildingName = linkedBuildingSelect.options[linkedBuildingSelect.selectedIndex]?.text || "";
     const qrAnchor = document.getElementById("qrAnchor").checked;
 
     try {
@@ -95,7 +151,8 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
             node_id: nodeId,
             name: nodeName,
             coordinates: { latitude, longitude },
-            linked_building: linkedBuilding,
+            linked_building: linkedBuildingId,
+            linked_building_name: linkedBuildingName,
             qr_anchor: qrAnchor,
             is_active: true,
             is_deleted: false,
@@ -110,6 +167,109 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
         alert("Error adding node: " + err); 
     }
 });
+
+document.getElementById("editNodeForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const form = e.target;
+  const docId = form.dataset.docId;   // 👈 we stored this earlier when opening modal
+  if (!docId) {
+    alert("No document ID found for update");
+    return;
+  }
+
+  const nodeId = document.getElementById("editNodeIdHidden").value; // hidden, original ID
+  const nodeName = document.getElementById("editNodeName").value;
+  const latitude = document.getElementById("editLatitude").value;
+  const longitude = document.getElementById("editLongitude").value;
+  const linkedBuildingSelect = document.getElementById("editLinkedBuilding");
+  const linkedBuildingId = linkedBuildingSelect.value;
+  const linkedBuildingName = linkedBuildingSelect.options[linkedBuildingSelect.selectedIndex]?.text || "";
+  const qrAnchor = document.getElementById("editQrAnchor").checked;
+
+  try {
+    const nodeRef = doc(db, "Nodes", docId);
+
+    await updateDoc(nodeRef, {
+      node_id: nodeId,
+      name: nodeName,
+      coordinates: { latitude, longitude },
+      linked_building: linkedBuildingId,
+      linked_building_name: linkedBuildingName,
+      qr_anchor: qrAnchor,
+      updated_at: new Date()
+    });
+
+    alert("Node updated!");
+    document.getElementById("editNodeModal").style.display = "none";
+    loadNodes(); // refresh table
+
+  } catch (err) {
+    console.error("Error updating node:", err);
+    alert("Error updating node: " + err.message);
+  }
+});
+
+
+// =============== EDIT NODE HANDLER ===============
+// ✅ listens for clicks on the edit icon in the nodes table
+document.querySelector(".nodetbl").addEventListener("click", async (e) => {
+    if (!e.target.classList.contains("fa-edit")) return;
+
+    const row = e.target.closest("tr");
+    if (!row) return;
+
+    const nodeId = row.querySelector("td")?.textContent?.trim();
+    if (!nodeId) return;
+
+    try {
+        const nodesQ = query(collection(db, "Nodes"), where("node_id", "==", nodeId));
+        const snap = await getDocs(nodesQ);
+
+        if (snap.empty) {
+            alert("Node not found in Firestore");
+            return;
+        }
+
+        const docSnap = snap.docs[0];
+        const nodeData = docSnap.data();
+
+        await loadBuildingsIntoDropdownById("editLinkedBuilding");
+
+        document.getElementById("editNodeId").value = nodeData.node_id ?? "";
+        document.getElementById("editNodeIdHidden").value = nodeData.node_id ?? "";
+        document.getElementById("editNodeName").value = nodeData.name ?? "";
+        document.getElementById("editLatitude").value = nodeData.coordinates?.latitude ?? "";
+        document.getElementById("editLongitude").value = nodeData.coordinates?.longitude ?? "";
+        document.getElementById("editQrAnchor").checked = !!nodeData.qr_anchor;
+
+        if (nodeData.linked_building) {
+            const sel = document.getElementById("editLinkedBuilding");
+            sel.value = nodeData.linked_building;
+
+            if (![...sel.options].some(o => o.value === sel.value)) {
+                const opt = document.createElement("option");
+                opt.value = nodeData.linked_building;
+                opt.textContent = nodeData.linked_building_name || nodeData.linked_building;
+                sel.appendChild(opt);
+                sel.value = nodeData.linked_building;
+            }
+        }
+
+        const editForm = document.getElementById("editNodeForm");
+        if (editForm) editForm.dataset.docId = docSnap.id;
+
+        document.getElementById("editNodeModal").style.display = "flex";  // 👈 show modal
+
+    } catch (err) {
+        console.error("Error opening edit modal:", err);
+    }
+});
+
+
+
+
+
 
 
 
@@ -278,6 +438,237 @@ window.onload = () => {
 
 
 
+// ================= EDIT EDGE MODAL =================
+
+// ================== TEMPLATE STORAGE ==================
+// store original select HTML so we can restore it later
+const selectTemplates = {};
+document.addEventListener("DOMContentLoaded", () => {
+  ["editPathType", "editElevation"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) selectTemplates[id] = el.outerHTML;
+  });
+});
+
+// recreate select if it was replaced with input
+function ensureSelectExists(selectId) {
+  let select = document.getElementById(selectId);
+  if (select) return select;
+
+  // if an input exists instead, restore the select
+  const modal = document.getElementById("editEdgeModal");
+  const input = modal.querySelector(`input[name='${selectId}']`);
+  if (input) {
+    const tpl = selectTemplates[selectId];
+    if (!tpl) return null;
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = tpl.trim();
+    const newSelect = wrapper.firstElementChild;
+    input.parentNode.replaceChild(newSelect, input);
+    return newSelect;
+  }
+  return null;
+}
+
+// handle select vs custom input
+function handlePreselectOrCustom(selectId, value) {
+  let select = document.getElementById(selectId);
+  if (!select) select = ensureSelectExists(selectId);
+
+  if (!select) return;
+
+  if (!value) {
+    select.value = "";
+    return;
+  }
+
+  const optionExists = Array.from(select.options).some(opt => opt.value === value);
+  if (optionExists) {
+    select.value = value;
+  } else {
+    // custom value → replace with input
+    const input = document.createElement("input");
+    input.type = "text";
+    input.name = selectId;
+    input.value = value;
+    input.classList.add("custom-input");
+    select.parentNode.replaceChild(input, select);
+  }
+}
+
+// ================== EDIT EDGE MODAL ==================
+document.querySelector(".edgetbl").addEventListener("click", async (e) => {
+  if (e.target.classList.contains("fa-edit")) {
+    const tr = e.target.closest("tr");
+    const edgeId = tr.children[0].textContent; // first td = edge_id
+
+    // Get edge data from Firestore
+    const q = query(collection(db, "Edges"), where("edge_id", "==", edgeId));
+    const snapshot = await getDocs(q);
+
+    if (!snapshot.empty) {
+      const docSnap = snapshot.docs[0];
+      const data = docSnap.data();
+
+      // Fill modal fields
+      document.getElementById("editEdgeId").value = data.edge_id;
+
+      // Load nodes into dropdowns and pre-select
+      await loadNodesIntoDropdownsForEdit(data.from_node, data.to_node);
+
+      // Handle path type & elevation properly
+      handlePreselectOrCustom("editPathType", data.path_type);
+      handlePreselectOrCustom("editElevation", data.elevations);
+
+      // Store doc ID for saving
+      document.getElementById("editEdgeModal").dataset.docId = docSnap.id;
+
+      // Show modal
+      document.getElementById("editEdgeModal").style.display = "flex";
+    }
+  }
+});
+
+
+// Helper to load nodes into edit dropdowns and select current values
+async function loadNodesIntoDropdownsForEdit(selectedFrom, selectedTo) {
+    const startNodeSelect = document.getElementById("editStartNode");
+    const endNodeSelect = document.getElementById("editEndNode");
+
+    startNodeSelect.innerHTML = `<option value="">Select start node</option>`;
+    endNodeSelect.innerHTML = `<option value="">Select end node</option>`;
+
+    const q = query(collection(db, "Nodes"), orderBy("created_at", "asc"));
+    const snapshot = await getDocs(q);
+
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.node_id) {
+            const option1 = document.createElement("option");
+            option1.value = data.node_id;
+            option1.textContent = `${data.node_id} - ${data.name}`;
+            if (data.node_id === selectedFrom) option1.selected = true;
+            startNodeSelect.appendChild(option1);
+
+            const option2 = document.createElement("option");
+            option2.value = data.node_id;
+            option2.textContent = `${data.node_id} - ${data.name}`;
+            if (data.node_id === selectedTo) option2.selected = true;
+            endNodeSelect.appendChild(option2);
+        }
+    });
+}
+
+// Handle "Other" replacement (Add + Edit modals)
+function handleOther(selectId) {
+    const select = document.getElementById(selectId);
+
+    if (!select) return;
+
+    select.addEventListener("change", function () {
+        if (this.value === "other") {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.name = selectId;
+            input.placeholder = "Enter your own value";
+            input.classList.add("custom-input");
+
+            this.parentNode.replaceChild(input, this);
+
+            input.addEventListener("blur", function () {
+                if (input.value.trim() === "") {
+                    input.parentNode.replaceChild(select, input);
+                    select.value = "";
+                }
+            });
+        }
+    });
+}
+
+// Apply for Add modal
+handleOther("pathType");
+handleOther("elevation");
+
+// Apply for Edit modal
+handleOther("editPathType");
+handleOther("editElevation");
+
+// Handle save changes (update Firestore)
+document.querySelector("#editEdgeModal form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const docId = document.getElementById("editEdgeModal").dataset.docId;
+
+    // Grab either select OR input value
+    const getFieldValue = (id) => {
+        const select = document.getElementById(id);
+        const input = document.querySelector(`input[name='${id}']`);
+        return select ? select.value.trim() : (input ? input.value.trim() : "");
+    };
+
+    // Convert custom input into snake_case
+    const toSnakeCase = str => str.toLowerCase().replace(/\s+/g, "_");
+
+    let pathType = getFieldValue("editPathType");
+    let elevation = getFieldValue("editElevation");
+
+    if (pathType && !["via_overpass","via_underpass","stairs","ramp"].includes(pathType)) {
+        pathType = toSnakeCase(pathType);
+    }
+    if (elevation && !["slope_up","slope_down","flat"].includes(elevation)) {
+        elevation = toSnakeCase(elevation);
+    }
+
+    const updatedData = {
+        from_node: document.getElementById("editStartNode").value,
+        to_node: document.getElementById("editEndNode").value,
+        path_type: pathType || null,
+        elevations: elevation || null,
+    };
+
+    try {
+        await updateDoc(doc(db, "Edges", docId), updatedData);
+
+        alert("Edge updated!");
+        document.getElementById("editEdgeModal").style.display = "none";
+        loadEdges(); // refresh table
+    } catch (err) {
+        alert("Error updating edge: " + err);
+    }
+});
+
+// Cancel button
+document.getElementById("cancelEditEdgeBtn").addEventListener("click", () => {
+    document.getElementById("editEdgeModal").style.display = "none";
+});
+
+// Close if clicked outside
+document.getElementById("editEdgeModal").addEventListener("click", (e) => {
+    if (e.target.id === "editEdgeModal") {
+        document.getElementById("editEdgeModal").style.display = "none";
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -348,33 +739,3 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-document.addEventListener("DOMContentLoaded", function () {
-    function handleOther(selectId) {
-        const select = document.getElementById(selectId);
-
-        select.addEventListener("change", function () {
-            if (this.value === "other") {
-                // Create input element
-                const input = document.createElement("input");
-                input.type = "text";
-                input.name = selectId;
-                input.placeholder = "Enter your own value";
-                input.classList.add("custom-input");
-
-                // Replace select with input
-                this.parentNode.replaceChild(input, this);
-
-                // Allow switching back (if user clears input)
-                input.addEventListener("blur", function () {
-                    if (input.value.trim() === "") {
-                        input.parentNode.replaceChild(select, input);
-                        select.value = "";
-                    }
-                });
-            }
-        });
-    }
-
-    handleOther("pathType");
-    handleOther("elevation");
-});

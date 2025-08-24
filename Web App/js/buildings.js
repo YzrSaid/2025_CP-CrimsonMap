@@ -7,7 +7,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
 // Import config from another file
-import { firebaseConfig } from "./../firebaseConfig.js";
+
 
 // Init Firebase
 const app = initializeApp(firebaseConfig);

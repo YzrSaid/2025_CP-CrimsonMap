@@ -138,7 +138,6 @@
                                     <td>Entrance - College of Nursing</td>
                                     <td>6.921100, 122.080010</td>
                                     <td>College of Nursing</td>
-                                    <td>ND-002</td>
                                     <td class="actions">
                                         <i class="fas fa-edit"></i>
                                         <i class="fas fa-trash"></i>
@@ -316,6 +315,195 @@
 
 
 
+
+
+
+
+
+
+<!-- Edit Node Modal Overlay -->
+<div id="editNodeModal" class="modal-overlay" style="display:none;">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editNodeTitle">
+    <h2 id="editNodeTitle">Edit Node</h2>
+
+    <form id="editNodeForm" novalidate>
+      <!-- Node Name/Label + Node ID -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="editNodeName">Node Name/Label</label>
+          <input id="editNodeName" name="nodeName" type="text" required>
+        </div>
+
+        <div class="form-group">
+          <label for="editNodeId">Node ID</label>
+          <input id="editNodeId" name="nodeId_display" type="text" readonly disabled>
+          <input id="editNodeIdHidden" name="nodeId" type="hidden">
+        </div>
+      </div>
+
+      <!-- Linked Building -->
+      <div class="form-group">
+        <label for="editLinkedBuilding">Linked Building</label>
+        <select id="editLinkedBuilding" name="linkedBuilding">
+          <option value="">Select a building</option>
+          <!-- options populated by JS -->
+        </select>
+      </div>
+
+      <!-- Coordinates -->
+      <div class="form-group">
+        <label>Coordinates</label>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="editLatitude" class="sr-only">Latitude</label>
+            <input id="editLatitude" name="latitude" type="number" step="any" min="-90" max="90" placeholder="Latitude">
+          </div>
+          <div class="form-group">
+            <label for="editLongitude" class="sr-only">Longitude</label>
+            <input id="editLongitude" name="longitude" type="number" step="any" min="-180" max="180" placeholder="Longitude">
+          </div>
+        </div>
+      </div>
+
+      <!-- Additional Information -->
+      <h3>Additional Information (Optional):</h3>
+      <div class="form-group checkbox-row">
+        <label for="editQrAnchor">Used for QR Code Placement</label>
+        <input id="editQrAnchor" name="qrAnchor" type="checkbox">
+      </div>
+
+      <!-- Actions -->
+      <div class="modal-actions">
+        <button type="submit" class="save-btn">Update</button>
+        <button type="button" class="cancel-btn" id="cancelEditNodeBtn">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+<!-- Edit Edge Modal Overlay -->
+<div id="editEdgeModal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+        <h2>Edit Edge</h2>
+
+        <form>
+            <!-- Edge ID -->
+            <div class="form-group"> 
+                <label>Edge ID</label> 
+                <input type="text" id="editEdgeId" disabled> 
+            </div>
+
+            <!-- Start & End Node -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Start Node</label>
+                    <select id="editStartNode">
+                        <option value="">Select start node</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>End Node</label>
+                    <select id="editEndNode">
+                        <option value="">Select end node</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Additional Information -->
+            <h3>Additional Information:</h3>
+            <div class="form-group checkbox-row">
+                <label>Bidirectional Path</label>
+                <input type="checkbox" id="editBidirectional">
+            </div>
+
+            <!-- Path Type & Elevation -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Path Type</label>
+                    <select id="editPathType">
+                        <option value="">Select path type</option>
+                        <option value="via_gate">Via Gate</option>
+                        <option value="via_overpass">Via Overpass</option>
+                        <option value="walkway">Walkway</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Elevation</label>
+                    <select id="editElevation">
+                        <option value="">Select elevation</option>
+                        <option value="flat">Flat</option>
+                        <option value="slope_up">Slope (Up)</option>
+                        <option value="slope_down">Slope (Down)</option>
+                        <option value="stairs">Stairs</option>
+                        <option value="steep_up">Steep (Up)</option>
+                        <option value="steep_down">Steep (Down)</option>
+                        <option value="mixed">Mixed</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Actions -->  
+            <div class="modal-actions">  
+                <button type="submit" class="save-btn">Save</button>  
+                <button type="button" class="cancel-btn" id="cancelEditEdgeBtn">Cancel</button>  
+            </div>  
+        </form>  
+    </div>  
+</div>
+
+
+
+<script>
+  const editNodeModal = document.getElementById("editNodeModal");
+  const cancelEditBtn = document.getElementById("cancelEditNodeBtn");
+
+  // Use event delegation to catch clicks on edit icons
+  document.querySelector(".nodetbl").addEventListener("click", (e) => {
+    if (e.target.classList.contains("fa-edit")) {
+      editNodeModal.style.display = "flex"; // show modal
+    }
+  });
+
+  // Cancel button closes modal
+  cancelEditBtn.addEventListener("click", () => {
+    editNodeModal.style.display = "none";
+  });
+
+  // Click outside modal box closes it
+  editNodeModal.addEventListener("click", (e) => {
+    if (e.target === editNodeModal) {
+      editNodeModal.style.display = "none";
+    }
+  });
+</script>
+
+<script>
+  const editEdgeModal = document.getElementById("editEdgeModal");
+  const cancelEditEdgeBtn = document.getElementById("cancelEditEdgeBtn");
+
+  // Use event delegation to catch clicks on edit icons inside .edgetbl
+  document.querySelector(".edgetbl").addEventListener("click", (e) => {
+    if (e.target.classList.contains("fa-edit")) {
+      editEdgeModal.style.display = "flex"; // show modal
+    }
+  });
+
+  // Cancel button closes modal
+  cancelEditEdgeBtn.addEventListener("click", () => {
+    editEdgeModal.style.display = "none";
+  });
+
+  // Click outside modal box closes it
+  editEdgeModal.addEventListener("click", (e) => {
+    if (e.target === editEdgeModal) {
+      editEdgeModal.style.display = "none";
+    }
+  });
+</script>
 
 
 

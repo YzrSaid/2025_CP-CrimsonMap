@@ -381,6 +381,10 @@ body {
     font-size: 22px;
 }
 
+.bottom-tbl .actions .fa-edit {
+    color: #f5a623;
+}
+
 
 
 /* Modal Overlay */
