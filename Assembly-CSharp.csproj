@@ -64,19 +64,19 @@
     <Analyzer Include="/home/yazar/Unity/2022.3.62f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.Properties.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets/Scripts/Main App Scripts/Buildings.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionManager.cs" />
     <Compile Include="Assets/Scripts/AnswerButtons.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MapButtonsAndControlsScript.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MapUtils.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MapCoordinateSystem.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/InfrastructurePopulator.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/CampusBounds.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionItem.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/SaveData.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/PathRenderer.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/BarrierSpawner.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/InfrastructureData.cs" />
     <Compile Include="Assets/Scripts/RotationBackground.cs" />
-    <Compile Include="Assets/Scripts/Main App Scripts/BuildingPopulator.cs" />
     <Compile Include="Assets/CanvasHelper.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MainAppManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/PolygonImage.cs" />
