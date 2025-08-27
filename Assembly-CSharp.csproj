@@ -59,11 +59,12 @@
     <UnityVersion>2022.3.62f1</UnityVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Analyzer Include="/home/yazar/.vscode/extensions/visualstudiotoolsforunity.vstuc-1.1.2/Analyzers/Microsoft.Unity.Analyzers.dll" />
+    <Analyzer Include="/home/yazar/.vscode/extensions/visualstudiotoolsforunity.vstuc-1.1.3/Analyzers/Microsoft.Unity.Analyzers.dll" />
     <Analyzer Include="/home/yazar/Unity/2022.3.62f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.SourceGenerators.dll" />
     <Analyzer Include="/home/yazar/Unity/2022.3.62f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.Properties.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets/Scripts/Main App Scripts/Buildings.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionManager.cs" />
     <Compile Include="Assets/Scripts/AnswerButtons.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MapButtonsAndControlsScript.cs" />
@@ -75,6 +76,7 @@
     <Compile Include="Assets/Scripts/Main App Scripts/PathRenderer.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/BarrierSpawner.cs" />
     <Compile Include="Assets/Scripts/RotationBackground.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/BuildingPopulator.cs" />
     <Compile Include="Assets/CanvasHelper.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MainAppManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/PolygonImage.cs" />
