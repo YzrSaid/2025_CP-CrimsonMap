@@ -73,6 +73,7 @@
     <Compile Include="Assets/Scripts/Main App Scripts/CampusBounds.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionItem.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/SaveData.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/GPS/GPSManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/PathRenderer.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/BarrierSpawner.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/InfrastructureData.cs" />
