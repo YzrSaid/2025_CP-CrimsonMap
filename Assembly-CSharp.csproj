@@ -69,6 +69,7 @@
     <Compile Include="Assets/Scripts/Main App Scripts/MapButtonsAndControlsScript.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MapUtils.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MapCoordinateSystem.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/GPS/UserIndicator.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/InfrastructurePopulator.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/CampusBounds.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionItem.cs" />

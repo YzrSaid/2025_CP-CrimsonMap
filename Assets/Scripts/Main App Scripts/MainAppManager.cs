@@ -89,14 +89,18 @@ public class MainAppManager : MonoBehaviour
     {
         if (mapController != null)
         {
+            // If you want to center on a manually stored position:
             mapController.CenterOnPosition(userMapLocalPosition);
-            mapController.PlaceUserPin(userMapLocalPosition);
+
+            // Or if you want to center on the actual user pin in the map:
+            mapController.CenterOnUserPin();
         }
         else
         {
             Debug.LogWarning("MapController reference not assigned!");
         }
     }
+
 
     // Optional: update userMapLocalPosition dynamically somewhere else as user moves
 }
