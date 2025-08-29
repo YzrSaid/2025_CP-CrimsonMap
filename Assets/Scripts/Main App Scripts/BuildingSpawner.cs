@@ -29,12 +29,6 @@ public class BuildingSpawner : MonoBehaviour
     }
 
     [System.Serializable]
-    public class NodeList
-    {
-        public List<Node> nodes;
-    }
-
-    [System.Serializable]
     public class Category
     {
         public int category_id;

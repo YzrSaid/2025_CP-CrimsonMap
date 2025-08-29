@@ -1,4 +1,6 @@
 // Node.cs
+using System.Collections.Generic;
+
 [System.Serializable]
 public class Node
 {
@@ -10,4 +12,11 @@ public class Node
     public bool is_barrier;
     public bool is_pathway;
     public bool is_active;
+    public int campus_id;
+}
+
+[System.Serializable]
+public class NodeList
+{
+    public List<Node> nodes;
 }

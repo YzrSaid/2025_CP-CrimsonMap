@@ -1,0 +1,14 @@
+[
+    {
+        "campus_id": "C-001",
+        "campus_name": "Campus A"
+    },
+    {
+        "campus_id": "C-002",
+        "campus_name": "Campus B"
+    },
+    {
+        "campus_id": "C-003",
+        "campus_name": "Campus C"
+    }
+]
