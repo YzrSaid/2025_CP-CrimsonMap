@@ -65,7 +65,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionManager.cs" />
-    <Compile Include="Assets/Scripts/AnswerButtons.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MapButtonsAndControlsScript.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MapManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MapUtils.cs" />
@@ -86,10 +85,8 @@
     <Compile Include="Assets/Scripts/Main App Scripts/JSONData/InfrastructureData.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionSpawner.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/BuildingSpawner.cs" />
-    <Compile Include="Assets/Scripts/QuestionDisplay.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/PageIndicator.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/GlobalManager.cs" />
-    <Compile Include="Assets/Scripts/QuestionGenerate.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/JSONData/NodeData.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/OnboardingManager.cs" />
   </ItemGroup>
