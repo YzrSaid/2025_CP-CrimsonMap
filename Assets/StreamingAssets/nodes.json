@@ -7,7 +7,8 @@
     "linked_building": true,
     "is_barrier": false,
     "is_pathway": false,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
   {
     "node_id": "N-002",
@@ -17,7 +18,8 @@
     "linked_building": true,
     "is_barrier": false,
     "is_pathway": false,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
   {
     "node_id": "N-011",
@@ -27,7 +29,8 @@
     "linked_building": true,
     "is_barrier": false,
     "is_pathway": false,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
   {
     "node_id": "N-012",
@@ -37,7 +40,8 @@
     "linked_building": true,
     "is_barrier": false,
     "is_pathway": false,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
 
   {
@@ -48,7 +52,8 @@
     "linked_building": false,
     "is_barrier": false,
     "is_pathway": true,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
   {
     "node_id": "P-002",
@@ -58,7 +63,8 @@
     "linked_building": false,
     "is_barrier": false,
     "is_pathway": true,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
   {
     "node_id": "P-003",
@@ -68,7 +74,8 @@
     "linked_building": false,
     "is_barrier": false,
     "is_pathway": true,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
   {
     "node_id": "P-004",
@@ -78,7 +85,8 @@
     "linked_building": false,
     "is_barrier": false,
     "is_pathway": true,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
   {
     "node_id": "P-005",
@@ -88,7 +96,8 @@
     "linked_building": false,
     "is_barrier": false,
     "is_pathway": true,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
   {
     "node_id": "P-006",
@@ -98,7 +107,8 @@
     "linked_building": false,
     "is_barrier": false,
     "is_pathway": true,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
   {
     "node_id": "P-007",
@@ -108,7 +118,8 @@
     "linked_building": false,
     "is_barrier": false,
     "is_pathway": true,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
 
   {
@@ -119,7 +130,8 @@
     "linked_building": false,
     "is_barrier": true,
     "is_pathway": false,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
   {
     "node_id": "N-007",
@@ -129,7 +141,8 @@
     "linked_building": false,
     "is_barrier": true,
     "is_pathway": false,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
   {
     "node_id": "N-004",
@@ -139,7 +152,8 @@
     "linked_building": false,
     "is_barrier": true,
     "is_pathway": false,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
   {
     "node_id": "N-008",
@@ -149,7 +163,8 @@
     "linked_building": false,
     "is_barrier": true,
     "is_pathway": false,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
   {
     "node_id": "N-005",
@@ -159,7 +174,8 @@
     "linked_building": false,
     "is_barrier": true,
     "is_pathway": false,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
   {
     "node_id": "N-009",
@@ -169,7 +185,8 @@
     "linked_building": false,
     "is_barrier": true,
     "is_pathway": false,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
   {
     "node_id": "N-006",
@@ -179,7 +196,8 @@
     "linked_building": false,
     "is_barrier": true,
     "is_pathway": false,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
   },
   {
     "node_id": "N-010",
@@ -189,6 +207,218 @@
     "linked_building": false,
     "is_barrier": true,
     "is_pathway": false,
-    "is_active": true
+    "is_active": true,
+    "campus_id": "C-001"
+  },
+   {
+    "node_id": "N-101",
+    "name": "Gate 1 Entrance",
+    "latitude": 6.922200,
+    "longitude": 122.087500,
+    "linked_building": true,
+    "is_barrier": false,
+    "is_pathway": false,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+  {
+    "node_id": "N-102",
+    "name": "College of Engineering Entrance",
+    "latitude": 6.922200,
+    "longitude": 122.089000,
+    "linked_building": true,
+    "is_barrier": false,
+    "is_pathway": false,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+  {
+    "node_id": "N-111",
+    "name": "Main Library Entrance",
+    "latitude": 6.922200,
+    "longitude": 122.090500,
+    "linked_building": true,
+    "is_barrier": false,
+    "is_pathway": false,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+  {
+    "node_id": "N-112",
+    "name": "Cafeteria Entrance",
+    "latitude": 6.921000,
+    "longitude": 122.089000,
+    "linked_building": true,
+    "is_barrier": false,
+    "is_pathway": false,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+
+  {
+    "node_id": "P-101",
+    "name": "Main Road Junction 1",
+    "latitude": 6.922150,
+    "longitude": 122.088000,
+    "linked_building": false,
+    "is_barrier": false,
+    "is_pathway": true,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+  {
+    "node_id": "P-102",
+    "name": "Main Road Junction 2",
+    "latitude": 6.922150,
+    "longitude": 122.088500,
+    "linked_building": false,
+    "is_barrier": false,
+    "is_pathway": true,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+  {
+    "node_id": "P-103",
+    "name": "Engineering Junction",
+    "latitude": 6.922150,
+    "longitude": 122.089000,
+    "linked_building": false,
+    "is_barrier": false,
+    "is_pathway": true,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+  {
+    "node_id": "P-104",
+    "name": "Central Junction",
+    "latitude": 6.922150,
+    "longitude": 122.089750,
+    "linked_building": false,
+    "is_barrier": false,
+    "is_pathway": true,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+  {
+    "node_id": "P-105",
+    "name": "Library Junction",
+    "latitude": 6.922150,
+    "longitude": 122.090500,
+    "linked_building": false,
+    "is_barrier": false,
+    "is_pathway": true,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+  {
+    "node_id": "P-106",
+    "name": "Cafeteria Branch Point",
+    "latitude": 6.921600,
+    "longitude": 122.089000,
+    "linked_building": false,
+    "is_barrier": false,
+    "is_pathway": true,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+  {
+    "node_id": "P-107",
+    "name": "Cafeteria Approach",
+    "latitude": 6.921300,
+    "longitude": 122.089000,
+    "linked_building": false,
+    "is_barrier": false,
+    "is_pathway": true,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+
+  {
+    "node_id": "N-103",
+    "name": "Barrier Top Left",
+    "latitude": 6.923000,
+    "longitude": 122.087000,
+    "linked_building": false,
+    "is_barrier": true,
+    "is_pathway": false,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+  {
+    "node_id": "N-107",
+    "name": "Barrier Top Middle",
+    "latitude": 6.923500,
+    "longitude": 122.089500,
+    "linked_building": false,
+    "is_barrier": true,
+    "is_pathway": false,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+  {
+    "node_id": "N-104",
+    "name": "Barrier Top Right",
+    "latitude": 6.923000,
+    "longitude": 122.091000,
+    "linked_building": false,
+    "is_barrier": true,
+    "is_pathway": false,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+  {
+    "node_id": "N-108",
+    "name": "Barrier Middle Right",
+    "latitude": 6.921500,
+    "longitude": 122.092000,
+    "linked_building": false,
+    "is_barrier": true,
+    "is_pathway": false,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+  {
+    "node_id": "N-105",
+    "name": "Barrier Bottom Right",
+    "latitude": 6.920000,
+    "longitude": 122.091000,
+    "linked_building": false,
+    "is_barrier": true,
+    "is_pathway": false,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+  {
+    "node_id": "N-109",
+    "name": "Barrier Bottom Middle",
+    "latitude": 6.919500,
+    "longitude": 122.089500,
+    "linked_building": false,
+    "is_barrier": true,
+    "is_pathway": false,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+  {
+    "node_id": "N-106",
+    "name": "Barrier Bottom Left",
+    "latitude": 6.920000,
+    "longitude": 122.087000,
+    "linked_building": false,
+    "is_barrier": true,
+    "is_pathway": false,
+    "is_active": true,
+    "campus_id": "C-002"
+  },
+  {
+    "node_id": "N-110",
+    "name": "Barrier Middle Left",
+    "latitude": 6.921500,
+    "longitude": 122.086000,
+    "linked_building": false,
+    "is_barrier": true,
+    "is_pathway": false,
+    "is_active": true,
+    "campus_id": "C-002"
   }
 ]

@@ -2,11 +2,15 @@
     {
         "map_id": "M-001",
         "map_name": "Main Map",
-        "campus_included": ["C-001", "C-002"]
+        "campus_included": [
+            "C-001", "C-002"
+        ]
     },
     {
         "map_id": "M-002",
         "map_name": "Campus C Map",
-        "campus_included": ["C-003"]
+        "campus_included": [
+            "C-003"
+        ]
     }
 ]

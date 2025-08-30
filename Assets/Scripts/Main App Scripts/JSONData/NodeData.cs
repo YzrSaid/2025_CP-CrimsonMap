@@ -12,7 +12,7 @@ public class Node
     public bool is_barrier;
     public bool is_pathway;
     public bool is_active;
-    public int campus_id;
+    public string campus_id;
 }
 
 [System.Serializable]

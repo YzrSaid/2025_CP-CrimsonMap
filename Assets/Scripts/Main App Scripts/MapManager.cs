@@ -1,244 +1,205 @@
-// using UnityEngine;
-// using System.Collections.Generic;
-// using System.IO;
-// using System.Linq;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using System.Collections.Generic;
+using System.IO;
+using System.Collections;
+using System.Linq;
 
-// /// <summary>
-// /// Manages multiple campus maps based on map.json configuration
-// /// </summary>
-// public class MapManager : MonoBehaviour
-// {
-//     [Header("Map Configuration")]
-//     public string currentMapId = "M-001"; // Default to Main Map
+/// <summary>
+/// Central manager for handling map switching and coordinating all spawners
+/// Manages multiple campuses per map and handles UI updates
+/// </summary>
+public class MapManager : MonoBehaviour
+{
+    [Header("UI References")]
+    public Button dropdownButton;
+    public TextMeshProUGUI dropdownButtonText; // Text component of the dropdown button
     
-//     [Header("References")]
-//     public RectTransform mapContainer;
-//     public BarrierSpawner barrierSpawner;
-//     public BuildingSpawner buildingSpawner;
-//     public PathRenderer pathRenderer;
+    [Header("Spawner References")]
+    public BarrierSpawner barrierSpawner;
+    public BuildingSpawner buildingSpawner;
+    public PathRenderer pathRenderer;
+    public MapCoordinateSystem coordinateSystem;
     
-//     [Header("JSON Files")]
-//     public string mapFileName = "map.json";
-//     public string campusFileName = "campus.json";
+    [Header("Map Controls")]
+    public MapButtonsAndControlsScript mapControls;
     
-//     // Map data structures
-//     [System.Serializable]
-//     public class Map
-//     {
-//         public string map_id;
-//         public string map_name;
-//         public string[] campus_included;
-//     }
+    [Header("Current Map Info")]
+    public MapData currentMap;
+    public List<string> currentCampusIds = new List<string>();
     
-//     [System.Serializable]
-//     public class MapList
-//     {
-//         public List<Map> maps;
-//     }
+    // Data containers
+    private List<MapData> availableMaps = new List<MapData>();
+    private Dictionary<string, CampusData> allCampuses = new Dictionary<string, CampusData>();
     
-//     [System.Serializable]
-//     public class Campus
-//     {
-//         public string campus_id;
-//         public string campus_name;
-//     }
+    // Events for spawners to listen to
+    public System.Action<MapData> OnMapChanged;
+    public System.Action OnMapLoadingComplete;
     
-//     [System.Serializable]
-//     public class CampusList
-//     {
-//         public List<Campus> campuses;
-//     }
-    
-//     // Current map data
-//     private Map currentMap;
-//     private List<Campus> activeCampuses;
-    
-//     public static MapManager Instance { get; private set; }
-    
-//     void Awake()
-//     {
-//         if (Instance == null)
-//         {
-//             Instance = this;
-//             DontDestroyOnLoad(gameObject);
-//         }
-//         else
-//         {
-//             Destroy(gameObject);
-//         }
-//     }
-    
-//     void Start()
-//     {
-//         LoadMapConfiguration();
-//         SetActiveMap(currentMapId);
-//     }
-    
-//     void LoadMapConfiguration()
-//     {
-//         // Load map.json
-//         string mapPath = Path.Combine(Application.streamingAssetsPath, mapFileName);
-//         if (!File.Exists(mapPath))
-//         {
-//             Debug.LogError($"Map configuration file not found: {mapFileName}");
-//             return;
-//         }
+    void Start()
+    {
+        LoadMapAndCampusData();
         
-//         string mapJson = File.ReadAllText(mapPath);
-//         MapList mapList = JsonUtility.FromJson<MapList>("{\"maps\":" + mapJson + "}");
+        // Auto-find MapButtonsAndControlsScript if not assigned
+        if (mapControls == null)
+        {
+            mapControls = FindObjectOfType<MapButtonsAndControlsScript>();
+        }
         
-//         // Load campus.json  
-//         string campusPath = Path.Combine(Application.streamingAssetsPath, campusFileName);
-//         if (!File.Exists(campusPath))
-//         {
-//             Debug.LogError($"Campus configuration file not found: {campusFileName}");
-//             return;
-//         }
-        
-//         string campusJson = File.ReadAllText(campusPath);
-//         CampusList campusList = JsonUtility.FromJson<CampusList>("{\"campuses\":" + campusJson + "}");
-        
-//         Debug.Log($"Loaded {mapList.maps.Count} maps and {campusList.campuses.Count} campuses");
-//     }
+        // Load first map by default if available
+        if (availableMaps.Count > 0)
+        {
+            LoadMap(availableMaps[0]);
+        }
+    }
     
-//     /// <summary>
-//     /// Switch to a different map (Main Map or Campus C Map)
-//     /// </summary>
-//     public void SetActiveMap(string mapId)
-//     {
-//         currentMapId = mapId;
+    void LoadMapAndCampusData()
+    {
+        // Load maps.json
+        string mapPath = Path.Combine(Application.streamingAssetsPath, "map.json");
+        if (File.Exists(mapPath))
+        {
+            string mapJson = File.ReadAllText(mapPath);
+            MapList mapList = JsonUtility.FromJson<MapList>("{\"maps\":" + mapJson + "}");
+            availableMaps.AddRange(mapList.maps);
+            Debug.Log($"📍 Loaded {availableMaps.Count} maps");
+        }
         
-//         // Load map configuration
-//         string mapPath = Path.Combine(Application.streamingAssetsPath, mapFileName);
-//         string mapJson = File.ReadAllText(mapPath);
-//         MapList mapList = JsonUtility.FromJson<MapList>("{\"maps\":" + mapJson + "}");
-        
-//         currentMap = mapList.maps.FirstOrDefault(m => m.map_id == mapId);
-//         if (currentMap == null)
-//         {
-//             Debug.LogError($"Map not found: {mapId}");
-//             return;
-//         }
-        
-//         // Load campus data to get campus names
-//         string campusPath = Path.Combine(Application.streamingAssetsPath, campusFileName);
-//         string campusJson = File.ReadAllText(campusPath);
-//         CampusList campusList = JsonUtility.FromJson<CampusList>("{\"campuses\":" + campusJson + "}");
-        
-//         // Get active campuses for this map
-//         activeCampuses = new List<Campus>();
-//         foreach (string campusId in currentMap.campus_included)
-//         {
-//             Campus campus = campusList.campuses.FirstOrDefault(c => c.campus_id == campusId);
-//             if (campus != null)
-//             {
-//                 activeCampuses.Add(campus);
-//             }
-//         }
-        
-//         Debug.Log($"Switched to {currentMap.map_name} with campuses: {string.Join(", ", activeCampuses.Select(c => c.campus_name))}");
-        
-//         // Clear existing map elements
-//         ClearMap();
-        
-//         // Regenerate map elements for active campuses
-//         RegenerateMapElements();
-//     }
+        // Load campus.json
+        string campusPath = Path.Combine(Application.streamingAssetsPath, "campus.json");
+        if (File.Exists(campusPath))
+        {
+            string campusJson = File.ReadAllText(campusPath);
+            CampusList campusList = JsonUtility.FromJson<CampusList>("{\"campuses\":" + campusJson + "}");
+            foreach (var campus in campusList.campuses)
+            {
+                allCampuses[campus.campus_id] = campus;
+            }
+            Debug.Log($"🏫 Loaded {allCampuses.Count} campus definitions");
+        }
+    }
     
-//     /// <summary>
-//     /// Get list of campus IDs that should be shown on current map
-//     /// </summary>
-//     public string[] GetActiveCampusIds()
-//     {
-//         if (currentMap == null) return new string[0];
-//         return currentMap.campus_included;
-//     }
-    
-//     /// <summary>
-//     /// Get list of campus names that should be shown on current map
-//     /// </summary>
-//     public string[] GetActiveCampusNames()
-//     {
-//         if (activeCampuses == null) return new string[0];
-//         return activeCampuses.Select(c => c.campus_name).ToArray();
-//     }
-    
-//     /// <summary>
-//     /// Check if a campus should be shown on current map
-//     /// </summary>
-//     public bool IsCampusActive(string campusId)
-//     {
-//         if (currentMap == null) return false;
-//         return currentMap.campus_included.Contains(campusId);
-//     }
-    
-//     void ClearMap()
-//     {
-//         // Clear all spawned elements
-//         foreach (Transform child in mapContainer)
-//         {
-//             if (child.name.Contains("Barrier") || child.name.Contains("Path") || child.name.Contains("Building"))
-//             {
-//                 DestroyImmediate(child.gameObject);
-//             }
-//         }
-//     }
-    
-//     void RegenerateMapElements()
-//     {
-//         // Update spawners to use active campuses
-//         if (barrierSpawner != null)
-//         {
-//             barrierSpawner.campusesToSpawn = GetActiveCampusNames();
-//         }
+    /// <summary>
+    /// Main method to switch to a different map
+    /// This will trigger all spawners to reload their content
+    /// </summary>
+    public void LoadMap(MapData mapData)
+    {
+        Debug.Log($"🗺️ Loading map: {mapData.map_name}");
         
-//         // Trigger regeneration (you'll need to add these methods to your spawners)
-//         StartCoroutine(RegenerateAllElements());
-//     }
+        currentMap = mapData;
+        currentCampusIds.Clear();
+        currentCampusIds.AddRange(mapData.campus_included);
+        
+        // Update dropdown button text
+        UpdateDropdownButtonText(mapData.map_name);
+        
+        // Clear existing spawned objects
+        ClearAllSpawnedObjects();
+        
+        // Notify coordinate system to recalculate bounds for this map
+        StartCoroutine(LoadMapCoroutine());
+    }
     
-//     System.Collections.IEnumerator RegenerateAllElements()
-//     {
-//         // Wait a frame to ensure everything is cleared
-//         yield return null;
+    IEnumerator LoadMapCoroutine()
+    {
+        // Fire event before loading starts
+        OnMapChanged?.Invoke(currentMap);
         
-//         // Regenerate barriers first
-//         if (barrierSpawner != null)
-//         {
-//             barrierSpawner.LoadAndSpawnBarriers(); // Make this method public
-//         }
+        // Wait for coordinate system to recalculate bounds
+        yield return StartCoroutine(coordinateSystem.RecalculateBoundsForCampuses(currentCampusIds));
         
-//         // Wait for barriers to complete
-//         yield return new WaitForSeconds(0.1f);
+        // Spawn everything in order
+        yield return StartCoroutine(barrierSpawner.LoadAndSpawnForCampuses(currentCampusIds));
+        yield return StartCoroutine(buildingSpawner.LoadAndSpawnForCampuses(currentCampusIds));
+        yield return StartCoroutine(pathRenderer.LoadAndRenderForCampuses(currentCampusIds));
         
-//         // Regenerate buildings
-//         if (buildingSpawner != null)
-//         {
-//             buildingSpawner.LoadAndSpawnBuildings(); // Make this method public
-//         }
+        // IMPORTANT: Reset map controls after map size changes
+        if (mapControls != null)
+        {
+            mapControls.ResetMapView();
+        }
         
-//         // Wait for buildings to complete  
-//         yield return new WaitForSeconds(0.1f);
+        // Fire completion event
+        OnMapLoadingComplete?.Invoke();
         
-//         // Regenerate paths
-//         if (pathRenderer != null)
-//         {
-//             pathRenderer.LoadAndRenderAllPathways(); // Make this method public
-//         }
-//     }
+        Debug.Log($"✅ Map '{currentMap.map_name}' loaded successfully with {currentCampusIds.Count} campuses");
+    }
     
-//     /// <summary>
-//     /// UI method to switch maps
-//     /// </summary>
-//     public void SwitchToMainMap()
-//     {
-//         SetActiveMap("M-001");
-//     }
+    void UpdateDropdownButtonText(string mapName)
+    {
+        if (dropdownButtonText != null)
+        {
+            dropdownButtonText.text = mapName;
+        }
+        else
+        {
+            // Fallback: try to find text component in children
+            TextMeshProUGUI text = dropdownButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (text != null) text.text = mapName;
+        }
+    }
     
-//     /// <summary>
-//     /// UI method to switch maps
-//     /// </summary>
-//     public void SwitchToCampusCMap()
-//     {
-//         SetActiveMap("M-002");
-//     }
-// }
+    void ClearAllSpawnedObjects()
+    {
+        // Clear barrier spawner objects
+        if (barrierSpawner != null)
+        {
+            barrierSpawner.ClearSpawnedObjects();
+        }
+        
+        // Clear building spawner objects
+        if (buildingSpawner != null)
+        {
+            buildingSpawner.ClearSpawnedObjects();
+        }
+        
+        // Clear path renderer objects
+        if (pathRenderer != null)
+        {
+            pathRenderer.ClearSpawnedObjects();
+        }
+    }
+    
+    /// <summary>
+    /// Get all available maps for dropdown population
+    /// </summary>
+    public List<MapData> GetAvailableMaps()
+    {
+        return availableMaps;
+    }
+    
+    /// <summary>
+    /// Get campus name by ID
+    /// </summary>
+    public string GetCampusName(string campusId)
+    {
+        return allCampuses.ContainsKey(campusId) ? allCampuses[campusId].campus_name : "Unknown Campus";
+    }
+    
+    /// <summary>
+    /// Get current map info for debugging
+    /// </summary>
+    public string GetCurrentMapInfo()
+    {
+        if (currentMap == null) return "No map loaded";
+        
+        string campusNames = string.Join(", ", currentCampusIds.Select(id => GetCampusName(id)));
+        return $"Map: {currentMap.map_name} | Campuses: {campusNames}";
+    }
+}
+
+// Campus data class
+[System.Serializable]
+public class CampusData
+{
+    public string campus_id;
+    public string campus_name;
+}
+
+[System.Serializable]
+public class CampusList
+{
+    public List<CampusData> campuses;
+}
