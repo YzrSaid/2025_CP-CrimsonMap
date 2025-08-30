@@ -1,73 +1,3 @@
-// using UnityEngine;
-// using UnityEngine.UI;
-// using TMPro;
-// using System.Collections.Generic;
-
-// public class MapDropdown : MonoBehaviour
-// {
-//    [Header("UI References")]
-// public Button dropdownButton;
-// public GameObject panelForBG;      // semi-black overlay
-// public GameObject panel;           // map options panel
-// public GameObject mapButtonPrefab;
-// public Transform buttonContainer;
-
-// private List<MapData> availableMaps = new List<MapData>();
-
-// void Start()
-// {
-//     dropdownButton.onClick.AddListener(TogglePanel);
-//     PopulatePanel();
-//     panel.SetActive(false);
-//     panelForBG.SetActive(false);
-// }
-
-//     void TogglePanel()
-//     {
-//         bool isActive = !panel.activeSelf;
-//         panel.SetActive(isActive);
-//         panelForBG.SetActive(isActive);
-//     }
-// void PopulatePanel()
-// {
-//     foreach (Transform child in buttonContainer)
-//     {
-//         Destroy(child.gameObject); // clear old buttons (optional)
-//     }
-
-//     foreach (var map in availableMaps)
-//     {
-//         GameObject btnObj = Instantiate(mapButtonPrefab, buttonContainer);
-
-//         // Handle TMP or legacy Text
-//         TMPro.TextMeshProUGUI tmpText = btnObj.GetComponentInChildren<TMPro.TextMeshProUGUI>();
-//         if (tmpText != null)
-//             tmpText.text = map.map_name;
-//         else
-//             btnObj.GetComponentInChildren<Text>().text = map.map_name;
-
-//         btnObj.GetComponent<Button>().onClick.AddListener(() =>
-//         {
-//             SelectMap(map);
-//         });
-//     }
-// }
-
-
-// void SelectMap(MapData map)
-// {
-//     Debug.Log("Selected Map: " + map.map_name);
-
-//     // Hide menu + background overlay
-//     panel.SetActive(false);
-//     panelForBG.SetActive(false);
-
-//     // TODO: Notify MainAppManager to switch maps here
-// }
-
-// }
-
-
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
@@ -78,14 +8,13 @@ public class MapDropdown : MonoBehaviour
 {
     [Header("UI References")]
     public Button dropdownButton;
-    public GameObject panel;
+    public GameObject panel; 
     public GameObject panelForBG;
-    public GameObject mapButtonPrefab; // Prefab for each map button
-    public Transform buttonContainer; // Parent transform for buttons
+    public GameObject mapButtonPrefab;
+    public Transform buttonContainer;
 
     [Header("Manager Reference")]
-    public MapManager mapManager; // Reference to the MapManager
-
+    public MapManager mapManager; 
     private List<MapData> availableMaps = new List<MapData>();
 
     void Start()
@@ -152,7 +81,6 @@ public class MapDropdown : MonoBehaviour
         panel.SetActive(false);
         panelForBG.SetActive(false);
 
-        // Tell MapManager to load the selected map
         if (mapManager != null)
         {
             mapManager.LoadMap(map);

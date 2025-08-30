@@ -5,21 +5,6 @@ using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
-[Serializable]
-public class Category
-{
-    public int category_id;
-    public string name;
-    public string icon;
-    public List<int> building_id;
-}
-
-[Serializable]
-public class CategoryList
-{
-    public List<Category> categories;
-}
-
 
 public class AccordionSpawner : MonoBehaviour
 {

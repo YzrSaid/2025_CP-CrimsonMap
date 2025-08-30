@@ -65,6 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionManager.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/JSONData/CategoryData.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MapButtonsAndControlsScript.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MapManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/JSONData/MapData.cs" />
@@ -72,6 +73,9 @@
     <Compile Include="Assets/Scripts/Main App Scripts/MapCoordinateSystem.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/GPS/UserIndicator.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/JSONData/EdgeData.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/PanelOpener.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/PanelCloser.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/Map/CategoryDropdown.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/InfrastructurePopulator.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/CampusBounds.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionItem.cs" />
@@ -85,6 +89,7 @@
     <Compile Include="Assets/Scripts/Main App Scripts/JSONData/InfrastructureData.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionSpawner.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/BuildingSpawner.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/PanelToggler.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/PageIndicator.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/GlobalManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/Map/MapDropdown.cs" />
