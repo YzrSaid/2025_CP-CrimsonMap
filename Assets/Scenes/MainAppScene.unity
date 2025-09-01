@@ -9356,7 +9356,7 @@ MonoBehaviour:
   dropdownButton: {fileID: 741374899}
   dropdownButtonText: {fileID: 1664784864}
   barrierSpawner: {fileID: 1465186275}
-  buildingSpawner: {fileID: 1465186276}
+  infrastructureSpawner: {fileID: 1465186276}
   pathRenderer: {fileID: 1465186277}
   coordinateSystem: {fileID: 1465186278}
   mapControls: {fileID: 0}
@@ -9399,7 +9399,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 270.32068, y: -135.26509}
+  m_AnchoredPosition: {x: 270.32068, y: -135.26578}
   m_SizeDelta: {x: 540.6514, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1484055794

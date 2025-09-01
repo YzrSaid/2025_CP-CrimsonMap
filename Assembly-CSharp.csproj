@@ -81,6 +81,7 @@
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionItem.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/SaveData.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/GPS/GPSManager.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/InfrastructureSpawner.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/PathRenderer.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/BarrierSpawner.cs" />
     <Compile Include="Assets/CanvasHelper.cs" />
@@ -88,7 +89,6 @@
     <Compile Include="Assets/Scripts/Main App Scripts/PolygonImage.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/JSONData/InfrastructureData.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionSpawner.cs" />
-    <Compile Include="Assets/Scripts/Main App Scripts/BuildingSpawner.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/PanelToggler.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/PageIndicator.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/GlobalManager.cs" />

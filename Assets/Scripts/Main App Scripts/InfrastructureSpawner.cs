@@ -6,7 +6,7 @@ using TMPro;
 using System.Collections;
 using System.Linq;
 
-public class BuildingSpawner : MonoBehaviour
+public class InfrastructureSpawner : MonoBehaviour
 {
     [Header("References")]
     public RectTransform mapContainer;

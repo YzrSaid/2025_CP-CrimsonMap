@@ -18,7 +18,7 @@ public class MapManager : MonoBehaviour
     
     [Header("Spawner References")]
     public BarrierSpawner barrierSpawner;
-    public BuildingSpawner buildingSpawner;
+    public InfrastructureSpawner infrastructureSpawner;
     public PathRenderer pathRenderer;
     public MapCoordinateSystem coordinateSystem;
     
@@ -112,7 +112,7 @@ public class MapManager : MonoBehaviour
         
         // Spawn everything in order
         yield return StartCoroutine(barrierSpawner.LoadAndSpawnForCampuses(currentCampusIds));
-        yield return StartCoroutine(buildingSpawner.LoadAndSpawnForCampuses(currentCampusIds));
+        yield return StartCoroutine(infrastructureSpawner.LoadAndSpawnForCampuses(currentCampusIds));
         yield return StartCoroutine(pathRenderer.LoadAndRenderForCampuses(currentCampusIds));
         
         // IMPORTANT: Reset map controls after map size changes
@@ -150,9 +150,9 @@ public class MapManager : MonoBehaviour
         }
         
         // Clear building spawner objects
-        if (buildingSpawner != null)
+        if (infrastructureSpawner != null)
         {
-            buildingSpawner.ClearSpawnedObjects();
+            infrastructureSpawner.ClearSpawnedObjects();
         }
         
         // Clear path renderer objects
