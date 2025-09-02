@@ -34,9 +34,8 @@ public class MapCoordinateSystem : MonoBehaviour
     // Singleton instance
     public static MapCoordinateSystem Instance { get; private set; }
 
-    // Bounds calculated from filtered campus data
     private float minLatitude, maxLatitude, minLongitude, maxLongitude;
-    private float contentMinLat, contentMaxLat, contentMinLon, contentMaxLon; // Actual content bounds
+    private float contentMinLat, contentMaxLat, contentMinLon, contentMaxLon; 
     private float mapWidthMeters, mapHeightMeters;
     private bool boundsCalculated = false;
 
@@ -76,7 +75,6 @@ public class MapCoordinateSystem : MonoBehaviour
         List<float> allLatitudes = new List<float>();
         List<float> allLongitudes = new List<float>();
 
-        // Load and filter nodes by campus
         string nodesPath = Path.Combine(Application.streamingAssetsPath, "nodes.json");
         if (File.Exists(nodesPath))
         {
@@ -85,7 +83,7 @@ public class MapCoordinateSystem : MonoBehaviour
 
             var filteredNodes = nodeList.nodes.Where(n =>
                 campusIds.Contains(n.campus_id) &&
-                n.is_barrier &&
+                n.type == "barrier" && 
                 n.is_active
             ).ToList();
 
@@ -97,20 +95,6 @@ public class MapCoordinateSystem : MonoBehaviour
 
             if (showDebugInfo)
                 Debug.Log($"Loaded {filteredNodes.Count} nodes for campuses: {string.Join(", ", campusIds)}");
-        }
-
-        // Load and filter infrastructures by campus
-        string infraPath = Path.Combine(Application.streamingAssetsPath, "infrastructures.json");
-        if (File.Exists(infraPath))
-        {
-            string infraJson = File.ReadAllText(infraPath);
-            InfrastructureList infraList = JsonUtility.FromJson<InfrastructureList>("{\"infrastructures\":" + infraJson + "}");
-
-            foreach (var infra in infraList.infrastructures)
-            {
-                allLatitudes.Add(infra.latitude);
-                allLongitudes.Add(infra.longitude);
-            }
         }
 
         if (allLatitudes.Count == 0)
@@ -176,8 +160,6 @@ public class MapCoordinateSystem : MonoBehaviour
     private void DebugCampusPositions(List<string> campusIds)
     {
         Debug.Log("=== CAMPUS CONTENT POSITIONS ===");
-        
-        // Sample a few points from each campus to show their UI positions
         string nodesPath = Path.Combine(Application.streamingAssetsPath, "nodes.json");
         if (File.Exists(nodesPath))
         {
@@ -188,9 +170,9 @@ public class MapCoordinateSystem : MonoBehaviour
             {
                 var campusNodes = nodeList.nodes.Where(n =>
                     n.campus_id == campusId &&
-                    n.is_barrier &&
+                    n.type == "barrier" &&  
                     n.is_active
-                ).Take(3).ToList(); // Take first 3 nodes as samples
+                ).Take(3).ToList();
 
                 Debug.Log($"Campus {campusId}:");
                 foreach (var node in campusNodes)
@@ -376,8 +358,7 @@ public class MapCoordinateSystem : MonoBehaviour
 
     public bool IsNodeInCurrentCampuses(Node node)
     {
-        string nodeCampusId = "C-" + node.campus_id.ToString().PadLeft(3, '0');
-        return currentCampusIds.Contains(nodeCampusId);
+        return currentCampusIds.Contains(node.campus_id);
     }
 
     public List<string> GetCurrentCampusIds()
@@ -403,16 +384,17 @@ public class MapCoordinateSystem : MonoBehaviour
         }
     }
 
-    // Data containers
+    // Data containers - Updated to match new format
     [System.Serializable]
     public class Infrastructure
     {
         public int infra_id;
-        public int category_id;
         public string name;
-        public float latitude;
-        public float longitude;
+        public int category_id;
         public string image_url;
+        public string email;
+        public string phone;
+        // Note: latitude and longitude removed - now comes from nodes
     }
 
     [System.Serializable]

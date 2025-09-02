@@ -59,19 +59,14 @@ public class BarrierSpawner : MonoBehaviour
         NodeList nodeList = JsonUtility.FromJson<NodeList>("{\"nodes\":" + File.ReadAllText(nodesPath) + "}");
         EdgeList edgeList = JsonUtility.FromJson<EdgeList>("{\"edges\":" + File.ReadAllText(edgesPath) + "}");
 
-        // Convert campus string IDs to integers for comparison
-        List<int> campusIntIds = new List<int>();
-
-
-        // Filter nodes by campus
+        // Filter nodes by campus and type "barrier" (changed from is_barrier)
         var filteredNodes = nodeList.nodes.Where(n =>
-     campusIds.Contains(n.campus_id) &&
-     n.is_barrier &&
-     n.is_active
- ).ToList();
+            campusIds.Contains(n.campus_id) &&
+            n.type == "barrier" &&
+            n.is_active
+        ).ToList();
 
-
-        Debug.Log($"🚧 Found {filteredNodes.Count} barrier nodes for campuses: {string.Join(", ", campusIds)} (IDs: {string.Join(", ", campusIntIds)})");
+        Debug.Log($"🚧 Found {filteredNodes.Count} barrier nodes for campuses: {string.Join(", ", campusIds)}");
 
         Dictionary<string, Node> nodeDict = new Dictionary<string, Node>();
 
@@ -179,6 +174,7 @@ public class BarrierSpawner : MonoBehaviour
 
         Debug.Log($"Created barrier polygon for Campus {campusId} with {barrierNodes.Count} points");
     }
+    
     /// <summary>
     /// Clear all spawned objects when switching maps
     /// </summary>
@@ -222,8 +218,8 @@ public class BarrierSpawner : MonoBehaviour
         List<string> campusIds = MapCoordinateSystem.Instance.GetCurrentCampusIds();
 
         return nodeList.nodes.Where(n =>
-            campusIds.Contains("C-" + n.campus_id.ToString().PadLeft(3, '0')) &&
-            n.is_barrier &&
+            campusIds.Contains(n.campus_id) &&
+            n.type == "barrier" &&  // Changed from is_barrier
             n.is_active
         ).ToList();
     }

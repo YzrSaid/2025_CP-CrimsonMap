@@ -87,7 +87,7 @@ public class PathRenderer : MonoBehaviour
         foreach (var node in filteredNodes)
         {
             allNodes[node.node_id] = node;
-            if (node.linked_building)
+            if (node.type == "infrastructure")
             {
                 Debug.Log($"Building Node: {node.name} (ID: {node.node_id}) Campus: {node.campus_id}");
             }
@@ -131,7 +131,7 @@ public class PathRenderer : MonoBehaviour
         {
             foreach (var node in allNodes.Values)
             {
-                if (!node.is_barrier) // Don't spawn debug nodes for barriers
+                if (node.type != "barrier")
                 {
                     SpawnPathwayNode(node);
                 }
