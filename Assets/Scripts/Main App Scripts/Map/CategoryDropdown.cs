@@ -14,28 +14,12 @@ public class CategoryDropdown : MonoBehaviour
 
     [Header("CategoryItem Prefab")]
     public Button categoryItemPrefab;
-
-    // Since in fresh start of the app the panel is close
-    private bool isOpen = false;
     private List<Button> spawnedItems = new List<Button>();
 
     void Start()
     {
-        categoryButton.onClick.AddListener(TogglePanel);
         panel.SetActive(false);
-    }
-
-    void TogglePanel()
-    {
-        if (!isOpen)
-        {
-            panel.SetActive(true);
-        }
-        else
-        {
-            // If clicked again, close it
-            panel.SetActive(false);
-        }
+        PopulatePanel();
     }
 
     void PopulatePanel()
@@ -47,6 +31,7 @@ public class CategoryDropdown : MonoBehaviour
         if (!File.Exists(path))
         {
             Debug.LogError("categories.json is not found in StreamingAssets!");
+            return;
         }
 
         string json = File.ReadAllText(path);
@@ -62,28 +47,82 @@ public class CategoryDropdown : MonoBehaviour
 
             // assign UI
             TMP_Text label = item.GetComponentInChildren<TMP_Text>();
-            Image iconImage = item.GetComponentInChildren<Image>();
+            
+            // DEBUG: Show all Image components in the prefab
+            Debug.Log($"=== DEBUG: All Image components in {category.name} prefab ===");
+            Image[] allImages = item.GetComponentsInChildren<Image>(true);
+            foreach (var img in allImages)
+            {
+                Debug.Log($"   - Image: '{img.name}' on GameObject: '{img.gameObject.name}'");
+            }
+            
+            // FIXED: Look for the specific icon image by name, not just any Image
+            Image iconImage = null;
+            foreach (var img in item.GetComponentsInChildren<Image>(true))
+            {
+                // Try common names for icon images
+                if (img.name == "Image_Icon" || img.name == "Icon" || img.name == "Image" || 
+                    img.gameObject.name.Contains("Icon") || img.gameObject.name.Contains("icon"))
+                {
+                    iconImage = img;
+                    Debug.Log($"✅ Found icon image: '{img.name}' on '{img.gameObject.name}'");
+                    break;
+                }
+            }
+            
+            // If still not found, use the second Image (skip the button background)
+            if (iconImage == null && allImages.Length > 1)
+            {
+                iconImage = allImages[1]; // Use second image (first is usually button background)
+                Debug.Log($"⚠️ Using fallback: second Image component '{iconImage.name}' on '{iconImage.gameObject.name}'");
+            }
 
             if (label != null) label.text = category.name;
 
-            if (iconImage != null)
+            if (iconImage != null && !string.IsNullOrEmpty(category.icon))
             {
-                // load sprite from StreamingAssets
-                string iconPath = Path.Combine(Application.streamingAssetsPath, category.icon);
-                if (File.Exists(iconPath))
+                // Remove extension if present
+                string fileName = Path.GetFileNameWithoutExtension(category.icon);
+
+                Debug.Log($"🔍 CategoryDropdown: Trying to load icon '{fileName}' for category '{category.name}'");
+
+                // Load from Resources/Images/icons/
+                Sprite sprite = Resources.Load<Sprite>($"Images/icons/{fileName}");
+
+                if (sprite != null)
                 {
-                    byte[] pngData = File.ReadAllBytes(iconPath);
-                    Texture2D tex = new Texture2D(2, 2);
-                    tex.LoadImage(pngData);
-                    Sprite sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
                     iconImage.sprite = sprite;
+                    Debug.Log($"✅ CategoryDropdown: Successfully loaded icon for {category.name}");
                 }
                 else
                 {
-                    Debug.LogWarning($"Icon not found: {iconPath}");
+                    Debug.LogWarning($"⚠️ CategoryDropdown: Icon not found in Resources/Images/icons/: {fileName}");
+                    
+                    // Try alternative paths
+                    string[] tryPaths = {
+                        fileName, // Just the filename
+                        $"icons/{fileName}", // Different folder structure
+                        category.icon.Replace(".png", "") // Full path without extension
+                    };
+                    
+                    Debug.Log("🔍 Trying alternative paths:");
+                    foreach (string tryPath in tryPaths)
+                    {
+                        Sprite testSprite = Resources.Load<Sprite>(tryPath);
+                        Debug.Log($"   {(testSprite != null ? "✅" : "❌")} '{tryPath}'");
+                        if (testSprite != null)
+                        {
+                            iconImage.sprite = testSprite;
+                            Debug.Log($"✅ Success with path: {tryPath}");
+                            break;
+                        }
+                    }
                 }
             }
-
+            else if (iconImage == null)
+            {
+                Debug.LogWarning($"⚠️ No Image component named 'Image_Icon' found in category item prefab for {category.name}");
+            }
         }
     }
 }

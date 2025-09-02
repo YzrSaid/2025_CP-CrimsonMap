@@ -187,7 +187,7 @@ public class InfrastructureSpawner : MonoBehaviour
         // Spawn infrastructure based on nodes (lat/lng comes from nodes now)
         foreach (var node in infrastructureNodes)
         {
-            int infraId = node.related_infra_id;
+            int infraId = node.related_infra_id;  // Now it's a regular int
             if (!infraDict.ContainsKey(infraId))
             {
                 Debug.LogWarning($"⚠️ Infrastructure ID {infraId} not found for node {node.node_id}");
@@ -228,7 +228,7 @@ public class InfrastructureSpawner : MonoBehaviour
         TextMeshProUGUI label = buildingObj.GetComponentInChildren<TextMeshProUGUI>();
         if (label != null) label.text = infrastructure.name;
 
-        // Set icon if available
+        // Set icon if available - Use category.icon instead of infrastructure.image_url
         Image icon = null;
         foreach (var img in buildingObj.GetComponentsInChildren<Image>(true))
         {
@@ -241,17 +241,51 @@ public class InfrastructureSpawner : MonoBehaviour
 
         if (icon != null && cat != null && !string.IsNullOrEmpty(cat.icon))
         {
-            string iconPath = Path.Combine(Application.dataPath, "Images", "icons", Path.GetFileName(cat.icon));
-            if (File.Exists(iconPath))
+            string resourcePath = cat.icon; // Use category icon, not infrastructure image_url
+
+            // Remove file extension for Resources.Load (it adds it automatically)
+            if (resourcePath.EndsWith(".png") || resourcePath.EndsWith(".jpg") || resourcePath.EndsWith(".jpeg"))
             {
-                byte[] imgData = File.ReadAllBytes(iconPath);
-                Texture2D tex = new Texture2D(2, 2);
-                tex.LoadImage(imgData);
-                icon.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+                resourcePath = Path.GetFileNameWithoutExtension(resourcePath);
+                string directory = Path.GetDirectoryName(cat.icon).Replace("\\", "/");
+                resourcePath = directory + "/" + resourcePath;
+            }
+
+            Debug.Log($"🔍 Trying to load sprite from Resources: '{resourcePath}' for category: {cat.name}");
+
+            // Load sprite from Resources
+            Sprite sprite = Resources.Load<Sprite>(resourcePath);
+
+            if (sprite != null)
+            {
+                icon.sprite = sprite;
+                Debug.Log($"✅ Loaded icon successfully from Resources: {resourcePath}");
             }
             else
             {
-                Debug.LogWarning($"⚠️ Icon not found: {iconPath}");
+                Debug.LogWarning($"⚠️ Could not load from Resources: {resourcePath}");
+                
+                // Debug: Try different variations for category icons
+                string[] tryPaths = {
+                    resourcePath,
+                    cat.icon.Replace(".png", ""),
+                    "Images/icons/" + Path.GetFileNameWithoutExtension(cat.icon),
+                    // Try just the filename without path
+                    Path.GetFileNameWithoutExtension(cat.icon)
+                };
+                
+                Debug.Log("🔍 Trying these Resource paths:");
+                foreach (string tryPath in tryPaths)
+                {
+                    Sprite testSprite = Resources.Load<Sprite>(tryPath);
+                    Debug.Log($"   {(testSprite != null ? "✅" : "❌")} '{tryPath}'");
+                    if (testSprite != null && icon.sprite == null)
+                    {
+                        icon.sprite = testSprite;
+                        Debug.Log($"✅ Success with path: {tryPath}");
+                        break;
+                    }
+                }
             }
         }
 
@@ -259,7 +293,7 @@ public class InfrastructureSpawner : MonoBehaviour
         Canvas canvas = buildingObj.GetComponent<Canvas>();
         if (canvas != null)
         {
-            canvas.sortingOrder = 1;
+            canvas.sortingOrder = 1; // Above paths
         }
         else
         {
@@ -268,7 +302,7 @@ public class InfrastructureSpawner : MonoBehaviour
         }
 
         spawnedBuildings.Add(buildingObj);
-        Debug.Log($"✅ Spawned infrastructure: {infrastructure.name} at position {pos}");
+        Debug.Log($"✅ Spawned infrastructure: {infrastructure.name} at position {pos} with category: {cat?.name}");
     }
 
     /// <summary>

@@ -3,7 +3,7 @@
     "infra_id": 1,
     "name": "College of Engineering",
     "category_id": 1,
-    "image_url": "images/engineering.png",
+    "image_url": "Images/icons/engineering.png",
     "email": "engg@university.edu",
     "phone": "+63 912 345 6789"
   },
@@ -11,7 +11,7 @@
     "infra_id": 2,
     "name": "Main Library",
     "category_id": 1,
-    "image_url": "images/library.png",
+    "image_url": "Images/icons/library.png",
     "email": "library@university.edu",
     "phone": "+63 934 567 8901"
   },
@@ -19,7 +19,7 @@
     "infra_id": 3,
     "name": "Cafeteria",
     "category_id": 4,
-    "image_url": "images/cafeteria.png",
+    "image_url": "Images/icons/cafeteria.png",
     "email": "cafeteria@university.edu",
     "phone": "+63 956 789 0123"
   },
@@ -27,7 +27,7 @@
     "infra_id": 4,
     "name": "Gate 1 Entrance",
     "category_id": 3,
-    "image_url": "images/gate.png",
+    "image_url": "Images/icons/gate.png",
     "email": "gate@university.edu",
     "phone": "+63 900 000 0000"
   }

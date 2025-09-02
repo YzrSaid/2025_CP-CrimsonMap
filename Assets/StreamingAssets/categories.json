@@ -2,25 +2,25 @@
   {
     "category_id": 1,
     "name": "Academics",
-    "icon": "icons/academic_icon.png",
+    "icon": "Images/icons/academic_icon.png",
     "building_id": [1, 5, 8]
   },
   {
     "category_id": 2,
     "name": "Clinics",
-    "icon": "icons/clinics_icon.png",
+    "icon": "Images/icons/clinics_icon.png",
     "building_id": [4]
   },
   {
     "category_id": 3,
     "name": "Dormitories",
-    "icon": "icons/dormitory_icon.png",
+    "icon": "Images/icons/dormitory_icon.png",
     "building_id": [6]
   },
   {
     "category_id": 4,
     "name": "Food & Cafeterias",
-    "icon": "icons/cafeteria_icon.png",
+    "icon": "Images/icons/cafeteria_icon.png",
     "building_id": [7]
   }
 ]
