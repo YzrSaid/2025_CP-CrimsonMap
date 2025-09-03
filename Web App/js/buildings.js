@@ -1,28 +1,27 @@
-import { 
-    initializeApp 
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-
-import { 
-    getFirestore, collection, addDoc, getDocs, query, orderBy 
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-
-// Import config from another file
+// ======================= FIREBASE SETUP ===========================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 import { firebaseConfig } from "./../firebaseConfig.js";
 
-// Init Firebase
+// Initialize Firebase and Firestore
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// =================== CATEGORY FUNCTIONS ===================
 
-// Modal open/close (for categories)
-function openModal() { document.getElementById('addCategoryModal').style.display = 'block'; }
-function closeModal() { document.getElementById('addCategoryModal').style.display = 'none'; }
-window.openModal = openModal;
-window.closeModal = closeModal;
+// ======================= CATEGORY SECTION =========================
 
-// Convert file to Base64 (for category icon)
-function fileToBase64(file) {
+// ----------- Modal Controls -----------
+function showCategoryModal() {
+    document.getElementById('addCategoryModal').style.display = 'flex';
+}
+function hideCategoryModal() {
+    document.getElementById('addCategoryModal').style.display = 'none';
+}
+window.showCategoryModal = showCategoryModal;
+window.hideCategoryModal = hideCategoryModal;
+
+// ----------- File to Base64 Utility -----------
+function convertFileToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
@@ -31,17 +30,15 @@ function fileToBase64(file) {
     });
 }
 
-
-// Load categories into table
-async function loadCategories() { 
+// ----------- Load Categories Table -----------
+async function renderCategoriesTable() {
     const tbody = document.getElementById("categoriesTableBody");
-    if (!tbody) return; // prevent error if table is not present
+    if (!tbody) return;
     tbody.innerHTML = "";
 
     try {
         const querySnapshot = await getDocs(collection(db, "Categories"));
         const categories = querySnapshot.docs.map(doc => doc.data());
-
         categories.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
 
         categories.forEach((data, index) => {
@@ -58,22 +55,19 @@ async function loadCategories() {
             `;
             tbody.appendChild(tr);
         });
-
     } catch (err) {
         console.error("Error loading categories: ", err);
     }
 }
 
-
-// Handle category form submit
+// ----------- Add Category Handler -----------
 document.getElementById('categoryForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const name = document.getElementById('categoryName').value;
     const iconFile = document.getElementById('categoryIcon').files[0];
-
     let iconBase64 = '';
-    if (iconFile) iconBase64 = await fileToBase64(iconFile);
+    if (iconFile) iconBase64 = await convertFileToBase64(iconFile);
 
     try {
         await addDoc(collection(db, "Categories"), {
@@ -87,55 +81,20 @@ document.getElementById('categoryForm')?.addEventListener('submit', async (e) =>
 
         alert("Category saved!");
         document.getElementById('categoryForm').reset();
-        closeModal();
-        loadCategories();
-        loadCategoriesIntoDropdown(); // refresh dropdown for buildings
-    } catch (err) { 
-        alert("Error adding category: " + err); 
-    } 
+        hideCategoryModal();
+        renderCategoriesTable();
+        populateCategoryDropdownForBuildings();
+    } catch (err) {
+        alert("Error adding category: " + err);
+    }
 });
 
-
-
-// =================== BUILDING FUNCTIONS ===================
-
-function openBuildingModal() { 
-    document.getElementById('addBuildingModal').style.display = 'flex'; 
-    generateNextBuildingId(); // auto-generate ID every time modal opens 
-}
-function closeBuildingModal() {
-    document.getElementById('addBuildingModal').style.display = 'none';
-}
-window.openBuildingModal = openBuildingModal;
-window.closeBuildingModal = closeBuildingModal;
-
-
-
-// =============== AUTO INCREMENT BUILDING ID =============== 
-async function generateNextBuildingId() { 
-    const q = query(collection(db, "Buildings")); 
-    const snapshot = await getDocs(q);
-
-    let maxNum = 0;
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.building_id) { 
-            const num = parseInt(data.building_id.replace("BLD-", "")); 
-            if (!isNaN(num) && num > maxNum) maxNum = num; 
-        }
-    });
-
-    const nextId = `BLD-${String(maxNum + 1).padStart(3, "0")}`;
-    document.getElementById("buildingId").value = nextId; 
-}
-
-// Load categories into dropdown (inside Add Building modal)
-async function loadCategoriesIntoDropdown() {
-    const categorySelect = document.querySelector("#addBuildingModal select");
+// ----------- Populate Category Dropdown for Infrastructure -----------
+async function populateCategoryDropdownForInfra() {
+    const categorySelect = document.querySelector("#addInfraModal select");
     if (!categorySelect) return;
 
     categorySelect.innerHTML = `<option value="">Select a category</option>`;
-
     const q = query(collection(db, "Categories"), orderBy("createdAt", "asc"));
     const snapshot = await getDocs(q);
 
@@ -151,79 +110,108 @@ async function loadCategoriesIntoDropdown() {
 }
 
 
+// ======================= INFRASTRUCTURE SECTION =========================
 
-// Handle add building form submit
-document.querySelector("#addBuildingModal form")?.addEventListener("submit", async (e) => {
+// ----------- Modal Controls -----------
+function showInfraModal() {
+    document.getElementById('addInfraModal').style.display = 'flex';
+    generateNextInfraId();
+}
+function hideInfraModal() {
+    document.getElementById('addInfraModal').style.display = 'none';
+}
+window.showInfraModal = showInfraModal;
+window.hideInfraModal = hideInfraModal;
+
+// ----------- Auto-Increment Infra ID -----------
+async function generateNextInfraId() {
+    const q = query(collection(db, "Infrastructure"));
+    const snapshot = await getDocs(q);
+
+    let maxNum = 0;
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.infra_id) {
+            const num = parseInt(data.infra_id.replace("INFA-", ""));
+            if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+    });
+
+    const nextId = `INFA-${String(maxNum + 1).padStart(2, "0")}`;
+    document.getElementById("infraId").value = nextId;
+}
+
+// ----------- Add Infrastructure Handler -----------
+document.querySelector("#addInfraModal form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const name = document.querySelector('#addBuildingModal input[placeholder="e.g. College of Nursing"]').value.trim();
-    const buildingId = document.getElementById("buildingId").value.trim();
-    const categoryId = document.querySelector('#addBuildingModal select').value;
-    const latitude = document.querySelector('#addBuildingModal input[placeholder="Latitude"]').value.trim();
-    const longitude = document.querySelector('#addBuildingModal input[placeholder="Longitude"]').value.trim();
-    const location = document.querySelector('#addBuildingModal input[placeholder="e.g. Near Gate 6 and College of Engineering"]').value.trim();
-    const phone = document.querySelector('#addBuildingModal input[type="text"][placeholder=""]').value.trim();
+    const name = document.querySelector('#addInfraModal input[placeholder="e.g. Main Library"]').value.trim();
+    const infraId = document.getElementById("infraId").value.trim();
+    const categoryId = document.querySelector('#addInfraModal select').value;
+    const phone = document.querySelector('#addInfraModal input[type="text"][placeholder="e.g. 09123456789"]').value.trim();
+    const email = document.querySelector('#addInfraModal input[type="email"]').value.trim();
+    // Image upload (optional)
+    let imageUrl = "";
+    const imageFile = document.getElementById('uploadImage').files[0];
+    if (imageFile) {
+        imageUrl = await convertFileToBase64(imageFile);
+    }
 
-    if (!name || !buildingId || !categoryId || !latitude || !longitude || !location) {
+    if (!name || !infraId || !categoryId) {
         alert("Please fill in all required fields.");
         return;
     }
 
     try {
-        await addDoc(collection(db, "Buildings"), {
-            building_id: buildingId,
+        await addDoc(collection(db, "Infrastructure"), {
+            infra_id: infraId,
             name: name,
             category_id: categoryId,
-            location: location,
-            latitude: latitude,
-            longitude: longitude,
-            image_url: "",
-            facility: "",
-            email: "",
-            phone: phone || "",
+            image_url: imageUrl,
+            email: email,
+            phone: phone,
             is_deleted: false,
             createdAt: new Date()
         });
 
-        alert("Building saved successfully!");
+        alert("Infrastructure saved successfully!");
         e.target.reset();
-        document.getElementById('addBuildingModal').style.display = 'none';
-        loadBuildings(); // refresh table
+        hideInfraModal();
+        renderInfraTable();
     } catch (err) {
-        console.error("Error adding building:", err);
-        alert("Error saving building.");
+        console.error("Error adding infrastructure:", err);
+        alert("Error saving infrastructure.");
     }
 });
 
-// Load buildings into table
-async function loadBuildings() {
-    const tbody = document.querySelector(".building-table tbody");
+// ----------- Load Infrastructure Table -----------
+async function renderInfraTable() {
+    const tbody = document.querySelector(".infra-table tbody");
     if (!tbody) return;
     tbody.innerHTML = "";
 
     try {
-        const querySnapshot = await getDocs(collection(db, "Buildings"));
-        const buildings = querySnapshot.docs.map(doc => doc.data());
+        const querySnapshot = await getDocs(collection(db, "Infrastructure"));
+        const infras = querySnapshot.docs.map(doc => doc.data());
+        infras.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
 
-        // Sort by createdAt ascending
-        buildings.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
+        // Get all categories once
+        const catSnap = await getDocs(collection(db, "Categories"));
+        const catMap = {};
+        catSnap.forEach(c => {
+            const data = c.data();
+            catMap[data.category_id] = data.name;
+        });
 
-        for (const data of buildings) {
-            // fetch category name
-            let categoryName = "N/A";
-            if (data.category_id) {
-                const cats = await getDocs(collection(db, "Categories"));
-                const match = cats.docs.find(c => c.data().category_id === data.category_id);
-                if (match) categoryName = match.data().name;
-            }
-
+        for (const data of infras) {
+            const categoryName = catMap[data.category_id] || "N/A";
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td>${data.building_id}</td>
+                <td>${data.infra_id}</td>
                 <td>${data.name}</td>
                 <td>${categoryName}</td>
-                <td>${data.location}</td>
-                <td>${data.latitude}, ${data.longitude}</td>
+                <td>${data.phone || ""}</td>
+                <td>${data.email || ""}</td>
                 <td class="actions">
                     <button class="edit"><i class="fas fa-edit"></i></button>
                     <button class="delete"><i class="fas fa-trash"></i></button>
@@ -232,25 +220,26 @@ async function loadBuildings() {
             tbody.appendChild(tr);
         }
     } catch (err) {
-        console.error("Error loading buildings: ", err);
+        console.error("Error loading infrastructure: ", err);
     }
 }
 
-// =================== ROOM FUNCTIONS ===================
 
-// Open / Close modal
-function openRoomModal() {
+// ======================= ROOM SECTION =========================
+
+// ----------- Modal Controls -----------
+function showRoomModal() {
     document.getElementById('addRoomModal').style.display = 'flex';
-    generateNextRoomId();   // auto-generate ID
-    loadBuildingsIntoDropdown(); // populate building dropdown
+    generateNextRoomId();
+    populateBuildingDropdownForRooms();
 }
-function closeRoomModal() {
+function hideRoomModal() {
     document.getElementById('addRoomModal').style.display = 'none';
 }
-window.openRoomModal = openRoomModal;
-window.closeRoomModal = closeRoomModal;
+window.showRoomModal = showRoomModal;
+window.hideRoomModal = hideRoomModal;
 
-// =============== AUTO INCREMENT ROOM ID =============== 
+// ----------- Auto-Increment Room ID -----------
 async function generateNextRoomId() {
     const q = query(collection(db, "Rooms"));
     const snapshot = await getDocs(q);
@@ -268,14 +257,12 @@ async function generateNextRoomId() {
     document.getElementById("roomId").value = nextId;
 }
 
-
-// =============== LOAD BUILDINGS INTO DROPDOWN =============== 
-async function loadBuildingsIntoDropdown() {
+// ----------- Populate Building Dropdown for Rooms -----------
+async function populateBuildingDropdownForRooms() {
     const select = document.querySelector("#addRoomModal select");
     if (!select) return;
 
     select.innerHTML = `<option value="">Select a building</option>`;
-
     const q = query(collection(db, "Buildings"), orderBy("createdAt", "asc"));
     const snapshot = await getDocs(q);
 
@@ -290,7 +277,7 @@ async function loadBuildingsIntoDropdown() {
     });
 }
 
-// =============== HANDLE ADD ROOM SUBMIT =============== 
+// ----------- Add Room Handler -----------
 document.querySelector("#addRoomModal form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -322,16 +309,16 @@ document.querySelector("#addRoomModal form")?.addEventListener("submit", async (
 
         alert("Room saved successfully!");
         e.target.reset();
-        document.getElementById('addRoomModal').style.display = 'none';
-        loadRooms(); // refresh table
+        hideRoomModal();
+        renderRoomsTable();
     } catch (err) {
         console.error("Error adding room:", err);
         alert("Error saving room.");
     }
 });
 
-// =============== LOAD ROOMS INTO TABLE =============== 
-async function loadRooms() {
+// ----------- Load Rooms Table -----------
+async function renderRoomsTable() {
     const tbody = document.querySelector(".rooms-table tbody");
     if (!tbody) return;
     tbody.innerHTML = "";
@@ -339,8 +326,6 @@ async function loadRooms() {
     try {
         const querySnapshot = await getDocs(collection(db, "Rooms"));
         const rooms = querySnapshot.docs.map(doc => doc.data());
-
-        // Sort by createdAt ascending
         rooms.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
 
         // Get all buildings once to avoid many queries
@@ -353,7 +338,6 @@ async function loadRooms() {
 
         for (const data of rooms) {
             const buildingName = buildingsMap[data.building_id] || "N/A";
-
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${data.room_id}</td>
@@ -373,95 +357,65 @@ async function loadRooms() {
     }
 }
 
-// =================== INITIAL LOAD =================== 
+
+// ======================= UI & TAB CONTROLS =========================
+
+// ----------- Initial Data Load -----------
 window.onload = () => {
-    loadCategories(); // for building modal
-    loadCategoriesIntoDropdown(); 
-    loadBuildings();
-    loadRooms();
+    renderCategoriesTable();
+    populateCategoryDropdownForInfra();
+    renderInfraTable();
+    renderRoomsTable();
 };
 
-
+// ----------- Tab Switching Logic -----------
 const tabs = document.querySelectorAll('.tab');
 const tables = {
-    buildtbl: document.querySelector('.buildtbl'),
+    infratbl: document.querySelector('.infratbl'),
     roomstbl: document.querySelector('.roomstbl'),
     categoriestbl: document.querySelector('.categoriestbl')
 };
-
 const addButton = document.querySelector('.addbtn button');
-
-// Define button text for each tab
 const buttonTexts = {
-    buildtbl: 'Add Building',
+    infratbl: 'Add Infrastructure',
     roomstbl: 'Add Room',
     categoriestbl: 'Add Category'
 };
 
-// Tab switching logic
 tabs.forEach(tab => {
     tab.addEventListener('click', () => {
         tabs.forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
-
         Object.values(tables).forEach(tbl => tbl.style.display = 'none');
-
         const target = tab.getAttribute('data-target');
-        if (tables[target]) {
-            tables[target].style.display = '';
-        }
-
-        if (buttonTexts[target]) {
-            addButton.textContent = buttonTexts[target];
-        }
+        if (tables[target]) tables[target].style.display = '';
+        if (buttonTexts[target]) addButton.textContent = buttonTexts[target];
     });
 });
 
-// Get modals
-const addBuildingModal = document.getElementById('addBuildingModal');
-const cancelBuildingBtn = document.querySelector('#addBuildingModal .cancel-btn');
+// ----------- Add Button Handler -----------
+addButton.addEventListener('click', () => {
+    if (addButton.textContent === 'Add Infrastructure') {
+        showInfraModal();
+    } else if (addButton.textContent === 'Add Room') {
+        showRoomModal();
+    } else if (addButton.textContent === 'Add Category') {
+        showCategoryModal();
+    }
+});
 
-const addRoomModal = document.getElementById('addRoomModal');
+// ----------- Modal Cancel Button Handlers -----------
+const cancelInfraBtn = document.querySelector('#addInfraModal .cancel-btn');
 const cancelRoomBtn = document.querySelector('#addRoomModal .cancel-btn');
-
-const addCategoryModal = document.getElementById('addCategoryModal');
 const cancelCategoryBtn = document.querySelector('#addCategoryModal .cancel-btn');
 
-// One click handler for the add button
-addButton.addEventListener('click', () => {
-    if (addButton.textContent === 'Add Building') {
-        addBuildingModal.style.display = 'flex';
-        window.openBuildingModal();
-    } 
-    else if (addButton.textContent === 'Add Room') {
-        addRoomModal.style.display = 'flex';
-        window.openRoomModal();
-    }
-    else if (addButton.textContent === 'Add Category') {
-        addCategoryModal.style.display = 'flex';
-    }
-});
+cancelInfraBtn.addEventListener('click', hideInfraModal);
+cancelRoomBtn.addEventListener('click', hideRoomModal);
+cancelCategoryBtn.addEventListener('click', hideCategoryModal);
 
-// Close modals when Cancel is clicked
-cancelBuildingBtn.addEventListener('click', () => {
-    addBuildingModal.style.display = 'none';
-});
-cancelRoomBtn.addEventListener('click', () => {
-    addRoomModal.style.display = 'none';
-});
-
-cancelCategoryBtn.addEventListener('click', () => {
-    addCategoryModal.style.display = 'none';
-});
-
-// Close when clicking outside the modal
-[addBuildingModal, addRoomModal].forEach(modal => {
+// ----------- Close Modal When Clicking Outside -----------
+[document.getElementById('addInfraModal'), document.getElementById('addRoomModal')].forEach(modal => {
     modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
+        if (e.target === modal) modal.style.display = 'none';
     });
 });
-
-window.openBuildingModal = openBuildingModal;
-window.closeBuildingModal = closeBuildingModal;

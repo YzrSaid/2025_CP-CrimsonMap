@@ -290,33 +290,33 @@ body {
 }
 
 
-/* Table */
-.building-table {
+/* Infrastructure Table */
+.infra-table {
     width: 100%;
     border-collapse: collapse;
     background: #fff;
 }
 
-.building-table th {
+.infra-table th {
     background: #b41c1c;
     color: white;
     padding: 10px;
     text-align: left;
-    border-right: 1px solid #fff; /* vertical lines between header cells */
+    border-right: 1px solid #fff;
 }
 
-.building-table th:last-child {
-    border-right: none; /* remove last border */
+.infra-table th:last-child {
+    border-right: none;
 }
 
-.building-table td {
+.infra-table td {
     padding: 10px;
-    border-bottom: 1px solid #ddd; /* horizontal lines */
-    border-right: 1px solid #ddd;  /* vertical lines */
+    border-bottom: 1px solid #ddd;
+    border-right: 1px solid #ddd;
 }
 
-.building-table td:last-child {
-    border-right: none; /* remove last border */
+.infra-table td:last-child {
+    border-right: none;
 }
 
 
@@ -574,7 +574,7 @@ h3 {
 
 /* Bigger modal for Add Category */
 #addCategoryModal .modal {
-    max-width: 600px;        /* wider modal */
+    max-width: 800px;        /* wider modal */
     padding: 25px;
 }
 
@@ -587,7 +587,7 @@ h3 {
 /* Make input have padding for button space */
 #addCategoryModal .icon-input input {
     padding-right: 40px;  /* space for plus button inside */
-    width: 350px;
+    width: 450px;
 }
 
 /* Plus button inside the input */

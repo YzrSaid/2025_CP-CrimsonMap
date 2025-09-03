@@ -1,26 +1,24 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js"; 
-import { 
-    getFirestore, collection, addDoc, getDocs, query, orderBy, where, updateDoc, doc   // ⬅️ added `where`
+// ======================= FIREBASE SETUP ===========================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import {
+    getFirestore, collection, addDoc, getDocs, query, orderBy, where, updateDoc, doc
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-
-// ✅ Firebase config
 import { firebaseConfig } from "./../firebaseConfig.js";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 
+// ======================= NODE SECTION =============================
 
-// =============== MODAL CONTROL ===============
-function openNodeModal() {
-    document.getElementById('addNodeModal').style.display = 'block';
+// ----------- Modal Controls -----------
+function showNodeModal() {
+    document.getElementById('addNodeModal').style.display = 'flex';
     generateNextNodeId();
-    loadBuildingsIntoDropdown();
+    loadBuildingsDropdownForNode();
 }
-
-function closeNodeModal() {
+function hideNodeModal() {
     document.getElementById('addNodeModal').style.display = 'none';
-
     // Reset all form fields EXCEPT nodeId
     document.getElementById("nodeName").value = "";
     document.getElementById("latitude").value = "";
@@ -28,10 +26,10 @@ function closeNodeModal() {
     document.getElementById("linkedBuilding").value = "";
     document.getElementById("qrAnchor").checked = false;
 }
-window.openNodeModal = openNodeModal;
-window.closeNodeModal = closeNodeModal;
+window.openNodeModal = showNodeModal;
+window.closeNodeModal = hideNodeModal;
 
-// =============== AUTO INCREMENT NODE ID ===============
+// ----------- Auto-Increment Node ID -----------
 async function generateNextNodeId() {
     const q = query(collection(db, "Nodes"));
     const snapshot = await getDocs(q);
@@ -49,9 +47,8 @@ async function generateNextNodeId() {
     document.getElementById("nodeId").value = nextId;
 }
 
-
-// =============== LOAD BUILDINGS INTO NODE MODAL DROPDOWN ===============
-async function loadBuildingsIntoDropdown() {
+// ----------- Load Buildings Dropdown for Node Modal -----------
+async function loadBuildingsDropdownForNode() {
     const buildingSelect = document.getElementById("linkedBuilding");
     if (!buildingSelect) return;
 
@@ -75,8 +72,8 @@ async function loadBuildingsIntoDropdown() {
     }
 }
 
-// ✅ NEW: load buildings into *edit modal* dropdown
-async function loadBuildingsIntoDropdownById(selectId) {
+// ----------- Load Buildings Dropdown by Element ID -----------
+async function loadBuildingsDropdownById(selectId) {
     const buildingSelect = document.getElementById(selectId);
     if (!buildingSelect) return;
 
@@ -100,9 +97,8 @@ async function loadBuildingsIntoDropdownById(selectId) {
     }
 }
 
-
-// =============== LOAD NODES INTO TABLE ===============
-async function loadNodes() { 
+// ----------- Load Nodes Table -----------
+async function renderNodesTable() {
     const tbody = document.querySelector(".nodetbl tbody");
     tbody.innerHTML = "";
 
@@ -117,9 +113,7 @@ async function loadNodes() {
             tr.innerHTML = `
                 <td>${data.node_id}</td>
                 <td>${data.name}</td>
-                <td>${data.coordinates ? 
-                    `${data.coordinates.latitude}, ${data.coordinates.longitude}` 
-                    : "-"}</td>
+                <td>${data.coordinates ? `${data.coordinates.latitude}, ${data.coordinates.longitude}` : "-"}</td>
                 <td>${data.linked_building_name || "-"}</td>
                 <td class="actions">
                     <i class="fas fa-edit"></i>
@@ -129,13 +123,12 @@ async function loadNodes() {
             tbody.appendChild(tr);
         });
 
-    } catch (err) { 
-        console.error("Error loading nodes: ", err); 
-    } 
+    } catch (err) {
+        console.error("Error loading nodes: ", err);
+    }
 }
 
-
-// =============== HANDLE NODE FORM SUBMIT ===============
+// ----------- Add Node Handler -----------
 document.getElementById("nodeForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -162,69 +155,58 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
         });
 
         alert("Node saved!");
-        closeNodeModal();
-        loadNodes();
+        hideNodeModal();
+        renderNodesTable();
 
-    } catch (err) { 
-        alert("Error adding node: " + err); 
+    } catch (err) {
+        alert("Error adding node: " + err);
     }
 });
 
+// ----------- Edit Node Handler -----------
 document.getElementById("editNodeForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const form = e.target;
-  const docId = form.dataset.docId;   // 👈 we stored this earlier when opening modal
-  if (!docId) {
-    alert("No document ID found for update");
-    return;
-  }
+    const form = e.target;
+    const docId = form.dataset.docId;
+    if (!docId) {
+        alert("No document ID found for update");
+        return;
+    }
 
-  const nodeId = document.getElementById("editNodeIdHidden").value; // hidden, original ID
-  const nodeName = document.getElementById("editNodeName").value;
-  const latitude = document.getElementById("editLatitude").value;
-  const longitude = document.getElementById("editLongitude").value;
-  const linkedBuildingSelect = document.getElementById("editLinkedBuilding");
-  const linkedBuildingId = linkedBuildingSelect.value;
-  const linkedBuildingName = linkedBuildingSelect.options[linkedBuildingSelect.selectedIndex]?.text || "";
-  const qrAnchor = document.getElementById("editQrAnchor").checked;
+    const nodeId = document.getElementById("editNodeIdHidden").value;
+    const nodeName = document.getElementById("editNodeName").value;
+    const latitude = document.getElementById("editLatitude").value;
+    const longitude = document.getElementById("editLongitude").value;
+    const linkedBuildingSelect = document.getElementById("editLinkedBuilding");
+    const linkedBuildingId = linkedBuildingSelect.value;
+    const linkedBuildingName = linkedBuildingSelect.options[linkedBuildingSelect.selectedIndex]?.text || "";
+    const qrAnchor = document.getElementById("editQrAnchor").checked;
 
-  try {
-    const nodeRef = doc(db, "Nodes", docId);
+    try {
+        const nodeRef = doc(db, "Nodes", docId);
 
-    await updateDoc(nodeRef, {
-      node_id: nodeId,
-      name: nodeName,
-      coordinates: { latitude, longitude },
-      linked_building: linkedBuildingId,
-      linked_building_name: linkedBuildingName,
-      qr_anchor: qrAnchor,
-      updated_at: new Date()
-    });
+        await updateDoc(nodeRef, {
+            node_id: nodeId,
+            name: nodeName,
+            coordinates: { latitude, longitude },
+            linked_building: linkedBuildingId,
+            linked_building_name: linkedBuildingName,
+            qr_anchor: qrAnchor,
+            updated_at: new Date()
+        });
 
-    alert("Node updated!");
-    document.getElementById("editNodeModal").style.display = "none";
-    loadNodes(); // refresh table
+        alert("Node updated!");
+        document.getElementById("editNodeModal").style.display = "none";
+        renderNodesTable();
 
-  } catch (err) {
-    console.error("Error updating node:", err);
-    alert("Error updating node: " + err.message);
-  }
+    } catch (err) {
+        console.error("Error updating node:", err);
+        alert("Error updating node: " + err.message);
+    }
 });
 
-
-
-
-
-
-
-
-
-
-
-//#cyan
-// =============== EDIT NODE HANDLER ===============
-// ✅ listens for clicks on the edit icon in the nodes table
+// ----------- Edit Node Modal Open Handler -----------
 document.querySelector(".nodetbl").addEventListener("click", async (e) => {
     if (!e.target.classList.contains("fa-edit")) return;
 
@@ -246,7 +228,7 @@ document.querySelector(".nodetbl").addEventListener("click", async (e) => {
         const docSnap = snap.docs[0];
         const nodeData = docSnap.data();
 
-        await loadBuildingsIntoDropdownById("editLinkedBuilding");
+        await loadBuildingsDropdownById("editLinkedBuilding");
 
         document.getElementById("editNodeId").value = nodeData.node_id ?? "";
         document.getElementById("editNodeIdHidden").value = nodeData.node_id ?? "";
@@ -271,7 +253,7 @@ document.querySelector(".nodetbl").addEventListener("click", async (e) => {
         const editForm = document.getElementById("editNodeForm");
         if (editForm) editForm.dataset.docId = docSnap.id;
 
-        document.getElementById("editNodeModal").style.display = "flex";  // 👈 show modal
+        document.getElementById("editNodeModal").style.display = "flex";
 
     } catch (err) {
         console.error("Error opening edit modal:", err);
@@ -279,12 +261,9 @@ document.querySelector(".nodetbl").addEventListener("click", async (e) => {
 });
 
 
+// ======================= EDGE SECTION =============================
 
-
-
-
-
-// =============== AUTO INCREMENT EDGE ID ===============
+// ----------- Auto-Increment Edge ID -----------
 async function generateNextEdgeId() {
     const q = query(collection(db, "Edges"));
     const snapshot = await getDocs(q);
@@ -303,15 +282,14 @@ async function generateNextEdgeId() {
     return nextId;
 }
 
-// =============== LOAD NODES INTO DROPDOWNS ===============
-async function loadNodesIntoDropdowns() {
+// ----------- Load Nodes into Edge Dropdowns -----------
+async function loadNodesDropdownsForEdge() {
     const startNodeSelect = document.getElementById("startNode");
-    const endNodeSelect   = document.getElementById("endNode");
+    const endNodeSelect = document.getElementById("endNode");
 
     startNodeSelect.innerHTML = `<option value="">Select start node</option>`;
-    endNodeSelect.innerHTML   = `<option value="">Select end node</option>`;
+    endNodeSelect.innerHTML = `<option value="">Select end node</option>`;
 
-    // ✅ Order nodes by created_at ascending
     const q = query(collection(db, "Nodes"), orderBy("created_at", "asc"));
     const snapshot = await getDocs(q);
 
@@ -331,14 +309,13 @@ async function loadNodesIntoDropdowns() {
     });
 }
 
-
-// =============== HANDLE EDGE FORM SUBMIT ===============
+// ----------- Add Edge Handler -----------
 document.querySelector("#addEdgeModal form").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const edgeId    = document.querySelector("#addEdgeModal input[type='text']").value;
+    const edgeId = document.querySelector("#addEdgeModal input[type='text']").value;
     const startNode = document.getElementById("startNode").value;
-    const endNode   = document.getElementById("endNode").value;
+    const endNode = document.getElementById("endNode").value;
 
     // Handle pathType (select OR custom input)
     let pathTypeEl = document.getElementById("pathType") || document.querySelector("input[name='pathType']");
@@ -349,13 +326,12 @@ document.querySelector("#addEdgeModal form").addEventListener("submit", async (e
     let elevation = elevationEl ? elevationEl.value.trim() : "";
 
     // Convert custom inputs into snake_case for DB storage
-    const toSnakeCase = str =>
-        str.toLowerCase().replace(/\s+/g, "_");
+    const toSnakeCase = str => str.toLowerCase().replace(/\s+/g, "_");
 
-    if (pathType && !["via_overpass","via_underpass","stairs","ramp"].includes(pathType)) {
+    if (pathType && !["via_overpass", "via_underpass", "stairs", "ramp"].includes(pathType)) {
         pathType = toSnakeCase(pathType);
     }
-    if (elevation && !["slope_up","slope_down","flat"].includes(elevation)) {
+    if (elevation && !["slope_up", "slope_down", "flat"].includes(elevation)) {
         elevation = toSnakeCase(elevation);
     }
 
@@ -364,7 +340,7 @@ document.querySelector("#addEdgeModal form").addEventListener("submit", async (e
             edge_id: edgeId,
             from_node: startNode,
             to_node: endNode,
-            distance: null, // to be added later
+            distance: null,
             path_type: pathType || null,
             elevations: elevation || null,
             is_active: true,
@@ -374,19 +350,15 @@ document.querySelector("#addEdgeModal form").addEventListener("submit", async (e
 
         alert("Edge saved!");
         document.getElementById("addEdgeModal").style.display = "none";
-        loadEdges();
+        renderEdgesTable();
 
     } catch (err) {
         alert("Error adding edge: " + err);
     }
 });
-//#
 
-
-
-
-// =============== LOAD EDGES INTO TABLE ===============
-async function loadEdges() {
+// ----------- Load Edges Table -----------
+async function renderEdgesTable() {
     const tbody = document.querySelector(".edgetbl tbody");
     if (!tbody) return;
     tbody.innerHTML = "";
@@ -397,18 +369,15 @@ async function loadEdges() {
     snapshot.forEach(doc => {
         const data = doc.data();
 
-        // --- Formatter helper ---
-        const formatText = (value, prefix = "") => {
+        // Formatter helper
+        const formatText = (value) => {
             if (!value) return "-";
-            // replace underscores with spaces, capitalize each word
-            const formatted = value
+            return value
                 .split("_")
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(" ");
-            return prefix ? `${prefix} ${formatted}` : formatted;
         };
 
-        // Format path_type and elevations
         const formattedPathType = formatText(data.path_type);
         const formattedElevation = formatText(data.elevations);
 
@@ -428,126 +397,102 @@ async function loadEdges() {
     });
 }
 
-
-// =============== MAKE FUNCTIONS GLOBAL FOR MODALS ===============
+// ----------- Edge Modal Controls -----------
 window.openEdgeModal = async function () {
-    document.getElementById("addEdgeModal").style.display = "block";
+    document.getElementById("addEdgeModal").style.display = "flex";
     await generateNextEdgeId();
-    await loadNodesIntoDropdowns();
+    await loadNodesDropdownsForEdge();
 };
-
 window.closeEdgeModal = function () {
     document.getElementById("addEdgeModal").style.display = "none";
 };
 
-// =============== LOAD DATA ON PAGE LOAD ===============
-window.onload = () => {
-    loadNodes();
-    loadEdges();
-};
 
+// ======================= EDIT EDGE SECTION =============================
 
-
-
-
-
-//#cyan
-// ================= EDIT EDGE MODAL =================
-
-// ================== TEMPLATE STORAGE ==================
-// store original select HTML so we can restore it later
+// ----------- Select Template Storage for Edit Modal -----------
 const selectTemplates = {};
 document.addEventListener("DOMContentLoaded", () => {
-  ["editPathType", "editElevation"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) selectTemplates[id] = el.outerHTML;
-  });
+    ["editPathType", "editElevation"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) selectTemplates[id] = el.outerHTML;
+    });
 });
 
-// recreate select if it was replaced with input
+// ----------- Ensure Select Exists (for custom input restoration) -----------
 function ensureSelectExists(selectId) {
-  let select = document.getElementById(selectId);
-  if (select) return select;
+    let select = document.getElementById(selectId);
+    if (select) return select;
 
-  // if an input exists instead, restore the select
-  const modal = document.getElementById("editEdgeModal");
-  const input = modal.querySelector(`input[name='${selectId}']`);
-  if (input) {
-    const tpl = selectTemplates[selectId];
-    if (!tpl) return null;
-    const wrapper = document.createElement("div");
-    wrapper.innerHTML = tpl.trim();
-    const newSelect = wrapper.firstElementChild;
-    input.parentNode.replaceChild(newSelect, input);
-    return newSelect;
-  }
-  return null;
-}
-
-// handle select vs custom input
-function handlePreselectOrCustom(selectId, value) {
-  let select = document.getElementById(selectId);
-  if (!select) select = ensureSelectExists(selectId);
-
-  if (!select) return;
-
-  if (!value) {
-    select.value = "";
-    return;
-  }
-
-  const optionExists = Array.from(select.options).some(opt => opt.value === value);
-  if (optionExists) {
-    select.value = value;
-  } else {
-    // custom value → replace with input
-    const input = document.createElement("input");
-    input.type = "text";
-    input.name = selectId;
-    input.value = value;
-    input.classList.add("custom-input");
-    select.parentNode.replaceChild(input, select);
-  }
-}
-
-
-
-// ================== EDIT EDGE MODAL ==================
-document.querySelector(".edgetbl").addEventListener("click", async (e) => {
-  if (e.target.classList.contains("fa-edit")) {
-    const tr = e.target.closest("tr");
-    const edgeId = tr.children[0].textContent; // first td = edge_id
-
-    // Get edge data from Firestore
-    const q = query(collection(db, "Edges"), where("edge_id", "==", edgeId));
-    const snapshot = await getDocs(q);
-
-    if (!snapshot.empty) {
-      const docSnap = snapshot.docs[0];
-      const data = docSnap.data();
-
-      // Fill modal fields
-      document.getElementById("editEdgeId").value = data.edge_id;
-
-      // Load nodes into dropdowns and pre-select
-      await loadNodesIntoDropdownsForEdit(data.from_node, data.to_node);
-
-      // Handle path type & elevation properly
-      handlePreselectOrCustom("editPathType", data.path_type);
-      handlePreselectOrCustom("editElevation", data.elevations);
-
-      // Store doc ID for saving
-      document.getElementById("editEdgeModal").dataset.docId = docSnap.id;
-
-      // Show modal
-      document.getElementById("editEdgeModal").style.display = "flex";
+    const modal = document.getElementById("editEdgeModal");
+    const input = modal.querySelector(`input[name='${selectId}']`);
+    if (input) {
+        const tpl = selectTemplates[selectId];
+        if (!tpl) return null;
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = tpl.trim();
+        const newSelect = wrapper.firstElementChild;
+        input.parentNode.replaceChild(newSelect, input);
+        return newSelect;
     }
-  }
-});
-//#
+    return null;
+}
 
-// Helper to load nodes into edit dropdowns and select current values
-async function loadNodesIntoDropdownsForEdit(selectedFrom, selectedTo) {
+// ----------- Handle Preselect or Custom Input for Edit Modal -----------
+function handlePreselectOrCustom(selectId, value) {
+    let select = document.getElementById(selectId);
+    if (!select) select = ensureSelectExists(selectId);
+
+    if (!select) return;
+
+    if (!value) {
+        select.value = "";
+        return;
+    }
+
+    const optionExists = Array.from(select.options).some(opt => opt.value === value);
+    if (optionExists) {
+        select.value = value;
+    } else {
+        // custom value → replace with input
+        const input = document.createElement("input");
+        input.type = "text";
+        input.name = selectId;
+        input.value = value;
+        input.classList.add("custom-input");
+        select.parentNode.replaceChild(input, select);
+    }
+}
+
+// ----------- Edit Edge Modal Open Handler -----------
+document.querySelector(".edgetbl").addEventListener("click", async (e) => {
+    if (e.target.classList.contains("fa-edit")) {
+        const tr = e.target.closest("tr");
+        const edgeId = tr.children[0].textContent;
+
+        // Get edge data from Firestore
+        const q = query(collection(db, "Edges"), where("edge_id", "==", edgeId));
+        const snapshot = await getDocs(q);
+
+        if (!snapshot.empty) {
+            const docSnap = snapshot.docs[0];
+            const data = docSnap.data();
+
+            document.getElementById("editEdgeId").value = data.edge_id;
+
+            await loadNodesDropdownsForEditEdge(data.from_node, data.to_node);
+
+            handlePreselectOrCustom("editPathType", data.path_type);
+            handlePreselectOrCustom("editElevation", data.elevations);
+
+            document.getElementById("editEdgeModal").dataset.docId = docSnap.id;
+            document.getElementById("editEdgeModal").style.display = "flex";
+        }
+    }
+});
+
+// ----------- Load Nodes into Edit Edge Dropdowns -----------
+async function loadNodesDropdownsForEditEdge(selectedFrom, selectedTo) {
     const startNodeSelect = document.getElementById("editStartNode");
     const endNodeSelect = document.getElementById("editEndNode");
 
@@ -575,10 +520,9 @@ async function loadNodesIntoDropdownsForEdit(selectedFrom, selectedTo) {
     });
 }
 
-// Handle "Other" replacement (Add + Edit modals)
-function handleOther(selectId) {
+// ----------- Handle "Other" Option for Selects -----------
+function handleOtherOption(selectId) {
     const select = document.getElementById(selectId);
-
     if (!select) return;
 
     select.addEventListener("change", function () {
@@ -600,16 +544,12 @@ function handleOther(selectId) {
         }
     });
 }
+handleOtherOption("pathType");
+handleOtherOption("elevation");
+handleOtherOption("editPathType");
+handleOtherOption("editElevation");
 
-// Apply for Add modal
-handleOther("pathType");
-handleOther("elevation");
-
-// Apply for Edit modal
-handleOther("editPathType");
-handleOther("editElevation");
-
-// Handle save changes (update Firestore)
+// ----------- Edit Edge Save Handler -----------
 document.querySelector("#editEdgeModal form").addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -622,16 +562,15 @@ document.querySelector("#editEdgeModal form").addEventListener("submit", async (
         return select ? select.value.trim() : (input ? input.value.trim() : "");
     };
 
-    // Convert custom input into snake_case
     const toSnakeCase = str => str.toLowerCase().replace(/\s+/g, "_");
 
     let pathType = getFieldValue("editPathType");
     let elevation = getFieldValue("editElevation");
 
-    if (pathType && !["via_overpass","via_underpass","stairs","ramp"].includes(pathType)) {
+    if (pathType && !["via_overpass", "via_underpass", "stairs", "ramp"].includes(pathType)) {
         pathType = toSnakeCase(pathType);
     }
-    if (elevation && !["slope_up","slope_down","flat"].includes(elevation)) {
+    if (elevation && !["slope_up", "slope_down", "flat"].includes(elevation)) {
         elevation = toSnakeCase(elevation);
     }
 
@@ -647,18 +586,16 @@ document.querySelector("#editEdgeModal form").addEventListener("submit", async (
 
         alert("Edge updated!");
         document.getElementById("editEdgeModal").style.display = "none";
-        loadEdges(); // refresh table
+        renderEdgesTable();
     } catch (err) {
         alert("Error updating edge: " + err);
     }
 });
 
-// Cancel button
+// ----------- Edit Edge Modal Cancel & Outside Click -----------
 document.getElementById("cancelEditEdgeBtn").addEventListener("click", () => {
     document.getElementById("editEdgeModal").style.display = "none";
 });
-
-// Close if clicked outside
 document.getElementById("editEdgeModal").addEventListener("click", (e) => {
     if (e.target.id === "editEdgeModal") {
         document.getElementById("editEdgeModal").style.display = "none";
@@ -666,27 +603,15 @@ document.getElementById("editEdgeModal").addEventListener("click", (e) => {
 });
 
 
+// ======================= UI & TAB CONTROLS =============================
 
+// ----------- Initial Data Load -----------
+window.onload = () => {
+    renderNodesTable();
+    renderEdgesTable();
+};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// ----------- Tab & Modal Controls -----------
 document.addEventListener("DOMContentLoaded", function () {
     const tabs = document.querySelectorAll(".top-tabs .tab");
     const tables = document.querySelectorAll(".bottom-tbl > div");
@@ -701,8 +626,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Button text mapping
     const buttonTexts = [
-        "Add Node",   // Tab 1
-        "Add Edge"    // Tab 2
+        "Add Node",
+        "Add Edge"
     ];
 
     // Tab switching
@@ -719,10 +644,10 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // ✅ Open modal
+    // Open modal
     addButton.addEventListener("click", () => {
         if (addButton.textContent === "Add Node") {
-            window.openNodeModal(); // <-- use the function from your module script
+            window.openNodeModal();
             addNodeModal.style.display = "flex";
         } else if (addButton.textContent === "Add Edge") {
             window.openEdgeModal();
@@ -750,8 +675,3 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
-
-
-
-
-
