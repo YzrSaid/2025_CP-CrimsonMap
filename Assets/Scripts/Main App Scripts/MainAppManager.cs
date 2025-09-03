@@ -24,7 +24,8 @@ public class MainAppManager : MonoBehaviour
     // --- New additions for map & "I'm Here" button ---
     public MapButtonsAndControlsScript mapController;  // Assign your MapContainer script here
     public Button imHereButton;                        // Assign your "I'm Here" button here
-    public Vector2 userMapLocalPosition;               // Set/update this to user's position on map
+    
+    // Remove the hardcoded userMapLocalPosition - we'll get it dynamically
 
     void Start()
     {
@@ -84,23 +85,61 @@ public class MainAppManager : MonoBehaviour
         settingsPanel.SetActive(true);
     }
 
-    // --- New method for I'm Here button ---
+    // --- Updated method for I'm Here button ---
     private void OnImHereClicked()
     {
-        if (mapController != null)
+        if (mapController == null)
         {
-            // If you want to center on a manually stored position:
-            mapController.CenterOnPosition(userMapLocalPosition);
+            Debug.LogWarning("MapController reference not assigned!");
+            return;
+        }
 
-            // Or if you want to center on the actual user pin in the map:
-            mapController.CenterOnUserPin();
+        // Get current GPS coordinates and convert to map position
+        if (GPSManager.Instance != null)
+        {
+            Vector2 gpsCoords = GPSManager.Instance.GetSmoothedCoordinates();
+            
+            // Check if we have valid GPS data
+            if (gpsCoords.x == 0f && gpsCoords.y == 0f)
+            {
+                Debug.LogWarning("I'm Here clicked but GPS coordinates are (0,0) - no valid location");
+                return;
+            }
+
+            // Convert GPS coordinates to map position
+            if (MapCoordinateSystem.Instance != null)
+            {
+                Vector2 mapPosition = MapCoordinateSystem.Instance.LatLonToMapPosition(gpsCoords.x, gpsCoords.y);
+                Debug.Log($"I'm Here clicked - GPS: ({gpsCoords.x:F6}, {gpsCoords.y:F6}) -> Map: ({mapPosition.x:F2}, {mapPosition.y:F2})");
+                
+                // Center the map on the current user location
+                mapController.CenterOnPosition(mapPosition);
+            }
+            else
+            {
+                Debug.LogWarning("MapCoordinateSystem.Instance not found!");
+            }
         }
         else
         {
-            Debug.LogWarning("MapController reference not assigned!");
+            Debug.LogWarning("GPSManager.Instance not found!");
         }
+
+        // Alternative: If you want to use the existing user pin position
+        // mapController.CenterOnUserPin();
     }
 
-
-    // Optional: update userMapLocalPosition dynamically somewhere else as user moves
+    // Optional: Get current user position dynamically (for other uses)
+    public Vector2 GetCurrentUserMapPosition()
+    {
+        if (GPSManager.Instance != null && MapCoordinateSystem.Instance != null)
+        {
+Vector2 gpsCoords = GPSManager.Instance.GetSmoothedCoordinates();
+            if (gpsCoords.x != 0f || gpsCoords.y != 0f) // Valid GPS data
+            {
+                return MapCoordinateSystem.Instance.LatLonToMapPosition(gpsCoords.x, gpsCoords.y);
+            }
+        }
+        return Vector2.zero;
+    }
 }

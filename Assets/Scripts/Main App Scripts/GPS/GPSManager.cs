@@ -7,9 +7,9 @@ public class GPSManager : MonoBehaviour
     public static GPSManager Instance;
     public bool useMockLocationInEditor = true;
 
-    // Mock coordinates (example: WMSU Main Campus)
-    private float mockLatitude = 6.9077f;
-    private float mockLongitude = 122.0761f;
+    // In GPSManager - Fixed coordinates
+private float mockLatitude = 6.9215f;   // Middle of campus  
+private float mockLongitude = 122.0790f; // Middle of campus
 
     public void Start()
     {
@@ -76,4 +76,24 @@ public class GPSManager : MonoBehaviour
 
         return new Vector2(Input.location.lastData.latitude, Input.location.lastData.longitude);
     }
+
+    // Add this to GPSManager to smooth GPS readings
+private List<Vector2> recentCoordinates = new List<Vector2>();
+private int maxHistorySize = 5;
+
+public Vector2 GetSmoothedCoordinates()
+{
+    Vector2 rawCoords = GetCoordinates();
+    
+    recentCoordinates.Add(rawCoords);
+    if (recentCoordinates.Count > maxHistorySize)
+        recentCoordinates.RemoveAt(0);
+    
+    // Return average of recent coordinates
+    Vector2 sum = Vector2.zero;
+    foreach (var coord in recentCoordinates)
+        sum += coord;
+    
+    return sum / recentCoordinates.Count;
+}
 }

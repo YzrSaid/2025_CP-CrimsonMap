@@ -84,6 +84,7 @@
     <Compile Include="Assets/Scripts/Main App Scripts/InfrastructureSpawner.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/PathRenderer.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/BarrierSpawner.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/GPS/GPSDebug.cs" />
     <Compile Include="Assets/CanvasHelper.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MainAppManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/PolygonImage.cs" />

@@ -25,23 +25,32 @@ public class UserIndicator : MonoBehaviour
         userIndicatorInstance.transform.SetAsLastSibling();
     }
 
+    // In UserIndicator.cs, replace the Update() method with this:
+    private Vector2 lastMapPos = Vector2.zero;
+    private float updateInterval = 0.5f; 
+    private float lastUpdateTime = 0f;
+
     void Update()
     {
         if (GPSManager.Instance == null || userIndicatorInstance == null) return;
 
-        // Get GPS Data from the GPS Manager
-        UnityEngine.Vector2 gpsCoords = GPSManager.Instance.GetCoordinates();
+        if (!MapCoordinateSystem.Instance.AreBoundsReady()) return;
+        // Only update at intervals, not every frame
+        if (Time.time - lastUpdateTime < updateInterval) return;
+        lastUpdateTime = Time.time;
 
-        // Convert lat/lon to map position
-        UnityEngine.Vector2 mapPos = MapCoordinateSystem.Instance.LatLonToMapPosition(gpsCoords.x, gpsCoords.y);
+        Vector2 gpsCoords = GPSManager.Instance.GetSmoothedCoordinates();
+        Vector2 mapPos = MapCoordinateSystem.Instance.LatLonToMapPosition(gpsCoords.x, gpsCoords.y);
 
-        userIndicatorInstance.GetComponent<RectTransform>().anchoredPosition = mapPos;
-
-        // Ensure the user indicator stays on top (optional - only if needed)
-        // You can comment this out if performance is a concern
-        if (userIndicatorInstance.transform.GetSiblingIndex() != userIndicatorInstance.transform.parent.childCount - 1)
+        // Only update if position changed significantly (reduce flickering)
+        if (Vector2.Distance(mapPos, lastMapPos) > 1f) // 1 unit threshold
         {
-            userIndicatorInstance.transform.SetAsLastSibling();
+            // userIndicatorInstance.GetComponent<RectTransform>().anchoredPosition = mapPos;
+            // lastMapPos = mapPos;
+            userIndicatorInstance.GetComponent<RectTransform>().anchoredPosition =
+        Vector2.Lerp(lastMapPos, mapPos, 0.3f); // 0.3 = smoothness factor
+            lastMapPos = userIndicatorInstance.GetComponent<RectTransform>().anchoredPosition;
+
         }
     }
 
