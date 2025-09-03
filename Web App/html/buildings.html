@@ -79,6 +79,8 @@
                 <button class="tab active" data-target="infratbl">Infrastructure</button>
                 <button class="tab" data-target="roomstbl">Rooms</button>
                 <button class="tab" data-target="categoriestbl">Categories</button>
+                <button class="tab" data-target="maptbl">Maps</button>
+                <button class="tab" data-target="campustbl">Campus</button>
             </div>
 
             <!-- Search, Sort, Add Button -->
@@ -161,6 +163,40 @@
                     </thead>
                     <tbody id="categoriesTableBody">
                         <!-- rows will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Maps Table -->
+            <div class="maptbl" style="display:none;">
+                <table class="maps-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Map Name</th>
+                            <th>Campus Included</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- JS will populate this -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Campus Table -->
+            <div class="campustbl" style="display:none;">
+                <table class="campus-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Campus Name</th>
+                            <th>Map</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- JS will populate this -->
                     </tbody>
                 </table>
             </div>
@@ -335,7 +371,63 @@
     </div> 
 </div>
 
+<!-- Add Map Modal -->
+<div id="addMapModal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+        <h2>Add Map</h2>
+        <form>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Map Name</label>
+                    <input type="text" id="mapName" placeholder="e.g. Main Campus Map">
+                </div>
+                <div class="form-group">
+                    <label>Map ID</label>
+                    <input id="mapId" type="text" disabled>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Campus Included</label>
+                <select id="campusIncludedSelect">
+                    <!-- JS will populate this -->
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="save-btn">Save</button>
+                <button type="button" class="cancel-btn">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
 
+<!-- Add Campus Modal -->
+<div id="addCampusModal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+        <h2>Add Campus</h2>
+        <form>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Campus Name</label>
+                    <input type="text" id="campusName" placeholder="e.g. Main Campus">
+                </div>
+                <div class="form-group">
+                    <label>Campus ID</label>
+                    <input id="campusId" type="text" disabled>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Map</label>
+                <select id="mapSelect">
+                    <!-- JS will populate this -->
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="save-btn">Save</button>
+                <button type="button" class="cancel-btn">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <script type="module" src="/js/buildings.js "></script>
 </body>

@@ -609,3 +609,55 @@ h3 {
     align-items: center;
     justify-content: center;
 }
+
+
+
+/* Maps Table */
+.maps-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+.maps-table th {
+    background: #b41c1c;
+    color: white;
+    padding: 10px;
+    text-align: left;
+    border-right: 1px solid #fff;
+}
+.maps-table th:last-child {
+    border-right: none;
+}
+.maps-table td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+}
+.maps-table td:last-child {
+    border-right: none;
+}
+
+/* Campus Table */
+.campus-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+.campus-table th {
+    background: #b41c1c;
+    color: white;
+    padding: 10px;
+    text-align: left;
+    border-right: 1px solid #fff;
+}
+.campus-table th:last-child {
+    border-right: none;
+}
+.campus-table td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+}
+.campus-table td:last-child {
+    border-right: none;
+}

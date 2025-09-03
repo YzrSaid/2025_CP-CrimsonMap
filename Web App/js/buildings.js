@@ -358,6 +358,246 @@ async function renderRoomsTable() {
 }
 
 
+// ======================= MAPS SECTION =========================
+
+// ----------- Modal Controls -----------
+function showMapModal() {
+    document.getElementById('addMapModal').style.display = 'flex';
+    generateNextMapId();
+    populateCampusIncludedSelect();
+}
+function hideMapModal() {
+    document.getElementById('addMapModal').style.display = 'none';
+}
+window.showMapModal = showMapModal;
+window.hideMapModal = hideMapModal;
+
+// ----------- Auto-Increment Map ID -----------
+async function generateNextMapId() {
+    const q = query(collection(db, "Maps"));
+    const snapshot = await getDocs(q);
+
+    let maxNum = 0;
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.map_id) {
+            const num = parseInt(data.map_id.replace("MAP-", ""));
+            if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+    });
+
+    const nextId = `MAP-${String(maxNum + 1).padStart(2, "0")}`;
+    document.getElementById("mapId").value = nextId;
+}
+
+// ----------- Populate Campus Included Select -----------
+async function populateCampusIncludedSelect() {
+    const select = document.getElementById("campusIncludedSelect");
+    if (!select) return;
+    select.innerHTML = "";
+    const q = query(collection(db, "Campus"), orderBy("createdAt", "asc"));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.campus_id && data.campus_name) {
+            const option = document.createElement("option");
+            option.value = data.campus_id;
+            option.textContent = data.campus_name;
+            select.appendChild(option);
+        }
+    });
+}
+
+// ----------- Add Map Handler -----------
+document.querySelector("#addMapModal form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const mapId = document.getElementById("mapId").value.trim();
+    const mapName = document.getElementById("mapName").value.trim();
+    const campusIncluded = document.getElementById("campusIncludedSelect").value;
+
+    if (!mapId || !mapName) {
+        alert("Please fill in all required fields.");
+        return;
+    }
+
+    try {
+        await addDoc(collection(db, "Maps"), {
+            map_id: mapId,
+            map_name: mapName,
+            campus_included: campusIncluded, // now a single campus_id string
+            createdAt: new Date()
+        });
+        alert("Map saved!");
+        e.target.reset();
+        hideMapModal();
+        renderMapsTable();
+    } catch (err) {
+        alert("Error saving map: " + err);
+    }
+});
+
+// ----------- Load Maps Table -----------
+async function renderMapsTable() {
+    const tbody = document.querySelector(".maps-table tbody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    try {
+        const querySnapshot = await getDocs(collection(db, "Maps"));
+        const maps = querySnapshot.docs.map(doc => doc.data());
+        maps.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
+
+        // Get all campuses for display
+        const campusSnap = await getDocs(collection(db, "Campus"));
+        const campusMap = {};
+        campusSnap.forEach(c => {
+            const data = c.data();
+            campusMap[data.campus_id] = data.campus_name;
+        });
+
+        for (const data of maps) {
+            const campusNames = campusMap[data.campus_included] || data.campus_included;
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${data.map_id}</td>
+                <td>${data.map_name}</td>
+                <td>${campusNames}</td>
+                <td class="actions">
+                    <button class="edit"><i class="fas fa-edit"></i></button>
+                    <button class="delete"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+    } catch (err) {
+        console.error("Error loading maps: ", err);
+    }
+}
+
+// ======================= CAMPUS SECTION =========================
+
+// ----------- Modal Controls -----------
+function showCampusModal() {
+    document.getElementById('addCampusModal').style.display = 'flex';
+    generateNextCampusId();
+    populateMapSelect();
+}
+function hideCampusModal() {
+    document.getElementById('addCampusModal').style.display = 'none';
+}
+window.showCampusModal = showCampusModal;
+window.hideCampusModal = hideCampusModal;
+
+// ----------- Auto-Increment Campus ID -----------
+async function generateNextCampusId() {
+    const q = query(collection(db, "Campus"));
+    const snapshot = await getDocs(q);
+
+    let maxNum = 0;
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.campus_id) {
+            const num = parseInt(data.campus_id.replace("CAMP-", ""));
+            if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+    });
+
+    const nextId = `CAMP-${String(maxNum + 1).padStart(2, "0")}`;
+    document.getElementById("campusId").value = nextId;
+}
+
+// ----------- Populate Map Select -----------
+async function populateMapSelect() {
+    const select = document.getElementById("mapSelect");
+    if (!select) return;
+    select.innerHTML = `<option value="">Select a map</option>`;
+    const q = query(collection(db, "Maps"), orderBy("createdAt", "asc"));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.map_id && data.map_name) {
+            const option = document.createElement("option");
+            option.value = data.map_id;
+            option.textContent = data.map_name;
+            select.appendChild(option);
+        }
+    });
+}
+
+// ----------- Add Campus Handler -----------
+document.querySelector("#addCampusModal form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const campusId = document.getElementById("campusId").value.trim();
+    const campusName = document.getElementById("campusName").value.trim();
+    const mapId = document.getElementById("mapSelect").value;
+
+    if (!campusId || !campusName || !mapId) {
+        alert("Please fill in all required fields.");
+        return;
+    }
+
+    try {
+        await addDoc(collection(db, "Campus"), {
+            campus_id: campusId,
+            campus_name: campusName,
+            map_id: mapId,
+            createdAt: new Date()
+        });
+        alert("Campus saved!");
+        e.target.reset();
+        hideCampusModal();
+        renderCampusTable();
+    } catch (err) {
+        alert("Error saving campus: " + err);
+    }
+});
+
+// ----------- Load Campus Table -----------
+async function renderCampusTable() {
+    const tbody = document.querySelector(".campus-table tbody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    try {
+        const querySnapshot = await getDocs(collection(db, "Campus"));
+        const campuses = querySnapshot.docs.map(doc => doc.data());
+        campuses.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
+
+        // Get all maps for display
+        const mapSnap = await getDocs(collection(db, "Maps"));
+        const mapMap = {};
+        mapSnap.forEach(m => {
+            const data = m.data();
+            mapMap[data.map_id] = data.map_name;
+        });
+
+        for (const data of campuses) {
+            const mapName = mapMap[data.map_id] || data.map_id;
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${data.campus_id}</td>
+                <td>${data.campus_name}</td>
+                <td>${mapName}</td>
+                <td class="actions">
+                    <button class="edit"><i class="fas fa-edit"></i></button>
+                    <button class="delete"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+    } catch (err) {
+        console.error("Error loading campuses: ", err);
+    }
+}
+
+
+
+
+
+
+
+
+
 // ======================= UI & TAB CONTROLS =========================
 
 // ----------- Initial Data Load -----------
@@ -366,6 +606,8 @@ window.onload = () => {
     populateCategoryDropdownForInfra();
     renderInfraTable();
     renderRoomsTable();
+    renderMapsTable();
+    renderCampusTable();
 };
 
 // ----------- Tab Switching Logic -----------
@@ -381,6 +623,11 @@ const buttonTexts = {
     roomstbl: 'Add Room',
     categoriestbl: 'Add Category'
 };
+// Add to your tables and buttonTexts objects:
+tables.maptbl = document.querySelector('.maptbl');
+tables.campustbl = document.querySelector('.campustbl');
+buttonTexts.maptbl = 'Add Map';
+buttonTexts.campustbl = 'Add Campus';
 
 tabs.forEach(tab => {
     tab.addEventListener('click', () => {
@@ -393,7 +640,7 @@ tabs.forEach(tab => {
     });
 });
 
-// ----------- Add Button Handler -----------
+// Extend Add Button Handler:
 addButton.addEventListener('click', () => {
     if (addButton.textContent === 'Add Infrastructure') {
         showInfraModal();
@@ -401,6 +648,10 @@ addButton.addEventListener('click', () => {
         showRoomModal();
     } else if (addButton.textContent === 'Add Category') {
         showCategoryModal();
+    } else if (addButton.textContent === 'Add Map') {
+        showMapModal();
+    } else if (addButton.textContent === 'Add Campus') {
+        showCampusModal();
     }
 });
 
@@ -408,13 +659,24 @@ addButton.addEventListener('click', () => {
 const cancelInfraBtn = document.querySelector('#addInfraModal .cancel-btn');
 const cancelRoomBtn = document.querySelector('#addRoomModal .cancel-btn');
 const cancelCategoryBtn = document.querySelector('#addCategoryModal .cancel-btn');
+const cancelMapBtn = document.querySelector('#addMapModal .cancel-btn');
+const cancelCampusBtn = document.querySelector('#addCampusModal .cancel-btn');
 
 cancelInfraBtn.addEventListener('click', hideInfraModal);
 cancelRoomBtn.addEventListener('click', hideRoomModal);
 cancelCategoryBtn.addEventListener('click', hideCategoryModal);
+cancelMapBtn.addEventListener('click', hideMapModal);
+cancelCampusBtn.addEventListener('click', hideCampusModal);
 
 // ----------- Close Modal When Clicking Outside -----------
 [document.getElementById('addInfraModal'), document.getElementById('addRoomModal')].forEach(modal => {
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.style.display = 'none';
+    });
+});
+
+// Close Modal When Clicking Outside:
+[document.getElementById('addMapModal'), document.getElementById('addCampusModal')].forEach(modal => {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.style.display = 'none';
     });
