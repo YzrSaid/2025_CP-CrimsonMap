@@ -15,7 +15,9 @@ const db = getFirestore(app);
 function showNodeModal() {
     document.getElementById('addNodeModal').style.display = 'flex';
     generateNextNodeId();
-    loadBuildingsDropdownForNode();
+    populateInfraDropdown();
+    populateRoomDropdown();
+    populateCampusDropdown();
 }
 function hideNodeModal() {
     document.getElementById('addNodeModal').style.display = 'none';
@@ -97,24 +99,124 @@ async function loadBuildingsDropdownById(selectId) {
     }
 }
 
+// ----------- Populate Related Infrastructure Dropdown -----------
+async function populateInfraDropdown() {
+    const select = document.getElementById("relatedInfra");
+    if (!select) return;
+    select.innerHTML = `<option value="">Select infrastructure</option>`;
+    const q = query(collection(db, "Infrastructure"));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.infra_id && data.name) {
+            const option = document.createElement("option");
+            option.value = data.infra_id;
+            option.textContent = data.name;
+            select.appendChild(option);
+        }
+    });
+}
+
+// ----------- Populate Related Room Dropdown -----------
+async function populateRoomDropdown() {
+    const select = document.getElementById("relatedRoom");
+    if (!select) return;
+    select.innerHTML = `<option value="">Select room</option>`;
+    const q = query(collection(db, "Rooms"));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.room_id && data.name) {
+            const option = document.createElement("option");
+            option.value = data.room_id;
+            option.textContent = data.name;
+            select.appendChild(option);
+        }
+    });
+}
+
+// ----------- Populate Campus Dropdown -----------
+async function populateCampusDropdown() {
+    const select = document.getElementById("campusDropdown");
+    if (!select) return;
+    select.innerHTML = `<option value="">Select campus</option>`;
+    const q = query(collection(db, "Campus"));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.campus_id && data.campus_name) {
+            const option = document.createElement("option");
+            option.value = data.campus_id;
+            option.textContent = data.campus_name;
+            select.appendChild(option);
+        }
+    });
+}
+
 // ----------- Load Nodes Table -----------
 async function renderNodesTable() {
     const tbody = document.querySelector(".nodetbl tbody");
     tbody.innerHTML = "";
 
     try {
+        // Fetch all needed collections for mapping IDs to names
+        const [infraSnap, roomSnap, campusSnap] = await Promise.all([
+            getDocs(collection(db, "Infrastructure")),
+            getDocs(collection(db, "Rooms")),
+            getDocs(collection(db, "Campus"))
+        ]);
+
+        // Build lookup maps
+        const infraMap = {};
+        infraSnap.forEach(doc => {
+            const d = doc.data();
+            infraMap[d.infra_id] = d.name;
+        });
+
+        const roomMap = {};
+        roomSnap.forEach(doc => {
+            const d = doc.data();
+            roomMap[d.room_id] = d.name;
+        });
+
+        const campusMap = {};
+        campusSnap.forEach(doc => {
+            const d = doc.data();
+            campusMap[d.campus_id] = d.campus_name;
+        });
+
+        // Fetch nodes
         const q = query(collection(db, "Nodes"), orderBy("created_at", "asc"));
         const querySnapshot = await getDocs(q);
 
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
 
+            // Coordinates
+            const coords = (data.lat && data.lng) ? `${data.lat}, ${data.lng}` : "-";
+
+            // Related infra/room names
+            const infraName = data.related_infra_id ? (infraMap[data.related_infra_id] || data.related_infra_id) : "-";
+            const roomName = data.related_room_id ? (roomMap[data.related_room_id] || data.related_room_id) : "-";
+
+            // Indoor/Outdoor
+            let indoorOutdoor = "Outdoor";
+            if (data.indoor) {
+                indoorOutdoor = `Indoor (Floor: ${data.indoor.floor || "-"}, X: ${data.indoor.x || "-"}, Y: ${data.indoor.y || "-"})`;
+            }
+
+            // Campus name
+            const campusName = data.campus_id ? (campusMap[data.campus_id] || data.campus_id) : "-";
+
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${data.node_id}</td>
                 <td>${data.name}</td>
-                <td>${data.coordinates ? `${data.coordinates.latitude}, ${data.coordinates.longitude}` : "-"}</td>
-                <td>${data.linked_building_name || "-"}</td>
+                <td>${coords}</td>
+                <td>${infraName}</td>
+                <td>${roomName}</td>
+                <td>${indoorOutdoor}</td>
+                <td>${campusName}</td>
                 <td class="actions">
                     <i class="fas fa-edit"></i>
                     <i class="fas fa-trash"></i>
@@ -128,6 +230,30 @@ async function renderNodesTable() {
     }
 }
 
+// ----------- Type Dropdown/Input Switch -----------
+document.addEventListener("DOMContentLoaded", function() {
+    const typeSelect = document.getElementById("nodeType");
+    let typeInput = null;
+
+    typeSelect.addEventListener("change", function() {
+        if (this.value === "other") {
+            typeInput = document.createElement("input");
+            typeInput.type = "text";
+            typeInput.id = "nodeType";
+            typeInput.placeholder = "Enter type";
+            typeInput.classList.add("custom-input");
+            this.parentNode.replaceChild(typeInput, this);
+
+            typeInput.addEventListener("blur", function() {
+                if (typeInput.value.trim() === "") {
+                    typeInput.parentNode.replaceChild(typeSelect, typeInput);
+                    typeSelect.value = "";
+                }
+            });
+        }
+    });
+});
+
 // ----------- Add Node Handler -----------
 document.getElementById("nodeForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -136,26 +262,56 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
     const nodeName = document.getElementById("nodeName").value;
     const latitude = document.getElementById("latitude").value;
     const longitude = document.getElementById("longitude").value;
-    const linkedBuildingSelect = document.getElementById("linkedBuilding");
-    const linkedBuildingId = linkedBuildingSelect.value;
-    const linkedBuildingName = linkedBuildingSelect.options[linkedBuildingSelect.selectedIndex]?.text || "";
-    const qrAnchor = document.getElementById("qrAnchor").checked;
+
+    // Type: could be select or input
+    let typeEl = document.getElementById("nodeType");
+    let type = typeEl ? typeEl.value : "";
+    if (!type && typeEl && typeEl.tagName === "INPUT") {
+        type = typeEl.value;
+    }
+
+    const relatedInfraId = document.getElementById("relatedInfra").value;
+    const relatedRoomId = document.getElementById("relatedRoom").value;
+
+    // Indoor/Outdoor
+    const isIndoor = document.getElementById("indoorCheckbox").checked;
+    let indoor = null;
+    if (isIndoor) {
+        indoor = {
+            floor: document.getElementById("floor").value,
+            x: document.getElementById("xCoord").value,
+            y: document.getElementById("yCoord").value
+        };
+    }
+
+    const campusId = document.getElementById("campusDropdown").value;
 
     try {
         await addDoc(collection(db, "Nodes"), {
             node_id: nodeId,
             name: nodeName,
-            coordinates: { latitude, longitude },
-            linked_building: linkedBuildingId,
-            linked_building_name: linkedBuildingName,
-            qr_anchor: qrAnchor,
+            lat: latitude,
+            lng: longitude,
+            type: type,
+            related_infra_id: relatedInfraId,
+            related_room_id: relatedRoomId,
+            indoor: indoor,
             is_active: true,
-            is_deleted: false,
+            campus_id: campusId,
             created_at: new Date()
         });
 
-        alert("Node saved!");
+        // Clear all fields in the add node modal
+        document.getElementById("nodeForm").reset();
+        // If you have custom fields (like disabled nodeId), reset them manually:
+        generateNextNodeId();
+        // Hide indoor details if shown
+        document.getElementById("indoorDetails").style.display = "none";
+
+        // Close modal
         hideNodeModal();
+
+        // Refresh table
         renderNodesTable();
 
     } catch (err) {
@@ -163,48 +319,7 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
     }
 });
 
-// ----------- Edit Node Handler -----------
-document.getElementById("editNodeForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
 
-    const form = e.target;
-    const docId = form.dataset.docId;
-    if (!docId) {
-        alert("No document ID found for update");
-        return;
-    }
-
-    const nodeId = document.getElementById("editNodeIdHidden").value;
-    const nodeName = document.getElementById("editNodeName").value;
-    const latitude = document.getElementById("editLatitude").value;
-    const longitude = document.getElementById("editLongitude").value;
-    const linkedBuildingSelect = document.getElementById("editLinkedBuilding");
-    const linkedBuildingId = linkedBuildingSelect.value;
-    const linkedBuildingName = linkedBuildingSelect.options[linkedBuildingSelect.selectedIndex]?.text || "";
-    const qrAnchor = document.getElementById("editQrAnchor").checked;
-
-    try {
-        const nodeRef = doc(db, "Nodes", docId);
-
-        await updateDoc(nodeRef, {
-            node_id: nodeId,
-            name: nodeName,
-            coordinates: { latitude, longitude },
-            linked_building: linkedBuildingId,
-            linked_building_name: linkedBuildingName,
-            qr_anchor: qrAnchor,
-            updated_at: new Date()
-        });
-
-        alert("Node updated!");
-        document.getElementById("editNodeModal").style.display = "none";
-        renderNodesTable();
-
-    } catch (err) {
-        console.error("Error updating node:", err);
-        alert("Error updating node: " + err.message);
-    }
-});
 
 // ----------- Edit Node Modal Open Handler -----------
 document.querySelector(".nodetbl").addEventListener("click", async (e) => {
@@ -672,6 +787,31 @@ document.addEventListener("DOMContentLoaded", function () {
     addEdgeModal.addEventListener("click", (e) => {
         if (e.target === addEdgeModal) {
             addEdgeModal.style.display = "none";
+        }
+    });
+});
+
+
+
+// Show/hide indoor details based on checkbox
+document.addEventListener("DOMContentLoaded", function() {
+    const indoorCheckbox = document.getElementById("indoorCheckbox");
+    const outdoorCheckbox = document.getElementById("outdoorCheckbox");
+    const indoorDetails = document.getElementById("indoorDetails");
+
+    indoorCheckbox.addEventListener("change", function() {
+        if (indoorCheckbox.checked) {
+            indoorDetails.style.display = "block";
+            outdoorCheckbox.checked = false;
+        } else {
+            indoorDetails.style.display = "none";
+        }
+    });
+
+    outdoorCheckbox.addEventListener("change", function() {
+        if (outdoorCheckbox.checked) {
+            indoorCheckbox.checked = false;
+            indoorDetails.style.display = "none";
         }
     });
 });
