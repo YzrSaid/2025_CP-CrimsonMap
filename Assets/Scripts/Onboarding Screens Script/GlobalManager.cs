@@ -62,15 +62,7 @@ public class GlobalManager : MonoBehaviour
         SaveData data = new SaveData();
         data.onboardingComplete = this.onboardingComplete;
 
-        // Convert SaveData to JSON and write to file
-        if (!Directory.Exists(Application.persistentDataPath))
-        {
-            string json = JsonUtility.ToJson(data);
-            File.WriteAllText(savePath, json);
-        }
-        else
-        {
-            Debug.LogError("Save path does not exist: " + savePath);
-        }
+         string json = JsonUtility.ToJson(data);
+    File.WriteAllText(savePath, json);
     }
 }

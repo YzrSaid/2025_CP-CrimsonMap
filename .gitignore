@@ -6,18 +6,39 @@
 [Ll]ogs/
 [Mm]emoryCaptures/
 obj/
+UserSettings/
+Packages/com.unity.collab-proxy/
 
-# OS generated files
+# Firebase SDK
+Assets/Firebase/
+
+# Firebase configs (DO NOT push to public repos)
+Assets/Firebase Config/google-services.json
+Assets/Firebase Config/GoogleService-Info.plist
+
+# IDE and OS files
+.vscode/
+.idea/
 .DS_Store
 *.swp
 
-# IDE folders
-.vscode/
-.idea/
+# Cache and project files
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
 
 # Crash logs
 sysinfo.txt
 
-# Other
+# Mobile builds
 *.apk
+*.aab
 *.ipa
+

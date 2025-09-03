@@ -30,35 +30,43 @@ public class OnboardingManager : MonoBehaviour
         getStartedButton.onClick.AddListener(FinishOnboarding);
     }
 
-    // void ShowPage(int index)
-    // {
-    //     for (int i = 0; i < pages.Count; i++)
-    //     {
-    //         pages[i].SetActive(i == index);
-    //     }
-
-    //     pageIndicator.SetActivePage(index);
-
-    //     // Control button visibility
-    //     nextButton.gameObject.SetActive(index < pages.Count - 1);
-    //     getStartedButton.gameObject.SetActive(index == pages.Count - 1);
-    // }
-
     void ShowPage(int index)
     {
-        StopAllCoroutines(); // Cancel any ongoing fade
-        StartCoroutine(FadeToPage(index));
+        StopAllCoroutines();
+
+        if (index == 0)
+        {
+            // First page will just show immediately, no fade
+            for (int i = 0; i < pages.Count; i++)
+            {
+                pages[i].SetActive(i == 0);
+
+                if (pages[i].TryGetComponent<CanvasGroup>(out var cg))
+                {
+                    cg.alpha = (i == 0) ? 1 : 0;
+                    cg.interactable = (i == 0);
+                    cg.blocksRaycasts = (i == 0);
+                }
+            }
+
+            currentPage = 0;
+        }
+        else
+        {
+            // Normal fade transition for other pages
+            StartCoroutine(FadeToPage(index));
+        }
 
         pageIndicator.SetActivePage(index);
 
-        // Control button visibility
         nextButton.gameObject.SetActive(index < pages.Count - 1);
         skipButton.gameObject.SetActive(index < pages.Count - 1);
         getStartedButton.gameObject.SetActive(index == pages.Count - 1);
     }
+
     IEnumerator FadeToPage(int targetIndex)
     {
-        float duration = 0.3f;
+        float duration = 0.1f;
 
         // Fade out current page
         if (currentPage < pages.Count)
@@ -105,7 +113,6 @@ public class OnboardingManager : MonoBehaviour
 
     void SkipOnboarding()
     {
-        FinishOnboarding();
         ShowPage(3);
     }
 
