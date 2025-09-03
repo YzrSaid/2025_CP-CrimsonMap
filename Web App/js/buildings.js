@@ -7,7 +7,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
 // Import config from another file
-
+import { firebaseConfig } from "./../firebaseConfig.js";
 
 // Init Firebase
 const app = initializeApp(firebaseConfig);
@@ -30,6 +30,7 @@ function fileToBase64(file) {
         reader.readAsDataURL(file);
     });
 }
+
 
 // Load categories into table
 async function loadCategories() { 
@@ -63,6 +64,7 @@ async function loadCategories() {
     }
 }
 
+
 // Handle category form submit
 document.getElementById('categoryForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -93,6 +95,8 @@ document.getElementById('categoryForm')?.addEventListener('submit', async (e) =>
     } 
 });
 
+
+
 // =================== BUILDING FUNCTIONS ===================
 
 function openBuildingModal() { 
@@ -104,6 +108,8 @@ function closeBuildingModal() {
 }
 window.openBuildingModal = openBuildingModal;
 window.closeBuildingModal = closeBuildingModal;
+
+
 
 // =============== AUTO INCREMENT BUILDING ID =============== 
 async function generateNextBuildingId() { 
@@ -143,6 +149,8 @@ async function loadCategoriesIntoDropdown() {
         }
     });
 }
+
+
 
 // Handle add building form submit
 document.querySelector("#addBuildingModal form")?.addEventListener("submit", async (e) => {

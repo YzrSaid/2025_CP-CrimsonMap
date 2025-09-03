@@ -9,6 +9,8 @@ import { firebaseConfig } from "./../firebaseConfig.js";
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+
+
 // =============== MODAL CONTROL ===============
 function openNodeModal() {
     document.getElementById('addNodeModal').style.display = 'block';
@@ -211,6 +213,16 @@ document.getElementById("editNodeForm").addEventListener("submit", async (e) => 
 });
 
 
+
+
+
+
+
+
+
+
+
+//#cyan
 // =============== EDIT NODE HANDLER ===============
 // ✅ listens for clicks on the edit icon in the nodes table
 document.querySelector(".nodetbl").addEventListener("click", async (e) => {
@@ -265,7 +277,6 @@ document.querySelector(".nodetbl").addEventListener("click", async (e) => {
         console.error("Error opening edit modal:", err);
     }
 });
-
 
 
 
@@ -369,6 +380,9 @@ document.querySelector("#addEdgeModal form").addEventListener("submit", async (e
         alert("Error adding edge: " + err);
     }
 });
+//#
+
+
 
 
 // =============== LOAD EDGES INTO TABLE ===============
@@ -437,7 +451,7 @@ window.onload = () => {
 
 
 
-
+//#cyan
 // ================= EDIT EDGE MODAL =================
 
 // ================== TEMPLATE STORAGE ==================
@@ -496,6 +510,8 @@ function handlePreselectOrCustom(selectId, value) {
   }
 }
 
+
+
 // ================== EDIT EDGE MODAL ==================
 document.querySelector(".edgetbl").addEventListener("click", async (e) => {
   if (e.target.classList.contains("fa-edit")) {
@@ -528,7 +544,7 @@ document.querySelector(".edgetbl").addEventListener("click", async (e) => {
     }
   }
 });
-
+//#
 
 // Helper to load nodes into edit dropdowns and select current values
 async function loadNodesIntoDropdownsForEdit(selectedFrom, selectedTo) {
