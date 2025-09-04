@@ -64,95 +64,112 @@
     <Analyzer Include="/home/yazar/Unity/2022.3.62f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.Properties.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_TextEventHandler.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/VertexShakeA.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_ExampleScript_01.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMPro_InstructionOverlay.cs" />
     <Compile Include="Assets/Scripts/Firebase/FirebaseManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionManager.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/VertexShakeB.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/JSONData/CategoryData.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/DropdownSample.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/VertexColorCycler.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MapButtonsAndControlsScript.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/EnvMapAnimator.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MapManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/JSONData/MapData.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_TextSelector_A.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MapUtils.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/Benchmark01_UGUI.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/SimpleScript.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/Benchmark04.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MapCoordinateSystem.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/ChatController.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/GPS/UserIndicator.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/ObjectSpin.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/JSONData/EdgeData.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/PanelOpener.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/PanelCloser.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_PhoneNumberValidator.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/Map/CategoryDropdown.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/InfrastructurePopulator.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/VertexJitter.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/CampusBounds.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionItem.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/SaveData.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/GPS/GPSManager.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_DigitValidator.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_FrameRateCounter.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/InfrastructureSpawner.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TextConsoleSimulator.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TeleType.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/PathRenderer.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_TextEventCheck.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/BarrierSpawner.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_UiFrameRateCounter.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/GPS/GPSDebug.cs" />
-    <Compile Include="Assets/CanvasHelper.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/Benchmark01.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TextMeshSpawner.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/VertexZoom.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/Benchmark02.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_TextSelector_B.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/SkewTextExample.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/WarpTextExample.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TextMeshProFloatingText.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/ShaderPropAnimator.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MainAppManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/PolygonImage.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/CameraController.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/JSONData/InfrastructureData.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionSpawner.cs" />
+    <Compile Include="Assets/Scripts/Launcher/LauncherScene.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/Benchmark03.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/PanelToggler.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/PageIndicator.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/GlobalManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/Map/MapDropdown.cs" />
+    <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_TextInfoDebugTool.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/JSONData/NodeData.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/OnboardingManager.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets/Firebase/Plugins/iOS/Firebase.Messaging.dll" />
     <None Include="Assets/TextMesh Pro/Shaders/TMPro.cginc" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile Overlay.shader" />
-    <None Include="Assets/Firebase/Plugins/x86_64/FirebaseCppFirestore.dll" />
-    <None Include="Assets/Firebase/Plugins/Firebase.Messaging.dll" />
     <None Include="Assets/Firebase/Plugins/Firebase.Analytics.dll" />
-    <None Include="Assets/Firebase/Plugins/x86_64/FirebaseCppDatabase.dll" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_Bitmap.shader" />
     <None Include="Assets/Firebase/Plugins/iOS/Firebase.Analytics.dll" />
-    <None Include="Assets/Firebase/Plugins/x86_64/FirebaseCppStorage.dll" />
+    <None Include="Assets/TextMesh Pro/Examples &amp; Extras/Fonts/Oswald-Bold - OFL.txt" />
     <None Include="Assets/Firebase/Plugins/Firebase.App.dll" />
+    <None Include="Assets/TextMesh Pro/Examples &amp; Extras/Fonts/Anton OFL.txt" />
     <None Include="Assets/TextMesh Pro/Shaders/TMPro_Mobile.cginc" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF SSD.shader" />
-    <None Include="Assets/Firebase/m2repository/com/google/firebase/firebase-firestore-unity/maven-metadata.xml" />
     <None Include="Assets/Firebase/Plugins/x86_64/FirebaseCppAnalytics.dll" />
-    <None Include="Assets/Firebase/Plugins/x86_64/FirebaseCppAuth.dll" />
-    <None Include="Assets/Firebase/Plugins/iOS/Firebase.Firestore.dll" />
-    <None Include="Assets/Firebase/Plugins/x86_64/FirebaseCppMessaging.dll" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Surface-Mobile.shader" />
     <None Include="Assets/Firebase/Plugins/Firebase.TaskExtension.dll" />
-    <None Include="Assets/TextMesh Pro/Resources/Fonts &amp; Materials/Montserrat/OFL.txt" />
+    <None Include="Assets/TextMesh Pro/Resources/Fonts &amp; Materials/OFL.txt" />
     <None Include="Assets/Firebase/m2repository/com/google/firebase/firebase-app-unity/maven-metadata.xml" />
-    <None Include="Assets/Firebase/m2repository/com/google/firebase/firebase-messaging-unity/maven-metadata.xml" />
-    <None Include="Assets/Firebase/Plugins/Firebase.Auth.dll" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Surface.shader" />
-    <None Include="Assets/TextMesh Pro/Resources/Fonts &amp; Materials/Montserrat/README.txt" />
+    <None Include="Assets/TextMesh Pro/Resources/Fonts &amp; Materials/README.txt" />
     <None Include="Assets/TextMesh Pro/Sprites/EmojiOne Attribution.txt" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_Bitmap-Custom-Atlas.shader" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF.shader" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile SSD.shader" />
     <None Include="Assets/TextMesh Pro/Resources/LineBreaking Leading Characters.txt" />
-    <None Include="Assets/Firebase/Plugins/Firebase.Database.dll" />
     <None Include="Assets/Firebase/m2repository/com/google/firebase/firebase-analytics-unity/maven-metadata.xml" />
     <None Include="Assets/TextMesh Pro/Shaders/TMPro_Properties.cginc" />
-    <None Include="Assets/Firebase/m2repository/com/google/firebase/firebase-auth-unity/maven-metadata.xml" />
     <None Include="Assets/TextMesh Pro/Shaders/TMPro_Surface.cginc" />
-    <None Include="Assets/Firebase/Plugins/iOS/Firebase.Auth.dll" />
     <None Include="Assets/TextMesh Pro/Resources/LineBreaking Following Characters.txt" />
-    <None Include="Assets/Firebase/Plugins/Firebase.Firestore.dll" />
-    <None Include="Assets/Firebase/Plugins/iOS/Firebase.Database.dll" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile Masking.shader" />
     <None Include="Assets/Firebase/Plugins/Firebase.Platform.dll" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF Overlay.shader" />
-    <None Include="Assets/Firebase/m2repository/com/google/firebase/firebase-database-unity/maven-metadata.xml" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_Bitmap-Mobile.shader" />
-    <None Include="Assets/Firebase/Plugins/Firebase.Storage.dll" />
     <None Include="Assets/Firebase/Plugins/Google.MiniJson.dll" />
     <None Include="Assets/TextMesh Pro/Fonts/LiberationSans - OFL.txt" />
     <None Include="Assets/Firebase/Plugins/x86_64/FirebaseCppApp-13_1_0.dll" />
-    <None Include="Assets/Firebase/Plugins/iOS/Firebase.Storage.dll" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile.shader" />
     <None Include="Assets/Firebase/Plugins/iOS/Firebase.App.dll" />
-    <None Include="Assets/Firebase/m2repository/com/google/firebase/firebase-storage-unity/maven-metadata.xml" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_Sprite.shader" />
+    <None Include="Assets/TextMesh Pro/Examples &amp; Extras/Fonts/Bangers - OFL.txt" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
@@ -475,52 +492,32 @@
       <HintPath>/home/yazar/Unity/2022.3.62f1/Editor/Data/Managed/UnityEngine/UnityEditor.UnityConnectModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="ReportGeneratorMerged">
-      <HintPath>Library/PackageCache/com.unity.testtools.codecoverage@1.2.6/lib/ReportGenerator/ReportGeneratorMerged.dll</HintPath>
+    <Reference Include="Firebase.Analytics">
+      <HintPath>Assets/Firebase/Plugins/Firebase.Analytics.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.VisualScripting.Antlr3.Runtime">
-      <HintPath>Library/PackageCache/com.unity.visualscripting@1.9.4/Runtime/VisualScripting.Flow/Dependencies/NCalc/Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
+    <Reference Include="ReportGeneratorMerged">
+      <HintPath>Library/PackageCache/com.unity.testtools.codecoverage@1.2.6/lib/ReportGenerator/ReportGeneratorMerged.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Firebase.App">
       <HintPath>Assets/Firebase/Plugins/Firebase.App.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Firebase.Database">
-      <HintPath>Assets/Firebase/Plugins/Firebase.Database.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Firebase.TaskExtension">
       <HintPath>Assets/Firebase/Plugins/Firebase.TaskExtension.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Google.MiniJson">
-      <HintPath>Assets/Firebase/Plugins/Google.MiniJson.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Firebase.Auth">
-      <HintPath>Assets/Firebase/Plugins/Firebase.Auth.dll</HintPath>
+    <Reference Include="Unity.VisualScripting.Antlr3.Runtime">
+      <HintPath>Library/PackageCache/com.unity.visualscripting@1.9.4/Runtime/VisualScripting.Flow/Dependencies/NCalc/Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Firebase.Platform">
       <HintPath>Assets/Firebase/Plugins/Firebase.Platform.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Firebase.Firestore">
-      <HintPath>Assets/Firebase/Plugins/Firebase.Firestore.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Firebase.Analytics">
-      <HintPath>Assets/Firebase/Plugins/Firebase.Analytics.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Firebase.Storage">
-      <HintPath>Assets/Firebase/Plugins/Firebase.Storage.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Firebase.Messaging">
-      <HintPath>Assets/Firebase/Plugins/Firebase.Messaging.dll</HintPath>
+    <Reference Include="Google.MiniJson">
+      <HintPath>Assets/Firebase/Plugins/Google.MiniJson.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Android.Types">
@@ -1121,7 +1118,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="FirebaseMessagingActivityGenerator.csproj" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>
