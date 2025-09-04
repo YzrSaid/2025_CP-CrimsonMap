@@ -68,7 +68,6 @@
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/VertexShakeA.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_ExampleScript_01.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMPro_InstructionOverlay.cs" />
-    <Compile Include="Assets/Scripts/Firebase/FirebaseManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionManager.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/VertexShakeB.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/JSONData/CategoryData.cs" />
@@ -100,6 +99,7 @@
     <Compile Include="Assets/Scripts/Main App Scripts/GPS/GPSManager.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_DigitValidator.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_FrameRateCounter.cs" />
+    <Compile Include="Assets/Scripts/Backend/FirestoreManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/InfrastructureSpawner.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TextConsoleSimulator.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TeleType.cs" />
@@ -116,6 +116,7 @@
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/SkewTextExample.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/WarpTextExample.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TextMeshProFloatingText.cs" />
+    <Compile Include="Assets/Scripts/Backend/JSONFileManager.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/ShaderPropAnimator.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MainAppManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/PolygonImage.cs" />
@@ -135,6 +136,7 @@
   <ItemGroup>
     <None Include="Assets/TextMesh Pro/Shaders/TMPro.cginc" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile Overlay.shader" />
+    <None Include="Assets/Firebase/Plugins/x86_64/FirebaseCppFirestore.dll" />
     <None Include="Assets/Firebase/Plugins/Firebase.Analytics.dll" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_Bitmap.shader" />
     <None Include="Assets/Firebase/Plugins/iOS/Firebase.Analytics.dll" />
@@ -143,7 +145,9 @@
     <None Include="Assets/TextMesh Pro/Examples &amp; Extras/Fonts/Anton OFL.txt" />
     <None Include="Assets/TextMesh Pro/Shaders/TMPro_Mobile.cginc" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF SSD.shader" />
+    <None Include="Assets/Firebase/m2repository/com/google/firebase/firebase-firestore-unity/maven-metadata.xml" />
     <None Include="Assets/Firebase/Plugins/x86_64/FirebaseCppAnalytics.dll" />
+    <None Include="Assets/Firebase/Plugins/iOS/Firebase.Firestore.dll" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Surface-Mobile.shader" />
     <None Include="Assets/Firebase/Plugins/Firebase.TaskExtension.dll" />
     <None Include="Assets/TextMesh Pro/Resources/Fonts &amp; Materials/OFL.txt" />
@@ -159,6 +163,7 @@
     <None Include="Assets/TextMesh Pro/Shaders/TMPro_Properties.cginc" />
     <None Include="Assets/TextMesh Pro/Shaders/TMPro_Surface.cginc" />
     <None Include="Assets/TextMesh Pro/Resources/LineBreaking Following Characters.txt" />
+    <None Include="Assets/Firebase/Plugins/Firebase.Firestore.dll" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile Masking.shader" />
     <None Include="Assets/Firebase/Plugins/Firebase.Platform.dll" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF Overlay.shader" />
@@ -502,6 +507,10 @@
     </Reference>
     <Reference Include="Firebase.App">
       <HintPath>Assets/Firebase/Plugins/Firebase.App.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Firebase.Firestore">
+      <HintPath>Assets/Firebase/Plugins/Firebase.Firestore.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Firebase.TaskExtension">

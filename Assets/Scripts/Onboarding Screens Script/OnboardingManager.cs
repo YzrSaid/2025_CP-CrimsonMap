@@ -11,16 +11,36 @@ public class OnboardingManager : MonoBehaviour
     public Button nextButton;
     public Button skipButton;
     public Button getStartedButton;
+    public Canvas onboardingCanvas;
+    
     private int currentPage = 0;
+
+    void Awake()
+    {
+        // Hide everything immediately if onboarding is complete
+        if (GlobalManager.Instance != null && GlobalManager.Instance.onboardingComplete)
+        {
+            if (onboardingCanvas != null)
+                onboardingCanvas.gameObject.SetActive(false);
+            
+            foreach (var page in pages)
+            {
+                page.SetActive(false);
+            }
+        }
+    }
 
     void Start()
     {
         if (GlobalManager.Instance.onboardingComplete)
         {
-            // If onboarding is already complete, skip to the main scene
             SceneManager.LoadScene("MainAppScene");
             return;
         }
+        
+        if (onboardingCanvas != null)
+            onboardingCanvas.gameObject.SetActive(true);
+            
         ShowPage(0);
         pageIndicator.SetupIndicators(pages.Count);
         pageIndicator.SetActivePage(0);
@@ -36,7 +56,6 @@ public class OnboardingManager : MonoBehaviour
 
         if (index == 0)
         {
-            // First page will just show immediately, no fade
             for (int i = 0; i < pages.Count; i++)
             {
                 pages[i].SetActive(i == 0);
@@ -53,12 +72,10 @@ public class OnboardingManager : MonoBehaviour
         }
         else
         {
-            // Normal fade transition for other pages
             StartCoroutine(FadeToPage(index));
         }
 
         pageIndicator.SetActivePage(index);
-
         nextButton.gameObject.SetActive(index < pages.Count - 1);
         skipButton.gameObject.SetActive(index < pages.Count - 1);
         getStartedButton.gameObject.SetActive(index == pages.Count - 1);
@@ -68,7 +85,6 @@ public class OnboardingManager : MonoBehaviour
     {
         float duration = 0.1f;
 
-        // Fade out current page
         if (currentPage < pages.Count)
         {
             CanvasGroup currentGroup = pages[currentPage].GetComponent<CanvasGroup>();
@@ -83,7 +99,6 @@ public class OnboardingManager : MonoBehaviour
             pages[currentPage].SetActive(false);
         }
 
-        // Fade in new page
         GameObject newPage = pages[targetIndex];
         newPage.SetActive(true);
         CanvasGroup newGroup = newPage.GetComponent<CanvasGroup>();
@@ -97,10 +112,8 @@ public class OnboardingManager : MonoBehaviour
             yield return null;
         }
         newGroup.alpha = 1;
-
         currentPage = targetIndex;
     }
-
 
     void NextPage()
     {
@@ -119,7 +132,7 @@ public class OnboardingManager : MonoBehaviour
     void FinishOnboarding()
     {
         GlobalManager.Instance.onboardingComplete = true;
-        GlobalManager.Instance.SaveData();
+        GlobalManager.Instance.SaveOnboardingData(); // Updated method name
         SceneManager.LoadScene("MainAppScene");
     }
 }

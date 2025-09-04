@@ -31,7 +31,7 @@ public class LauncherScene : MonoBehaviour
         }
         else
         {
-            SceneManager.LoadScene("OnboardingScene");
+            SceneManager.LoadScene("OnboardingScreensScene");
         }
     }
 }
