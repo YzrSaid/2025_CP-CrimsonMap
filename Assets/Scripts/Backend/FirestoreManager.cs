@@ -7,23 +7,6 @@ using Firebase.Extensions;
 using System;
 using System.Linq;
 
-[System.Serializable]
-public class MapVersionInfo
-{
-    public string current_version;
-    public string map_name;
-    public long last_updated; // Unix timestamp
-    public string map_id; // Add map_id field
-}
-
-[System.Serializable]
-public class StaticDataVersionInfo
-{
-    public bool infrastructure_updated;
-    public bool categories_updated;
-    public long last_check;
-}
-
 public class FirestoreManager : MonoBehaviour
 {
     public static FirestoreManager Instance { get; private set; }
