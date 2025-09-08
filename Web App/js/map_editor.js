@@ -21,12 +21,9 @@ function showNodeModal() {
 }
 function hideNodeModal() {
     document.getElementById('addNodeModal').style.display = 'none';
-    // Reset all form fields EXCEPT nodeId
     document.getElementById("nodeName").value = "";
     document.getElementById("latitude").value = "";
     document.getElementById("longitude").value = "";
-    document.getElementById("linkedBuilding").value = "";
-    document.getElementById("qrAnchor").checked = false;
 }
 window.openNodeModal = showNodeModal;
 window.closeNodeModal = hideNodeModal;
@@ -100,8 +97,8 @@ async function loadBuildingsDropdownById(selectId) {
 }
 
 // ----------- Populate Related Infrastructure Dropdown -----------
-async function populateInfraDropdown() {
-    const select = document.getElementById("relatedInfra");
+async function populateInfraDropdown(selectId = "relatedInfra") {
+    const select = document.getElementById(selectId);
     if (!select) return;
     select.innerHTML = `<option value="">Select infrastructure</option>`;
     const q = query(collection(db, "Infrastructure"));
@@ -118,8 +115,8 @@ async function populateInfraDropdown() {
 }
 
 // ----------- Populate Related Room Dropdown -----------
-async function populateRoomDropdown() {
-    const select = document.getElementById("relatedRoom");
+async function populateRoomDropdown(selectId = "relatedRoom") {
+    const select = document.getElementById(selectId);
     if (!select) return;
     select.innerHTML = `<option value="">Select room</option>`;
     const q = query(collection(db, "Rooms"));
@@ -136,8 +133,8 @@ async function populateRoomDropdown() {
 }
 
 // ----------- Populate Campus Dropdown -----------
-async function populateCampusDropdown() {
-    const select = document.getElementById("campusDropdown");
+async function populateCampusDropdown(selectId = "campusDropdown") {
+    const select = document.getElementById(selectId);
     if (!select) return;
     select.innerHTML = `<option value="">Select campus</option>`;
     const q = query(collection(db, "Campus"));
@@ -208,10 +205,14 @@ async function renderNodesTable() {
             // Campus name
             const campusName = data.campus_id ? (campusMap[data.campus_id] || data.campus_id) : "-";
 
+            // Type
+            const type = data.type ? data.type.charAt(0).toUpperCase() + data.type.slice(1) : "-";
+
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${data.node_id}</td>
                 <td>${data.name}</td>
+                <td>${type}</td>
                 <td>${coords}</td>
                 <td>${infraName}</td>
                 <td>${roomName}</td>
@@ -332,6 +333,7 @@ document.querySelector(".nodetbl").addEventListener("click", async (e) => {
     if (!nodeId) return;
 
     try {
+        // Fetch node data from Firestore
         const nodesQ = query(collection(db, "Nodes"), where("node_id", "==", nodeId));
         const snap = await getDocs(nodesQ);
 
@@ -343,37 +345,166 @@ document.querySelector(".nodetbl").addEventListener("click", async (e) => {
         const docSnap = snap.docs[0];
         const nodeData = docSnap.data();
 
-        await loadBuildingsDropdownById("editLinkedBuilding");
+        // Populate dropdowns for edit modal
+        // Populate dropdowns for edit modal, then set value
+        await populateInfraDropdown("editRelatedInfra");
+        document.getElementById("editRelatedInfra").value = nodeData.related_infra_id ?? "";
 
+        await populateRoomDropdown("editRelatedRoom");
+        document.getElementById("editRelatedRoom").value = nodeData.related_room_id ?? "";
+
+        await populateCampusDropdown("editCampusDropdown");
+        document.getElementById("editCampusDropdown").value = nodeData.campus_id ?? "";
+
+        // Set values
         document.getElementById("editNodeId").value = nodeData.node_id ?? "";
         document.getElementById("editNodeIdHidden").value = nodeData.node_id ?? "";
         document.getElementById("editNodeName").value = nodeData.name ?? "";
-        document.getElementById("editLatitude").value = nodeData.coordinates?.latitude ?? "";
-        document.getElementById("editLongitude").value = nodeData.coordinates?.longitude ?? "";
-        document.getElementById("editQrAnchor").checked = !!nodeData.qr_anchor;
+        document.getElementById("editLatitude").value = nodeData.lat ?? "";
+        document.getElementById("editLongitude").value = nodeData.lng ?? "";
 
-        if (nodeData.linked_building) {
-            const sel = document.getElementById("editLinkedBuilding");
-            sel.value = nodeData.linked_building;
-
-            if (![...sel.options].some(o => o.value === sel.value)) {
-                const opt = document.createElement("option");
-                opt.value = nodeData.linked_building;
-                opt.textContent = nodeData.linked_building_name || nodeData.linked_building;
-                sel.appendChild(opt);
-                sel.value = nodeData.linked_building;
+        // Type (handle custom input for "other")
+        let typeSelect = document.getElementById("editNodeType");
+        if (
+            ["room", "barrier", "infrastructure"].includes(nodeData.type)
+        ) {
+            // Restore select if needed
+            if (typeSelect.tagName !== "SELECT") {
+                const parent = typeSelect.parentNode;
+                const newSelect = document.createElement("select");
+                newSelect.id = "editNodeType";
+                newSelect.innerHTML = `
+                    <option value="">Select type</option>
+                    <option value="room">Room</option>
+                    <option value="barrier">Barrier</option>
+                    <option value="infrastructure">Infrastructure</option>
+                `;
+                parent.replaceChild(newSelect, typeSelect);
+                typeSelect = newSelect;
             }
+            typeSelect.value = nodeData.type;
+        } else if (nodeData.type) {
+            // Custom type
+            if (typeSelect.tagName === "SELECT") {
+                // Replace select with input
+                const input = document.createElement("input");
+                input.type = "text";
+                input.id = "editNodeType";
+                input.value = nodeData.type;
+                input.classList.add("custom-input");
+                typeSelect.parentNode.replaceChild(input, typeSelect);
+            } else {
+                typeSelect.value = nodeData.type;
+            }
+        } else {
+            if (typeSelect.tagName === "SELECT") typeSelect.value = "";
+            else typeSelect.value = "";
         }
 
-        const editForm = document.getElementById("editNodeForm");
-        if (editForm) editForm.dataset.docId = docSnap.id;
+        // Related infra/room
+        document.getElementById("editRelatedInfra").value = nodeData.related_infra_id ?? "";
+        document.getElementById("editRelatedRoom").value = nodeData.related_room_id ?? "";
 
+        // Indoor/Outdoor
+        const indoorCheckbox = document.getElementById("editIndoorCheckbox");
+        const outdoorCheckbox = document.getElementById("editOutdoorCheckbox");
+        const indoorDetails = document.getElementById("editIndoorDetails");
+        if (nodeData.indoor) {
+            indoorCheckbox.checked = true;
+            outdoorCheckbox.checked = false;
+            indoorDetails.style.display = "block";
+            document.getElementById("editFloor").value = nodeData.indoor.floor ?? "";
+            document.getElementById("editXCoord").value = nodeData.indoor.x ?? "";
+            document.getElementById("editYCoord").value = nodeData.indoor.y ?? "";
+        } else {
+            indoorCheckbox.checked = false;
+            outdoorCheckbox.checked = true;
+            indoorDetails.style.display = "none";
+            document.getElementById("editFloor").value = "";
+            document.getElementById("editXCoord").value = "";
+            document.getElementById("editYCoord").value = "";
+        }
+
+        // Campus
+        document.getElementById("editCampusDropdown").value = nodeData.campus_id ?? "";
+
+        // Show modal
         document.getElementById("editNodeModal").style.display = "flex";
+        // Store docId for update
+        document.getElementById("editNodeForm").dataset.docId = docSnap.id;
 
     } catch (err) {
         console.error("Error opening edit modal:", err);
     }
 });
+
+// ----------- Edit Node Save Handler -----------
+document.getElementById("editNodeForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const form = e.target;
+    const docId = form.dataset.docId;
+    if (!docId) {
+        alert("No document ID found for update");
+        return;
+    }
+
+    const nodeId = document.getElementById("editNodeIdHidden").value;
+    const nodeName = document.getElementById("editNodeName").value;
+    const latitude = document.getElementById("editLatitude").value;
+    const longitude = document.getElementById("editLongitude").value;
+
+    // Type: could be select or input
+    let typeEl = document.getElementById("editNodeType");
+    let type = typeEl ? typeEl.value : "";
+    if (!type && typeEl && typeEl.tagName === "INPUT") {
+        type = typeEl.value;
+    }
+
+    const relatedInfraId = document.getElementById("editRelatedInfra").value;
+    const relatedRoomId = document.getElementById("editRelatedRoom").value;
+
+    // Indoor/Outdoor
+    const isIndoor = document.getElementById("editIndoorCheckbox").checked;
+    let indoor = null;
+    if (isIndoor) {
+        indoor = {
+            floor: document.getElementById("editFloor").value,
+            x: document.getElementById("editXCoord").value,
+            y: document.getElementById("editYCoord").value
+        };
+    }
+
+    const campusId = document.getElementById("editCampusDropdown").value;
+
+    try {
+        const nodeRef = doc(db, "Nodes", docId);
+
+        await updateDoc(nodeRef, {
+            node_id: nodeId,
+            name: nodeName,
+            lat: latitude,
+            lng: longitude,
+            type: type,
+            related_infra_id: relatedInfraId,
+            related_room_id: relatedRoomId,
+            indoor: indoor,
+            is_active: true,
+            campus_id: campusId,
+            updated_at: new Date()
+        });
+
+        alert("Node updated!");
+        document.getElementById("editNodeModal").style.display = "none";
+        renderNodesTable();
+
+    } catch (err) {
+        console.error("Error updating node:", err);
+        alert("Error updating node: " + err.message);
+    }
+});
+
+
 
 
 // ======================= EDGE SECTION =============================
@@ -815,3 +946,50 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 });
+
+
+
+  const editNodeModal = document.getElementById("editNodeModal");
+  const cancelEditBtn = document.getElementById("cancelEditNodeBtn");
+
+  // Use event delegation to catch clicks on edit icons
+  document.querySelector(".nodetbl").addEventListener("click", (e) => {
+    if (e.target.classList.contains("fa-edit")) {
+      editNodeModal.style.display = "flex"; // show modal
+    }
+  });
+
+  // Cancel button closes modal
+  cancelEditBtn.addEventListener("click", () => {
+    editNodeModal.style.display = "none";
+  });
+
+  // Click outside modal box closes it
+  editNodeModal.addEventListener("click", (e) => {
+    if (e.target === editNodeModal) {
+      editNodeModal.style.display = "none";
+    }
+  });
+
+
+    const editEdgeModal = document.getElementById("editEdgeModal");
+  const cancelEditEdgeBtn = document.getElementById("cancelEditEdgeBtn");
+
+  // Use event delegation to catch clicks on edit icons inside .edgetbl
+  document.querySelector(".edgetbl").addEventListener("click", (e) => {
+    if (e.target.classList.contains("fa-edit")) {
+      editEdgeModal.style.display = "flex"; // show modal
+    }
+  });
+
+  // Cancel button closes modal
+  cancelEditEdgeBtn.addEventListener("click", () => {
+    editEdgeModal.style.display = "none";
+  });
+
+  // Click outside modal box closes it
+  editEdgeModal.addEventListener("click", (e) => {
+    if (e.target === editEdgeModal) {
+      editEdgeModal.style.display = "none";
+    }
+  });

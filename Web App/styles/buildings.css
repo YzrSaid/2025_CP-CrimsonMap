@@ -661,3 +661,18 @@ h3 {
 .campus-table td:last-child {
     border-right: none;
 }
+
+/* Add to styles/buildings.css */
+#editInfraPreview {
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    margin-top: 8px;
+}
+
+
+#deleteInfraModal .save-btn {
+    background: #b41c1c;
+}
+#deleteInfraModal .save-btn:hover {
+    background: #800000;
+}

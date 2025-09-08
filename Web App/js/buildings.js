@@ -1,6 +1,6 @@
 // ======================= FIREBASE SETUP ===========================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 import { firebaseConfig } from "./../firebaseConfig.js";
 
 // Initialize Firebase and Firestore
@@ -192,7 +192,7 @@ async function renderInfraTable() {
 
     try {
         const querySnapshot = await getDocs(collection(db, "Infrastructure"));
-        const infras = querySnapshot.docs.map(doc => doc.data());
+        const infras = querySnapshot.docs.map(doc => doc.data()).filter(data => !data.is_deleted);
         infras.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
 
         // Get all categories once
@@ -680,4 +680,229 @@ cancelCampusBtn.addEventListener('click', hideCampusModal);
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.style.display = 'none';
     });
+});
+
+
+
+
+
+// ======================= EDIT INFRASTRUCTURE SECTION =========================
+
+// ----------- Edit Infrastructure Modal Open Handler -----------
+document.querySelector(".infra-table").addEventListener("click", async (e) => {
+    // Only respond to edit icon/button clicks
+    if (
+        !(e.target.classList.contains("fa-edit") ||
+          (e.target.closest("button") && e.target.closest("button").classList.contains("edit")))
+    ) return;
+
+    const row = e.target.closest("tr");
+    if (!row) return;
+
+    // Get infra_id from the first cell
+    const infraId = row.querySelector("td")?.textContent?.trim();
+    if (!infraId) return;
+
+    try {
+        // Fetch infrastructure data from Firestore
+        const infraQ = query(collection(db, "Infrastructure"), where("infra_id", "==", infraId));
+        const snap = await getDocs(infraQ);
+
+        if (snap.empty) {
+            alert("Infrastructure not found in Firestore");
+            return;
+        }
+
+        const docSnap = snap.docs[0];
+        const infraData = docSnap.data();
+
+        // Populate category dropdown and set value
+        await populateEditInfraCategoryDropdown(infraData.category_id);
+        document.getElementById("editInfraCategory").value = infraData.category_id ?? "";
+
+        // Prefill fields
+        document.getElementById("editInfraId").value = infraData.infra_id ?? "";
+        document.getElementById("editInfraName").value = infraData.name ?? "";
+        document.getElementById("editInfraPhone").value = infraData.phone ?? "";
+        document.getElementById("editInfraEmail").value = infraData.email ?? "";
+
+        // Image preview
+        const preview = document.getElementById("editInfraPreview");
+        if (infraData.image_url) {
+            preview.src = infraData.image_url;
+            preview.style.display = "block";
+        } else {
+            preview.src = "";
+            preview.style.display = "none";
+        }
+
+        // Store docId for update
+        document.getElementById("editInfraForm").dataset.docId = docSnap.id;
+
+        // Show modal
+        document.getElementById("editInfraModal").style.display = "flex";
+
+    } catch (err) {
+        console.error("Error opening edit modal:", err);
+    }
+});
+
+// ----------- Populate Category Dropdown for Edit Modal -----------
+async function populateEditInfraCategoryDropdown(selectedId) {
+    const select = document.getElementById("editInfraCategory");
+    if (!select) return;
+    select.innerHTML = `<option value="">Select a category</option>`;
+    const q = query(collection(db, "Categories"), orderBy("createdAt", "asc"));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.category_id && data.name) {
+            const option = document.createElement("option");
+            option.value = data.category_id;
+            option.textContent = data.name;
+            select.appendChild(option);
+        }
+    });
+    // Set selected value after options are loaded
+    if (selectedId) select.value = selectedId;
+}
+
+// ----------- Save Edited Infrastructure -----------
+document.getElementById("editInfraForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const docId = e.target.dataset.docId;
+    if (!docId) {
+        alert("No document ID found for update.");
+        return;
+    }
+
+    const name = document.getElementById("editInfraName").value.trim();
+    const categoryId = document.getElementById("editInfraCategory").value;
+    const phone = document.getElementById("editInfraPhone").value.trim();
+    const email = document.getElementById("editInfraEmail").value.trim();
+
+    // Handle image update (optional)
+    let imageUrl = document.getElementById("editInfraPreview").src || "";
+    const imageFile = document.getElementById("editInfraImage").files[0];
+    if (imageFile) {
+        imageUrl = await convertFileToBase64(imageFile);
+    }
+
+    if (!name || !categoryId) {
+        alert("Please fill in all required fields.");
+        return;
+    }
+
+    try {
+        await updateDoc(doc(db, "Infrastructure", docId), {
+            name: name,
+            category_id: categoryId,
+            phone: phone,
+            email: email,
+            image_url: imageUrl,
+            updatedAt: new Date()
+        });
+
+        alert("Infrastructure updated!");
+        document.getElementById("editInfraModal").style.display = "none";
+        renderInfraTable();
+    } catch (err) {
+        alert("Error updating infrastructure: " + err);
+    }
+});
+
+// ----------- Cancel Button for Edit Modal -----------
+document.getElementById("cancelEditInfraBtn").addEventListener("click", () => {
+    document.getElementById("editInfraModal").style.display = "none";
+});
+
+// ----------- Close Modal When Clicking Outside -----------
+document.getElementById("editInfraModal").addEventListener("click", (e) => {
+    if (e.target === document.getElementById("editInfraModal")) {
+        document.getElementById("editInfraModal").style.display = "none";
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ----------- Delete Infrastructure Modal Logic -----------
+
+let infraToDelete = null; // Will hold {docId, name} for deletion
+
+// Open delete modal when clicking the delete icon
+document.querySelector(".infra-table").addEventListener("click", async (e) => {
+    if (
+        !(e.target.classList.contains("fa-trash") ||
+          (e.target.closest("button") && e.target.closest("button").classList.contains("delete")))
+    ) return;
+
+    const row = e.target.closest("tr");
+    if (!row) return;
+
+    const infraId = row.querySelector("td")?.textContent?.trim();
+    const infraName = row.children[1]?.textContent?.trim() || "";
+
+    // Find the Firestore docId for this infra
+    try {
+        const infraQ = query(collection(db, "Infrastructure"), where("infra_id", "==", infraId));
+        const snap = await getDocs(infraQ);
+
+        if (snap.empty) {
+            alert("Infrastructure not found in Firestore");
+            return;
+        }
+        const docSnap = snap.docs[0];
+        infraToDelete = { docId: docSnap.id, name: infraName };
+
+        // Set prompt text
+        document.getElementById("deleteInfraPrompt").textContent =
+            `Are you sure you want to delete "${infraName}"?`;
+
+        // Show modal
+        document.getElementById("deleteInfraModal").style.display = "flex";
+    } catch (err) {
+        console.error("Error preparing delete modal:", err);
+    }
+});
+
+// Confirm deletion
+document.getElementById("confirmDeleteInfraBtn").addEventListener("click", async () => {
+    if (!infraToDelete) return;
+    try {
+        await updateDoc(doc(db, "Infrastructure", infraToDelete.docId), {
+            is_deleted: true,
+            deletedAt: new Date()
+        });
+        document.getElementById("deleteInfraModal").style.display = "none";
+        infraToDelete = null;
+        renderInfraTable();
+    } catch (err) {
+        alert("Error deleting infrastructure: " + err);
+    }
+});
+
+// Cancel deletion
+document.getElementById("cancelDeleteInfraBtn").addEventListener("click", () => {
+    document.getElementById("deleteInfraModal").style.display = "none";
+    infraToDelete = null;
+});
+
+// Close modal when clicking outside
+document.getElementById("deleteInfraModal").addEventListener("click", (e) => {
+    if (e.target === document.getElementById("deleteInfraModal")) {
+        document.getElementById("deleteInfraModal").style.display = "none";
+        infraToDelete = null;
+    }
 });
