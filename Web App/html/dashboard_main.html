@@ -272,15 +272,15 @@
     let content = `
       <b>${node.name || "Unnamed"}</b><br>
       Type: ${node.type || "-"}<br>
-      Lat: ${node.lat}<br>
-      Lng: ${node.lng}
+      Lat: ${node.latitude}<br>
+      Lng: ${node.longitude}
     `;
 
     if (node.campusName) content += `<br>Campus: ${node.campusName}`;
     if (node.infraName) content += `<br>Infrastructure: ${node.infraName}`;
 
     L.popup()
-      .setLatLng([node.lat, node.lng])
+      .setLatLng([node.latitude, node.longitude])
       .setContent(content)
       .openOn(node._map || window._activeMap); // fallback if needed
   }
@@ -291,7 +291,7 @@
 
     // --- Barriers (polygon + corner markers) ---
     const barrierNodes = data.filter(d => d.type === "barrier");
-    const barrierCoords = barrierNodes.map(b => [b.lat, b.lng]);
+    const barrierCoords = barrierNodes.map(b => [b.latitude, b.longitude]);
 
     if (barrierCoords.length > 0) {
       // Draw polygon
@@ -307,14 +307,14 @@
           showDetails({
             name: "WMSU Camp B",
             type: "Campus Area",
-            lat: e.latlng.lat.toFixed(6),
-            lng: e.latlng.lng.toFixed(6)
+            latitude: e.latlng.lat.toFixed(6),
+            longitude: e.latlng.lng.toFixed(6)
           });
         });
 
         // Corner markers
         barrierNodes.forEach(node => {
-          const cornerMarker = L.circleMarker([node.lat, node.lng], {
+          const cornerMarker = L.circleMarker([node.latitude, node.longitude], {
             radius: 6,
             color: "darkgreen",
             fillColor: "lightgreen",
@@ -328,7 +328,7 @@
 
     // --- Infrastructure (Buildings) ---
     data.filter(d => d.type === "infrastructure").forEach(building => {
-      const marker = L.circleMarker([building.lat, building.lng], {
+      const marker = L.circleMarker([building.latitude, building.longitude], {
         radius: 8,
         color: "blue",
         fillColor: "lightblue",
@@ -342,7 +342,7 @@
 
     // --- Rooms ---
     data.filter(d => d.type === "room").forEach(room => {
-      const marker = L.marker([room.lat, room.lng]).addTo(map);
+      const marker = L.marker([room.latitude, room.longitude]).addTo(map);
 
       if (enableClick) {
         marker.on("click", () => showDetails({ ...room, _map: map }));
@@ -350,7 +350,7 @@
     });
 
     // --- Fit bounds to all nodes ---
-    const allCoords = data.map(d => [d.lat, d.lng]);
+    const allCoords = data.map(d => [d.latitude, d.longitude]);
     if (allCoords.length > 0) {
       map.fitBounds(allCoords);
     }

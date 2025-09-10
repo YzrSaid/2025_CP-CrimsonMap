@@ -55,6 +55,11 @@
         </div>
         
 
+<script type="module">
+
+</script>
+
+
     </div>
 
 
@@ -80,8 +85,7 @@
                 <div class="top-title_sort">
                     <div class="title">
                         <h2>Map Overview</h2>
-                        <button id="migrateNodesBtn" style="display:block;">Migrate Nodes</button>
-
+                        <button id="migrateNodesToFloatBtn" style="display:flex;">Migrate Nodes to Float</button>
                     </div>
 
                     <div class="sorting">
@@ -605,10 +609,12 @@
       querySnapshot.forEach(docSnap => {
         const d = docSnap.data();
         nodes.push({
-          ...d,
-          infraName: d.related_infra_id ? (infraMap[d.related_infra_id] || d.related_infra_id) : "-",
-          roomName: d.related_room_id ? (roomMap[d.related_room_id] || d.related_room_id) : "-",
-          campusName: d.campus_id ? (campusMap[d.campus_id] || d.campus_id) : "-"
+        ...d,
+        latitude: d.latitude,     // ✅ fallback for old docs
+        longitude: d.longitude,   // ✅ fallback for old docs
+        infraName: d.related_infra_id ? (infraMap[d.related_infra_id] || d.related_infra_id) : "-",
+        roomName: d.related_room_id ? (roomMap[d.related_room_id] || d.related_room_id) : "-",
+        campusName: d.campus_id ? (campusMap[d.campus_id] || d.campus_id) : "-"
         });
       });
 
@@ -692,8 +698,8 @@ function showDetails(node) {
     <div class="details-item"><span>Node ID:</span> ${node.node_id || "-"}</div>
     <div class="details-item"><span>Name:</span> ${node.name || "-"}</div>
     <div class="details-item"><span>Type:</span> ${node.type || "-"}</div>
-    <div class="details-item"><span>Latitude:</span> ${node.lat || "-"}</div>
-    <div class="details-item"><span>Longitude:</span> ${node.lng || "-"}</div>
+    <div class="details-item"><span>Latitude:</span> ${node.latitude || "-"}</div>
+    <div class="details-item"><span>Longitude:</span> ${node.longitude || "-"}</div>
     <div class="details-item"><span>Infrastructure:</span> ${node.infraName || "-"}</div>
     <div class="details-item"><span>Room:</span> ${node.roomName || "-"}</div>
     ${
@@ -716,7 +722,7 @@ function showDetails(node) {
 function renderDataOnMap(map, data, enableClick = false) {
   // --- Barriers (polygon + corner markers) ---
   const barrierNodes = data.filter(d => d.type === "barrier");
-  const barrierCoords = barrierNodes.map(b => [b.lat, b.lng]);
+  const barrierCoords = barrierNodes.map(b => [b.latitude, b.longitude]);
 
   if (barrierCoords.length > 0) {
     // Draw polygon
@@ -732,14 +738,14 @@ function renderDataOnMap(map, data, enableClick = false) {
         showDetails({
           name: "WMSU Camp B",
           type: "Campus Area",
-          lat: e.latlng.lat.toFixed(6),
-          lng: e.latlng.lng.toFixed(6)
+          latitude: e.latlng.lat.toFixed(6),
+          longitude: e.latlng.lng.toFixed(6)
         });
       });
 
       // Add markers for each barrier corner
       barrierNodes.forEach(node => {
-        const cornerMarker = L.circleMarker([node.lat, node.lng], {
+        const cornerMarker = L.circleMarker([node.latitude, node.longitude], {
           radius: 6,
           color: "darkgreen",
           fillColor: "lightgreen",
@@ -753,7 +759,7 @@ function renderDataOnMap(map, data, enableClick = false) {
 
   // --- Infrastructure (Buildings) ---
   data.filter(d => d.type === "infrastructure").forEach(building => {
-    const marker = L.circleMarker([building.lat, building.lng], {
+    const marker = L.circleMarker([building.latitude, building.longitude], {
       radius: 8,
       color: "blue",
       fillColor: "lightblue",
@@ -767,7 +773,7 @@ function renderDataOnMap(map, data, enableClick = false) {
 
   // --- Rooms ---
   data.filter(d => d.type === "room").forEach(room => {
-    const marker = L.marker([room.lat, room.lng]).addTo(map);
+    const marker = L.marker([room.latitude, room.longitude]).addTo(map);
 
     if (enableClick) {
       marker.on("click", () => showDetails(room));
@@ -775,7 +781,7 @@ function renderDataOnMap(map, data, enableClick = false) {
   });
 
   // --- Fit bounds to all nodes ---
-  const allCoords = data.map(d => [d.lat, d.lng]);
+  const allCoords = data.map(d => [d.latitude, d.longitude]);
   if (allCoords.length > 0) {
     map.fitBounds(allCoords);
   }

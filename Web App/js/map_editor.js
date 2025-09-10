@@ -9,6 +9,36 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 
+async function migrateNodesToFloat() {
+  const snapshot = await getDocs(collection(db, "Nodes"));
+
+  for (const node of snapshot.docs) {
+    const data = node.data();
+
+    let lat = data.latitude;
+    let lng = data.longitude;
+
+    // ✅ Only process if they exist
+    if (lat !== undefined && lng !== undefined) {
+      const latNum = parseFloat(lat);
+      const lngNum = parseFloat(lng);
+
+      // ✅ Only update if conversion is valid and they are still strings
+      if (!isNaN(latNum) && !isNaN(lngNum)) {
+        console.log(`Migrating ${node.id}...`);
+        await updateDoc(doc(db, "Nodes", node.id), {
+          latitude: latNum,
+          longitude: lngNum,
+        });
+      }
+    }
+  }
+
+  alert("✅ Migration complete! All nodes now have numeric latitude/longitude.");
+}
+
+// Hook up to button
+document.getElementById("migrateNodesToFloatBtn").addEventListener("click", migrateNodesToFloat);
 // ======================= NODE SECTION =============================
 
 // ----------- Modal Controls -----------
@@ -261,8 +291,10 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
 
     const nodeId = document.getElementById("nodeId").value;
     const nodeName = document.getElementById("nodeName").value;
-    const latitude = document.getElementById("latitude").value;
-    const longitude = document.getElementById("longitude").value;
+
+    // ✅ Parse as floats so they save as Firestore "number"
+    const latitude = parseFloat(document.getElementById("latitude").value);
+    const longitude = parseFloat(document.getElementById("longitude").value);
 
     // Type: could be select or input
     let typeEl = document.getElementById("nodeType");
@@ -280,8 +312,8 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
     if (isIndoor) {
         indoor = {
             floor: document.getElementById("floor").value,
-            x: document.getElementById("xCoord").value,
-            y: document.getElementById("yCoord").value
+            x: parseFloat(document.getElementById("xCoord").value) || 0,
+            y: parseFloat(document.getElementById("yCoord").value) || 0
         };
     }
 
@@ -291,8 +323,8 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
         await addDoc(collection(db, "Nodes"), {
             node_id: nodeId,
             name: nodeName,
-            latitude: latitude,   // ✅ renamed
-            longitude: longitude, // ✅ renamed
+            latitude: latitude,   // ✅ now number
+            longitude: longitude, // ✅ now number
             type: type,
             related_infra_id: relatedInfraId,
             related_room_id: relatedRoomId,
@@ -302,12 +334,9 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
             created_at: new Date()
         });
 
-
         // Clear all fields in the add node modal
         document.getElementById("nodeForm").reset();
-        // If you have custom fields (like disabled nodeId), reset them manually:
         generateNextNodeId();
-        // Hide indoor details if shown
         document.getElementById("indoorDetails").style.display = "none";
 
         // Close modal
@@ -320,6 +349,7 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
         alert("Error adding node: " + err);
     }
 });
+
 
 
 
@@ -452,8 +482,10 @@ document.getElementById("editNodeForm").addEventListener("submit", async (e) => 
 
     const nodeId = document.getElementById("editNodeIdHidden").value;
     const nodeName = document.getElementById("editNodeName").value;
-    const latitude = document.getElementById("editLatitude").value;
-    const longitude = document.getElementById("editLongitude").value;
+
+    // ✅ Parse to float so they save as Firestore numbers
+    const latitude = parseFloat(document.getElementById("editLatitude").value);
+    const longitude = parseFloat(document.getElementById("editLongitude").value);
 
     // Type: could be select or input
     let typeEl = document.getElementById("editNodeType");
@@ -471,8 +503,8 @@ document.getElementById("editNodeForm").addEventListener("submit", async (e) => 
     if (isIndoor) {
         indoor = {
             floor: document.getElementById("editFloor").value,
-            x: document.getElementById("editXCoord").value,
-            y: document.getElementById("editYCoord").value
+            x: parseFloat(document.getElementById("editXCoord").value) || 0,
+            y: parseFloat(document.getElementById("editYCoord").value) || 0
         };
     }
 
@@ -484,8 +516,8 @@ document.getElementById("editNodeForm").addEventListener("submit", async (e) => 
         await updateDoc(nodeRef, {
             node_id: nodeId,
             name: nodeName,
-            latitude: latitude,   // ✅ renamed
-            longitude: longitude, // ✅ renamed
+            latitude: latitude,   // ✅ now number
+            longitude: longitude, // ✅ now number
             type: type,
             related_infra_id: relatedInfraId,
             related_room_id: relatedRoomId,
@@ -494,7 +526,6 @@ document.getElementById("editNodeForm").addEventListener("submit", async (e) => 
             campus_id: campusId,
             updated_at: new Date()
         });
-
 
         alert("Node updated!");
         document.getElementById("editNodeModal").style.display = "none";
@@ -505,7 +536,6 @@ document.getElementById("editNodeForm").addEventListener("submit", async (e) => 
         alert("Error updating node: " + err.message);
     }
 });
-
 
 
 

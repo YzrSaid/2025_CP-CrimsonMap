@@ -104,10 +104,12 @@ async function populateCategoryDropdownForInfra() {
             const option = document.createElement("option");
             option.value = data.category_id;
             option.textContent = data.name;
+            option.dataset.name = data.name; // ✅ save category name here
             categorySelect.appendChild(option);
         }
     });
 }
+
 
 
 // ======================= INFRASTRUCTURE SECTION =========================
@@ -147,10 +149,14 @@ document.querySelector("#addInfraModal form")?.addEventListener("submit", async 
 
     const name = document.querySelector('#addInfraModal input[placeholder="e.g. Main Library"]').value.trim();
     const infraId = document.getElementById("infraId").value.trim();
-    const categoryId = document.querySelector('#addInfraModal select').value;
+
+    const categorySelect = document.querySelector('#addInfraModal select');
+    const categoryId = categorySelect.value;
+    const categoryName = categorySelect.selectedOptions[0]?.dataset.name || categoryId; // ✅ category name
+
     const phone = document.querySelector('#addInfraModal input[type="text"][placeholder="e.g. 09123456789"]').value.trim();
     const email = document.querySelector('#addInfraModal input[type="email"]').value.trim();
-    // Image upload (optional)
+
     let imageUrl = "";
     const imageFile = document.getElementById('uploadImage').files[0];
     if (imageFile) {
@@ -163,6 +169,7 @@ document.querySelector("#addInfraModal form")?.addEventListener("submit", async 
     }
 
     try {
+        // Save infrastructure
         await addDoc(collection(db, "Infrastructure"), {
             infra_id: infraId,
             name: name,
@@ -174,15 +181,25 @@ document.querySelector("#addInfraModal form")?.addEventListener("submit", async 
             createdAt: new Date()
         });
 
+        // ✅ Save activity log with category NAME (not id)
+        await addDoc(collection(db, "ActivityLogs"), {
+            timestamp: new Date(),
+            activity: "Added Infrastructure",
+            item: `Infrastructure ${infraId}`,
+            description: `Added infrastructure "${name}" under category "${categoryName}".`
+        });
+
         alert("Infrastructure saved successfully!");
         e.target.reset();
         hideInfraModal();
         renderInfraTable();
+
     } catch (err) {
         console.error("Error adding infrastructure:", err);
         alert("Error saving infrastructure.");
     }
 });
+
 
 // ----------- Load Infrastructure Table -----------
 async function renderInfraTable() {
@@ -231,7 +248,7 @@ async function renderInfraTable() {
 function showRoomModal() {
     document.getElementById('addRoomModal').style.display = 'flex';
     generateNextRoomId();
-    populateBuildingDropdownForRooms();
+    populateInfraDropdownForRooms();
 }
 function hideRoomModal() {
     document.getElementById('addRoomModal').style.display = 'none';
@@ -257,25 +274,54 @@ async function generateNextRoomId() {
     document.getElementById("roomId").value = nextId;
 }
 
-// ----------- Populate Building Dropdown for Rooms -----------
-async function populateBuildingDropdownForRooms() {
+// ----------- Populate Infrastructure Dropdown for Rooms -----------
+async function populateInfraDropdownForRooms() {
     const select = document.querySelector("#addRoomModal select");
     if (!select) return;
 
-    select.innerHTML = `<option value="">Select a building</option>`;
-    const q = query(collection(db, "Buildings"), orderBy("createdAt", "asc"));
-    const snapshot = await getDocs(q);
+    select.innerHTML = `<option value="">Select an infrastructure</option>`;
 
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.building_id && data.name) {
-            const option = document.createElement("option");
-            option.value = data.building_id;
-            option.textContent = data.name;
-            select.appendChild(option);
-        }
-    });
+    try {
+        // Step 1: Fetch categories so we can translate IDs → names
+        const categoriesSnapshot = await getDocs(collection(db, "Categories"));
+        const categoryMap = {};
+        categoriesSnapshot.forEach(doc => {
+            const cat = doc.data();
+            if (cat.category_id && cat.name) {
+                categoryMap[cat.category_id] = cat.name;
+            }
+        });
+
+        // Step 2: Fetch infrastructures
+        const q = query(collection(db, "Infrastructure"), orderBy("createdAt", "asc"));
+        const snapshot = await getDocs(q);
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+
+            // Look up category name using category_id
+            const categoryName = categoryMap[data.category_id] || null;
+
+            // ✅ Only include if under Academics or Administration Offices
+            if (
+                data.infra_id &&
+                data.name &&
+                (categoryName === "Academics" || categoryName === "Administration Offices")
+            ) {
+                const option = document.createElement("option");
+                option.value = data.infra_id;
+                option.textContent = data.name;
+                option.dataset.name = data.name; // ✅ save infra name
+                option.dataset.category = categoryName; // ✅ save category too
+                select.appendChild(option);
+            }
+        });
+    } catch (err) {
+        console.error("Error populating infrastructures: ", err);
+    }
 }
+
+
 
 // ----------- Add Room Handler -----------
 document.querySelector("#addRoomModal form")?.addEventListener("submit", async (e) => {
@@ -283,28 +329,39 @@ document.querySelector("#addRoomModal form")?.addEventListener("submit", async (
 
     const name = document.querySelector('#addRoomModal input[placeholder="e.g. Lecture Room 1"]').value.trim();
     const roomId = document.querySelector('#addRoomModal input[name="room_id"]').value.trim();
-    const buildingId = document.querySelector('#addRoomModal select').value;
+    const selectEl = document.querySelector('#addRoomModal select');
+    const infraId = selectEl.value; // now infra, not building
+    const infraName = selectEl.selectedOptions[0]?.dataset.name || infraId; // ✅ get infra name
     const latitude = document.querySelector('#addRoomModal input[placeholder="Latitude"]').value.trim();
     const longitude = document.querySelector('#addRoomModal input[placeholder="Longitude"]').value.trim();
     const location = document.querySelector('#addRoomModal input[placeholder="e.g. Near Gate 6 and College of Engineering"]').value.trim();
     const phone = document.querySelector('#addRoomModal input[type="text"][placeholder=""]').value.trim();
 
-    if (!name || !roomId || !buildingId || !latitude || !longitude || !location) {
+    if (!name || !roomId || !infraId || !latitude || !longitude || !location) {
         alert("Please fill in all required fields.");
         return;
     }
 
     try {
+        // Save Room
         await addDoc(collection(db, "Rooms"), {
             room_id: roomId,
             name: name,
-            building_id: buildingId,
+            infra_id: infraId, // ✅ updated key
             location: location,
             latitude: latitude,
             longitude: longitude,
             phone: phone || "",
             is_deleted: false,
             createdAt: new Date()
+        });
+
+        // Save Activity Log
+        await addDoc(collection(db, "ActivityLogs"), {
+            timestamp: new Date(),
+            activity: "Added Room",
+            item: `Room ${roomId}`,
+            description: `Added room "${name}" under infrastructure "${infraName}".`
         });
 
         alert("Room saved successfully!");
@@ -316,6 +373,8 @@ document.querySelector("#addRoomModal form")?.addEventListener("submit", async (
         alert("Error saving room.");
     }
 });
+
+
 
 // ----------- Load Rooms Table -----------
 async function renderRoomsTable() {
