@@ -676,3 +676,66 @@ h3 {
 #deleteInfraModal .save-btn:hover {
     background: #800000;
 }
+
+
+
+
+.custom-multiselect {
+  position: relative;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px;
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.custom-multiselect .selected-options {
+  font-size: 14px;
+  color: #555;
+}
+
+.custom-multiselect .options-list {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  z-index: 10;
+}
+
+.custom-multiselect.open .options-list {
+  display: block;
+  margin-bottom: 50px;
+}
+
+.custom-multiselect .option {
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.custom-multiselect .option:hover {
+  background: #f0f0f0;
+}
+
+.custom-multiselect .option.selected {
+  background: #e2e2e2;
+  color: rgb(0, 0, 0);
+}
+
+.custom-multiselect .option .checkmark {
+  display: none;
+  font-weight: bold;
+}
+
+.custom-multiselect .option.selected .checkmark {
+  display: inline;
+}

@@ -413,9 +413,12 @@ document.querySelector("#addMapModal form")?.addEventListener("submit", async (e
     e.preventDefault();
     const mapId = document.getElementById("mapId").value.trim();
     const mapName = document.getElementById("mapName").value.trim();
-    const campusIncluded = document.getElementById("campusIncludedSelect").value;
 
-    if (!mapId || !mapName) {
+    // ✅ Get selected campuses from custom dropdown
+    const campusDropdown = document.getElementById("campusDropdown");
+    const campusIncluded = campusDropdown.getSelectedValues();
+
+    if (!mapId || !mapName || campusIncluded.length === 0) {
         alert("Please fill in all required fields.");
         return;
     }
@@ -424,17 +427,89 @@ document.querySelector("#addMapModal form")?.addEventListener("submit", async (e
         await addDoc(collection(db, "Maps"), {
             map_id: mapId,
             map_name: mapName,
-            campus_included: campusIncluded, // now a single campus_id string
+            campus_included: campusIncluded, // ✅ array now
             createdAt: new Date()
         });
         alert("Map saved!");
         e.target.reset();
+
+        // reset dropdown display
+        document.getElementById("selectedCampuses").textContent = "Select campuses...";
+        campusDropdown.querySelectorAll(".option").forEach(opt => opt.classList.remove("selected"));
+
         hideMapModal();
         renderMapsTable();
     } catch (err) {
         alert("Error saving map: " + err);
     }
 });
+
+
+
+async function populateCampusDropdown() {
+  const container = document.getElementById("campusDropdown");
+  const optionsList = document.getElementById("campusOptions");
+  const selectedDisplay = document.getElementById("selectedCampuses");
+
+  optionsList.innerHTML = "";
+  let selectedValues = [];
+
+  // Fetch campuses
+  const q = query(collection(db, "Campus"), orderBy("createdAt", "asc"));
+  const snapshot = await getDocs(q);
+
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    if (data.campus_id && data.campus_name) {
+      const option = document.createElement("div");
+      option.classList.add("option");
+      option.dataset.value = data.campus_id;
+      option.innerHTML = `
+        <span>${data.campus_name}</span>
+        <span class="checkmark">✔</span>
+      `;
+
+      option.addEventListener("click", () => {
+        option.classList.toggle("selected");
+
+        const value = option.dataset.value;
+        if (option.classList.contains("selected")) {
+          selectedValues.push(value);
+        } else {
+          selectedValues = selectedValues.filter(v => v !== value);
+        }
+
+        // Update display
+        selectedDisplay.textContent =
+          selectedValues.length > 0
+            ? selectedValues.join(", ")
+            : "Select campuses...";
+      });
+
+      optionsList.appendChild(option);
+    }
+  });
+
+  // Toggle open/close
+  container.addEventListener("click", (e) => {
+    if (!e.target.closest(".options-list")) {
+      container.classList.toggle("open");
+    }
+  });
+
+  // Close if click outside
+  document.addEventListener("click", (e) => {
+    if (!container.contains(e.target)) {
+      container.classList.remove("open");
+    }
+  });
+
+  // Expose getter
+  container.getSelectedValues = () => selectedValues;
+}
+
+populateCampusDropdown();
+
 
 // ----------- Load Maps Table -----------
 async function renderMapsTable() {
@@ -456,7 +531,15 @@ async function renderMapsTable() {
         });
 
         for (const data of maps) {
-            const campusNames = campusMap[data.campus_included] || data.campus_included;
+            let campusNames = "";
+            if (Array.isArray(data.campus_included)) {
+                campusNames = data.campus_included
+                    .map(id => campusMap[id] || id)
+                    .join(", ");
+            } else {
+                campusNames = campusMap[data.campus_included] || data.campus_included;
+            }
+
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${data.map_id}</td>

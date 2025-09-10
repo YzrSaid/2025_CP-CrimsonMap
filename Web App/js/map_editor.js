@@ -190,7 +190,7 @@ async function renderNodesTable() {
             const data = docSnap.data();
 
             // Coordinates
-            const coords = (data.lat && data.lng) ? `${data.lat}, ${data.lng}` : "-";
+            const coords = (data.latitude && data.longitude) ? `${data.latitude}, ${data.longitude}` : "-";
 
             // Related infra/room names
             const infraName = data.related_infra_id ? (infraMap[data.related_infra_id] || data.related_infra_id) : "-";
@@ -291,8 +291,8 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
         await addDoc(collection(db, "Nodes"), {
             node_id: nodeId,
             name: nodeName,
-            lat: latitude,
-            lng: longitude,
+            latitude: latitude,   // ✅ renamed
+            longitude: longitude, // ✅ renamed
             type: type,
             related_infra_id: relatedInfraId,
             related_room_id: relatedRoomId,
@@ -301,6 +301,7 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
             campus_id: campusId,
             created_at: new Date()
         });
+
 
         // Clear all fields in the add node modal
         document.getElementById("nodeForm").reset();
@@ -360,8 +361,8 @@ document.querySelector(".nodetbl").addEventListener("click", async (e) => {
         document.getElementById("editNodeId").value = nodeData.node_id ?? "";
         document.getElementById("editNodeIdHidden").value = nodeData.node_id ?? "";
         document.getElementById("editNodeName").value = nodeData.name ?? "";
-        document.getElementById("editLatitude").value = nodeData.lat ?? "";
-        document.getElementById("editLongitude").value = nodeData.lng ?? "";
+        document.getElementById("editLatitude").value = nodeData.latitude ?? "";
+        document.getElementById("editLongitude").value = nodeData.longitude ?? "";
 
         // Type (handle custom input for "other")
         let typeSelect = document.getElementById("editNodeType");
@@ -483,8 +484,8 @@ document.getElementById("editNodeForm").addEventListener("submit", async (e) => 
         await updateDoc(nodeRef, {
             node_id: nodeId,
             name: nodeName,
-            lat: latitude,
-            lng: longitude,
+            latitude: latitude,   // ✅ renamed
+            longitude: longitude, // ✅ renamed
             type: type,
             related_infra_id: relatedInfraId,
             related_room_id: relatedRoomId,
@@ -493,6 +494,7 @@ document.getElementById("editNodeForm").addEventListener("submit", async (e) => 
             campus_id: campusId,
             updated_at: new Date()
         });
+
 
         alert("Node updated!");
         document.getElementById("editNodeModal").style.display = "none";
