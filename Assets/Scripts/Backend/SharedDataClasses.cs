@@ -2,14 +2,12 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-// Create a new file called "SharedDataClasses.cs" and put all these classes there
-
 [System.Serializable]
 public class MapInfo
 {
     public string map_id;
     public string map_name;
-    public string[] campus_included;
+    public List<string> campus_included;
 }
 
 [System.Serializable]

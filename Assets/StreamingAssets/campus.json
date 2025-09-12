@@ -1,14 +1,30 @@
 [
-    {
-        "campus_id": "C-001",
-        "campus_name": "Campus A"
-    },
-    {
-        "campus_id": "C-002",
-        "campus_name": "Campus B"
-    },
-    {
-        "campus_id": "C-003",
-        "campus_name": "Campus C"
-    }
+  {
+    "map_id": "MAP-01",
+    "createdAt": {},
+    "campus_name": "Campus A",
+    "campus_id": "CAMP-01",
+    "id": "LPdTcLknVfDaBGJyvUnH"
+  },
+  {
+    "map_id": "MAP-03",
+    "createdAt": {},
+    "campus_name": "sampe campus log",
+    "campus_id": "CAMP-04",
+    "id": "OMYVL8mDyYmfkz5NsImA"
+  },
+  {
+    "map_id": "MAP-01",
+    "createdAt": {},
+    "campus_name": "Campus B",
+    "campus_id": "CAMP-02",
+    "id": "RlcqVPExr5Q8lpWjc3HF"
+  },
+  {
+    "map_id": "MAP-01",
+    "createdAt": {},
+    "campus_name": "Campus C",
+    "campus_id": "CAMP-03",
+    "id": "gFc6dcNnpMdsnr2e9ZoO"
+  }
 ]

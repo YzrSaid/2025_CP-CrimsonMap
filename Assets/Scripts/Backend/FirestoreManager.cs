@@ -6,6 +6,7 @@ using Firebase.Firestore;
 using Firebase.Extensions;
 using System;
 using System.Linq;
+using Newtonsoft.Json;
 
 public class FirestoreManager : MonoBehaviour
 {
@@ -30,7 +31,7 @@ public class FirestoreManager : MonoBehaviour
     // Version-controlled collections (these come from map versions)
     private readonly string[] versionedCollections = {
         "Campus",
-        "Maps", 
+        "Maps",
         "Nodes"
         // "Edges" - if you have edges, add it here
     };
@@ -125,10 +126,12 @@ public class FirestoreManager : MonoBehaviour
         onComplete?.Invoke();
     }
 
+
+
     private void LoadAvailableMaps()
     {
         availableMaps.Clear();
-        
+
         if (JSONFileManager.Instance != null)
         {
             string mapsJson = JSONFileManager.Instance.ReadJSONFile("maps.json");
@@ -136,23 +139,24 @@ public class FirestoreManager : MonoBehaviour
             {
                 try
                 {
-                    // Parse JSON array using fixed JsonHelper
-                    var mapsArray = JsonHelper.FromJson<MapInfo>(mapsJson);
+                    var mapsArray = JsonConvert.DeserializeObject<List<MapInfo>>(mapsJson);
                     availableMaps.AddRange(mapsArray);
-                    
+
                     Debug.Log($"Loaded {availableMaps.Count} available maps:");
                     foreach (var map in availableMaps)
                     {
                         Debug.Log($"  - {map.map_id}: {map.map_name}");
+                        Debug.Log($"    campuses: {string.Join(", ", map.campus_included)}");
                     }
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
                     Debug.LogError($"Failed to parse maps.json: {ex.Message}");
                 }
             }
         }
     }
+
 
     private void CheckAllMapVersions(System.Action onComplete)
     {
@@ -176,7 +180,7 @@ public class FirestoreManager : MonoBehaviour
         foreach (var mapInfo in availableMaps)
         {
             Debug.Log($"Checking version for map: {mapInfo.map_id}");
-            
+
             CheckSingleMapVersion(mapInfo.map_id, (needsUpdate, serverVersion) =>
             {
                 if (needsUpdate && serverVersion != null)
@@ -199,13 +203,13 @@ public class FirestoreManager : MonoBehaviour
         if (mapsNeedingUpdate.Count > 0)
         {
             Debug.Log($"Syncing {mapsNeedingUpdate.Count} maps with updates...");
-            
+
             int completedSyncs = 0;
             foreach (var mapVersion in mapsNeedingUpdate)
             {
                 SyncSingleMapVersion(mapVersion, () => completedSyncs++);
             }
-            
+
             yield return new WaitUntil(() => completedSyncs >= mapsNeedingUpdate.Count);
             Debug.Log("All map updates completed");
         }
@@ -319,7 +323,7 @@ public class FirestoreManager : MonoBehaviour
 
         // Update local version cache for this specific map
         UpdateLocalVersionCache(mapVersion);
-        
+
         Debug.Log($"Map {mapVersion.map_id} sync completed for version: {mapVersion.current_version}");
         onComplete?.Invoke();
     }
@@ -404,13 +408,13 @@ public class FirestoreManager : MonoBehaviour
 
                     // Compare with local cache
                     LocalStaticDataCache localCache = GetLocalStaticDataCache();
-                    bool needsUpdate = localCache == null || 
+                    bool needsUpdate = localCache == null ||
                                      (serverInfo.infrastructure_updated && !localCache.infrastructure_synced) ||
                                      (serverInfo.categories_updated && !localCache.categories_synced);
 
                     Debug.Log($"Static data check - Infrastructure: {(serverInfo.infrastructure_updated ? "UPDATE NEEDED" : "OK")}, " +
                              $"Categories: {(serverInfo.categories_updated ? "UPDATE NEEDED" : "OK")}");
-                    
+
                     onComplete?.Invoke(needsUpdate, serverInfo);
                 }
                 else
@@ -474,7 +478,7 @@ public class FirestoreManager : MonoBehaviour
 
         // Update local cache to reflect successful sync
         UpdateLocalStaticDataCache(versionInfo);
-        
+
         // Reset server flags (tell admin data has been synced)
         ResetStaticDataFlags();
 
@@ -563,7 +567,7 @@ public class FirestoreManager : MonoBehaviour
     {
         // Reset the server flags to false after successful sync
         DocumentReference staticRef = db.Collection(STATIC_DATA_VERSIONS_COLLECTION).Document("GlobalInfo");
-        
+
         var resetData = new Dictionary<string, object>
         {
             { "infrastructure_updated", false },
@@ -608,13 +612,29 @@ public class FirestoreManager : MonoBehaviour
                 {
                     if (document.Exists)
                     {
-                        var docData = document.ToDictionary();
+                        var rawDict = document.ToDictionary();
+                        Dictionary<string, object> docData = new Dictionary<string, object>();
+
+                        foreach (var kv in rawDict)
+                        {
+                            if (kv.Value is IEnumerable<object> listValue && !(kv.Value is string))
+                            {
+                                // ✅ Convert Firestore array → JSON array of strings
+                                docData[kv.Key] = listValue.Select(v => v?.ToString()).ToList();
+                            }
+                            else
+                            {
+                                docData[kv.Key] = kv.Value;
+                            }
+                        }
+
                         docData["id"] = document.Id;
                         documents.Add(docData);
                     }
                 }
 
-                string jsonArray = ConvertToJsonArray(documents);
+                string jsonArray = JsonConvert.SerializeObject(documents, Formatting.Indented);
+
                 if (JSONFileManager.Instance != null)
                 {
                     JSONFileManager.Instance.WriteJSONFile(fileName, jsonArray);
@@ -630,6 +650,7 @@ public class FirestoreManager : MonoBehaviour
             }
         });
     }
+
 
     // Method to get available versions for a specific map
     public void GetAvailableMapVersions(string mapId, System.Action<List<string>> onComplete)
@@ -654,7 +675,7 @@ public class FirestoreManager : MonoBehaviour
                 {
                     versions.Add(doc.Id);
                 }
-                
+
                 // Sort versions (assuming they follow semantic versioning)
                 versions.Sort((a, b) => CompareVersions(a, b));
                 onComplete?.Invoke(versions);
@@ -671,7 +692,7 @@ public class FirestoreManager : MonoBehaviour
     public void SwitchToMapVersion(string mapId, string version, System.Action onComplete = null)
     {
         Debug.Log($"Switching map {mapId} to version: {version}");
-        
+
         // Update local cache to reflect the switch
         MapVersionInfo versionInfo = new MapVersionInfo
         {
@@ -826,4 +847,138 @@ public class FirestoreManager : MonoBehaviour
             onUpdate?.Invoke(documents);
         });
     }
+
+
+
+    // FALLBACK
+    // Add these methods to your FirestoreManager class
+
+    public void SyncFromIndividualCollections(System.Action onComplete = null)
+    {
+        StartCoroutine(SyncFromIndividualCollectionsCoroutine(onComplete));
+    }
+
+    private IEnumerator SyncFromIndividualCollectionsCoroutine(System.Action onComplete)
+    {
+        Debug.Log("Starting sync from individual collections (fallback mode)...");
+
+        // Define all collections you want to sync
+        string[] collectionsToSync = {
+        "Maps",           // Main maps collection
+        "Infrastructure", // Building info, room details  
+        "Categories",     // Category definitions
+        "Campus",         // Campus data
+        "Nodes",          // Map nodes
+        "Edges"           // Map edges
+    };
+
+        int completedSyncs = 0;
+        int totalSyncs = collectionsToSync.Length;
+
+        // Sync each collection
+        foreach (string collectionName in collectionsToSync)
+        {
+            Debug.Log($"Syncing {collectionName} collection...");
+            SyncCollectionToLocal(collectionName, () =>
+            {
+                completedSyncs++;
+                Debug.Log($"Completed {completedSyncs}/{totalSyncs} collections");
+            });
+        }
+
+        // Wait for all syncs to complete
+        yield return new WaitUntil(() => completedSyncs >= totalSyncs);
+
+        Debug.Log("Individual collections sync completed!");
+        onComplete?.Invoke();
+    }
+
+    // Modified version of CheckAndSyncData with fallback capability
+    public void CheckAndSyncDataWithFallback(System.Action onComplete = null)
+    {
+        if (!isFirebaseReady)
+        {
+            Debug.LogWarning("Firebase not ready, using cached data");
+            onComplete?.Invoke();
+            return;
+        }
+
+        StartCoroutine(CheckAndSyncDataWithFallbackCoroutine(onComplete));
+    }
+
+    private IEnumerator CheckAndSyncDataWithFallbackCoroutine(System.Action onComplete)
+    {
+        Debug.Log("Starting comprehensive data sync check with fallback...");
+
+        // Step 1: Try to sync Maps collection first
+        bool mapsSyncComplete = false;
+        SyncCollectionToLocal(MAPS_COLLECTION, () => mapsSyncComplete = true);
+        yield return new WaitUntil(() => mapsSyncComplete);
+
+        // Step 2: Load available maps from local JSON
+        LoadAvailableMaps();
+
+        // Step 3: Check if mapVersions system is set up
+        bool hasVersionSystem = false;
+        if (availableMaps.Count > 0)
+        {
+            // Test if mapVersions collection exists by checking the first map
+            string firstMapId = availableMaps[0].map_id;
+            bool versionCheckComplete = false;
+
+            CheckSingleMapVersion(firstMapId, (needsUpdate, serverVersion) =>
+            {
+                hasVersionSystem = (serverVersion != null);
+                versionCheckComplete = true;
+                Debug.Log($"Version system available: {hasVersionSystem}");
+            });
+
+            yield return new WaitUntil(() => versionCheckComplete);
+        }
+
+        if (hasVersionSystem && availableMaps.Count > 0)
+        {
+            Debug.Log("Using versioned data system...");
+            // Use the original versioned system
+            bool allMapsChecked = false;
+            CheckAllMapVersions(() => allMapsChecked = true);
+            yield return new WaitUntil(() => allMapsChecked);
+
+            // Check static collections
+            bool staticSyncComplete = false;
+            SyncStaticCollections(() => staticSyncComplete = true);
+            yield return new WaitUntil(() => staticSyncComplete);
+        }
+        else
+        {
+            Debug.Log("Version system not available, using individual collections fallback...");
+            // Fallback to individual collections
+            bool fallbackSyncComplete = false;
+            SyncFromIndividualCollections(() => fallbackSyncComplete = true);
+            yield return new WaitUntil(() => fallbackSyncComplete);
+        }
+
+        Debug.Log("Comprehensive data sync with fallback completed");
+        onComplete?.Invoke();
+    }
+
+    // Helper method to test if a collection exists and has documents
+    private void TestCollectionExists(string collectionName, System.Action<bool> onComplete)
+    {
+        db.Collection(collectionName).Limit(1).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsCompletedSuccessfully)
+            {
+                QuerySnapshot snapshot = task.Result;
+                bool hasDocuments = snapshot.Documents.Count() > 0;
+                onComplete?.Invoke(hasDocuments);
+            }
+            else
+            {
+                Debug.LogWarning($"Failed to check collection {collectionName}: {task.Exception?.Message}");
+                onComplete?.Invoke(false);
+            }
+        });
+    }
 }
+

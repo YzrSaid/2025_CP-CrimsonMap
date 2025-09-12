@@ -153,6 +153,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   onboardingComplete: 0
   isDataInitialized: 0
+  availableMaps: []
   jsonFileManagerPrefab: {fileID: 415949767}
   firestoreManagerPrefab: {fileID: 914826945}
 --- !u!4 &109111738
@@ -179,6 +180,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 415949768}
+  - component: {fileID: 415949769}
   m_Layer: 0
   m_Name: JSONFileManager
   m_TagString: Untagged
@@ -201,6 +203,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &415949769
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 415949767}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c2dd0a5788e16d6a9996bfac86323db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &551755050
 GameObject:
   m_ObjectHideFlags: 0
@@ -440,6 +454,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 914826946}
+  - component: {fileID: 914826947}
   m_Layer: 0
   m_Name: FirestoreManager
   m_TagString: Untagged
@@ -462,6 +477,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &914826947
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 914826945}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02991c867e39948709e3071225724fbc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

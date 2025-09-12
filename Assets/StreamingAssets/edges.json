@@ -1,434 +1,50 @@
 [
   {
+    "to_node": "ND-027",
+    "path_type": null,
+    "is_deleted": false,
+    "is_active": true,
+    "from_node": "ND-026",
+    "elevations": null,
     "edge_id": "EDG-001",
-    "from_node": "N-001",
-    "to_node": "P-001",
-    "distance": 25,
-    "path_type": "paved",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
+    "distance": null,
+    "created_at": {},
+    "id": "EGohxSSF1wNtGiWz10yL"
   },
   {
-    "edge_id": "EDG-002",
-    "from_node": "P-001",
-    "to_node": "P-002",
-    "distance": 30,
-    "path_type": "paved",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-003",
-    "from_node": "P-002",
-    "to_node": "P-003",
-    "distance": 35,
-    "path_type": "paved",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
+    "to_node": "ND-026",
+    "path_type": null,
+    "is_deleted": false,
+    "is_active": true,
+    "from_node": "ND-029",
+    "elevations": null,
     "edge_id": "EDG-004",
-    "from_node": "P-003",
-    "to_node": "N-002",
-    "distance": 15,
-    "path_type": "walkway",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
+    "distance": null,
+    "created_at": {},
+    "id": "LOkIYIyloHQOIZLLyFC8"
   },
   {
-    "edge_id": "EDG-005",
-    "from_node": "P-003",
-    "to_node": "P-004",
-    "distance": 40,
-    "path_type": "paved",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
+    "to_node": "ND-029",
+    "path_type": null,
+    "is_deleted": false,
+    "is_active": true,
+    "from_node": "ND-028",
+    "elevations": null,
+    "edge_id": "EDG-003",
+    "distance": null,
+    "created_at": {},
+    "id": "i92A89tLWDI2kTmyAPJV"
   },
   {
-    "edge_id": "EDG-006",
-    "from_node": "P-004",
-    "to_node": "P-005",
-    "distance": 40,
-    "path_type": "paved",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-007",
-    "from_node": "P-005",
-    "to_node": "N-011",
-    "distance": 15,
-    "path_type": "walkway",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-008",
-    "from_node": "P-003",
-    "to_node": "P-006",
-    "distance": 35,
-    "path_type": "walkway",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-009",
-    "from_node": "P-006",
-    "to_node": "P-007",
-    "distance": 20,
-    "path_type": "walkway",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-010",
-    "from_node": "P-007",
-    "to_node": "N-012",
-    "distance": 20,
-    "path_type": "walkway",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-011",
-    "from_node": "N-003",
-    "to_node": "N-007",
-    "distance": 0,
-    "path_type": "barrier",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-012",
-    "from_node": "N-007",
-    "to_node": "N-004",
-    "distance": 0,
-    "path_type": "barrier",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-013",
-    "from_node": "N-004",
-    "to_node": "N-008",
-    "distance": 0,
-    "path_type": "barrier",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-014",
-    "from_node": "N-008",
-    "to_node": "N-005",
-    "distance": 0,
-    "path_type": "barrier",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-015",
-    "from_node": "N-005",
-    "to_node": "N-009",
-    "distance": 0,
-    "path_type": "barrier",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-016",
-    "from_node": "N-009",
-    "to_node": "N-006",
-    "distance": 0,
-    "path_type": "barrier",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-017",
-    "from_node": "N-006",
-    "to_node": "N-010",
-    "distance": 0,
-    "path_type": "barrier",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-018",
-    "from_node": "N-010",
-    "to_node": "N-003",
-    "distance": 0,
-    "path_type": "barrier",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-101",
-    "from_node": "N-101",
-    "to_node": "P-101",
-    "distance": 25,
-    "path_type": "paved",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-102",
-    "from_node": "P-101",
-    "to_node": "P-102",
-    "distance": 30,
-    "path_type": "paved",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-103",
-    "from_node": "P-102",
-    "to_node": "P-103",
-    "distance": 35,
-    "path_type": "paved",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-104",
-    "from_node": "P-103",
-    "to_node": "N-102",
-    "distance": 15,
-    "path_type": "walkway",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-105",
-    "from_node": "P-103",
-    "to_node": "P-104",
-    "distance": 40,
-    "path_type": "paved",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-106",
-    "from_node": "P-104",
-    "to_node": "P-105",
-    "distance": 40,
-    "path_type": "paved",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-107",
-    "from_node": "P-105",
-    "to_node": "N-111",
-    "distance": 15,
-    "path_type": "walkway",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-108",
-    "from_node": "P-103",
-    "to_node": "P-106",
-    "distance": 35,
-    "path_type": "walkway",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-109",
-    "from_node": "P-106",
-    "to_node": "P-107",
-    "distance": 20,
-    "path_type": "walkway",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-110",
-    "from_node": "P-107",
-    "to_node": "N-112",
-    "distance": 20,
-    "path_type": "walkway",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-111",
-    "from_node": "N-103",
-    "to_node": "N-107",
-    "distance": 0,
-    "path_type": "barrier",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-112",
-    "from_node": "N-107",
-    "to_node": "N-104",
-    "distance": 0,
-    "path_type": "barrier",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-113",
-    "from_node": "N-104",
-    "to_node": "N-108",
-    "distance": 0,
-    "path_type": "barrier",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-114",
-    "from_node": "N-108",
-    "to_node": "N-105",
-    "distance": 0,
-    "path_type": "barrier",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-115",
-    "from_node": "N-105",
-    "to_node": "N-109",
-    "distance": 0,
-    "path_type": "barrier",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-116",
-    "from_node": "N-109",
-    "to_node": "N-106",
-    "distance": 0,
-    "path_type": "barrier",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-117",
-    "from_node": "N-106",
-    "to_node": "N-110",
-    "distance": 0,
-    "path_type": "barrier",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
-  },
-  {
-    "edge_id": "EDG-118",
-    "from_node": "N-110",
-    "to_node": "N-103",
-    "distance": 0,
-    "path_type": "barrier",
-    "elevations": [
-      0,
-      0
-    ],
-    "is_active": true
+    "to_node": "ND-028",
+    "path_type": null,
+    "is_deleted": false,
+    "is_active": true,
+    "from_node": "ND-027",
+    "elevations": null,
+    "edge_id": "EDG-002",
+    "distance": null,
+    "created_at": {},
+    "id": "xWyCI7XR9TMtCRc8cGHQ"
   }
 ]

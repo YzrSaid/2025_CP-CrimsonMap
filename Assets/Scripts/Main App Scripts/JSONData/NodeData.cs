@@ -12,23 +12,31 @@ public class Node
     public bool is_active;
     
     // Unity JsonUtility has issues with nullable ints
-    public int related_infra_id = -1;  
-    public int related_room_id = -1;   
+    public string related_infra_id;  
+    public string related_room_id;   
     
-    public bool indoor;
+    public IndoorInfo indoor; 
     public string campus_id;
     
-    // Helper properties to check if values are set
-    public bool HasRelatedInfraId => related_infra_id > 0;
-    public bool HasRelatedRoomId => related_room_id > 0;
-    
-    // Get the actual values (returns null if not set)
-    public int? GetRelatedInfraId() => related_infra_id > 0 ? related_infra_id : (int?)null;
-    public int? GetRelatedRoomId() => related_room_id > 0 ? related_room_id : (int?)null;
+   // Helpers
+    public bool HasRelatedInfraId => !string.IsNullOrEmpty(related_infra_id);
+    public bool HasRelatedRoomId => !string.IsNullOrEmpty(related_room_id);
+
+    // If you need them as strings
+    public string GetRelatedInfraId() => HasRelatedInfraId ? related_infra_id : null;
+    public string GetRelatedRoomId() => HasRelatedRoomId ? related_room_id : null;
 }
 
 [System.Serializable]
 public class NodeList
 {
     public List<Node> nodes;
+}
+
+[System.Serializable]
+public class IndoorInfo
+{
+    public float x;
+    public float y;
+    public int floor;
 }

@@ -5,6 +5,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Android;
 using System.Linq;
+using Newtonsoft.Json;
 
 public class GlobalManager : MonoBehaviour
 {
@@ -46,7 +47,7 @@ public class GlobalManager : MonoBehaviour
             DontDestroyOnLoad(this.gameObject);
 
             onboardingSavePath = Application.persistentDataPath + "/saveData.json";
-            
+
             InitializeManagers();
         }
         else
@@ -61,6 +62,88 @@ public class GlobalManager : MonoBehaviour
         StartCoroutine(InitializeManagersCoroutine());
     }
 
+    // private IEnumerator InitializeManagersCoroutine()
+    // {
+    //     Debug.Log("Initializing managers...");
+
+    //     // Create JSON File Manager if it doesn't exist
+    //     if (JSONFileManager.Instance == null)
+    //     {
+    //         if (jsonFileManagerPrefab != null)
+    //         {
+    //             Instantiate(jsonFileManagerPrefab);
+    //         }
+    //         else
+    //         {
+    //             GameObject jsonManager = new GameObject("JSONFileManager");
+    //             jsonManager.AddComponent<JSONFileManager>();
+    //         }
+    //     }
+
+    //     // Create Firestore Manager if it doesn't exist
+    //     if (FirestoreManager.Instance == null)
+    //     {
+    //         if (firestoreManagerPrefab != null)
+    //         {
+    //             Instantiate(firestoreManagerPrefab);
+    //         }
+    //         else
+    //         {
+    //             GameObject firestoreManager = new GameObject("FirestoreManager");
+    //             firestoreManager.AddComponent<FirestoreManager>();
+    //         }
+    //     }
+
+    //     yield return null; // Wait a frame for managers to initialize
+
+    //     // Load local onboarding data first
+    //     LoadOnboardingData();
+
+    //     // Initialize base JSON files (creates default files if they don't exist)
+    //     if (JSONFileManager.Instance != null)
+    //     {
+    //         bool jsonInitComplete = false;
+    //         JSONFileManager.Instance.InitializeJSONFiles(() => {
+    //             jsonInitComplete = true;
+    //         });
+
+    //         yield return new WaitUntil(() => jsonInitComplete);
+    //     }
+
+    //     // Initialize Firebase and perform comprehensive sync
+    //     if (FirestoreManager.Instance != null)
+    //     {
+    //         bool firebaseInitComplete = false;
+    //         FirestoreManager.Instance.InitializeFirebase((success) => {
+    //             firebaseInitComplete = true;
+
+    //             if (success)
+    //             {
+    //                 Debug.Log("Firebase initialized successfully - starting comprehensive data sync...");
+    //                 // Use the new multi-map intelligent sync
+    //                 FirestoreManager.Instance.CheckAndSyncData(() => {
+    //                     Debug.Log("Comprehensive multi-map sync completed!");
+    //                     PostSyncInitialization();
+    //                 });
+    //             }
+    //             else
+    //             {
+    //                 Debug.Log("Firebase failed to initialize - using cached/local data only");
+    //                 PostSyncInitialization();
+    //             }
+    //         });
+
+    //         yield return new WaitUntil(() => firebaseInitComplete);
+    //     }
+    //     else
+    //     {
+    //         Debug.Log("Data initialization complete (local only)");
+    //         PostSyncInitialization();
+    //     }
+    // }
+
+    // Replace your InitializeManagersCoroutine in GlobalManager with this version:
+
     private IEnumerator InitializeManagersCoroutine()
     {
         Debug.Log("Initializing managers...");
@@ -68,13 +151,18 @@ public class GlobalManager : MonoBehaviour
         // Create JSON File Manager if it doesn't exist
         if (JSONFileManager.Instance == null)
         {
+            GameObject jsonManager;
             if (jsonFileManagerPrefab != null)
             {
-                Instantiate(jsonFileManagerPrefab);
+                jsonManager = Instantiate(jsonFileManagerPrefab);
+                if (jsonManager.GetComponent<JSONFileManager>() == null)
+                {
+                    jsonManager.AddComponent<JSONFileManager>();
+                }
             }
             else
             {
-                GameObject jsonManager = new GameObject("JSONFileManager");
+                jsonManager = new GameObject("JSONFileManager");
                 jsonManager.AddComponent<JSONFileManager>();
             }
         }
@@ -82,62 +170,109 @@ public class GlobalManager : MonoBehaviour
         // Create Firestore Manager if it doesn't exist
         if (FirestoreManager.Instance == null)
         {
+            GameObject firestoreManager;
             if (firestoreManagerPrefab != null)
             {
-                Instantiate(firestoreManagerPrefab);
+                firestoreManager = Instantiate(firestoreManagerPrefab);
+                if (firestoreManager.GetComponent<FirestoreManager>() == null)
+                {
+                    firestoreManager.AddComponent<FirestoreManager>();
+                }
             }
             else
             {
-                GameObject firestoreManager = new GameObject("FirestoreManager");
+                firestoreManager = new GameObject("FirestoreManager");
                 firestoreManager.AddComponent<FirestoreManager>();
             }
         }
 
-        yield return null; // Wait a frame for managers to initialize
+        // Wait for managers to properly initialize their singletons
+        yield return new WaitUntil(() => JSONFileManager.Instance != null && FirestoreManager.Instance != null);
+
+        Debug.Log("Managers created, continuing initialization...");
 
         // Load local onboarding data first
         LoadOnboardingData();
 
         // Initialize base JSON files (creates default files if they don't exist)
-        if (JSONFileManager.Instance != null)
+        bool jsonInitComplete = false;
+        JSONFileManager.Instance.InitializeJSONFiles(() =>
         {
-            bool jsonInitComplete = false;
-            JSONFileManager.Instance.InitializeJSONFiles(() => {
-                jsonInitComplete = true;
-            });
-            
-            yield return new WaitUntil(() => jsonInitComplete);
-        }
+            jsonInitComplete = true;
+        });
 
-        // Initialize Firebase and perform comprehensive sync
-        if (FirestoreManager.Instance != null)
+        yield return new WaitUntil(() => jsonInitComplete);
+
+        // Initialize Firebase and perform comprehensive sync WITH FALLBACK
+        bool firebaseInitComplete = false;
+        FirestoreManager.Instance.InitializeFirebase((success) =>
         {
-            bool firebaseInitComplete = false;
-            FirestoreManager.Instance.InitializeFirebase((success) => {
-                firebaseInitComplete = true;
-                
-                if (success)
+            firebaseInitComplete = true;
+
+            if (success)
+            {
+                Debug.Log("Firebase initialized successfully - starting comprehensive data sync with fallback...");
+                // Use the new fallback method
+                FirestoreManager.Instance.CheckAndSyncDataWithFallback(() =>
                 {
-                    Debug.Log("Firebase initialized successfully - starting comprehensive data sync...");
-                    // Use the new multi-map intelligent sync
-                    FirestoreManager.Instance.CheckAndSyncData(() => {
-                        Debug.Log("Comprehensive multi-map sync completed!");
-                        PostSyncInitialization();
-                    });
+                    Debug.Log("Comprehensive sync with fallback completed!");
+                    PostSyncInitialization();
+                });
+            }
+            else
+            {
+                Debug.Log("Firebase failed to initialize - using cached/local data only");
+                PostSyncInitialization();
+            }
+        });
+
+        yield return new WaitUntil(() => firebaseInitComplete);
+    }
+
+    // Also update your SmartDataSync method to use the fallback:
+    public void SmartDataSync(System.Action onComplete = null)
+    {
+        if (FirestoreManager.Instance != null && FirestoreManager.Instance.IsReady)
+        {
+            var oldVersions = new Dictionary<string, string>(currentMapVersions);
+
+            // Use fallback-enabled sync
+            FirestoreManager.Instance.CheckAndSyncDataWithFallback(() =>
+            {
+                UpdateCurrentMapVersions();
+
+                // Check if any versions changed
+                bool versionsChanged = false;
+                List<string> updatedMaps = new List<string>();
+
+                foreach (var kvp in currentMapVersions)
+                {
+                    string oldVersion = oldVersions.GetValueOrDefault(kvp.Key, "unknown");
+                    if (oldVersion != kvp.Value)
+                    {
+                        versionsChanged = true;
+                        updatedMaps.Add(kvp.Key);
+                        Debug.Log($"Map {kvp.Key} updated from {oldVersion} to {kvp.Value}");
+                    }
+                }
+
+                if (versionsChanged)
+                {
+                    Debug.Log($"Map versions updated for: {string.Join(", ", updatedMaps)}");
+                    OnMapVersionsChanged?.Invoke(currentMapVersions);
                 }
                 else
                 {
-                    Debug.Log("Firebase failed to initialize - using cached/local data only");
-                    PostSyncInitialization();
+                    Debug.Log("All map data is already up to date");
                 }
+
+                onComplete?.Invoke();
             });
-            
-            yield return new WaitUntil(() => firebaseInitComplete);
         }
         else
         {
-            Debug.Log("Data initialization complete (local only)");
-            PostSyncInitialization();
+            Debug.LogWarning("Firestore not ready for sync");
+            onComplete?.Invoke();
         }
     }
 
@@ -146,12 +281,13 @@ public class GlobalManager : MonoBehaviour
         // Load available maps and update current versions
         LoadAvailableMaps();
         UpdateCurrentMapVersions();
-        
+
         // Initialize map-specific files now that we know what maps exist
         if (JSONFileManager.Instance != null && availableMaps.Count > 0)
         {
             List<string> mapIds = availableMaps.Select(m => m.map_id).ToList();
-            JSONFileManager.Instance.InitializeMapSpecificFiles(mapIds, () => {
+            JSONFileManager.Instance.InitializeMapSpecificFiles(mapIds, () =>
+            {
                 FinalizeDataInitialization();
             });
         }
@@ -165,13 +301,13 @@ public class GlobalManager : MonoBehaviour
     {
         isDataInitialized = true;
         Debug.Log($"All systems ready! Available maps: {availableMaps.Count}");
-        
+
         // Log map versions
         foreach (var kvp in currentMapVersions)
         {
             Debug.Log($"Map {kvp.Key}: Version {kvp.Value}");
         }
-        
+
         // Notify other systems that data is ready
         OnDataInitializationComplete?.Invoke();
     }
@@ -179,7 +315,7 @@ public class GlobalManager : MonoBehaviour
     private void LoadAvailableMaps()
     {
         availableMaps.Clear();
-        
+
         if (JSONFileManager.Instance != null)
         {
             string mapsJson = JSONFileManager.Instance.ReadJSONFile("maps.json");
@@ -187,29 +323,30 @@ public class GlobalManager : MonoBehaviour
             {
                 try
                 {
-                    var mapsArray = JsonHelper.FromJson<MapInfo>(mapsJson);
+                    // Use Newtonsoft instead of JsonHelper
+                    var mapsArray = JsonConvert.DeserializeObject<List<MapInfo>>(mapsJson);
                     availableMaps.AddRange(mapsArray);
-                    
+
                     Debug.Log($"Loaded {availableMaps.Count} available maps:");
                     foreach (var map in availableMaps)
                     {
                         Debug.Log($"  - {map.map_id}: {map.map_name}");
+                        Debug.Log($"    campuses: {string.Join(", ", map.campus_included)}");
                     }
-                    
+
                     OnAvailableMapsChanged?.Invoke(availableMaps);
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
-                    Debug.LogError($"Failed to load available maps: {ex.Message}");
+                    Debug.LogError($"Failed to load available maps: {ex.Message}\nJSON Content:\n{mapsJson}");
                 }
             }
         }
     }
-
     private void UpdateCurrentMapVersions()
     {
         currentMapVersions.Clear();
-        
+
         if (JSONFileManager.Instance != null && FirestoreManager.Instance != null)
         {
             foreach (var map in availableMaps)
@@ -217,7 +354,7 @@ public class GlobalManager : MonoBehaviour
                 LocalVersionCache cache = JSONFileManager.Instance.GetMapVersionCache(map.map_id);
                 currentMapVersions[map.map_id] = cache?.cached_version ?? "none";
             }
-            
+
             Debug.Log($"Updated current map versions: {currentMapVersions.Count} maps");
         }
     }
@@ -226,23 +363,23 @@ public class GlobalManager : MonoBehaviour
     public string GetSystemStatus()
     {
         bool staticDataFresh = IsStaticDataFresh();
-        
+
         string status = "=== CRIMSON MAP SYSTEM STATUS ===\n";
         status += $"Data Initialized: {isDataInitialized}\n";
         status += $"Available Maps: {availableMaps.Count}\n";
-        
+
         foreach (var map in availableMaps)
         {
             string version = currentMapVersions.GetValueOrDefault(map.map_id, "unknown");
             status += $"  - {map.map_id} ({map.map_name}): v{version}\n";
         }
-        
+
         status += $"JSON Manager Ready: {JSONFileManager.Instance != null}\n";
         status += $"Firestore Manager Ready: {FirestoreManager.Instance?.IsReady ?? false}\n";
         status += $"Onboarding Complete: {onboardingComplete}\n";
         status += $"Static Data Fresh: {staticDataFresh}\n";
         status += $"System Ready: {IsSystemReady()}";
-        
+
         return status;
     }
 
@@ -298,12 +435,12 @@ public class GlobalManager : MonoBehaviour
     {
         int completedSyncs = 0;
         int totalSyncs = 2; // Infrastructure and Categories
-        
+
         FirestoreManager.Instance.SyncCollectionToLocal("Infrastructure", () => completedSyncs++);
         FirestoreManager.Instance.SyncCollectionToLocal("Categories", () => completedSyncs++);
-        
+
         yield return new WaitUntil(() => completedSyncs >= totalSyncs);
-        
+
         Debug.Log("Static data refresh completed");
         onComplete?.Invoke();
     }
@@ -385,11 +522,11 @@ public class GlobalManager : MonoBehaviour
         if (FirestoreManager.Instance != null && FirestoreManager.Instance.IsReady)
         {
             var oldVersions = new Dictionary<string, string>(currentMapVersions);
-            
+
             FirestoreManager.Instance.CheckAndSyncData(() =>
             {
                 UpdateCurrentMapVersions();
-                
+
                 // Check if any versions changed
                 bool versionsChanged = false;
                 foreach (var kvp in currentMapVersions)
@@ -401,12 +538,12 @@ public class GlobalManager : MonoBehaviour
                         Debug.Log($"Map {kvp.Key} updated from {oldVersion} to {kvp.Value}");
                     }
                 }
-                
+
                 if (versionsChanged)
                 {
                     OnMapVersionsChanged?.Invoke(currentMapVersions);
                 }
-                
+
                 Debug.Log("Force refresh completed!");
                 onComplete?.Invoke();
             });
@@ -419,50 +556,50 @@ public class GlobalManager : MonoBehaviour
     }
 
     // Smart data sync (checks versions first) - now handles multiple maps
-    public void SmartDataSync(System.Action onComplete = null)
-    {
-        if (FirestoreManager.Instance != null && FirestoreManager.Instance.IsReady)
-        {
-            var oldVersions = new Dictionary<string, string>(currentMapVersions);
-            
-            FirestoreManager.Instance.CheckAndSyncData(() =>
-            {
-                UpdateCurrentMapVersions();
-                
-                // Check if any versions changed
-                bool versionsChanged = false;
-                List<string> updatedMaps = new List<string>();
-                
-                foreach (var kvp in currentMapVersions)
-                {
-                    string oldVersion = oldVersions.GetValueOrDefault(kvp.Key, "unknown");
-                    if (oldVersion != kvp.Value)
-                    {
-                        versionsChanged = true;
-                        updatedMaps.Add(kvp.Key);
-                        Debug.Log($"Map {kvp.Key} updated from {oldVersion} to {kvp.Value}");
-                    }
-                }
-                
-                if (versionsChanged)
-                {
-                    Debug.Log($"Map versions updated for: {string.Join(", ", updatedMaps)}");
-                    OnMapVersionsChanged?.Invoke(currentMapVersions);
-                }
-                else
-                {
-                    Debug.Log("All map data is already up to date");
-                }
-                
-                onComplete?.Invoke();
-            });
-        }
-        else
-        {
-            Debug.LogWarning("Firestore not ready for sync");
-            onComplete?.Invoke();
-        }
-    }
+    // public void SmartDataSync(System.Action onComplete = null)
+    // {
+    //     if (FirestoreManager.Instance != null && FirestoreManager.Instance.IsReady)
+    //     {
+    //         var oldVersions = new Dictionary<string, string>(currentMapVersions);
+
+    //         FirestoreManager.Instance.CheckAndSyncData(() =>
+    //         {
+    //             UpdateCurrentMapVersions();
+
+    //             // Check if any versions changed
+    //             bool versionsChanged = false;
+    //             List<string> updatedMaps = new List<string>();
+
+    //             foreach (var kvp in currentMapVersions)
+    //             {
+    //                 string oldVersion = oldVersions.GetValueOrDefault(kvp.Key, "unknown");
+    //                 if (oldVersion != kvp.Value)
+    //                 {
+    //                     versionsChanged = true;
+    //                     updatedMaps.Add(kvp.Key);
+    //                     Debug.Log($"Map {kvp.Key} updated from {oldVersion} to {kvp.Value}");
+    //                 }
+    //             }
+
+    //             if (versionsChanged)
+    //             {
+    //                 Debug.Log($"Map versions updated for: {string.Join(", ", updatedMaps)}");
+    //                 OnMapVersionsChanged?.Invoke(currentMapVersions);
+    //             }
+    //             else
+    //             {
+    //                 Debug.Log("All map data is already up to date");
+    //             }
+
+    //             onComplete?.Invoke();
+    //         });
+    //     }
+    //     else
+    //     {
+    //         Debug.LogWarning("Firestore not ready for sync");
+    //         onComplete?.Invoke();
+    //     }
+    // }
 
     // Get available versions for a specific map
     public void GetAvailableMapVersions(string mapId, System.Action<List<string>> onComplete)
@@ -484,12 +621,12 @@ public class GlobalManager : MonoBehaviour
         if (FirestoreManager.Instance != null && FirestoreManager.Instance.IsReady)
         {
             string oldVersion = currentMapVersions.GetValueOrDefault(mapId, "unknown");
-            
+
             FirestoreManager.Instance.SwitchToMapVersion(mapId, version, () =>
             {
                 // Update the specific map version
                 currentMapVersions[mapId] = version;
-                
+
                 Debug.Log($"Switched map {mapId} from {oldVersion} to {version}");
                 OnMapVersionsChanged?.Invoke(currentMapVersions);
                 onComplete?.Invoke();
@@ -595,8 +732,8 @@ public class GlobalManager : MonoBehaviour
     // Check if all systems are ready
     public bool IsSystemReady()
     {
-        return isDataInitialized && 
-               JSONFileManager.Instance != null && 
+        return isDataInitialized &&
+               JSONFileManager.Instance != null &&
                (FirestoreManager.Instance == null || FirestoreManager.Instance.IsReady);
     }
 
@@ -613,12 +750,12 @@ public class GlobalManager : MonoBehaviour
     public string GetComprehensiveStatus()
     {
         string systemStatus = GetSystemStatus();
-        
+
         if (JSONFileManager.Instance != null)
         {
             systemStatus += "\n\n" + JSONFileManager.Instance.GetFileSystemStatus();
         }
-        
+
         return systemStatus;
     }
 }

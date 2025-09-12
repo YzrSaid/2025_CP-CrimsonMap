@@ -57,7 +57,7 @@ public class MapManager : MonoBehaviour
     void LoadMapAndCampusData()
     {
         // Load maps.json
-        string mapPath = Path.Combine(Application.streamingAssetsPath, "map.json");
+        string mapPath = Path.Combine(Application.streamingAssetsPath, "maps.json");
         if (File.Exists(mapPath))
         {
             string mapJson = File.ReadAllText(mapPath);
@@ -111,8 +111,8 @@ public class MapManager : MonoBehaviour
         yield return StartCoroutine(coordinateSystem.RecalculateBoundsForCampuses(currentCampusIds));
         
         // Spawn everything in order
-        yield return StartCoroutine(barrierSpawner.LoadAndSpawnForCampuses(currentCampusIds));
-        yield return StartCoroutine(infrastructureSpawner.LoadAndSpawnForCampuses(currentCampusIds));
+        // yield return StartCoroutine(barrierSpawner.LoadAndSpawnForCampuses(currentCampusIds));
+        // yield return StartCoroutine(infrastructureSpawner.LoadAndSpawnForCampuses(currentCampusIds));
         yield return StartCoroutine(pathRenderer.LoadAndRenderForCampuses(currentCampusIds));
         
         // IMPORTANT: Reset map controls after map size changes
@@ -144,22 +144,22 @@ public class MapManager : MonoBehaviour
     void ClearAllSpawnedObjects()
     {
         // Clear barrier spawner objects
-        if (barrierSpawner != null)
-        {
-            barrierSpawner.ClearSpawnedObjects();
-        }
+        // if (barrierSpawner != null)
+        // {
+        //     barrierSpawner.ClearSpawnedObjects();
+        // }
         
         // Clear building spawner objects
-        if (infrastructureSpawner != null)
-        {
-            infrastructureSpawner.ClearSpawnedObjects();
-        }
+        // if (infrastructureSpawner != null)
+        // {
+        //     infrastructureSpawner.ClearSpawnedObjects();
+        // }
         
-        // Clear path renderer objects
-        if (pathRenderer != null)
-        {
-            pathRenderer.ClearSpawnedObjects();
-        }
+        // // Clear path renderer objects
+        // if (pathRenderer != null)
+        // {
+        //     pathRenderer.ClearSpawnedObjects();
+        // }
     }
     
     /// <summary>

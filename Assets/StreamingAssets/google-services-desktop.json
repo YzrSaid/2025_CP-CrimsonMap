@@ -7,47 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:396668100672:android:99cf8299dd293ab3fabfa5",
-        "android_client_info": {
-          "package_name": "com.DefaultCompany.CrimsonMap"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyA-hUlNf7dQp8R_BbWPZrpOCSlg8N8FWVQ"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
         "mobilesdk_app_id": "1:396668100672:android:74f8e8feef1633e8fabfa5",
         "android_client_info": {
           "package_name": "com.WMSU.CrimsonMap"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyA-hUlNf7dQp8R_BbWPZrpOCSlg8N8FWVQ"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:396668100672:android:c32c998d88fd4e97fabfa5",
-        "android_client_info": {
-          "package_name": "com.Yazar.CrimsonMap"
         }
       },
       "oauth_client": [],

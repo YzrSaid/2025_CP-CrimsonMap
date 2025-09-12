@@ -3,7 +3,7 @@
 [System.Serializable]
 public class Infrastructure
 {
-    public int infra_id;
+    public string infra_id;
     public string name;
     public int category_id;
     public string image_url;

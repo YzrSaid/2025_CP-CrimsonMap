@@ -21,12 +21,12 @@ public class MapCoordinateSystem : MonoBehaviour
 
     [Header("Scale Settings")]
     [Tooltip("Fixed scale: pixels per meter. Higher = more zoomed in")]
-    public float fixedScale = 0.2f;
-    
+    public float fixedScale = 1f;
+
     [Header("Content Margins")]
     [Tooltip("Extra space around actual content to ensure everything is visible")]
-    public float contentMargin = 300f;
-    
+    public float contentMargin = 100f;
+
     [Header("Debug")]
     public bool showDebugInfo = true;
     public bool showContentBounds = true;
@@ -35,7 +35,7 @@ public class MapCoordinateSystem : MonoBehaviour
     public static MapCoordinateSystem Instance { get; private set; }
 
     private float minLatitude, maxLatitude, minLongitude, maxLongitude;
-    private float contentMinLat, contentMaxLat, contentMinLon, contentMaxLon; 
+    private float contentMinLat, contentMaxLat, contentMinLon, contentMaxLon;
     private float mapWidthMeters, mapHeightMeters;
     private bool boundsCalculated = false;
 
@@ -83,7 +83,7 @@ public class MapCoordinateSystem : MonoBehaviour
 
             var filteredNodes = nodeList.nodes.Where(n =>
                 campusIds.Contains(n.campus_id) &&
-                n.type == "barrier" && 
+                n.type == "barrier" &&
                 n.is_active
             ).ToList();
 
@@ -135,6 +135,7 @@ public class MapCoordinateSystem : MonoBehaviour
         ResizeMapImageForContent();
 
         boundsCalculated = true;
+        DebugScaleAndSpacing();
 
         if (showDebugInfo)
         {
@@ -170,7 +171,7 @@ public class MapCoordinateSystem : MonoBehaviour
             {
                 var campusNodes = nodeList.nodes.Where(n =>
                     n.campus_id == campusId &&
-                    n.type == "barrier" &&  
+                    n.type == "barrier" &&
                     n.is_active
                 ).Take(3).ToList();
 
@@ -182,13 +183,13 @@ public class MapCoordinateSystem : MonoBehaviour
                 }
             }
         }
-        
+
         // Show map bounds in UI coordinates
         Vector2 bottomLeft = LatLonToMapPosition(minLatitude, minLongitude);
         Vector2 topRight = LatLonToMapPosition(maxLatitude, maxLongitude);
         Vector2 contentBottomLeft = LatLonToMapPosition(contentMinLat, contentMinLon);
         Vector2 contentTopRight = LatLonToMapPosition(contentMaxLat, contentMaxLon);
-        
+
         Debug.Log($"Map UI Bounds: BottomLeft({bottomLeft.x:F1}, {bottomLeft.y:F1}) to TopRight({topRight.x:F1}, {topRight.y:F1})");
         Debug.Log($"Content UI Bounds: BottomLeft({contentBottomLeft.x:F1}, {contentBottomLeft.y:F1}) to TopRight({contentTopRight.x:F1}, {contentTopRight.y:F1})");
         Debug.Log($"Map Image Size: {mapImage.sizeDelta.x:F1}px x {mapImage.sizeDelta.y:F1}px");
@@ -204,9 +205,9 @@ public class MapCoordinateSystem : MonoBehaviour
             // Calculate total required size: content + margins + padding
             float totalWidth = mapWidthMeters * fixedScale + paddingLeft + paddingRight;
             float totalHeight = mapHeightMeters * fixedScale + paddingTop + paddingBottom;
-            
+
             mapImage.sizeDelta = new Vector2(totalWidth, totalHeight);
-            
+
             if (showDebugInfo)
             {
                 Debug.Log($"Resized mapImage to: {totalWidth:F1}px x {totalHeight:F1}px");
@@ -287,7 +288,7 @@ public class MapCoordinateSystem : MonoBehaviour
 
         Vector2 contentBottomLeft = LatLonToMapPosition(contentMinLat, contentMinLon);
         Vector2 contentTopRight = LatLonToMapPosition(contentMaxLat, contentMaxLon);
-        
+
         Vector2 mapSize = mapImage.sizeDelta;
         Vector2 mapCenter = Vector2.zero; // Map is anchored at center
 
@@ -297,20 +298,20 @@ public class MapCoordinateSystem : MonoBehaviour
         float mapBottom = mapCenter.y - mapSize.y / 2f;
         float mapTop = mapCenter.y + mapSize.y / 2f;
 
-        bool contentFits = contentBottomLeft.x >= mapLeft && 
+        bool contentFits = contentBottomLeft.x >= mapLeft &&
                           contentTopRight.x <= mapRight &&
-                          contentBottomLeft.y >= mapBottom && 
+                          contentBottomLeft.y >= mapBottom &&
                           contentTopRight.y <= mapTop;
 
         Debug.Log($"=== CONTENT FIT VALIDATION ===");
         Debug.Log($"Map UI Bounds: Left={mapLeft:F1}, Right={mapRight:F1}, Bottom={mapBottom:F1}, Top={mapTop:F1}");
         Debug.Log($"Content UI Bounds: Left={contentBottomLeft.x:F1}, Right={contentTopRight.x:F1}, Bottom={contentBottomLeft.y:F1}, Top={contentTopRight.y:F1}");
         Debug.Log($"Content Fits: {contentFits}");
-        
+
         if (!contentFits)
         {
             Debug.LogWarning("Content extends beyond map bounds! Some campus content may be cut off.");
-            
+
             if (contentTopRight.x > mapRight)
                 Debug.LogWarning($"Content extends {contentTopRight.x - mapRight:F1}px beyond RIGHT edge");
             if (contentBottomLeft.x < mapLeft)
@@ -383,23 +384,56 @@ public class MapCoordinateSystem : MonoBehaviour
             yield return null;
         }
     }
-
-    // Data containers - Updated to match new format
-    [System.Serializable]
-    public class Infrastructure
+    // Add this to MapCoordinateSystem.cs for debugging
+    public void DebugScaleAndSpacing()
     {
-        public int infra_id;
-        public string name;
-        public int category_id;
-        public string image_url;
-        public string email;
-        public string phone;
-        // Note: latitude and longitude removed - now comes from nodes
+        if (!boundsCalculated) return;
+
+        Debug.Log("=== SCALE AND SPACING DEBUG ===");
+        Debug.Log($"Fixed Scale: {fixedScale} pixels/meter");
+        Debug.Log($"Campus Size: {mapWidthMeters:F1}m x {mapHeightMeters:F1}m");
+        Debug.Log($"UI Size: {mapWidthMeters * fixedScale:F1}px x {mapHeightMeters * fixedScale:F1}px");
+
+        // Check infrastructure spacing
+        string nodesPath = Path.Combine(Application.streamingAssetsPath, "nodes.json");
+        if (File.Exists(nodesPath))
+        {
+            string nodesJson = File.ReadAllText(nodesPath);
+            NodeList nodeList = JsonUtility.FromJson<NodeList>("{\"nodes\":" + nodesJson + "}");
+
+            var infraNodes = nodeList.nodes.Where(n =>
+                currentCampusIds.Contains(n.campus_id) &&
+                n.type == "infrastructure" &&
+                n.is_active
+            ).Take(5).ToList();
+
+            Debug.Log($"Sample Infrastructure Positions:");
+            for (int i = 0; i < infraNodes.Count; i++)
+            {
+                var node = infraNodes[i];
+                Vector2 uiPos = LatLonToMapPosition(node.latitude, node.longitude);
+                Debug.Log($"  {node.name}: ({node.latitude:F6}, {node.longitude:F6}) -> UI({uiPos.x:F1}, {uiPos.y:F1})");
+
+                // Check distance to next building
+                if (i < infraNodes.Count - 1)
+                {
+                    var nextNode = infraNodes[i + 1];
+                    float realDistance = CalculateRealDistance(node.latitude, node.longitude,
+                                                             nextNode.latitude, nextNode.longitude);
+                    Vector2 nextUiPos = LatLonToMapPosition(nextNode.latitude, nextNode.longitude);
+                    float uiDistance = Vector2.Distance(uiPos, nextUiPos);
+
+                    Debug.Log($"    -> Distance to {nextNode.name}: {realDistance:F1}m = {uiDistance:F1}px");
+                }
+            }
+        }
     }
 
-    [System.Serializable]
-    public class InfrastructureList
+    private float CalculateRealDistance(float lat1, float lon1, float lat2, float lon2)
     {
-        public List<Infrastructure> infrastructures;
+        float midLat = (lat1 + lat2) / 2f;
+        float xMeters = (lon2 - lon1) * 111320f * Mathf.Cos(midLat * Mathf.Deg2Rad);
+        float yMeters = (lat2 - lat1) * 111320f;
+        return Mathf.Sqrt(xMeters * xMeters + yMeters * yMeters);
     }
 }

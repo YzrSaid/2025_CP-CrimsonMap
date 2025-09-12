@@ -96,7 +96,7 @@ public class CategoryDropdown : MonoBehaviour
                 }
                 else
                 {
-                    Debug.LogWarning($"⚠️ CategoryDropdown: Icon not found in Resources/Images/icons/: {fileName}");
+                    // Debug.LogWarning($"⚠️ CategoryDropdown: Icon not found in Resources/Images/icons/: {fileName}");
                     
                     // Try alternative paths
                     string[] tryPaths = {

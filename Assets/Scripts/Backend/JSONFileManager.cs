@@ -18,8 +18,11 @@ public class JSONFileManager : MonoBehaviour
         "categories.json",
         "infrastructure.json",
         "maps.json", // Main maps collection
-        "recent_destination.json",
+        "recent_destinations.json",
         "rooms.json",
+        "nodes.json",
+        "campus.json",
+        "edges.json",
         "saved_destinations.json",
         "static_data_cache.json" // For Infrastructure/Categories sync tracking
     };
@@ -37,14 +40,14 @@ public class JSONFileManager : MonoBehaviour
             if (useStreamingAssets)
             {
                 // In Unity Editor - use StreamingAssets folder
-                streamingAssetsPath = Path.Combine(Application.streamingAssetsPath, "Data");
+                streamingAssetsPath = Path.Combine(Application.streamingAssetsPath);
                 dataPath = streamingAssetsPath;
                 
-                // Create StreamingAssets/Data folder if it doesn't exist
+                // Create StreamingAssets folder if it doesn't exist
                 if (!Directory.Exists(streamingAssetsPath))
                 {
                     Directory.CreateDirectory(streamingAssetsPath);
-                    Debug.Log($"Created StreamingAssets/Data folder at: {streamingAssetsPath}");
+                    Debug.Log($"Created StreamingAssets folder at: {streamingAssetsPath}");
                 }
             }
             else

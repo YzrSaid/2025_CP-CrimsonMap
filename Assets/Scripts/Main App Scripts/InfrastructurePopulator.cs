@@ -55,11 +55,11 @@ public class InfrastructurePopulator : MonoBehaviour
 
     private void LoadInfrastructures()
     {
-        string path = Path.Combine(Application.streamingAssetsPath, "infrastructures.json");
+        string path = Path.Combine(Application.streamingAssetsPath, "infrastructure.json");
 
         if (!File.Exists(path))
         {
-            Debug.LogError("infrastructures.json not found at " + path);
+            Debug.LogError("infrastructure.json not found at " + path);
         }
         else
         {

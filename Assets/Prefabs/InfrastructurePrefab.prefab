@@ -34,8 +34,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -46.842487, y: -7.4056005}
-  m_SizeDelta: {x: 32.4252, y: 32.575}
+  m_AnchoredPosition: {x: -40.4288, y: -12.6802}
+  m_SizeDelta: {x: 8.7812, y: 9.0434}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2965150161010335869
 GameObject:
@@ -71,8 +71,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.20000911, y: 0.10013318}
-  m_SizeDelta: {x: 20.069, y: 17.3002}
+  m_AnchoredPosition: {x: -0.059975147, y: -0.4397254}
+  m_SizeDelta: {x: 5.1526, y: 4.5209}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &877023713616149723
 CanvasRenderer:
@@ -147,8 +147,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.2, y: 0.1}
-  m_SizeDelta: {x: 31.0112, y: 31.7679}
+  m_AnchoredPosition: {x: -0.06, y: -0.44}
+  m_SizeDelta: {x: 7.9619, y: 8.3017}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8963497052400177609
 CanvasRenderer:
@@ -220,6 +220,6 @@ CircleCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: -0.18774414}
+  m_Offset: {x: 0.01020813, y: 0.00592041}
   serializedVersion: 2
-  m_Radius: 15.709351
+  m_Radius: 4.13385

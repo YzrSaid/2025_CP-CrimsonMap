@@ -12,7 +12,7 @@ public class MapButtonsAndControlsScript : MonoBehaviour, IPointerDownHandler, I
     public float zoomSpeedMouse = 0.1f;
 
     [Header("Initial Settings")]
-    public float initialScale = 0.5f;
+    public float initialScale = 1f;
 
     [Header("Dragging Settings")]
     public float baseOverscrollAmount = 500f;
@@ -27,7 +27,7 @@ public class MapButtonsAndControlsScript : MonoBehaviour, IPointerDownHandler, I
     void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
-        rectTransform.localScale = new Vector3(initialScale, initialScale, 1f);
+        // rectTransform.localScale = new Vector3(initialScale, initialScale, 1f);
 
         MapManager mapManager = FindObjectOfType<MapManager>();
         if (mapManager != null)
@@ -47,6 +47,11 @@ public class MapButtonsAndControlsScript : MonoBehaviour, IPointerDownHandler, I
 
     void OnMapLoadingComplete()
     {
+        // Force initial zoom = 1 so it matches pixel scaling
+        rectTransform.localScale = Vector3.one;
+
+        // Optionally, center it
+        rectTransform.anchoredPosition = Vector2.zero;
         ClampPosition();
     }
 
