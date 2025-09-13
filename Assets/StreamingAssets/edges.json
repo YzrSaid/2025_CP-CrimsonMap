@@ -46,5 +46,17 @@
     "distance": null,
     "created_at": {},
     "id": "xWyCI7XR9TMtCRc8cGHQ"
+  },
+  {
+    "to_node": "ND-018",
+    "path_type": null,
+    "is_deleted": false,
+    "is_active": true,
+    "from_node": "ND-017",
+    "elevations": null,
+    "edge_id": "EDG-005",
+    "distance": null,
+    "created_at": {},
+    "id": "xWyCI7XR9TMtCRc8cGHQ"
   }
 ]

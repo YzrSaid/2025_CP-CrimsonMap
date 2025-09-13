@@ -45,7 +45,7 @@ public class InfrastructureSpawner : MonoBehaviour
     void Start()
     {
         DebugLog("🏢 InfrastructureSpawner started");
-        
+
         if (mapboxMap == null)
         {
             Debug.LogError("❌ No AbstractMap found! Please assign mapboxMap in inspector");
@@ -53,7 +53,7 @@ public class InfrastructureSpawner : MonoBehaviour
         }
 
         DebugLog("📍 Found AbstractMap, starting automatic spawn process");
-        
+
         // Start the spawn process immediately
         StartCoroutine(WaitForMapAndSpawn());
     }
@@ -61,11 +61,11 @@ public class InfrastructureSpawner : MonoBehaviour
     private IEnumerator WaitForMapAndSpawn()
     {
         DebugLog("⏳ Waiting for map to be ready...");
-        
+
         // Wait for map initialization
         float timeout = 30f;
         float elapsed = 0f;
-        
+
         while (elapsed < timeout)
         {
             if (mapboxMap != null && mapboxMap.gameObject.activeInHierarchy)
@@ -73,10 +73,10 @@ public class InfrastructureSpawner : MonoBehaviour
                 DebugLog($"🗺️ Map seems ready after {elapsed:F1}s, attempting spawn...");
                 break;
             }
-            
+
             yield return new WaitForSeconds(0.5f);
             elapsed += 0.5f;
-            
+
             if (elapsed % 5f < 0.6f)
             {
                 DebugLog($"⏳ Still waiting for map... ({elapsed:F1}s/{timeout}s)");
@@ -91,7 +91,7 @@ public class InfrastructureSpawner : MonoBehaviour
 
         // Additional delay to ensure map is fully ready
         yield return new WaitForSeconds(2f);
-        
+
         // Start spawning
         yield return StartCoroutine(LoadAndSpawnInfrastructure());
     }
@@ -176,11 +176,11 @@ public class InfrastructureSpawner : MonoBehaviour
     private List<string> GetAllCampusIdsFromData()
     {
         string nodesPath = Path.Combine(Application.streamingAssetsPath, nodesFileName);
-        DebugLog($"📂 Looking for nodes file at: {nodesPath}");
-        
+        DebugLog($"Looking for nodes file at: {nodesPath}");
+
         if (!File.Exists(nodesPath))
         {
-            Debug.LogError($"❌ Nodes file not found: {nodesPath}");
+            Debug.LogError($"Nodes file not found: {nodesPath}");
             return new List<string>();
         }
 
@@ -188,10 +188,10 @@ public class InfrastructureSpawner : MonoBehaviour
         {
             string jsonContent = File.ReadAllText(nodesPath);
             Node[] nodes = JsonHelper.FromJson<Node>(jsonContent);
-            
+
             if (nodes == null || nodes.Length == 0)
             {
-                Debug.LogError("❌ No nodes found in JSON file");
+                Debug.LogError("No nodes found in JSON file");
                 return new List<string>();
             }
 
@@ -206,7 +206,7 @@ public class InfrastructureSpawner : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"❌ Error reading nodes file: {e.Message}");
+            Debug.LogError($"Error reading nodes file: {e.Message}");
             return new List<string>();
         }
     }
@@ -218,7 +218,7 @@ public class InfrastructureSpawner : MonoBehaviour
 
         if (!File.Exists(nodesPath))
         {
-            Debug.LogError($"❌ Nodes file not found: {nodesPath}");
+            Debug.LogError($"Nodes file not found: {nodesPath}");
             return null;
         }
 
@@ -226,10 +226,10 @@ public class InfrastructureSpawner : MonoBehaviour
         {
             string jsonContent = File.ReadAllText(nodesPath);
             DebugLog($"📄 Read {jsonContent.Length} characters from nodes file");
-            
+
             Node[] nodes = JsonHelper.FromJson<Node>(jsonContent);
             DebugLog($"📊 Parsed {nodes?.Length ?? 0} nodes from JSON");
-            
+
             return nodes;
         }
         catch (System.Exception e)
@@ -254,10 +254,10 @@ public class InfrastructureSpawner : MonoBehaviour
         {
             string jsonContent = File.ReadAllText(infraPath);
             DebugLog($"📄 Read {jsonContent.Length} characters from infrastructure file");
-            
+
             Infrastructure[] infrastructures = JsonHelper.FromJson<Infrastructure>(jsonContent);
             DebugLog($"📊 Parsed {infrastructures?.Length ?? 0} infrastructures from JSON");
-            
+
             return infrastructures;
         }
         catch (System.Exception e)
@@ -282,10 +282,10 @@ public class InfrastructureSpawner : MonoBehaviour
         {
             string jsonContent = File.ReadAllText(categoriesPath);
             DebugLog($"📄 Read {jsonContent.Length} characters from categories file");
-            
+
             Category[] categories = JsonHelper.FromJson<Category>(jsonContent);
             DebugLog($"📊 Parsed {categories?.Length ?? 0} categories from JSON");
-            
+
             return categories;
         }
         catch (System.Exception e)
@@ -295,7 +295,7 @@ public class InfrastructureSpawner : MonoBehaviour
         }
     }
 
-    private List<InfrastructureData> BuildInfrastructureData(Node[] nodes, Infrastructure[] infrastructures, 
+    private List<InfrastructureData> BuildInfrastructureData(Node[] nodes, Infrastructure[] infrastructures,
                                                             Category[] categories, List<string> campusIds)
     {
         var infrastructureData = new List<InfrastructureData>();
@@ -316,12 +316,6 @@ public class InfrastructureSpawner : MonoBehaviour
             !string.IsNullOrEmpty(n.related_infra_id) &&
             IsValidCoordinate(n.latitude, n.longitude)
         ).ToList();
-
-        DebugLog($"🔍 Infrastructure node filtering:");
-        DebugLog($"  - Total nodes: {nodes.Length}");
-        DebugLog($"  - Infrastructure nodes: {nodes.Count(n => n?.type == "infrastructure")}");
-        DebugLog($"  - Active infrastructure: {nodes.Count(n => n?.type == "infrastructure" && n.is_active)}");
-        DebugLog($"  - Campus matched: {infrastructureNodes.Count}");
 
         // Build combined data
         foreach (var node in infrastructureNodes)
@@ -373,12 +367,12 @@ public class InfrastructureSpawner : MonoBehaviour
                 // Add the location-tracking component
                 InfrastructureNode infraComponent = infraObj.AddComponent<InfrastructureNode>();
                 infraComponent.Initialize(mapboxMap, data, heightOffset);
-                
+
                 spawnedInfrastructure.Add(infraComponent);
-                
+
                 // Add to lookup dictionary
                 infraIdToComponent[data.Infrastructure.infra_id] = infraComponent;
-                
+
                 spawnedCount++;
 
                 DebugLog($"🏢 Spawned infrastructure: {data.Infrastructure.name} (ID: {data.Infrastructure.infra_id})");
@@ -394,7 +388,7 @@ public class InfrastructureSpawner : MonoBehaviour
             {
                 Debug.LogError($"❌ Error spawning infrastructure {data.Infrastructure.infra_id}: {e.Message}");
             }
-            
+
             if (shouldYield)
             {
                 yield return null;
@@ -419,7 +413,7 @@ public class InfrastructureSpawner : MonoBehaviour
         spawnedInfrastructure.Clear();
         infraIdToComponent.Clear();
         hasSpawned = false;
-        
+
         DebugLog("✅ Cleared all infrastructure items");
     }
 
@@ -498,7 +492,7 @@ public class InfrastructureNode : MonoBehaviour
     private InfrastructureData infrastructureData;
     private Vector2d geoLocation;
     private float heightOffset;
-    
+
     public InfrastructureData GetInfrastructureData() => infrastructureData;
     public Vector2d GetGeoLocation() => geoLocation;
 
@@ -508,95 +502,239 @@ public class InfrastructureNode : MonoBehaviour
         infrastructureData = data;
         geoLocation = new Vector2d(data.Node.latitude, data.Node.longitude);
         heightOffset = height;
-        
+
         // Set up the UI components with infrastructure data
         SetupInfrastructureDisplay();
-        
+
         // Set initial position
         UpdatePosition();
     }
-    
+
     private void SetupInfrastructureDisplay()
     {
         // Set building name on TextMeshPro 3D component
         TextMeshPro label3D = GetComponentInChildren<TextMeshPro>();
-        if (label3D != null) 
+        if (label3D != null)
         {
             label3D.text = infrastructureData.Infrastructure.name;
             DebugLog($"✅ Set 3D label text: {infrastructureData.Infrastructure.name}");
         }
 
-        // Also check for TextMeshProUGUI in case there's a world space canvas
-        TextMeshProUGUI labelUI = GetComponentInChildren<TextMeshProUGUI>();
-        if (labelUI != null) 
+        // Set up the circle background color
+        SetupCircleBackground();
+
+        // Prefer infrastructure image_url over category icon
+        if (!string.IsNullOrEmpty(infrastructureData.Infrastructure.image_url))
         {
-            labelUI.text = infrastructureData.Infrastructure.name;
-            DebugLog($"✅ Set UI label text: {infrastructureData.Infrastructure.name}");
+            SetupIconFromImageUrl(infrastructureData.Infrastructure.image_url);
         }
-
-        // Set material/texture based on category
-        if (infrastructureData.Category != null)
+        else if (infrastructureData.Category != null && !string.IsNullOrEmpty(infrastructureData.Category.icon))
         {
-            SetupInfrastructureMaterial();
+            SetupCategoryIcon();
         }
-
-        // Set up any additional 3D components as needed
-        SetupInfrastructureColor();
-    }
-
-    private void SetupInfrastructureMaterial()
-    {
-        // Try to load a material based on category
-        if (infrastructureData.Category != null && !string.IsNullOrEmpty(infrastructureData.Category.icon))
+        else
         {
-            // First try to load as material
-            string materialPath = infrastructureData.Category.icon.Replace(".png", "").Replace(".jpg", "");
-            Material categoryMaterial = Resources.Load<Material>(materialPath);
-            
-            if (categoryMaterial != null)
-            {
-                ApplyMaterialToRenderers(categoryMaterial);
-                DebugLog($"✅ Applied material: {materialPath}");
-                return;
-            }
-
-            // If no material, try to load as texture and create material
-            Texture2D categoryTexture = Resources.Load<Texture2D>(materialPath);
-            if (categoryTexture != null)
-            {
-                Material newMaterial = new Material(Shader.Find("Standard"));
-                newMaterial.mainTexture = categoryTexture;
-                ApplyMaterialToRenderers(newMaterial);
-                DebugLog($"✅ Created and applied material from texture: {materialPath}");
-                return;
-            }
-
-            DebugLog($"⚠️ Could not load material or texture: {materialPath}");
+            DebugLog($"⚠️ No icon found for {infrastructureData.Infrastructure.name}");
         }
     }
 
-    private void SetupInfrastructureColor()
+    private void SetupIconFromImageUrl(string imageUrl)
     {
-        // Apply color based on category or use default
-        Color infrastructureColor = Color.white;
-        
-        if (infrastructureData.Category != null)
+        Transform iconPlane = transform.Find("Icon_Plane") ?? transform.Find("Icon");
+        if (iconPlane == null)
         {
-            // You could define colors per category ID or use a hash-based color
-            infrastructureColor = GetColorForCategory(infrastructureData.Category.category_id);
-        }
-        
-        // Apply color to all renderers
-        Renderer[] renderers = GetComponentsInChildren<Renderer>();
-        foreach (var renderer in renderers)
-        {
-            if (renderer.material != null)
+            foreach (Transform child in transform)
             {
-                renderer.material.color = infrastructureColor;
+                if (child.GetComponent<MeshFilter>()?.sharedMesh?.name.Contains("Quad") == true)
+                {
+                    iconPlane = child;
+                    break;
+                }
             }
         }
-        
-        DebugLog($"✅ Applied color: {infrastructureColor} to {renderers.Length} renderers");
+
+        if (iconPlane == null)
+        {
+            Debug.LogWarning($"⚠️ No Icon plane found for {infrastructureData.Infrastructure.name}");
+            return;
+        }
+
+        Renderer iconRenderer = iconPlane.GetComponent<Renderer>();
+        if (iconRenderer == null) return;
+
+        // Build path relative to Resources folder
+        string resourcePath = $"Images/icons/{Path.GetFileNameWithoutExtension(imageUrl)}";
+        DebugLog($"🔍 Loading infra icon from: {resourcePath}");
+
+        Texture2D iconTexture = Resources.Load<Texture2D>(resourcePath);
+        if (iconTexture != null)
+        {
+            Material iconMaterial = new Material(Shader.Find("Unlit/Texture"));
+            iconMaterial.mainTexture = iconTexture;
+            iconRenderer.material = iconMaterial;
+
+            DebugLog($"✅ Applied infra-specific icon: {imageUrl}");
+        }
+        else
+        {
+            Debug.LogWarning($"⚠️ Could not load infra-specific icon: {resourcePath}");
+        }
+    }
+
+
+
+    private void SetupCircleBackground()
+    {
+        // Find the base circle (cylinder) and apply background color/material
+        Transform baseCircle = transform.Find("InfrastructurePrefab_3D");
+        if (baseCircle == null)
+        {
+            // Try to find cylinder by component if naming is different
+            foreach (Transform child in transform)
+            {
+                if (child.GetComponent<MeshFilter>()?.sharedMesh?.name.Contains("Cylinder") == true)
+                {
+                    baseCircle = child;
+                    break;
+                }
+            }
+        }
+
+        if (baseCircle != null)
+        {
+            Renderer circleRenderer = baseCircle.GetComponent<Renderer>();
+            if (circleRenderer != null)
+            {
+                // Create or modify material for the circle background
+                Material circleMaterial = new Material(Shader.Find("Default-Material"));
+
+                // Set background color based on category
+                if (infrastructureData.Category != null)
+                {
+                    circleMaterial.color = GetColorForCategory(infrastructureData.Category.category_id);
+                }
+                else
+                {
+                    circleMaterial.color = Color.gray; // Default color
+                }
+
+                circleRenderer.material = circleMaterial;
+                DebugLog($"✅ Applied circle background color: {circleMaterial.color}");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"⚠️ Could not find Base_Circle for infrastructure: {infrastructureData.Infrastructure.name}");
+        }
+    }
+
+    private void SetupCategoryIcon()
+    {
+        // Find the icon plane (quad)
+        Transform iconPlane = transform.Find("Icon");
+        if (iconPlane == null)
+        {
+            iconPlane = transform.Find("Icon");
+            if (iconPlane == null)
+            {
+                // Try to find quad by component if naming is different
+                foreach (Transform child in transform)
+                {
+                    if (child.GetComponent<MeshFilter>()?.sharedMesh?.name.Contains("Quad") == true)
+                    {
+                        iconPlane = child;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (iconPlane == null)
+        {
+            Debug.LogWarning($"⚠️ Could not find Icon_Plane for infrastructure: {infrastructureData.Infrastructure.name}");
+            return;
+        }
+
+        Renderer iconRenderer = iconPlane.GetComponent<Renderer>();
+        if (iconRenderer == null)
+        {
+            Debug.LogWarning($"⚠️ Icon plane has no renderer for infrastructure: {infrastructureData.Infrastructure.name}");
+            return;
+        }
+
+        // Load the icon texture
+        Texture2D iconTexture = LoadIconTexture(infrastructureData.Category.icon);
+        if (iconTexture != null)
+        {
+            // Create material with the icon texture
+            Material iconMaterial = new Material(Shader.Find("Default-Material"));
+            iconMaterial.mainTexture = iconTexture;
+            iconMaterial.color = Color.white; // Keep icon at full brightness
+
+            // Make it unlit so it's always visible
+            iconMaterial.shader = Shader.Find("Unlit/Texture");
+
+            iconRenderer.material = iconMaterial;
+            DebugLog($"✅ Applied icon texture to plane: {infrastructureData.Category.icon}");
+        }
+        else
+        {
+            // Fallback: create a simple colored material if no texture found
+            Material fallbackMaterial = new Material(Shader.Find("Default-Material"));
+            fallbackMaterial.color = GetColorForCategory(infrastructureData.Category.category_id);
+            iconRenderer.material = fallbackMaterial;
+            DebugLog($"⚠️ Used fallback color for icon: {infrastructureData.Category.icon}");
+        }
+    }
+
+    private Texture2D LoadIconTexture(string iconPath)
+    {
+        string resourcePath = iconPath;
+
+        // Remove file extension for Resources.Load
+        if (resourcePath.EndsWith(".png") || resourcePath.EndsWith(".jpg") || resourcePath.EndsWith(".jpeg"))
+        {
+            resourcePath = Path.GetFileNameWithoutExtension(resourcePath);
+            string directory = Path.GetDirectoryName(iconPath).Replace("\\", "/");
+            if (!string.IsNullOrEmpty(directory))
+            {
+                resourcePath = directory + "/" + resourcePath;
+            }
+        }
+
+        DebugLog($"🔍 Trying to load texture from Resources: '{resourcePath}' for category: {infrastructureData.Category.name}");
+
+        Texture2D texture = Resources.Load<Texture2D>(resourcePath);
+
+        if (texture != null)
+        {
+            DebugLog($"✅ Loaded texture successfully from Resources: {resourcePath}");
+            return texture;
+        }
+
+        // Try alternative paths
+        string[] tryPaths = {
+            resourcePath,
+            iconPath.Replace(".png", "").Replace(".jpg", ""),
+            "Images/icons/" + Path.GetFileNameWithoutExtension(iconPath),
+            Path.GetFileNameWithoutExtension(iconPath),
+            "icons/" + Path.GetFileNameWithoutExtension(iconPath)
+        };
+
+        DebugLog("🔍 Trying alternative texture paths:");
+        foreach (string tryPath in tryPaths)
+        {
+            Texture2D testTexture = Resources.Load<Texture2D>(tryPath);
+            DebugLog($"   {(testTexture != null ? "✅" : "❌")} '{tryPath}'");
+            if (testTexture != null)
+            {
+                DebugLog($"✅ Success with alternative path: {tryPath}");
+                return testTexture;
+            }
+        }
+
+        Debug.LogWarning($"⚠️ Could not load texture from Resources: {resourcePath}");
+        return null;
     }
 
     private Color GetColorForCategory(long categoryId)
@@ -604,27 +742,18 @@ public class InfrastructureNode : MonoBehaviour
         // Generate a consistent color based on category ID
         UnityEngine.Random.State oldState = UnityEngine.Random.state;
         UnityEngine.Random.InitState((int)categoryId);
-        
+
         Color color = new Color(
-            UnityEngine.Random.Range(0.3f, 1f),
-            UnityEngine.Random.Range(0.3f, 1f),
-            UnityEngine.Random.Range(0.3f, 1f),
+            UnityEngine.Random.Range(0.4f, 0.9f), // Avoid too dark or too bright
+            UnityEngine.Random.Range(0.4f, 0.9f),
+            UnityEngine.Random.Range(0.4f, 0.9f),
             1f
         );
-        
+
         UnityEngine.Random.state = oldState;
         return color;
     }
 
-    private void ApplyMaterialToRenderers(Material material)
-    {
-        Renderer[] renderers = GetComponentsInChildren<Renderer>();
-        foreach (var renderer in renderers)
-        {
-            renderer.material = material;
-        }
-    }
-    
     void Update()
     {
         if (map != null)
@@ -632,13 +761,13 @@ public class InfrastructureNode : MonoBehaviour
             UpdatePosition();
         }
     }
-    
+
     void UpdatePosition()
     {
         // Convert geo coordinate to current world position
         Vector3 worldPos = map.GeoToWorldPosition(geoLocation, true);
         worldPos.y += heightOffset;
-        
+
         // Update our position to stay locked to geographic location
         transform.position = worldPos;
     }
@@ -653,3 +782,4 @@ public class InfrastructureNode : MonoBehaviour
         }
     }
 }
+

@@ -113,7 +113,7 @@ public class MapManager : MonoBehaviour
         // Spawn everything in order
         // yield return StartCoroutine(barrierSpawner.LoadAndSpawnForCampuses(currentCampusIds));
         // yield return StartCoroutine(infrastructureSpawner.LoadAndSpawnForCampuses(currentCampusIds));
-        yield return StartCoroutine(pathRenderer.LoadAndRenderForCampuses(currentCampusIds));
+        // yield return StartCoroutine(pathRenderer.LoadAndRenderForCampuses(currentCampusIds));
         
         // IMPORTANT: Reset map controls after map size changes
         if (mapControls != null)

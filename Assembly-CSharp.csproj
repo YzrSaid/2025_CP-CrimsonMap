@@ -443,6 +443,7 @@
     <Compile Include="Assets/Mapbox/Unity/Telemetry/TelemetryEditor.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/VectorLayer.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Factories/TileProcessFinishedEventArgs.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/InfrastructureOverlapResolver.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/ReloadMap.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Filters/FilterBase.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/Cache/MemoryCache.cs" />

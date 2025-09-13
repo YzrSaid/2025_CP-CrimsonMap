@@ -199,7 +199,7 @@
   {
     "node_id": "ND-017",
     "is_active": true,
-    "related_room_id": "",
+    "related_room_id": null,
     "indoor": null,
     "type": "infrastructure",
     "name": "College of Computing Studies",
@@ -262,6 +262,20 @@
     "latitude": 6.9128,
     "created_at": {},
     "related_infra_id": "INFRA-10",
+    "longitude": 122.06315,
+    "campus_id": "CAMP-02",
+    "id": "lhRY7R5vmsD2yQfivGaf"
+  },
+  {
+    "node_id": "ND-018",
+    "is_active": true,
+    "related_room_id": null,
+    "indoor": null,
+    "type": "pathway",
+    "name": "CCS to CCJE Pathway",
+    "latitude": 6.9127,
+    "created_at": {},
+    "related_infra_id": null,
     "longitude": 122.06315,
     "campus_id": "CAMP-02",
     "id": "lhRY7R5vmsD2yQfivGaf"

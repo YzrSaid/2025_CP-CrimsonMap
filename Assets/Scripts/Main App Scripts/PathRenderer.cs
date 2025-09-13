@@ -1,252 +1,630 @@
+using UnityEngine;
 using System.Collections.Generic;
 using System.IO;
-using UnityEngine;
 using System.Collections;
-using UnityEngine.UI;
 using System.Linq;
+using Mapbox.Utils;
+using Mapbox.Unity.Map;
 
 public class PathRenderer : MonoBehaviour
 {
-    [Header("References")]
-    public RectTransform mapContainer;
+    [Header("Mapbox")]
+    public AbstractMap mapboxMap;
 
-    [Header("Path Colors")]
-    public Color pavedRoadColor = new Color(0.3f, 0.3f, 0.3f, 0.9f);
-    public Color walkwayColor = new Color(0.5f, 0.5f, 0.5f, 0.8f);
-    public Color barrierColor = new Color(0.8f, 0.8f, 0.8f, 0.5f);
+    [Header("Path Prefabs")]
+    public GameObject pathPrefab; // Single prefab for all pathway connections
 
-    [Header("Path Widths")]
-    public float pavedWidth = 8f;
-    public float walkwayWidth = 5f;
-    public float barrierWidth = 3f;
+    [Header("JSON Files")]
+    public string nodesFileName = "nodes.json";
+    public string edgesFileName = "edges.json";
 
-    [Header("Debug")]
-    public bool showPathwayNodes = false;
-    public GameObject pathwayNodePrefab;
+    [Header("Settings")]
+    public bool enableDebugLogs = true;
+    public List<string> targetCampusIds = new List<string>();
+    public float pathWidth = 1f;
+    public float pathHeightOffset = 1f;
 
-    // Track spawned objects for cleanup
-    private List<GameObject> spawnedPaths = new List<GameObject>();
-    private List<GameObject> spawnedPathNodes = new List<GameObject>();
+    [Header("Path Appearance")]
+    public Color pathwayColor = new Color(0.8f, 0.6f, 0.4f, 0.9f); // Default pathway color
+
+    // Track spawned paths with their location components
+    private List<PathEdge> spawnedPaths = new List<PathEdge>();
     private Dictionary<string, Node> allNodes = new Dictionary<string, Node>();
-    private Image mapBackground;
+
+    private bool hasRendered = false;
+    private bool isRendering = false;
+
+    void Awake()
+    {
+        // Find map if not assigned
+        if (mapboxMap == null)
+        {
+            mapboxMap = FindObjectOfType<AbstractMap>();
+        }
+    }
 
     void Start()
     {
-        // Auto-detect map background
-        mapBackground = mapContainer.GetComponentInChildren<Image>();
-        if (mapBackground == null)
+        DebugLog("🛤️ PathRenderer started");
+
+        if (mapboxMap == null)
         {
-            Debug.LogError("No background image found inside mapContainer!");
+            Debug.LogError("❌ No AbstractMap found! Please assign mapboxMap in inspector");
+            return;
         }
-        
-        Debug.Log("PathRenderer ready - waiting for map assignment");
+
+        DebugLog("📍 Found AbstractMap, starting automatic render process");
+
+        // Start the render process immediately
+        StartCoroutine(WaitForMapAndRender());
     }
 
-    /// <summary>
-    /// Load and render paths for specific campuses
-    /// Called by MapManager when switching maps
-    /// </summary>
-    public IEnumerator LoadAndRenderForCampuses(List<string> campusIds)
+    private IEnumerator WaitForMapAndRender()
     {
-        Debug.Log($"Loading paths for campuses: {string.Join(", ", campusIds)}");
+        DebugLog("⏳ Waiting for map to be ready...");
 
-        if (MapCoordinateSystem.Instance == null)
+        // Wait for map initialization
+        float timeout = 30f;
+        float elapsed = 0f;
+
+        while (elapsed < timeout)
         {
-            Debug.LogError("MapCoordinateSystem not found!");
+            if (mapboxMap != null && mapboxMap.gameObject.activeInHierarchy)
+            {
+                DebugLog($"🗺️ Map seems ready after {elapsed:F1}s, attempting render...");
+                break;
+            }
+
+            yield return new WaitForSeconds(0.5f);
+            elapsed += 0.5f;
+
+            if (elapsed % 5f < 0.6f)
+            {
+                DebugLog($"⏳ Still waiting for map... ({elapsed:F1}s/{timeout}s)");
+            }
+        }
+
+        if (elapsed >= timeout)
+        {
+            Debug.LogError("❌ Map initialization timeout!");
             yield break;
         }
 
-        yield return StartCoroutine(MapCoordinateSystem.Instance.WaitForBoundsReady());
-        yield return StartCoroutine(LoadFilteredNodesCoroutine(campusIds));
+        // Additional delay to ensure map is fully ready
+        yield return new WaitForSeconds(2f);
 
-        if (allNodes.Count > 0)
-        {
-            yield return StartCoroutine(LoadAndRenderFilteredEdgesCoroutine(campusIds));
-        }
+        // Start rendering
+        yield return StartCoroutine(LoadAndRenderPaths());
     }
 
-    IEnumerator LoadFilteredNodesCoroutine(List<string> campusIds)
+    public IEnumerator LoadAndRenderPaths()
     {
-        string nodesPath = Path.Combine(Application.streamingAssetsPath, "nodes.json");
+        if (isRendering)
+        {
+            DebugLog("⚠️ Already rendering paths");
+            yield break;
+        }
+
+        isRendering = true;
+        DebugLog("🛤️ Starting LoadAndRenderPaths...");
+
+        List<Edge> validEdges = null;
+        List<string> campusIds = null;
+
+        try
+        {
+            // Get campus IDs to render
+            campusIds = GetTargetCampusIds();
+            if (campusIds.Count == 0)
+            {
+                Debug.LogError("❌ No campus IDs found in data");
+                yield break;
+            }
+
+            DebugLog($"🏫 Target campus IDs: {string.Join(", ", campusIds)}");
+
+            // Clear existing paths first
+            ClearSpawnedPaths();
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"❌ Error in LoadAndRenderPaths: {e.Message}");
+            yield break;
+        }
+        finally
+        {
+            isRendering = false;
+        }
+
+        // Load and filter nodes (yield must be outside try-catch)
+        yield return StartCoroutine(LoadFilteredNodes(campusIds));
+
+        if (allNodes.Count == 0)
+        {
+            Debug.LogError("❌ No pathway or infrastructure nodes loaded");
+            yield break;
+        }
+
+        // Load and filter edges
+        Edge[] edges = LoadEdgesFromJSON();
+        if (edges == null || edges.Length == 0)
+        {
+            Debug.LogError("❌ Failed to load edges from JSON");
+            yield break;
+        }
+
+        // Filter valid pathway edges
+        validEdges = FilterValidPathwayEdges(edges);
+        DebugLog($"🛤️ Found {validEdges.Count} valid pathway edges to render");
+
+        if (validEdges.Count == 0)
+        {
+            Debug.LogWarning("⚠️ No valid pathway edges found matching criteria");
+            yield break;
+        }
+
+        // Render the paths
+        yield return StartCoroutine(RenderPathEdges(validEdges));
+
+        hasRendered = true;
+        Debug.Log($"✅ PathRenderer completed: {spawnedPaths.Count} paths rendered");
+    }
+
+    private List<string> GetTargetCampusIds()
+    {
+        // If specific campus IDs are set in inspector, use those
+        if (targetCampusIds != null && targetCampusIds.Count > 0)
+        {
+            return targetCampusIds.Where(id => !string.IsNullOrEmpty(id)).ToList();
+        }
+
+        // Otherwise, get all available campus IDs from the data
+        return GetAllCampusIdsFromData();
+    }
+
+    private List<string> GetAllCampusIdsFromData()
+    {
+        string nodesPath = Path.Combine(Application.streamingAssetsPath, nodesFileName);
+        DebugLog($"📂 Looking for nodes file at: {nodesPath}");
+
         if (!File.Exists(nodesPath))
         {
-            Debug.LogError("Nodes JSON not found!");
+            Debug.LogError($"❌ Nodes file not found: {nodesPath}");
+            return new List<string>();
+        }
+
+        try
+        {
+            string jsonContent = File.ReadAllText(nodesPath);
+            Node[] nodes = JsonHelper.FromJson<Node>(jsonContent);
+
+            if (nodes == null || nodes.Length == 0)
+            {
+                Debug.LogError("❌ No nodes found in JSON file");
+                return new List<string>();
+            }
+
+            var campusIds = nodes
+                    .Where(n => n != null && n.is_active && (n.type == "pathway" || n.type == "infrastructure") && !string.IsNullOrEmpty(n.campus_id))
+                    .Select(n => n.campus_id)
+                    .Distinct()
+                    .ToList();
+
+            DebugLog($"🏫 Found {campusIds.Count} unique campus IDs with pathways and infrastructure");
+            return campusIds;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"❌ Error reading nodes file: {e.Message}");
+            return new List<string>();
+        }
+    }
+
+    private IEnumerator LoadFilteredNodes(List<string> campusIds)
+    {
+        string nodesPath = Path.Combine(Application.streamingAssetsPath, nodesFileName);
+        DebugLog($"📂 Loading nodes from: {nodesPath}");
+
+        if (!File.Exists(nodesPath))
+        {
+            Debug.LogError($"❌ Nodes file not found: {nodesPath}");
             yield break;
         }
 
-        string nodesJson = File.ReadAllText(nodesPath);
-        NodeList nodeList = JsonUtility.FromJson<NodeList>("{\"nodes\":" + nodesJson + "}");
-
-        allNodes.Clear();
-
-        // Filter nodes by campus - direct string comparison
-        var filteredNodes = nodeList.nodes.Where(n => 
-            campusIds.Contains(n.campus_id)
-        ).ToList();
-
-        foreach (var node in filteredNodes)
+        try
         {
-            allNodes[node.node_id] = node;
-            if (node.type == "infrastructure")
-            {
-                Debug.Log($"Building Node: {node.name} (ID: {node.node_id}) Campus: {node.campus_id}");
-            }
-        }
+            string jsonContent = File.ReadAllText(nodesPath);
+            DebugLog($"📄 Read {jsonContent.Length} characters from nodes file");
 
-        Debug.Log($"Loaded {allNodes.Count} nodes for pathways in campuses: {string.Join(", ", campusIds)}");
+            Node[] nodes = JsonHelper.FromJson<Node>(jsonContent);
+            DebugLog($"📊 Parsed {nodes?.Length ?? 0} nodes from JSON");
+
+            allNodes.Clear();
+
+            // Filter for pathway nodes only
+            var pathwayNodes = nodes.Where(n =>
+                n != null &&
+                n.is_active &&
+                n.type == "pathway" || n.type == "infrastructure" &&
+                campusIds.Contains(n.campus_id) &&
+                IsValidCoordinate(n.latitude, n.longitude)
+            ).ToList();
+
+            foreach (var node in pathwayNodes)
+            {
+                allNodes[node.node_id] = node;
+            }
+
+            DebugLog($"🔍 Node filtering process:");
+            DebugLog($"  - Total nodes: {nodes.Length}");
+            DebugLog($"  - Active nodes: {nodes.Count(n => n?.is_active == true)}");
+            DebugLog($"  - Pathway nodes in target campus: {allNodes.Count}");
+
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"❌ Error loading nodes: {e.Message}");
+        }
     }
 
-    IEnumerator LoadAndRenderFilteredEdgesCoroutine(List<string> campusIds)
+    private Edge[] LoadEdgesFromJSON()
     {
-        string edgesPath = Path.Combine(Application.streamingAssetsPath, "edges.json");
+        string edgesPath = Path.Combine(Application.streamingAssetsPath, edgesFileName);
+        DebugLog($"📂 Loading edges from: {edgesPath}");
+
         if (!File.Exists(edgesPath))
         {
-            Debug.LogError("Edges JSON not found!");
-            yield break;
+            Debug.LogError($"❌ Edges file not found: {edgesPath}");
+            return null;
         }
 
-        string edgesJson = File.ReadAllText(edgesPath);
-        EdgeList edgeList = JsonUtility.FromJson<EdgeList>("{\"edges\":" + edgesJson + "}");
-
-        int pathwayCount = 0;
-
-        // Filter edges: both nodes must exist and not be barriers
-        var validEdges = edgeList.edges.Where(e => 
-            e.path_type != "barrier" && 
-            e.is_active &&
-            allNodes.ContainsKey(e.from_node) && 
-            allNodes.ContainsKey(e.to_node)
-        ).ToList();
-
-        foreach (var edge in validEdges)
+        try
         {
-            RenderPathEdge(edge);
-            pathwayCount++;
+            string jsonContent = File.ReadAllText(edgesPath);
+            DebugLog($"📄 Read {jsonContent.Length} characters from edges file");
+
+            Edge[] edges = JsonHelper.FromJson<Edge>(jsonContent);
+            DebugLog($"📊 Parsed {edges?.Length ?? 0} edges from JSON");
+
+            return edges;
         }
-
-        Debug.Log($"Rendered {pathwayCount} pathway connections for selected campuses");
-
-        // Spawn pathway nodes if debug mode is enabled
-        if (showPathwayNodes && pathwayNodePrefab != null)
+        catch (System.Exception e)
         {
-            foreach (var node in allNodes.Values)
+            Debug.LogError($"❌ Error loading edges JSON: {e.Message}");
+            return null;
+        }
+    }
+
+    private List<Edge> FilterValidPathwayEdges(Edge[] allEdges)
+    {
+        DebugLog($"🔍 Available pathway nodes: {string.Join(", ", allNodes.Keys)}");
+
+        var validEdges = new List<Edge>();
+        var activeEdges = allEdges.Where(e => e != null && e.is_active).ToList();
+
+        foreach (var edge in activeEdges)
+        {
+            bool hasFromNode = allNodes.ContainsKey(edge.from_node);
+            bool hasToNode = allNodes.ContainsKey(edge.to_node);
+
+            if (hasFromNode && hasToNode)
             {
-                if (node.type != "barrier")
+                validEdges.Add(edge);
+                DebugLog($"✅ Valid edge: {edge.edge_id} ({edge.from_node} -> {edge.to_node})");
+            }
+            else
+            {
+                DebugLog($"❌ Invalid edge {edge.edge_id}: from_node={edge.from_node} (exists: {hasFromNode}), to_node={edge.to_node} (exists: {hasToNode})");
+            }
+        }
+
+        DebugLog($"🔍 Edge filtering process:");
+        DebugLog($"  - Total edges: {allEdges.Length}");
+        DebugLog($"  - Active edges: {activeEdges.Count}");
+        DebugLog($"  - Valid pathway connections: {validEdges.Count}");
+
+        return validEdges;
+    }
+
+    private IEnumerator RenderPathEdges(List<Edge> edges)
+    {
+        DebugLog($"🛤️ Rendering {edges.Count} pathway edges...");
+
+        int renderedCount = 0;
+        foreach (var edge in edges)
+        {
+            bool shouldYield = false;
+            try
+            {
+                if (pathPrefab == null)
                 {
-                    SpawnPathwayNode(node);
+                    Debug.LogError("❌ Path prefab is null!");
+                    break;
                 }
+
+                // Get the connected nodes
+                if (!allNodes.TryGetValue(edge.from_node, out Node fromNode) ||
+                    !allNodes.TryGetValue(edge.to_node, out Node toNode))
+                {
+                    Debug.LogError($"❌ Could not find nodes for edge {edge.edge_id}: {edge.from_node} -> {edge.to_node}");
+                    continue;
+                }
+
+                // Create the path GameObject
+                GameObject pathObj = Instantiate(pathPrefab, Vector3.zero, Quaternion.identity, mapboxMap.transform);
+                pathObj.name = $"Pathway_{edge.edge_id}_{edge.from_node}_to_{edge.to_node}";
+
+                // Add the path component
+                PathEdge pathComponent = pathObj.AddComponent<PathEdge>();
+                pathComponent.Initialize(mapboxMap, edge, fromNode, toNode, pathWidth, pathHeightOffset, pathwayColor);
+
+                spawnedPaths.Add(pathComponent);
+                renderedCount++;
+
+                DebugLog($"🛤️ Rendered pathway: {edge.edge_id} ({edge.from_node} -> {edge.to_node})");
+
+                // Mark for yielding periodically to avoid frame drops
+                if (renderedCount % 10 == 0)
+                {
+                    shouldYield = true;
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"❌ Error rendering path {edge.edge_id}: {e.Message}");
+            }
+
+            if (shouldYield)
+            {
+                yield return null;
+            }
+        }
+
+        DebugLog($"✅ Successfully rendered {renderedCount} pathway edges");
+    }
+
+    public void ClearSpawnedPaths()
+    {
+        DebugLog($"🧹 Clearing {spawnedPaths.Count} pathway edges");
+
+        foreach (var path in spawnedPaths)
+        {
+            if (path != null && path.gameObject != null)
+            {
+                DestroyImmediate(path.gameObject);
+            }
+        }
+
+        spawnedPaths.Clear();
+        allNodes.Clear();
+        hasRendered = false;
+
+        DebugLog("✅ Cleared all pathway edges");
+    }
+
+    // Manual render methods for testing
+    public void ManualRender()
+    {
+        DebugLog("🔄 Manual render triggered");
+        StartCoroutine(LoadAndRenderPaths());
+    }
+
+    [System.Obsolete("Debug method - remove in production")]
+    public void ForceResetRendering()
+    {
+        DebugLog("🔄 Force resetting rendering state");
+        isRendering = false;
+        hasRendered = false;
+        StopAllCoroutines();
+        DebugLog($"✅ Reset complete");
+    }
+
+    private bool IsValidCoordinate(float lat, float lon)
+    {
+        return !float.IsNaN(lat) && !float.IsNaN(lon) &&
+            !float.IsInfinity(lat) && !float.IsInfinity(lon) &&
+            lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+    }
+
+    private void DebugLog(string message)
+    {
+        if (enableDebugLogs)
+        {
+            Debug.Log($"[PathRenderer] {message}");
+        }
+    }
+
+    void Update()
+    {
+        // Debug controls
+        if (Application.isEditor && enableDebugLogs)
+        {
+            if (Input.GetKeyDown(KeyCode.P))
+            {
+                Debug.Log($"=== PATH RENDERER STATUS ===");
+                Debug.Log($"Has rendered: {hasRendered}");
+                Debug.Log($"Is rendering: {isRendering}");
+                Debug.Log($"Paths rendered: {spawnedPaths.Count}");
+                Debug.Log($"Pathway nodes loaded: {allNodes.Count}");
+                Debug.Log($"Map assigned: {mapboxMap != null}");
+            }
+
+            if (Input.GetKeyDown(KeyCode.O))
+            {
+                ManualRender();
+            }
+
+            if (Input.GetKeyDown(KeyCode.L))
+            {
+                ClearSpawnedPaths();
+            }
+        }
+    }
+    public void ForceUpdateAllPaths()
+    {
+        foreach (var path in spawnedPaths)
+        {
+            if (path != null)
+            {
+                path.ForceUpdate();
+            }
+        }
+    }
+}
+
+public class PathEdge : MonoBehaviour
+{
+    private AbstractMap map;
+    private Edge edgeData;
+    private Node fromNode;
+    private Node toNode;
+    private float baseWidth;
+    private float heightOffset;
+    private Color pathColor;
+
+    // Cache for consistent scaling
+    private float referenceZoomLevel;
+    private Vector3 referenceFromPos;
+    private Vector3 referenceToPos;
+    private float referenceDistance;
+    private bool isInitialized = false;
+
+    public Edge GetEdgeData() => edgeData;
+    public Node GetFromNode() => fromNode;
+    public Node GetToNode() => toNode;
+
+    public void Initialize(AbstractMap mapReference, Edge edge, Node from, Node to,
+                        float pathWidth, float height, Color color)
+    {
+        map = mapReference;
+        edgeData = edge;
+        fromNode = from;
+        toNode = to;
+        baseWidth = pathWidth;
+        heightOffset = height;
+        pathColor = color;
+
+        // Store reference zoom level and positions
+        if (map != null)
+        {
+            referenceZoomLevel = map.Zoom;
+            
+            // Calculate reference positions and distance at current zoom
+            referenceFromPos = map.GeoToWorldPosition(new Vector2d(fromNode.latitude, fromNode.longitude), false);
+            referenceToPos = map.GeoToWorldPosition(new Vector2d(toNode.latitude, toNode.longitude), false);
+            referenceDistance = Vector3.Distance(referenceFromPos, referenceToPos);
+            
+            isInitialized = true;
+            
+            Debug.Log($"Path {edge.edge_id} initialized at zoom {referenceZoomLevel:F1} with reference distance {referenceDistance:F3}");
+        }
+
+        // Apply path color
+        ApplyColorToPath(pathColor);
+
+        // Initial transform update
+        UpdatePathTransform();
+    }
+
+    private void ApplyColorToPath(Color color)
+    {
+        // Apply color to all renderers in the path prefab
+        Renderer[] renderers = GetComponentsInChildren<Renderer>();
+        foreach (var renderer in renderers)
+        {
+            if (renderer.material != null)
+            {
+                renderer.material.color = color;
             }
         }
     }
 
-    void RenderPathEdge(Edge edge)
+    void LateUpdate()
     {
-        Node fromNode = allNodes[edge.from_node];
-        Node toNode = allNodes[edge.to_node];
-
-        Vector2 posA = MapCoordinateSystem.Instance.LatLonToMapPosition(fromNode.latitude, fromNode.longitude);
-        Vector2 posB = MapCoordinateSystem.Instance.LatLonToMapPosition(toNode.latitude, toNode.longitude);
-
-        GameObject lineObj = new GameObject($"Path_{edge.edge_id}", typeof(RectTransform), typeof(Image));
-        lineObj.transform.SetParent(mapContainer, false);
-
-        RectTransform rt = lineObj.GetComponent<RectTransform>();
-        Image img = lineObj.GetComponent<Image>();
-
-        // Pick color/width based on path type
-        Color pathColor = pavedRoadColor;
-        float pathWidth = pavedWidth;
-
-        switch (edge.path_type.ToLower())
+        if (map != null && fromNode != null && toNode != null && isInitialized)
         {
-            case "walkway":
-                pathColor = walkwayColor;
-                pathWidth = walkwayWidth;
-                break;
-            case "paved":
-                pathColor = pavedRoadColor;
-                pathWidth = pavedWidth;
-                break;
-        }
-
-        img.color = pathColor;
-
-        // Position and rotation
-        Vector2 dir = (posB - posA).normalized;
-        float distance = Vector2.Distance(posA, posB);
-
-        rt.anchoredPosition = (posA + posB) / 2f;
-        
-        float scaleFactor = mapContainer.GetComponentInParent<Canvas>().scaleFactor;
-        rt.sizeDelta = new Vector2(pathWidth / scaleFactor, distance);
-        
-        rt.localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f);
-
-        // Set layer order: background < paths < buildings
-        if (mapBackground != null)
-        {
-            int bgIndex = mapBackground.transform.GetSiblingIndex();
-            lineObj.transform.SetSiblingIndex(bgIndex + 1);
-        }
-
-        spawnedPaths.Add(lineObj);
-    }
-
-    void SpawnPathwayNode(Node node)
-    {
-        Vector2 pos = MapCoordinateSystem.Instance.LatLonToMapPosition(node.latitude, node.longitude);
-        
-        GameObject nodeObj = Instantiate(pathwayNodePrefab, mapContainer);
-        nodeObj.GetComponent<RectTransform>().anchoredPosition = pos;
-        nodeObj.name = $"PathNode_{node.node_id}";
-        
-        spawnedPathNodes.Add(nodeObj);
-    }
-
-    /// <summary>
-    /// Clear all spawned path objects when switching maps
-    /// </summary>
-    public void ClearSpawnedObjects()
-    {
-        // Clear path lines
-        foreach (var obj in spawnedPaths)
-        {
-            if (obj != null) Destroy(obj);
-        }
-        spawnedPaths.Clear();
-
-        // Clear debug nodes
-        foreach (var obj in spawnedPathNodes)
-        {
-            if (obj != null) Destroy(obj);
-        }
-        spawnedPathNodes.Clear();
-
-        allNodes.Clear();
-        Debug.Log("PathRenderer: Cleared all spawned paths");
-    }
-
-    public void TogglePathwayVisibility()
-    {
-        foreach (var pathLine in spawnedPaths)
-        {
-            if (pathLine != null)
-                pathLine.SetActive(!pathLine.activeInHierarchy);
+            // Update every few frames for smooth movement
+            if (Time.frameCount % 2 == 0)
+            {
+                UpdatePathTransform();
+            }
         }
     }
 
-    public void SetPathwayOpacity(float alpha)
+    void UpdatePathTransform()
     {
-        foreach (var pathLine in spawnedPaths)
+        if (fromNode == null || toNode == null || map == null || !isInitialized) return;
+
+        // Get current positions
+        Vector3 fromPos = map.GeoToWorldPosition(new Vector2d(fromNode.latitude, fromNode.longitude), false);
+        Vector3 toPos = map.GeoToWorldPosition(new Vector2d(toNode.latitude, toNode.longitude), false);
+
+        // Apply height offset
+        fromPos.y = heightOffset;
+        toPos.y = heightOffset;
+
+        // Calculate direction
+        Vector3 direction = toPos - fromPos;
+        float currentDistance = direction.magnitude;
+
+        // Hide if nodes are too close (prevents visual glitches)
+        if (currentDistance < 0.001f)
         {
-            if (pathLine == null) continue;
+            gameObject.SetActive(false);
+            return;
+        }
+
+        gameObject.SetActive(true);
+
+        // Position at the center between nodes
+        Vector3 centerPos = (fromPos + toPos) * 0.5f;
+        transform.position = centerPos;
+
+        // Rotate to face the correct direction
+        if (direction != Vector3.zero)
+        {
+            transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+        }
+
+        // KEY FIX: Use the reference distance instead of current distance
+        // This keeps the visual length consistent regardless of zoom
+        float visualDistance = referenceDistance;
+        
+        // Apply the scale using the reference distance
+        transform.localScale = new Vector3(baseWidth, baseWidth, visualDistance);
+
+        // Debug info (uncomment if needed)
+        //Debug.Log($"Path {edgeData.edge_id}: current={currentDistance:F3}, reference={referenceDistance:F3}, zoom={map.Zoom:F1}");
+    }
+
+    public void ForceUpdate()
+    {
+        if (map != null && isInitialized)
+        {
+            UpdatePathTransform();
+        }
+    }
+
+    // Optional: Debug visualization in Scene view
+    void OnDrawGizmosSelected()
+    {
+        if (fromNode != null && toNode != null && map != null)
+        {
+            Vector3 fromPos = map.GeoToWorldPosition(new Vector2d(fromNode.latitude, fromNode.longitude), false);
+            Vector3 toPos = map.GeoToWorldPosition(new Vector2d(toNode.latitude, toNode.longitude), false);
+
+            fromPos.y = heightOffset;
+            toPos.y = heightOffset;
+
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(transform.TransformPoint(fromPos), 0.2f);
+            Gizmos.DrawWireSphere(transform.TransformPoint(toPos), 0.2f);
+            Gizmos.color = Color.green;
+            Gizmos.DrawLine(transform.TransformPoint(fromPos), transform.TransformPoint(toPos));
             
-            var image = pathLine.GetComponent<Image>();
-            if (image == null) continue;
-            
-            Color color = image.color;
-            color.a = alpha;
-            image.color = color;
+            // Show the center point
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireCube(transform.position, Vector3.one * 0.1f);
         }
     }
 }
