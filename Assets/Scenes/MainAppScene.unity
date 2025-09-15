@@ -7946,6 +7946,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1257486800756004, guid: e6b749c6d877f4c19a5a5c3c0783d53b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1699060741}
+    - targetCorrespondingSourceObject: {fileID: 1257486800756004, guid: e6b749c6d877f4c19a5a5c3c0783d53b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1699060743}
   m_SourcePrefab: {fileID: 100100000, guid: e6b749c6d877f4c19a5a5c3c0783d53b, type: 3}
 --- !u!1 &1259183061
 GameObject:
@@ -10844,7 +10847,7 @@ MonoBehaviour:
   enableDebugLogs: 1
   targetCampusIds: []
   nodeSize: 4.5
-  heightOffset: 10
+  heightOffset: 1
   edgeWidth: 1
   edgeMaterial: {fileID: 2100000, guid: 107ca5e7bb5e26f46b0ce09f5fc2e817, type: 2}
 --- !u!114 &1699060738
@@ -10854,7 +10857,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 259187411}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6b9fb05533eb5e059a2554bcfd46716, type: 3}
   m_Name: 
@@ -10884,7 +10887,7 @@ MonoBehaviour:
   enableDebugLogs: 1
   targetCampusIds: []
   infrastructureSize: 3
-  heightOffset: 15
+  heightOffset: 1
 --- !u!114 &1699060741
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10906,6 +10909,29 @@ MonoBehaviour:
   pathWidth: 1
   pathHeightOffset: 1
   pathwayColor: {r: 0.8, g: 0.6, b: 0.4, a: 0.9}
+--- !u!114 &1699060743
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 259187411}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5657e60ec02b33c5d84b6ee6704d11d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mapboxMap: {fileID: 1699060734}
+  userIndicatorPrefab: {fileID: 2531190016571084963, guid: 4a7abfc3061df376ab00315da1deb1cd, type: 3}
+  shadowConePrefab: {fileID: 5720313531753482208, guid: 22769e8ad43aabd6492c58e34bf5e09b, type: 3}
+  heightOffset: 15
+  updateInterval: 0.2
+  positionSmoothness: 4
+  rotationSmoothness: 1
+  shadowDistance: 5
+  shadowAngle: 45
+  shadowColor: {r: 0.2, g: 0.6, b: 1, a: 0.3}
+  shadowMaterial: {fileID: 2100000, guid: 22119a5c2fdefaf798d7c04a97974c9f, type: 2}
 --- !u!1 &1723283726
 GameObject:
   m_ObjectHideFlags: 0

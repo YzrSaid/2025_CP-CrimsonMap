@@ -24,7 +24,7 @@ public class InfrastructureSpawner : MonoBehaviour
     public bool enableDebugLogs = true;
     public List<string> targetCampusIds = new List<string>();
     public float infrastructureSize = 3.0f;
-    public float heightOffset = 15f;
+    public float heightOffset = 1f;
 
     // Track spawned infrastructure with their location components
     private List<InfrastructureNode> spawnedInfrastructure = new List<InfrastructureNode>();
