@@ -17,7 +17,7 @@ public class JSONFileManager : MonoBehaviour
     private readonly string[] baseRequiredFiles = {
         "categories.json",
         "infrastructure.json",
-        "maps.json", // Main maps collection
+        "maps.json", 
         "recent_destinations.json",
         "rooms.json",
         "nodes.json",

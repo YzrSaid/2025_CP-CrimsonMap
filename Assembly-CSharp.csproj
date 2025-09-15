@@ -206,6 +206,7 @@
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/Benchmark04.cs" />
     <Compile Include="Assets/Mapbox/Examples/6_ZoomableMap/Scripts/SpawnOnMap.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/Location.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/CrossPlatformFileLoader.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Factories/TerrainDataFetcher.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/ISubLayerSimpleStyle.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/TileJsonData.cs" />

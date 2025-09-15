@@ -114,39 +114,39 @@ public class InfrastructureSpawner : MonoBehaviour
             List<string> campusIds = GetTargetCampusIds();
             if (campusIds.Count == 0)
             {
-                Debug.LogError("❌ No campus IDs found in data");
+                Debug.LogError("No campus IDs found in data");
                 yield break;
             }
 
-            DebugLog($"🏫 Target campus IDs: {string.Join(", ", campusIds)}");
+            DebugLog($"Target campus IDs: {string.Join(", ", campusIds)}");
 
             // Clear existing objects first
             ClearSpawnedInfrastructure();
 
             // Load all required JSON files
-            Node[] nodes = LoadNodesFromJSON();
-            Infrastructure[] infrastructures = LoadInfrastructureFromJSON();
-            Category[] categories = LoadCategoriesFromJSON();
+            Node[] nodes = LoadNodesFromJSONSync();
+            Infrastructure[] infrastructures = LoadInfrastructureFromJSONSync();
+            Category[] categories = LoadCategoriesFromJSONSync();
 
             if (nodes == null || infrastructures == null)
             {
-                Debug.LogError("❌ Failed to load required JSON files");
+                Debug.LogError("Failed to load required JSON files");
                 yield break;
             }
 
             // Build infrastructure data with location info
             infrastructureToSpawn = BuildInfrastructureData(nodes, infrastructures, categories, campusIds);
-            DebugLog($"🏢 Found {infrastructureToSpawn.Count} infrastructure items to spawn");
+            DebugLog($"Found {infrastructureToSpawn.Count} infrastructure items to spawn");
 
             if (infrastructureToSpawn.Count == 0)
             {
-                Debug.LogWarning("⚠️ No infrastructure found matching criteria");
+                Debug.LogWarning("No infrastructure found matching criteria");
                 yield break;
             }
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"❌ Error in LoadAndSpawnInfrastructure: {e.Message}");
+            Debug.LogError($"Error in LoadAndSpawnInfrastructure: {e.Message}");
             yield break;
         }
         finally
@@ -158,7 +158,7 @@ public class InfrastructureSpawner : MonoBehaviour
         yield return StartCoroutine(SpawnInfrastructureItems(infrastructureToSpawn));
 
         hasSpawned = true;
-        Debug.Log($"✅ InfrastructureSpawner completed: {spawnedInfrastructure.Count} infrastructure items spawned");
+        Debug.Log($"InfrastructureSpawner completed: {spawnedInfrastructure.Count} infrastructure items spawned");
     }
 
     private List<string> GetTargetCampusIds()
@@ -170,127 +170,106 @@ public class InfrastructureSpawner : MonoBehaviour
         }
 
         // Otherwise, get all available campus IDs from the data
-        return GetAllCampusIdsFromData();
+        return GetAllCampusIdsFromDataSync();
     }
 
-    private List<string> GetAllCampusIdsFromData()
+    private List<string> GetAllCampusIdsFromDataSync()
     {
-        string nodesPath = Path.Combine(Application.streamingAssetsPath, nodesFileName);
-        DebugLog($"Looking for nodes file at: {nodesPath}");
+        List<string> campusIds = new List<string>();
+        Node[] nodes = LoadNodesFromJSONSync();
 
-        if (!File.Exists(nodesPath))
+        if (nodes != null && nodes.Length > 0)
         {
-            Debug.LogError($"Nodes file not found: {nodesPath}");
-            return new List<string>();
-        }
-
-        try
-        {
-            string jsonContent = File.ReadAllText(nodesPath);
-            Node[] nodes = JsonHelper.FromJson<Node>(jsonContent);
-
-            if (nodes == null || nodes.Length == 0)
-            {
-                Debug.LogError("No nodes found in JSON file");
-                return new List<string>();
-            }
-
-            var campusIds = nodes
+            campusIds = nodes
                 .Where(n => n != null && n.type == "infrastructure" && n.is_active && !string.IsNullOrEmpty(n.campus_id))
                 .Select(n => n.campus_id)
                 .Distinct()
                 .ToList();
 
-            DebugLog($"🏫 Found {campusIds.Count} unique campus IDs with infrastructure");
-            return campusIds;
+            DebugLog($"Found {campusIds.Count} unique campus IDs with infrastructure");
         }
-        catch (System.Exception e)
+        else
         {
-            Debug.LogError($"Error reading nodes file: {e.Message}");
-            return new List<string>();
+            Debug.LogError("No nodes found in JSON file");
         }
+
+        return campusIds;
     }
 
-    private Node[] LoadNodesFromJSON()
+    private Node[] LoadNodesFromJSONSync()
     {
-        string nodesPath = Path.Combine(Application.streamingAssetsPath, nodesFileName);
-        DebugLog($"📂 Loading nodes from: {nodesPath}");
-
-        if (!File.Exists(nodesPath))
-        {
-            Debug.LogError($"Nodes file not found: {nodesPath}");
-            return null;
-        }
-
         try
         {
-            string jsonContent = File.ReadAllText(nodesPath);
-            DebugLog($"📄 Read {jsonContent.Length} characters from nodes file");
-
-            Node[] nodes = JsonHelper.FromJson<Node>(jsonContent);
-            DebugLog($"📊 Parsed {nodes?.Length ?? 0} nodes from JSON");
-
-            return nodes;
+            string path = Path.Combine(Application.streamingAssetsPath, nodesFileName);
+            if (File.Exists(path))
+            {
+                string json = File.ReadAllText(path);
+                DebugLog($"Read {json.Length} characters from nodes file");
+                Node[] nodes = JsonHelper.FromJson<Node>(json);
+                DebugLog($"Parsed {nodes?.Length ?? 0} nodes from JSON");
+                return nodes;
+            }
+            else
+            {
+                Debug.LogError($"Nodes file not found at path: {path}");
+                return null;
+            }
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"❌ Error loading nodes JSON: {e.Message}");
-            return null;
-        }
-    }
-
-    private Infrastructure[] LoadInfrastructureFromJSON()
-    {
-        string infraPath = Path.Combine(Application.streamingAssetsPath, infrastructureFileName);
-        DebugLog($"📂 Loading infrastructure from: {infraPath}");
-
-        if (!File.Exists(infraPath))
-        {
-            Debug.LogError($"❌ Infrastructure file not found: {infraPath}");
-            return null;
-        }
-
-        try
-        {
-            string jsonContent = File.ReadAllText(infraPath);
-            DebugLog($"📄 Read {jsonContent.Length} characters from infrastructure file");
-
-            Infrastructure[] infrastructures = JsonHelper.FromJson<Infrastructure>(jsonContent);
-            DebugLog($"📊 Parsed {infrastructures?.Length ?? 0} infrastructures from JSON");
-
-            return infrastructures;
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"❌ Error loading infrastructure JSON: {e.Message}");
+            Debug.LogError($"Error loading nodes JSON: {e.Message}");
             return null;
         }
     }
 
-    private Category[] LoadCategoriesFromJSON()
+    private Infrastructure[] LoadInfrastructureFromJSONSync()
     {
-        string categoriesPath = Path.Combine(Application.streamingAssetsPath, categoriesFileName);
-        DebugLog($"📂 Loading categories from: {categoriesPath}");
-
-        if (!File.Exists(categoriesPath))
-        {
-            Debug.LogWarning($"⚠️ Categories file not found: {categoriesPath}");
-            return null;
-        }
-
         try
         {
-            string jsonContent = File.ReadAllText(categoriesPath);
-            DebugLog($"📄 Read {jsonContent.Length} characters from categories file");
-
-            Category[] categories = JsonHelper.FromJson<Category>(jsonContent);
-            DebugLog($"📊 Parsed {categories?.Length ?? 0} categories from JSON");
-
-            return categories;
+            string path = Path.Combine(Application.streamingAssetsPath, infrastructureFileName);
+            if (File.Exists(path))
+            {
+                string json = File.ReadAllText(path);
+                DebugLog($"Read {json.Length} characters from infrastructure file");
+                Infrastructure[] infrastructures = JsonHelper.FromJson<Infrastructure>(json);
+                DebugLog($"Parsed {infrastructures?.Length ?? 0} infrastructures from JSON");
+                return infrastructures;
+            }
+            else
+            {
+                Debug.LogError($"Infrastructure file not found at path: {path}");
+                return null;
+            }
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"❌ Error loading categories JSON: {e.Message}");
+            Debug.LogError($"Error loading infrastructure JSON: {e.Message}");
+            return null;
+        }
+    }
+
+    private Category[] LoadCategoriesFromJSONSync()
+    {
+        try
+        {
+            string path = Path.Combine(Application.streamingAssetsPath, categoriesFileName);
+            if (File.Exists(path))
+            {
+                string json = File.ReadAllText(path);
+                DebugLog($"📄 Read {json.Length} characters from categories file");
+                Category[] categories = JsonHelper.FromJson<Category>(json);
+                DebugLog($"📊 Parsed {categories?.Length ?? 0} categories from JSON");
+                return categories;
+            }
+            else
+            {
+                Debug.LogWarning($"⚠️ Categories file not found at path: {path}");
+                return null;
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"⚠️ Error loading categories JSON: {e.Message}");
             return null;
         }
     }
