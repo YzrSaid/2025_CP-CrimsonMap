@@ -1,7 +1,7 @@
 // ======================= FIREBASE SETUP ===========================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
-    getFirestore, collection, addDoc, getDocs, query, orderBy, where, updateDoc, doc
+    getFirestore, collection, addDoc, getDocs, query, orderBy, where, updateDoc, doc, getDoc, arrayUnion, writeBatch, deleteField
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 import { firebaseConfig } from "./../firebaseConfig.js";
 
@@ -9,36 +9,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 
-async function migrateNodesToFloat() {
-  const snapshot = await getDocs(collection(db, "Nodes"));
-
-  for (const node of snapshot.docs) {
-    const data = node.data();
-
-    let lat = data.latitude;
-    let lng = data.longitude;
-
-    // ✅ Only process if they exist
-    if (lat !== undefined && lng !== undefined) {
-      const latNum = parseFloat(lat);
-      const lngNum = parseFloat(lng);
-
-      // ✅ Only update if conversion is valid and they are still strings
-      if (!isNaN(latNum) && !isNaN(lngNum)) {
-        console.log(`Migrating ${node.id}...`);
-        await updateDoc(doc(db, "Nodes", node.id), {
-          latitude: latNum,
-          longitude: lngNum,
-        });
-      }
-    }
-  }
-
-  alert("✅ Migration complete! All nodes now have numeric latitude/longitude.");
-}
-
-// Hook up to button
-document.getElementById("migrateNodesToFloatBtn").addEventListener("click", migrateNodesToFloat);
 // ======================= NODE SECTION =============================
 
 // ----------- Modal Controls -----------
@@ -180,6 +150,14 @@ async function populateCampusDropdown(selectId = "campusDropdown") {
     });
 }
 
+
+
+
+
+
+
+
+
 // ----------- Load Nodes Table -----------
 async function renderNodesTable() {
     const tbody = document.querySelector(".nodetbl tbody");
@@ -261,6 +239,117 @@ async function renderNodesTable() {
     }
 }
 
+
+
+
+
+
+
+// SHOWS ALL THW NODES FROM VERSIONS
+
+
+// // ----------- Load Nodes Table -----------
+// async function renderNodesTable() {
+//     const tbody = document.querySelector(".nodetbl tbody");
+//     if (!tbody) return;
+//     tbody.innerHTML = "";
+
+//     try {
+//         // Fetch all needed collections for mapping IDs to names
+//         const [infraSnap, roomSnap, campusSnap] = await Promise.all([
+//             getDocs(collection(db, "Infrastructure")),
+//             getDocs(collection(db, "Rooms")),
+//             getDocs(collection(db, "Campus"))
+//         ]);
+
+//         // Build lookup maps
+//         const infraMap = {};
+//         infraSnap.forEach(doc => {
+//             const d = doc.data();
+//             infraMap[d.infra_id] = d.name;
+//         });
+
+//         const roomMap = {};
+//         roomSnap.forEach(doc => {
+//             const d = doc.data();
+//             roomMap[d.room_id] = d.name;
+//         });
+
+//         const campusMap = {};
+//         campusSnap.forEach(doc => {
+//             const d = doc.data();
+//             campusMap[d.campus_id] = d.campus_name;
+//         });
+
+//         // Fetch all maps
+//         const mapsSnap = await getDocs(collection(db, "MapVersions"));
+
+//         for (const mapDoc of mapsSnap.docs) {
+//             const mapData = mapDoc.data();
+//             const currentVersion = mapData.current_version || "v1.0.0";
+
+//             const versionRef = doc(db, "MapVersions", mapDoc.id, "versions", currentVersion);
+//             const versionSnap = await getDoc(versionRef);
+
+//             if (!versionSnap.exists()) continue;
+
+//             const { nodes = [] } = versionSnap.data();
+
+//             nodes.forEach(node => {
+//                 // Coordinates
+//                 const coords = (node.latitude && node.longitude) ? `${node.latitude}, ${node.longitude}` : "-";
+
+//                 // Related infra/room names
+//                 const infraName = node.related_infra_id ? (infraMap[node.related_infra_id] || node.related_infra_id) : "-";
+//                 const roomName = node.related_room_id ? (roomMap[node.related_room_id] || node.related_room_id) : "-";
+
+//                 // Indoor/Outdoor
+//                 let indoorOutdoor = "Outdoor";
+//                 if (node.indoor) {
+//                     indoorOutdoor = `Indoor (Floor: ${node.indoor.floor || "-"}, X: ${node.indoor.x || "-"}, Y: ${node.indoor.y || "-"})`;
+//                 }
+
+//                 // Campus name
+//                 const campusName = node.campus_id ? (campusMap[node.campus_id] || node.campus_id) : "-";
+
+//                 // Type
+//                 const type = node.type ? node.type.charAt(0).toUpperCase() + node.type.slice(1) : "-";
+
+//                 const tr = document.createElement("tr");
+//                 tr.innerHTML = `
+//                     <td>${node.node_id}</td>
+//                     <td>${node.name}</td>
+//                     <td>${type}</td>
+//                     <td>${coords}</td>
+//                     <td>${infraName}</td>
+//                     <td>${roomName}</td>
+//                     <td>${indoorOutdoor}</td>
+//                     <td>${campusName}</td>
+//                     <td class="actions">
+//                         <i class="fas fa-edit"></i>
+//                         <i class="fas fa-trash"></i>
+//                     </td>
+//                 `;
+//                 tbody.appendChild(tr);
+//             });
+//         }
+
+//     } catch (err) {
+//         console.error("Error loading nodes: ", err);
+//     }
+// }
+
+
+
+
+
+
+
+
+
+
+
+
 // ----------- Type Dropdown/Input Switch -----------
 document.addEventListener("DOMContentLoaded", function() {
     const typeSelect = document.getElementById("nodeType");
@@ -292,11 +381,9 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
     const nodeId = document.getElementById("nodeId").value;
     const nodeName = document.getElementById("nodeName").value;
 
-    // ✅ Parse as floats so they save as Firestore "number"
     const latitude = parseFloat(document.getElementById("latitude").value);
     const longitude = parseFloat(document.getElementById("longitude").value);
 
-    // Type: could be select or input
     let typeEl = document.getElementById("nodeType");
     let type = typeEl ? typeEl.value : "";
     if (!type && typeEl && typeEl.tagName === "INPUT") {
@@ -319,36 +406,80 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
 
     const campusId = document.getElementById("campusDropdown").value;
 
+    // ✅ Step A: Cartesian conversion helper
+    const origin = { lat: 6.913341, lng: 122.063693 }; // fixed origin
+    function latLngToXY(lat, lng, origin) {
+        const R = 6371000; // meters
+        const dLat = (lat - origin.lat) * Math.PI / 180;
+        const dLng = (lng - origin.lng) * Math.PI / 180;
+        const x = dLng * Math.cos(origin.lat * Math.PI / 180) * R;
+        const y = dLat * R;
+        return { x, y };
+    }
+
+    // ✅ Step B: Convert current node’s lat/lng → Cartesian
+    const { x, y } = latLngToXY(latitude, longitude, origin);
+
     try {
-        await addDoc(collection(db, "Nodes"), {
-            node_id: nodeId,
-            name: nodeName,
-            latitude: latitude,   // ✅ now number
-            longitude: longitude, // ✅ now number
-            type: type,
-            related_infra_id: relatedInfraId,
-            related_room_id: relatedRoomId,
-            indoor: indoor,
-            is_active: true,
-            campus_id: campusId,
-            created_at: new Date()
+        // 🔍 Step 1: Find the map that includes this campus
+        const mapsQuery = query(
+            collection(db, "MapVersions"),
+            where("campus_included", "array-contains", campusId)
+        );
+        const mapsSnapshot = await getDocs(mapsQuery);
+
+        if (mapsSnapshot.empty) {
+            alert("No map found for this campus.");
+            return;
+        }
+
+        const mapDoc = mapsSnapshot.docs[0];
+        const mapDocId = mapDoc.id;
+        const currentVersion = mapDoc.data().current_version || "v1.0.0";
+
+        // 🔍 Step 2: Reference the current version document
+        const versionRef = doc(db, "MapVersions", mapDocId, "versions", currentVersion);
+        const versionSnap = await getDoc(versionRef);
+
+        if (!versionSnap.exists()) {
+            await setDoc(versionRef, { nodes: [], edges: [] });
+        }
+
+        // 🔍 Step 3: Append new node to nodes array (with Cartesian coords)
+        await updateDoc(versionRef, {
+            nodes: arrayUnion({
+                node_id: nodeId,
+                name: nodeName,
+                latitude: latitude,
+                longitude: longitude,
+                x_coordinate: x,   // ✅ Cartesian X
+                y_coordinate: y,   // ✅ Cartesian Y
+                type: type,
+                related_infra_id: relatedInfraId,
+                related_room_id: relatedRoomId,
+                indoor: indoor,
+                is_active: true,
+                campus_id: campusId,
+                created_at: new Date()
+            })
         });
 
-        // Clear all fields in the add node modal
+        // ✅ Step 4: Reset UI
         document.getElementById("nodeForm").reset();
         generateNextNodeId();
         document.getElementById("indoorDetails").style.display = "none";
 
-        // Close modal
         hideNodeModal();
-
-        // Refresh table
         renderNodesTable();
 
     } catch (err) {
         alert("Error adding node: " + err);
+        console.error(err);
     }
 });
+
+
+
 
 
 
@@ -469,6 +600,10 @@ document.querySelector(".nodetbl").addEventListener("click", async (e) => {
     }
 });
 
+
+
+
+
 // ----------- Edit Node Save Handler -----------
 document.getElementById("editNodeForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -539,6 +674,47 @@ document.getElementById("editNodeForm").addEventListener("submit", async (e) => 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ======================= EDGE SECTION =============================
 
 // ----------- Auto-Increment Edge ID -----------
@@ -587,6 +763,13 @@ async function loadNodesDropdownsForEdge() {
     });
 }
 
+
+
+
+
+
+
+
 // ----------- Add Edge Handler -----------
 document.querySelector("#addEdgeModal form").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -614,26 +797,73 @@ document.querySelector("#addEdgeModal form").addEventListener("submit", async (e
     }
 
     try {
-        await addDoc(collection(db, "Edges"), {
-            edge_id: edgeId,
-            from_node: startNode,
-            to_node: endNode,
-            distance: null,
-            path_type: pathType || null,
-            elevations: elevation || null,
-            is_active: true,
-            is_deleted: false,
-            created_at: new Date()
+        // 🔍 Step 1: Get node details
+        const nodesSnap = await getDocs(collection(db, "Nodes"));
+        const startNodeData = nodesSnap.docs.find(d => d.data().node_id === startNode)?.data();
+        const endNodeData = nodesSnap.docs.find(d => d.data().node_id === endNode)?.data();
+
+        if (!startNodeData || !endNodeData) {
+            alert("Start or End node not found.");
+            return;
+        }
+
+        // 🔍 Step 2: Find which maps each node's campus belongs to
+        const getMapForCampus = async (campusId) => {
+            const q = query(collection(db, "MapVersions"), where("campus_included", "array-contains", campusId));
+            const snap = await getDocs(q);
+            return snap.empty ? null : snap.docs[0]; // Assume one map per campus
+        };
+
+        const startMapDoc = await getMapForCampus(startNodeData.campus_id);
+        const endMapDoc = await getMapForCampus(endNodeData.campus_id);
+
+        if (!startMapDoc || !endMapDoc) {
+            alert("One or both campuses are not linked to any map.");
+            return;
+        }
+
+        // 🔍 Step 3: Check if both nodes are in the same map
+        if (startMapDoc.id !== endMapDoc.id) {
+            alert("❌ Cannot connect nodes from different maps (e.g., Campus A-B with Campus C).");
+            return;
+        }
+
+        const mapDocId = startMapDoc.id;
+        const currentVersion = startMapDoc.data().current_version || "v1.0.0";
+
+        // 🔍 Step 4: Reference the current version
+        const versionRef = doc(db, "MapVersions", mapDocId, "versions", currentVersion);
+        const versionSnap = await getDoc(versionRef);
+
+        if (!versionSnap.exists()) {
+            await setDoc(versionRef, { nodes: [], edges: [] });
+        }
+
+        // 🔍 Step 5: Add edge to edges array
+        await updateDoc(versionRef, {
+            edges: arrayUnion({
+                edge_id: edgeId,
+                from_node: startNode,
+                to_node: endNode,
+                distance: null,
+                path_type: pathType || null,
+                elevations: elevation || null,
+                is_active: true,
+                is_deleted: false,
+                created_at: new Date()
+            })
         });
 
-        alert("Edge saved!");
+        alert("✅ Edge saved!");
         document.getElementById("addEdgeModal").style.display = "none";
         renderEdgesTable();
 
     } catch (err) {
         alert("Error adding edge: " + err);
+        console.error(err);
     }
 });
+
 
 // ----------- Load Edges Table -----------
 async function renderEdgesTable() {
@@ -674,6 +904,75 @@ async function renderEdgesTable() {
         tbody.appendChild(tr);
     });
 }
+
+
+
+
+
+
+// THIS SHOWS THE EDGES FROM THE VERSIONS
+
+// // ----------- Load Edges Table -----------
+// async function renderEdgesTable() {
+//     const tbody = document.querySelector(".edgetbl tbody");
+//     if (!tbody) return;
+//     tbody.innerHTML = "";
+
+//     try {
+//         // 🔍 Find all maps
+//         const mapsSnap = await getDocs(collection(db, "MapVersions"));
+
+//         for (const mapDoc of mapsSnap.docs) {
+//             const mapData = mapDoc.data();
+//             const currentVersion = mapData.current_version || "v1.0.0";
+
+//             const versionRef = doc(db, "MapVersions", mapDoc.id, "versions", currentVersion);
+//             const versionSnap = await getDoc(versionRef);
+
+//             if (!versionSnap.exists()) continue;
+
+//             const { edges = [] } = versionSnap.data();
+
+//             edges.forEach(edge => {
+//                 // Formatter helper
+//                 const formatText = (value) => {
+//                     if (!value) return "-";
+//                     return value
+//                         .split("_")
+//                         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+//                         .join(" ");
+//                 };
+
+//                 const formattedPathType = formatText(edge.path_type);
+//                 const formattedElevation = formatText(edge.elevations);
+
+//                 const tr = document.createElement("tr");
+//                 tr.innerHTML = `
+//                     <td>${edge.edge_id}</td>
+//                     <td>${edge.from_node} > ${edge.to_node}</td>
+//                     <td>${edge.distance || "-"}</td>
+//                     <td>${formattedPathType}</td>
+//                     <td>${formattedElevation}</td>
+//                     <td class="actions">
+//                         <i class="fas fa-edit"></i>
+//                         <i class="fas fa-trash"></i>
+//                     </td>
+//                 `;
+//                 tbody.appendChild(tr);
+//             });
+//         }
+//     } catch (err) {
+//         console.error("Error rendering edges:", err);
+//     }
+// }
+
+
+
+
+
+
+
+
 
 // ----------- Edge Modal Controls -----------
 window.openEdgeModal = async function () {
@@ -1025,3 +1324,6 @@ document.addEventListener("DOMContentLoaded", function() {
       editEdgeModal.style.display = "none";
     }
   });
+
+
+  

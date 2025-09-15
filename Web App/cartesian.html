@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cartesian Plane of Nodes</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    #chart-container {
+      width: 90%;
+      height: 600px;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>📍 Cartesian Plane of Nodes with Barriers</h1>
+  <div id="chart-container">
+    <canvas id="cartesianChart"></canvas>
+  </div>
+
+  <script type="module">
+    // ======================= FIREBASE SETUP ===========================
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import {
+      getFirestore, collection, getDocs, query, orderBy
+    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+    import { firebaseConfig } from "./../firebaseConfig.js";
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function loadNodes() {
+      const q = query(collection(db, "Nodes"), orderBy("created_at", "asc"));
+      const snapshot = await getDocs(q);
+
+      const buildings = [];
+      const barriers = [];
+
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        if (d.x_coordinates !== undefined && d.y_coordinates !== undefined) {
+          if (d.type === "infrastructure") {
+            buildings.push({
+              x: d.x_coordinates,
+              y: d.y_coordinates,
+              label: d.name || d.node_id
+            });
+          }
+          if (d.type === "barrier") {
+            barriers.push({
+              x: d.x_coordinates,
+              y: d.y_coordinates,
+              label: d.name || d.node_id
+            });
+          }
+        }
+      });
+
+      renderChart(buildings, barriers);
+    }
+
+    function renderChart(buildings, barriers) {
+      const ctx = document.getElementById("cartesianChart").getContext("2d");
+
+      new Chart(ctx, {
+        type: "scatter",
+        data: {
+          datasets: [
+            {
+              label: "Buildings",
+              data: buildings.map(n => ({ x: n.x, y: n.y, label: n.label })),
+              backgroundColor: "blue",
+              pointRadius: 6
+            },
+            {
+              label: "Barriers",
+              data: barriers.map(n => ({ x: n.x, y: n.y, label: n.label })),
+              backgroundColor: "green",
+              pointRadius: 5,
+              showLine: true,          // ✅ draw lines between barrier points
+              borderColor: "green",    // ✅ green line
+              borderWidth: 2,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const point = context.raw;
+                  return `${point.label} (x: ${point.x.toFixed(2)}, y: ${point.y.toFixed(2)})`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: { display: true, text: "X Coordinate (m)" },
+              grid: { color: "#ddd" }
+            },
+            y: {
+              title: { display: true, text: "Y Coordinate (m)" },
+              grid: { color: "#ddd" }
+            }
+          }
+        }
+      });
+    }
+
+    loadNodes();
+  </script>
+</body>
+</html>

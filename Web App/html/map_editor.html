@@ -7,6 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="/styles/map_editor.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
 
 </head>
 <body>
@@ -55,11 +57,6 @@
         </div>
         
 
-<script type="module">
-
-</script>
-
-
     </div>
 
 
@@ -85,7 +82,7 @@
                 <div class="top-title_sort">
                     <div class="title">
                         <h2>Map Overview</h2>
-                        <button id="migrateNodesToFloatBtn" style="display:flex;">Migrate Nodes to Float</button>
+
                     </div>
 
                     <div class="sorting">
@@ -569,7 +566,7 @@
 
 
 <!-- Leaflet CSS + JS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script type="module">
@@ -617,6 +614,29 @@
         campusName: d.campus_id ? (campusMap[d.campus_id] || d.campus_id) : "-"
         });
       });
+
+      // ------------------ Convert Lat/Lng to X/Y ------------------
+        const origin = { lat: 6.913341, lng: 122.063693 }; // your chosen origin
+
+        function latLngToXY(lat, lng, origin) {
+        const R = 6371000; // Earth radius in meters
+        const dLat = (lat - origin.lat) * Math.PI / 180;
+        const dLng = (lng - origin.lng) * Math.PI / 180;
+
+        const x = dLng * Math.cos(origin.lat * Math.PI / 180) * R;
+        const y = dLat * R;
+
+        return { x, y };
+        }
+
+        // Attach Cartesian coords to infrastructure nodes
+        nodes
+        .filter(n => n.type === "infrastructure")
+        .forEach(building => {
+            const { x, y } = latLngToXY(building.latitude, building.longitude, origin);
+            building.cartesian = { x, y };
+            console.log(`Building: ${building.name} → x-coordinate: ${x.toFixed(2)}, y-coordinate: ${y.toFixed(2)}`);
+        });
 
       // ---- Small fixed overview map ----
       const map = L.map("map-overview", {
@@ -780,11 +800,6 @@ function renderDataOnMap(map, data, enableClick = false) {
     }
   });
 
-  // --- Fit bounds to all nodes ---
-  const allCoords = data.map(d => [d.latitude, d.longitude]);
-  if (allCoords.length > 0) {
-    map.fitBounds(allCoords);
-  }
 }
 
   document.addEventListener("DOMContentLoaded", loadMap);

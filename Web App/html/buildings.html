@@ -94,6 +94,10 @@
                             <option>Sort</option>
                         </select>
                     </div>
+
+
+
+
                 </div>
 
                 <div class="g2">
@@ -174,10 +178,12 @@
                         <tr>
                             <th>ID</th>
                             <th>Map Name</th>
+                            <th>Current Version</th> <!-- ✅ new column -->
                             <th>Campus Included</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
+
                     <tbody>
                         <!-- JS will populate this -->
                     </tbody>
@@ -488,6 +494,104 @@
 </div>
 
 
+<!-- Edit Category Modal Overlay -->
+<div id="editCategoryModal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+        <h2>Edit Category</h2>
+
+        <form id="editCategoryForm">
+            <!-- Name/Label -->
+            <div class="form-group">
+                <label>Name/Label</label>
+                <input type="text" id="editCategoryName" placeholder="Category Name" required>
+            </div>
+
+            <!-- Icon -->
+            <div class="form-group">
+                <label>Icon (.ico/.png)</label>
+                <div class="upload-box">
+                    <input type="file" id="editCategoryIcon" accept=".png,.ico" hidden>
+                    <label for="editCategoryIcon" class="upload-label">
+                        <span class="plus-icon">+</span>
+                        <p>(Accepted Formats: ico, png)</p>
+                    </label>
+                </div>
+                <img id="editCategoryPreview" src="" alt="Preview" style="max-width:80px; max-height:80px; display:none; margin-top:8px;">
+            </div>
+
+            <!-- Actions -->
+            <div class="modal-actions">
+                <button type="submit" class="save-btn">Save</button>
+                <button type="button" class="cancel-btn" id="cancelEditCategoryBtn">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+<!-- Edit Map Modal Overlay -->
+<div id="editMapModal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+        <h2>Edit Map</h2>
+
+        <form id="editMapForm">
+            <!-- Map Name -->
+            <div class="form-group">
+                <label>Map Name</label>
+                <input type="text" id="editMapName" placeholder="Map Name" required>
+            </div>
+
+            <!-- Campus Included Multi-select -->
+            <div class="form-group">
+                <label>Campus Included</label>
+                <div id="editCampusDropdown" class="custom-multiselect">
+                    <div id="editSelectedCampuses" class="selected-options">Select campuses...</div>
+                    <div id="editCampusOptions" class="options-list"></div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="modal-actions">
+                <button type="submit" class="save-btn">Save</button>
+                <button type="button" class="cancel-btn" id="cancelEditMapBtn">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+<!-- Edit Campus Modal Overlay -->
+<div id="editCampusModal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+        <h2>Edit Campus</h2>
+        <form id="editCampusForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Campus Name</label>
+                    <input type="text" id="editCampusName" placeholder="e.g. Main Campus" required>
+                </div>
+                <div class="form-group">
+                    <label>Campus ID</label>
+                    <input id="editCampusId" type="text" disabled>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Map</label>
+                <select id="editMapSelect">
+                    <!-- JS will populate this -->
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="save-btn">Save</button>
+                <button type="button" class="cancel-btn" id="cancelEditCampusBtn">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
 
 
 
@@ -506,6 +610,62 @@
     </div>
   </div>
 </div>
+
+
+
+<!-- Delete Room Modal Overlay -->
+<div id="deleteRoomModal" class="modal-overlay" style="display:none;">
+  <div class="modal" style="max-width:400px;">
+    <h2 style="color:#b41c1c;">Confirm Deletion</h2>
+    <p id="deleteRoomPrompt" style="margin: 20px 0; text-align:center;"></p>
+    <div class="modal-actions">
+      <button id="confirmDeleteRoomBtn" class="save-btn" style="background:#b41c1c;">Delete</button>
+      <button id="cancelDeleteRoomBtn" class="cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Delete Category Modal Overlay -->
+<div id="deleteCategoryModal" class="modal-overlay" style="display:none;">
+  <div class="modal" style="max-width:400px;">
+    <h2 style="color:#b41c1c;">Confirm Deletion</h2>
+    <p id="deleteCategoryPrompt" style="margin: 20px 0; text-align:center;"></p>
+    <div class="modal-actions">
+      <button id="confirmDeleteCategoryBtn" class="save-btn" style="background:#b41c1c;">Delete</button>
+      <button id="cancelDeleteCategoryBtn" class="cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Delete Map Modal Overlay -->
+<div id="deleteMapModal" class="modal-overlay" style="display:none;">
+  <div class="modal" style="max-width:400px;">
+    <h2 style="color:#b41c1c;">Confirm Deletion</h2>
+    <p id="deleteMapPrompt" style="margin: 20px 0; text-align:center;"></p>
+    <div class="modal-actions">
+      <button id="confirmDeleteMapBtn" class="save-btn" style="background:#b41c1c;">Delete</button>
+      <button id="cancelDeleteMapBtn" class="cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Delete Campus Modal Overlay -->
+<div id="deleteCampusModal" class="modal-overlay" style="display:none;">
+  <div class="modal" style="max-width:400px;">
+    <h2 style="color:#b41c1c;">Confirm Deletion</h2>
+    <p id="deleteCampusPrompt" style="margin: 20px 0; text-align:center;"></p>
+    <div class="modal-actions">
+      <button id="confirmDeleteCampusBtn" class="save-btn" style="background:#b41c1c;">Delete</button>
+      <button id="cancelDeleteCampusBtn" class="cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
 
 <script type="module" src="/js/buildings.js "></script>
 </body>

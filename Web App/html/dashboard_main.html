@@ -190,6 +190,7 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+  
 
   async function loadMap() {
     try {
@@ -218,6 +219,29 @@
         });
       });
 
+      // ------------------ Convert Lat/Lng to X/Y ------------------
+const origin = { lat: 6.913341, lng: 122.063693 }; // your point of origin
+
+function latLngToXY(lat, lng, origin) {
+  const R = 6371000; // Earth radius in meters
+  const dLat = (lat - origin.lat) * Math.PI / 180;
+  const dLng = (lng - origin.lng) * Math.PI / 180;
+
+  const x = dLng * Math.cos(origin.lat * Math.PI / 180) * R;
+  const y = dLat * R;
+
+  return { x, y };
+}
+
+// Loop through buildings only
+nodes
+  .filter(n => n.type === "infrastructure")
+  .forEach(building => {
+    const { x, y } = latLngToXY(building.latitude, building.longitude, origin);
+    console.log(`Building: ${building.name} → X: ${x.toFixed(2)}, Y: ${y.toFixed(2)}`);
+    building.cartesian = { x, y }; // optional: store inside the node
+  });
+
       // ---- Small overview map ----
       const map = L.map("map-overview", {
         center: [6.9130, 122.0630],
@@ -238,7 +262,7 @@
 
       // ---- Modal logic ----
       const modal = document.getElementById("mapModal");
-      const closeBtn = document.querySelector(".close-btn");
+      const closeBtn = document.getElementById("closeModal");
 
       document.getElementById("map-overview").addEventListener("click", () => {
         modal.style.display = "block";
@@ -349,12 +373,8 @@
       }
     });
 
-    // --- Fit bounds to all nodes ---
-    const allCoords = data.map(d => [d.latitude, d.longitude]);
-    if (allCoords.length > 0) {
-      map.fitBounds(allCoords);
-    }
   }
+  
 
   document.addEventListener("DOMContentLoaded", loadMap);
 </script>
