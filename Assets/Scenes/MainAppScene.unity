@@ -7892,7 +7892,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114478715909612932, guid: e6b749c6d877f4c19a5a5c3c0783d53b, type: 3}
       propertyPath: _previewOptions.isPreviewEnabled
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114478715909612932, guid: e6b749c6d877f4c19a5a5c3c0783d53b, type: 3}
       propertyPath: _imagery._layerProperty.sourceType
@@ -7937,9 +7937,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1257486800756004, guid: e6b749c6d877f4c19a5a5c3c0783d53b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1699060737}
-    - targetCorrespondingSourceObject: {fileID: 1257486800756004, guid: e6b749c6d877f4c19a5a5c3c0783d53b, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1699060738}
     - targetCorrespondingSourceObject: {fileID: 1257486800756004, guid: e6b749c6d877f4c19a5a5c3c0783d53b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1699060740}
@@ -10842,31 +10839,21 @@ MonoBehaviour:
   mapboxMap: {fileID: 1699060734}
   nodePrefab: {fileID: 3368960490352540225, guid: 26e90b3c4bb6f5750a47ebad761d32e5, type: 3}
   edgePrefab: {fileID: 3787068372135269401, guid: 6b96a6db51334d06f93d2d4d6829cc56, type: 3}
+  polygonPrefab: {fileID: 0}
   nodesFileName: nodes.json
   edgesFileName: edges.json
+  polygonsFileName: polygons.json
   enableDebugLogs: 1
-  targetCampusIds: []
+  targetCampusIds:
+  - CAMP-02
   nodeSize: 4.5
   heightOffset: 1
   edgeWidth: 1
   edgeMaterial: {fileID: 2100000, guid: 107ca5e7bb5e26f46b0ce09f5fc2e817, type: 2}
---- !u!114 &1699060738
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 259187411}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e6b9fb05533eb5e059a2554bcfd46716, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mapboxMap: {fileID: 1699060734}
-  dotPrefab: {fileID: 3368960490352540225, guid: 26e90b3c4bb6f5750a47ebad761d32e5, type: 3}
-  spawnOnStart: 1
-  dotSize: 5
-  heightOffset: 10
+  enablePolygonBackgrounds: 1
+  polygonHeightOffset: 0.5
+  defaultPolygonColor: {r: 0.2, g: 0.8, b: 0.2, a: 0.3}
+  polygonMaterial: {fileID: 2100000, guid: 749b9069dc4742c5bfa5c74644049926, type: 2}
 --- !u!114 &1699060740
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -111,29 +111,43 @@ public class PathRenderer : MonoBehaviour
         List<Edge> validEdges = null;
         List<string> campusIds = null;
 
+        // Get campus IDs to render
+        bool errorOccurred = false;
+        System.Exception caughtException = null;
+
+        yield return StartCoroutine(GetTargetCampusIdsAsync((ids) => {
+            campusIds = ids;
+        }));
+
         try
         {
-            // Get campus IDs to render
-            campusIds = GetTargetCampusIds();
-            if (campusIds.Count == 0)
+            if (campusIds == null || campusIds.Count == 0)
             {
                 Debug.LogError("❌ No campus IDs found in data");
-                yield break;
+                errorOccurred = true;
             }
+            else
+            {
+                DebugLog($"🏫 Target campus IDs: {string.Join(", ", campusIds)}");
 
-            DebugLog($"🏫 Target campus IDs: {string.Join(", ", campusIds)}");
-
-            // Clear existing paths first
-            ClearSpawnedPaths();
+                // Clear existing paths first
+                ClearSpawnedPaths();
+            }
         }
         catch (System.Exception e)
         {
             Debug.LogError($"❌ Error in LoadAndRenderPaths: {e.Message}");
-            yield break;
+            errorOccurred = true;
+            caughtException = e;
         }
         finally
         {
             isRendering = false;
+        }
+
+        if (errorOccurred)
+        {
+            yield break;
         }
 
         // Load and filter nodes (yield must be outside try-catch)
@@ -146,15 +160,22 @@ public class PathRenderer : MonoBehaviour
         }
 
         // Load and filter edges
-        Edge[] edges = LoadEdgesFromJSON();
-        if (edges == null || edges.Length == 0)
+        yield return StartCoroutine(LoadEdgesFromJSONAsync((edges) => {
+            if (edges == null || edges.Length == 0)
+            {
+                Debug.LogError("❌ Failed to load edges from JSON");
+                return;
+            }
+
+            // Filter valid pathway edges
+            validEdges = FilterValidPathwayEdges(edges);
+        }));
+
+        if (validEdges == null)
         {
-            Debug.LogError("❌ Failed to load edges from JSON");
             yield break;
         }
 
-        // Filter valid pathway edges
-        validEdges = FilterValidPathwayEdges(edges);
         DebugLog($"🛤️ Found {validEdges.Count} valid pathway edges to render");
 
         if (validEdges.Count == 0)
@@ -170,129 +191,159 @@ public class PathRenderer : MonoBehaviour
         Debug.Log($"✅ PathRenderer completed: {spawnedPaths.Count} paths rendered");
     }
 
-    private List<string> GetTargetCampusIds()
+    private IEnumerator GetTargetCampusIdsAsync(System.Action<List<string>> onComplete)
     {
         // If specific campus IDs are set in inspector, use those
         if (targetCampusIds != null && targetCampusIds.Count > 0)
         {
-            return targetCampusIds.Where(id => !string.IsNullOrEmpty(id)).ToList();
+            var validIds = targetCampusIds.Where(id => !string.IsNullOrEmpty(id)).ToList();
+            onComplete?.Invoke(validIds);
+            yield break;
         }
 
         // Otherwise, get all available campus IDs from the data
-        return GetAllCampusIdsFromData();
+        yield return StartCoroutine(GetAllCampusIdsFromDataAsync(onComplete));
     }
 
-    private List<string> GetAllCampusIdsFromData()
+    private IEnumerator GetAllCampusIdsFromDataAsync(System.Action<List<string>> onComplete)
     {
-        string nodesPath = Path.Combine(Application.streamingAssetsPath, nodesFileName);
-        DebugLog($"📂 Looking for nodes file at: {nodesPath}");
+        DebugLog($"📂 Loading campus IDs from nodes file: {nodesFileName}");
 
-        if (!File.Exists(nodesPath))
-        {
-            Debug.LogError($"❌ Nodes file not found: {nodesPath}");
-            return new List<string>();
-        }
+        var campusIds = new List<string>();
+        bool loadCompleted = false;
 
-        try
-        {
-            string jsonContent = File.ReadAllText(nodesPath);
-            Node[] nodes = JsonHelper.FromJson<Node>(jsonContent);
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(nodesFileName,
+            // onSuccess
+            (jsonContent) => {
+                try
+                {
+                    Node[] nodes = JsonHelper.FromJson<Node>(jsonContent);
 
-            if (nodes == null || nodes.Length == 0)
-            {
-                Debug.LogError("❌ No nodes found in JSON file");
-                return new List<string>();
+                    if (nodes == null || nodes.Length == 0)
+                    {
+                        Debug.LogError("❌ No nodes found in JSON file");
+                        loadCompleted = true;
+                        return;
+                    }
+
+                    campusIds = nodes
+                        .Where(n => n != null && n.is_active && (n.type == "pathway" || n.type == "infrastructure") && !string.IsNullOrEmpty(n.campus_id))
+                        .Select(n => n.campus_id)
+                        .Distinct()
+                        .ToList();
+
+                    DebugLog($"🏫 Found {campusIds.Count} unique campus IDs with pathways and infrastructure");
+                    loadCompleted = true;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"❌ Error parsing nodes JSON: {e.Message}");
+                    loadCompleted = true;
+                }
+            },
+            // onError
+            (error) => {
+                Debug.LogError($"❌ Error loading nodes file: {error}");
+                loadCompleted = true;
             }
+        ));
 
-            var campusIds = nodes
-                    .Where(n => n != null && n.is_active && (n.type == "pathway" || n.type == "infrastructure") && !string.IsNullOrEmpty(n.campus_id))
-                    .Select(n => n.campus_id)
-                    .Distinct()
-                    .ToList();
-
-            DebugLog($"🏫 Found {campusIds.Count} unique campus IDs with pathways and infrastructure");
-            return campusIds;
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"❌ Error reading nodes file: {e.Message}");
-            return new List<string>();
-        }
+        // Wait for load to complete
+        yield return new WaitUntil(() => loadCompleted);
+        onComplete?.Invoke(campusIds);
     }
 
     private IEnumerator LoadFilteredNodes(List<string> campusIds)
     {
-        string nodesPath = Path.Combine(Application.streamingAssetsPath, nodesFileName);
-        DebugLog($"📂 Loading nodes from: {nodesPath}");
+        DebugLog($"📂 Loading filtered nodes from: {nodesFileName}");
 
-        if (!File.Exists(nodesPath))
-        {
-            Debug.LogError($"❌ Nodes file not found: {nodesPath}");
-            yield break;
-        }
+        bool loadCompleted = false;
 
-        try
-        {
-            string jsonContent = File.ReadAllText(nodesPath);
-            DebugLog($"📄 Read {jsonContent.Length} characters from nodes file");
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(nodesFileName,
+            // onSuccess
+            (jsonContent) => {
+                try
+                {
+                    DebugLog($"📄 Read {jsonContent.Length} characters from nodes file");
 
-            Node[] nodes = JsonHelper.FromJson<Node>(jsonContent);
-            DebugLog($"📊 Parsed {nodes?.Length ?? 0} nodes from JSON");
+                    Node[] nodes = JsonHelper.FromJson<Node>(jsonContent);
+                    DebugLog($"📊 Parsed {nodes?.Length ?? 0} nodes from JSON");
 
-            allNodes.Clear();
+                    allNodes.Clear();
 
-            // Filter for pathway nodes only
-            var pathwayNodes = nodes.Where(n =>
-                n != null &&
-                n.is_active &&
-                n.type == "pathway" || n.type == "infrastructure" &&
-                campusIds.Contains(n.campus_id) &&
-                IsValidCoordinate(n.latitude, n.longitude)
-            ).ToList();
+                    // Filter for pathway nodes only
+                    var pathwayNodes = nodes.Where(n =>
+                        n != null &&
+                        n.is_active &&
+                        (n.type == "pathway" || n.type == "infrastructure") &&
+                        campusIds.Contains(n.campus_id) &&
+                        IsValidCoordinate(n.latitude, n.longitude)
+                    ).ToList();
 
-            foreach (var node in pathwayNodes)
-            {
-                allNodes[node.node_id] = node;
+                    foreach (var node in pathwayNodes)
+                    {
+                        allNodes[node.node_id] = node;
+                    }
+
+                    DebugLog($"🔍 Node filtering process:");
+                    DebugLog($"  - Total nodes: {nodes.Length}");
+                    DebugLog($"  - Active nodes: {nodes.Count(n => n?.is_active == true)}");
+                    DebugLog($"  - Pathway nodes in target campus: {allNodes.Count}");
+
+                    loadCompleted = true;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"❌ Error parsing nodes: {e.Message}");
+                    loadCompleted = true;
+                }
+            },
+            // onError
+            (error) => {
+                Debug.LogError($"❌ Error loading nodes: {error}");
+                loadCompleted = true;
             }
+        ));
 
-            DebugLog($"🔍 Node filtering process:");
-            DebugLog($"  - Total nodes: {nodes.Length}");
-            DebugLog($"  - Active nodes: {nodes.Count(n => n?.is_active == true)}");
-            DebugLog($"  - Pathway nodes in target campus: {allNodes.Count}");
-
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"❌ Error loading nodes: {e.Message}");
-        }
+        // Wait for load to complete
+        yield return new WaitUntil(() => loadCompleted);
     }
 
-    private Edge[] LoadEdgesFromJSON()
+    private IEnumerator LoadEdgesFromJSONAsync(System.Action<Edge[]> onComplete)
     {
-        string edgesPath = Path.Combine(Application.streamingAssetsPath, edgesFileName);
-        DebugLog($"📂 Loading edges from: {edgesPath}");
+        DebugLog($"📂 Loading edges from: {edgesFileName}");
 
-        if (!File.Exists(edgesPath))
-        {
-            Debug.LogError($"❌ Edges file not found: {edgesPath}");
-            return null;
-        }
+        bool loadCompleted = false;
+        Edge[] edges = null;
 
-        try
-        {
-            string jsonContent = File.ReadAllText(edgesPath);
-            DebugLog($"📄 Read {jsonContent.Length} characters from edges file");
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(edgesFileName,
+            // onSuccess
+            (jsonContent) => {
+                try
+                {
+                    DebugLog($"📄 Read {jsonContent.Length} characters from edges file");
 
-            Edge[] edges = JsonHelper.FromJson<Edge>(jsonContent);
-            DebugLog($"📊 Parsed {edges?.Length ?? 0} edges from JSON");
+                    edges = JsonHelper.FromJson<Edge>(jsonContent);
+                    DebugLog($"📊 Parsed {edges?.Length ?? 0} edges from JSON");
 
-            return edges;
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"❌ Error loading edges JSON: {e.Message}");
-            return null;
-        }
+                    loadCompleted = true;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"❌ Error parsing edges JSON: {e.Message}");
+                    loadCompleted = true;
+                }
+            },
+            // onError
+            (error) => {
+                Debug.LogError($"❌ Error loading edges: {error}");
+                loadCompleted = true;
+            }
+        ));
+
+        // Wait for load to complete
+        yield return new WaitUntil(() => loadCompleted);
+        onComplete?.Invoke(edges);
     }
 
     private List<Edge> FilterValidPathwayEdges(Edge[] allEdges)

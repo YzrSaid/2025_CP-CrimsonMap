@@ -2,6 +2,117 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
+// CategoryData
+[System.Serializable]
+public class Category
+{
+    public int category_id;
+    public string name;
+    public string icon;
+    public List<int> building_id;
+}
+
+[System.Serializable]
+public class CategoryList
+{
+    public List<Category> categories;
+}
+
+// EdgeData
+[System.Serializable]
+public class Edge
+{
+    public string edge_id;
+    public string from_node;
+    public string to_node;
+    public float distance;
+    public string path_type;
+    public string elevations;
+    public bool is_active;
+}
+
+[System.Serializable]
+public class EdgeList
+{
+    public List<Edge> edges;
+}
+
+// InfrastructureData
+[System.Serializable]
+public class Infrastructure
+{
+    public string infra_id;
+    public string name;
+    public int category_id;
+    public string image_url;
+    public string email;
+    public string phone;
+}
+
+[System.Serializable]
+public class InfrastructureList
+{
+    public Infrastructure[] infrastructures;
+}
+
+// MapData
+[Serializable]
+public class MapData
+{
+    public string map_id;
+    public string map_name;
+    public List<string> campus_included;
+}
+
+[Serializable]
+public class MapList
+{
+    public List<MapData> maps;
+}
+
+// NodeData
+[System.Serializable]
+public class Node
+{
+    public string node_id;
+    public string name;
+    public float latitude;
+    public float longitude;
+    public string type;
+    public bool is_active;
+
+    // Unity JsonUtility has issues with nullable ints
+    public string related_infra_id;
+    public string related_room_id;
+
+    public IndoorInfo indoor;
+    public string campus_id;
+
+    // Helpers
+    public bool HasRelatedInfraId => !string.IsNullOrEmpty(related_infra_id);
+    public bool HasRelatedRoomId => !string.IsNullOrEmpty(related_room_id);
+
+    // If you need them as strings
+    public string GetRelatedInfraId() => HasRelatedInfraId ? related_infra_id : null;
+    public string GetRelatedRoomId() => HasRelatedRoomId ? related_room_id : null;
+}
+
+[System.Serializable]
+public class NodeList
+{
+    public List<Node> nodes;
+}
+
+// IndoorData
+
+[System.Serializable]
+public class IndoorInfo
+{
+    public float x;
+    public float y;
+    public int floor;
+}
+
 [System.Serializable]
 public class MapInfo
 {
@@ -56,6 +167,7 @@ public class SavedDestinationsData
     public Dictionary<string, object>[] saved_destinations;
 }
 
+// This data is important for the onboarding screens
 [System.Serializable]
 public class SaveData
 {
