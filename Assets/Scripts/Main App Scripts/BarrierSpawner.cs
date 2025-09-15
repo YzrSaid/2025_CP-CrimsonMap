@@ -619,19 +619,44 @@ public class BarrierEdge : MonoBehaviour
     private BarrierNode fromNode;
     private BarrierNode toNode;
     private float heightOffset;
+    private float edgeWidth;
+    
+    // Cache for consistent scaling - same fix as PathEdge
+    private float referenceDistance;
+    private bool isInitialized = false;
     
     public Edge GetEdgeData() => edgeData;
     public BarrierNode GetFromNode() => fromNode;
     public BarrierNode GetToNode() => toNode;
 
     public void Initialize(AbstractMap mapReference, Edge edge, BarrierNode from, BarrierNode to, 
-                          float edgeWidth, float height, Material material = null)
+                          float width, float height, Material material = null)
     {
         map = mapReference;
         edgeData = edge;
         fromNode = from;
         toNode = to;
         heightOffset = height;
+        edgeWidth = width;
+        
+        // KEY FIX: Calculate reference distance at initialization using local coordinates
+        if (map != null && fromNode != null && toNode != null)
+        {
+            // Get the node data to calculate reference distance
+            Node fromNodeData = fromNode.GetNodeData();
+            Node toNodeData = toNode.GetNodeData();
+            
+            if (fromNodeData != null && toNodeData != null)
+            {
+                // Use local coordinates (false parameter) to get consistent distance
+                Vector3 refFromPos = map.GeoToWorldPosition(new Vector2d(fromNodeData.latitude, fromNodeData.longitude), false);
+                Vector3 refToPos = map.GeoToWorldPosition(new Vector2d(toNodeData.latitude, toNodeData.longitude), false);
+                referenceDistance = Vector3.Distance(refFromPos, refToPos);
+                
+                isInitialized = true;
+                Debug.Log($"BarrierEdge {edge.edge_id} initialized with reference distance {referenceDistance:F3}");
+            }
+        }
         
         // Set initial scale based on edge width
         transform.localScale = new Vector3(edgeWidth, transform.localScale.y, transform.localScale.z);
@@ -657,41 +682,39 @@ public class BarrierEdge : MonoBehaviour
     
     void Update()
     {
-        if (map != null && fromNode != null && toNode != null)
+        if (map != null && fromNode != null && toNode != null && isInitialized)
         {
-            // Update after nodes have updated their positions
-            UpdateEdgeTransform();
-        }
-    }
-    
-    void LateUpdate()
-    {
-        // Also update in LateUpdate to ensure we're using the most recent node positions
-        if (map != null && fromNode != null && toNode != null)
-        {
-            UpdateEdgeTransform();
+            // Update every few frames for performance
+            if (Time.frameCount % 2 == 0)
+            {
+                UpdateEdgeTransform();
+            }
         }
     }
     
     void UpdateEdgeTransform()
     {
-        if (fromNode == null || toNode == null) return;
+        if (fromNode == null || toNode == null || !isInitialized) return;
         
-        // Wait one frame to ensure nodes have updated their positions
         Vector3 fromPos = fromNode.transform.position;
         Vector3 toPos = toNode.transform.position;
         
-        // Calculate direction and total distance in world space
+        // Calculate direction
         Vector3 direction = toPos - fromPos;
-        float totalDistance = direction.magnitude;
         
-        if (direction == Vector3.zero || totalDistance < 0.01f) return;
+        if (direction.magnitude < 0.01f)
+        {
+            gameObject.SetActive(false);
+            return;
+        }
         
-        // Get node sizes (use the actual world scale, not local scale)
+        gameObject.SetActive(true);
+        
+        // Get node sizes for edge adjustment
         float fromNodeRadius = fromNode.transform.lossyScale.x * 0.5f;
         float toNodeRadius = toNode.transform.lossyScale.x * 0.5f;
         
-        // Add a small buffer to prevent overlap during map transitions
+        // Add a small buffer to prevent overlap
         float buffer = 0.1f;
         fromNodeRadius += buffer;
         toNodeRadius += buffer;
@@ -701,31 +724,27 @@ public class BarrierEdge : MonoBehaviour
         Vector3 adjustedFromPos = fromPos + directionNormalized * fromNodeRadius;
         Vector3 adjustedToPos = toPos - directionNormalized * toNodeRadius;
         
-        // Calculate adjusted distance and center
-        float adjustedDistance = Vector3.Distance(adjustedFromPos, adjustedToPos);
+        // Calculate how much we need to subtract from reference distance for node radii
+        float totalRadiusOffset = fromNodeRadius + toNodeRadius;
+        float adjustedReferenceDistance = Mathf.Max(0.1f, referenceDistance - totalRadiusOffset);
         
-        // Prevent negative or very small distances
-        if (adjustedDistance < 0.1f)
-        {
-            gameObject.SetActive(false);
-            return;
-        }
-        else
-        {
-            gameObject.SetActive(true);
-        }
-        
+        // Position at center between adjusted positions
         Vector3 centerPos = Vector3.Lerp(adjustedFromPos, adjustedToPos, 0.5f);
         centerPos.y = heightOffset; // Set proper height
         
-        // Position the edge at the adjusted center
         transform.position = centerPos;
         
         // Rotate to face the correct direction
         transform.rotation = Quaternion.LookRotation(directionNormalized);
-        
-        // Scale the edge to match the adjusted distance
-        Vector3 currentScale = transform.localScale;
-        transform.localScale = new Vector3(currentScale.x, currentScale.y, adjustedDistance);
+        transform.localScale = new Vector3(edgeWidth, transform.localScale.y, adjustedReferenceDistance);
+    }
+    
+    // Force update method for zoom changes
+    public void ForceUpdate()
+    {
+        if (map != null && isInitialized)
+        {
+            UpdateEdgeTransform();
+        }
     }
 }
