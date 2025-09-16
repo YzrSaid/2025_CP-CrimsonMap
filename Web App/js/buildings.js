@@ -499,7 +499,21 @@ async function populateCampusIncludedSelect() {
     });
 }
 
-// ----------- Add Map Handler (New Approach) -----------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ----------- Add Map Handler (Sequential Doc ID) -----------
 document.querySelector("#addMapModal form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -513,33 +527,41 @@ document.querySelector("#addMapModal form")?.addEventListener("submit", async (e
     }
 
     try {
-        // ✅ Auto-generate map ID
-        const mapId = await generateNextMapId();
+        // ✅ Generate the next document ID in format MAP-01
+        const mapsSnap = await getDocs(collection(db, "MapVersions"));
+        const existingDocNumbers = mapsSnap.docs
+            .map(doc => doc.id)
+            .filter(id => id.startsWith("MAP-"))
+            .map(id => parseInt(id.slice(4), 10))
+            .filter(num => !isNaN(num));
+        const nextNum = existingDocNumbers.length > 0 ? Math.max(...existingDocNumbers) + 1 : 1;
+        const newDocId = `MAP-${nextNum.toString().padStart(2, "0")}`; // MAP-01, MAP-02, etc.
 
-        // ✅ Step 1: Create a new Map document in MapVersions
-        const mapRef = await addDoc(collection(db, "MapVersions"), {
-            map_id: mapId,
+        // ✅ Create the new document with that ID
+        const mapRef = doc(db, "MapVersions", newDocId);
+        await setDoc(mapRef, {
+            map_id: newDocId,
             map_name: mapName,
             campus_included: campusIncluded,
             createdAt: new Date(),
             current_version: "v1.0.0"
         });
 
-        // ✅ Step 2: Create the initial version doc (v1.0.0)
-        await setDoc(doc(db, "MapVersions", mapRef.id, "versions", "v1.0.0"), {
+        // ✅ Create the initial version document
+        await setDoc(doc(db, "MapVersions", newDocId, "versions", "v1.0.0"), {
             nodes: [],
             edges: []
         });
 
-        // ✅ Step 3: Log Activity
+        // ✅ Log Activity
         await addDoc(collection(db, "ActivityLogs"), {
             timestamp: new Date(),
             activity: "Added Map",
-            item: `Map ${mapId}`,
+            item: `Map ${newDocId}`,
             description: `Created map "${mapName}" with version v1.0.0 and campuses: ${campusIncluded.join(", ") || "none"}.`
         });
 
-        alert("Map created successfully with version v1.0.0!");
+        alert(`Map created successfully with document ID: ${newDocId} and version v1.0.0!`);
         e.target.reset();
 
         // Reset dropdown UI
@@ -552,6 +574,7 @@ document.querySelector("#addMapModal form")?.addEventListener("submit", async (e
         alert("Error creating map: " + err.message);
     }
 });
+
 
 
 

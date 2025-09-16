@@ -82,14 +82,27 @@
                 <div class="top-title_sort">
                     <div class="title">
                         <h2>Map Overview</h2>
-
                     </div>
 
-                    <div class="sorting">
-                        <select>
-                            <option>Main Map</option>
-                        </select>
+                    <div class="side-dropd" style="display: flex; gap: 10px; align-items: center;">
+                        <div class="sorting">
+                            <select id="mapSelect" style="padding: 5px 10px; border-radius: 5px;">
+                                <option value="">Select Map</option>
+                            </select>
+                        </div>
+                        <div class="campusdropd">
+                            <select id="campusSelect" style="padding: 5px 10px; border-radius: 5px;">
+                                <option value="">Select Campus</option>
+                            </select>
+                        </div>
+                        <div class="versions">
+                            <select id="versionSelect" style="padding: 5px 10px; border-radius: 5px;">
+                                <option value="">Select Version</option>
+                            </select>
+                        </div>
                     </div>
+
+                    
                 </div>
 
                 <div class="bottom-map">
@@ -215,6 +228,7 @@
                     <option value="room">Room</option>
                     <option value="barrier">Barrier</option>
                     <option value="infrastructure">Infrastructure</option>
+                    <option value="intermediate">Intermediate</option>
                 </select>
             </div>
 
@@ -404,6 +418,7 @@
                 <option value="room">Room</option>
                 <option value="barrier">Barrier</option>
                 <option value="infrastructure">Infrastructure</option>
+                <option value="intermediate">Intermediate</option>
             </select>
         </div>
 
@@ -557,6 +572,68 @@
 
 
 
+<!-- Delete Edge Modal Overlay -->
+<div id="deleteEdgeModal" class="modal-overlay" style="display:none;">
+  <div class="modal" style="max-width:400px;">
+    <h2 style="color:#b41c1c;">Confirm Deletion</h2>
+    <p id="deleteEdgePrompt" style="margin: 20px 0; text-align:center;"></p>
+    <div class="modal-actions">
+      <button id="confirmDeleteEdgeBtn" class="save-btn" style="background:#b41c1c;">Delete</button>
+      <button id="cancelDeleteEdgeBtn" class="cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Delete Node Modal Overlay -->
+<div id="deleteNodeModal" class="modal-overlay" style="display:none;">
+  <div class="modal" style="max-width:400px;">
+    <h2 style="color:#b41c1c;">Confirm Deletion</h2>
+    <p id="deleteNodePrompt" style="margin: 20px 0; text-align:center;"></p>
+    <div class="modal-actions">
+      <button id="confirmDeleteNodeBtn" class="save-btn" style="background:#b41c1c;">Delete</button>
+      <button id="cancelDeleteNodeBtn" class="cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+<!-- Node Save Confirmation Modal -->
+<div id="nodeSaveModal" class="modal-overlay" style="display:none;">
+  <div class="modal" style="max-width:400px; position:relative;">
+    <button id="closeNodeSaveModal" style="position:absolute; top:10px; right:10px; font-size:18px;">&times;</button>
+    <h2>Save Node</h2>
+    <p>Do you want to overwrite the current map version or create a new version?</p>
+    <div class="modal-actions" style="margin-top:20px; display:flex; justify-content:space-between;">
+      <button id="overwriteNodeBtn" class="save-btn" style="background:#b41c1c;">Overwrite</button>
+      <button id="newVersionNodeBtn" class="save-btn" style="background:#1c7db4;">New Version</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- Edge Version Choice Modal (inline styles) -->
+<div id="edgeSaveModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; overflow:auto; background-color: rgba(0,0,0,0.5);">
+    <div style="background-color:#fff; margin:15% auto; padding:20px; border-radius:8px; width:300px; text-align:center; position:relative;">
+        <span id="closeEdgeSaveModal" style="position:absolute; top:10px; right:15px; font-size:20px; cursor:pointer;">&times;</span>
+        <h3>Save Edge</h3>
+        <p>Do you want to overwrite the current map version or create a new version?</p>
+        <button id="overwriteEdgeBtn" style="margin:10px; padding:10px 15px;">Overwrite Current Version</button>
+        <button id="newVersionEdgeBtn" style="margin:10px; padding:10px 15px;">Create New Version</button>
+    </div>
+</div>
+
+
+
+
 
 
 <!-- ================== SCRIPT ================== --> 
@@ -573,12 +650,21 @@
   // ======================= FIREBASE SETUP ===========================
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
   import {
-    getFirestore, collection, getDocs, query, orderBy
+    getFirestore, collection, getDocs, query, orderBy, doc, getDoc, updateDoc
   } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
   import { firebaseConfig } from "./../firebaseConfig.js";
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+
+
+
+
+
+
+
+
+
 
   async function loadMap() {
     try {

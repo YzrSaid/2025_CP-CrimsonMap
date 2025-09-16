@@ -244,10 +244,15 @@ body {
 }
 
 
+
+
+
+
+
+
 .recent-activity {
     flex: 1;
     background-color: #f6f6f6;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
     padding: 20px;
@@ -259,11 +264,22 @@ body {
     margin-bottom: 15px;
 }
 
+/* Scrollable container for the table body */
 .activity-table {
-    flex: 1;
-    overflow-y: auto;
     background: white;
     border: 1px solid #ddd;
+    overflow-y: auto;          /* allow vertical scrolling */
+    max-height: 150px;         /* adjust to roughly 3 rows */
+}
+
+/* Optional: add smooth scrolling for better UX */
+.activity-table::-webkit-scrollbar {
+    width: 6px;
+}
+
+.activity-table::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 3px;
 }
 
 .activity-table table {
@@ -271,6 +287,7 @@ body {
     border-collapse: collapse;
 }
 
+/* Header styling */
 .activity-table thead th {
     background-color: #b22222; /* crimson red */
     color: white;
@@ -284,21 +301,27 @@ body {
     border-right: none;
 }
 
+/* Body styling */
 .activity-table tbody td {
-    text-align: center; /* center all contents */
+    text-align: center;
     padding: 10px;
-    border-bottom: 1px solid #ddd; /* horizontal divider between rows */
-    border-right: 1px solid #ddd; /* vertical divider between columns */
+    border-bottom: 1px solid #ddd;
+    border-right: 1px solid #ddd;
     font-size: 14px;
 }
 
 .activity-table tbody td:last-child {
-    border-right: none; /* no divider on last column */
+    border-right: none;
 }
 
 .activity-table tbody tr:last-child td {
-    border-bottom: none; /* remove border from last row */
+    border-bottom: none;
 }
+
+
+
+
+
 
 
 /* Map Overview */
@@ -382,4 +405,24 @@ body {
 
 .close:hover {
     color: red;
+}
+
+
+
+
+.top-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.top-title .title h2 {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.sorting select {
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
 }

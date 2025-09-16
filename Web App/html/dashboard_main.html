@@ -86,7 +86,7 @@
                             <i class="fas fa-building"></i>
                         </div>
                         <div class="info">
-                            <h2>14</h2>
+                            <h2>0</h2>
                             <p>Buildings</p>
                         </div>
                     </div>
@@ -96,7 +96,7 @@
                             <i class="fas fa-layer-group"></i>
                         </div>
                         <div class="info">
-                            <h2>14</h2>
+                            <h2>0</h2>
                             <p>Categories</p>
                         </div>
                     </div>
@@ -106,7 +106,7 @@
                             <i class="fas fa-sync-alt"></i>
                         </div>
                         <div class="info">
-                            <h2>v1.5</h2>
+                            <h2>v1.0.0</h2>
                             <p>Current Map</p>
                         </div>
                     </div>
@@ -116,7 +116,7 @@
                             <i class="fas fa-door-open"></i>
                         </div>
                         <div class="info">
-                            <h2>8</h2>
+                            <h2>0</h2>
                             <p>Rooms & Offices</p>
                         </div>
                     </div>
@@ -155,11 +155,35 @@
                 </div>
             </div>
 
-            <!-- Map Overview -->
-            <div class="map-overview">
-                <h3>Current Map Overview</h3>
+
+            <div class="bot-map">
+              <div class="map-overview">
+                <div class="top-title">
+                  <h3>Current Map Overview</h3>
+                  <div class="side-dropd" style="display: flex; gap: 10px; align-items: center;">
+                        <div class="sorting">
+                            <select id="mapSelect" style="padding: 5px 10px; border-radius: 5px;">
+                                <option value="">Select Map</option>
+                            </select>
+                        </div>
+                        <div class="campusdropd">
+                            <select id="campusSelect" style="padding: 5px 10px; border-radius: 5px;">
+                                <option value="">Select Campus</option>
+                            </select>
+                        </div>
+                        <div class="versions">
+                            <select id="versionSelect" style="padding: 5px 10px; border-radius: 5px;">
+                                <option value="">Select Version</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
                 <div id="map-overview"></div>
+              </div>
             </div>
+            <!-- Map Overview -->
+            
 
             <div id="mapModal" class="modal">
                 <div class="modal-content">
@@ -184,13 +208,245 @@
   // ======================= FIREBASE SETUP ===========================
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
   import {
-    getFirestore, collection, getDocs, query, orderBy
+    getFirestore, collection, getDocs, query, orderBy, limit, doc, getDoc, updateDoc
   } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
   import { firebaseConfig } from "./../firebaseConfig.js";
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   
+
+async function updateDashboardStats() {
+    try {
+        // --- Buildings (Infrastructure nodes) ---
+        const nodesSnap = await getDocs(collection(db, "Nodes"));
+        const buildingsCount = nodesSnap.docs
+            .map(doc => doc.data())
+            .filter(d => d.type === "infrastructure" && !d.is_deleted)
+            .length;
+
+        // --- Categories ---
+        const categoriesSnap = await getDocs(collection(db, "Categories"));
+        const categoriesCount = categoriesSnap.docs
+            .map(doc => doc.data())
+            .filter(d => !d.is_deleted)
+            .length;
+
+        // --- Rooms & Offices ---
+        const roomsSnap = await getDocs(collection(db, "Rooms"));
+        const roomsCount = roomsSnap.docs
+            .map(doc => doc.data())
+            .filter(d => !d.is_deleted)
+            .length;
+
+        // --- Current Map Version ---
+        const mapVersionsSnap = await getDocs(query(collection(db, "MapVersions"), orderBy("createdAt", "desc"), limit(1)));
+        let currentVersion = "—";
+        if (!mapVersionsSnap.empty) {
+            const latestMap = mapVersionsSnap.docs[0].data();
+            currentVersion = latestMap.current_version || "—";
+        }
+
+        // --- Update HTML ---
+        const statsCards = document.querySelectorAll(".stats .card .info h2");
+        if (statsCards.length >= 4) {
+            statsCards[0].textContent = buildingsCount;      // Buildings
+            statsCards[1].textContent = categoriesCount;     // Categories
+            statsCards[2].textContent = currentVersion;      // Current Map
+            statsCards[3].textContent = roomsCount;          // Rooms & Offices
+        }
+    } catch (err) {
+        console.error("Error updating dashboard stats:", err);
+    }
+}
+
+// Call on page load
+updateDashboardStats();
+
+
+
+
+
+
+// ----------- Load Recent Activity Table -----------
+async function renderRecentActivity() {
+    const tbody = document.querySelector(".recent-activity .activity-table tbody");
+    if (!tbody) return;
+    tbody.innerHTML = ""; // Clear table
+
+    try {
+        const q = query(collection(db, "ActivityLogs"), orderBy("timestamp", "desc")); // show latest first
+        const querySnapshot = await getDocs(q);
+
+        let counter = 1;
+        querySnapshot.forEach(docSnap => {
+            const data = docSnap.data();
+
+            // Format timestamp
+            let formattedDate = "-";
+            if (data.timestamp && typeof data.timestamp.toDate === "function") {
+                const d = data.timestamp.toDate();
+                const dateStr = d.toLocaleDateString("en-CA"); // YYYY-MM-DD
+                const timeStr = d.toLocaleTimeString("en-US", {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true
+                });
+                formattedDate = `${dateStr} ${timeStr}`; // ✅ fixed template literal
+            }
+
+            // Combine activity + item
+            const activityText = data.item 
+                ? `${data.activity || "-"} <i>${data.item}</i>`  // ✅ fixed template literal
+                : data.activity || "-";
+
+            // Create table row
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${counter++}</td>
+                <td>${activityText}</td>
+                <td>${formattedDate}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error("Error loading recent activity:", err);
+    }
+}
+
+// Run when page loads
+document.addEventListener("DOMContentLoaded", renderRecentActivity);
+
+
+
+
+
+
+
+async function populateMaps() {
+    const mapSelect = document.getElementById("mapSelect");
+    const campusSelect = document.getElementById("campusSelect");
+    const versionSelect = document.getElementById("versionSelect");
+
+    mapSelect.innerHTML = '<option value="">Select Map</option>';
+    campusSelect.innerHTML = '<option value="">Select Campus</option>';
+    versionSelect.innerHTML = '<option value="">Select Version</option>';
+
+    try {
+        const mapsSnap = await getDocs(collection(db, "MapVersions"));
+
+        mapsSnap.forEach(docSnap => {
+            const mapData = docSnap.data();
+            const mapId = docSnap.id;
+            const option = document.createElement("option");
+            option.value = mapId;
+            option.textContent = `${mapData.map_name} (${mapId})`;
+            mapSelect.appendChild(option);
+        });
+
+        if (mapsSnap.docs.length > 0) {
+            const firstMapId = mapsSnap.docs[0].id;
+            mapSelect.value = firstMapId;
+            await populateCampuses(firstMapId);
+            await populateVersions(firstMapId);
+        }
+
+        // When Map changes
+        mapSelect.addEventListener("change", async () => {
+            const selectedMapId = mapSelect.value;
+            if (!selectedMapId) return;
+            await populateCampuses(selectedMapId);
+            await populateVersions(selectedMapId);
+        });
+
+    } catch (err) {
+        console.error("Error loading maps:", err);
+    }
+}
+
+async function populateCampuses(mapId) {
+    const campusSelect = document.getElementById("campusSelect");
+    campusSelect.innerHTML = '<option value="">Select Campus</option>';
+
+    const mapDocRef = doc(db, "MapVersions", mapId);
+    const mapDocSnap = await getDoc(mapDocRef);
+    if (!mapDocSnap.exists()) return;
+
+    const mapData = mapDocSnap.data();
+    const campuses = mapData.campus_included || [];
+
+    campuses.forEach(campusId => {
+        const option = document.createElement("option");
+        option.value = campusId;
+        option.textContent = campusId; // You can fetch the campus name if needed
+        campusSelect.appendChild(option);
+    });
+
+    // Optional: select first campus by default
+    if (campuses.length > 0) campusSelect.value = campuses[0];
+
+    // When campus changes, you could filter nodes/edges tables here
+    campusSelect.addEventListener("change", () => {
+        const selectedCampus = campusSelect.value;
+        // e.g., renderNodesTable(selectedCampus)
+        // e.g., renderEdgesTable(selectedCampus)
+    });
+}
+
+async function populateVersions(mapId) {
+    const versionSelect = document.getElementById("versionSelect");
+    versionSelect.innerHTML = '<option value="">Select Version</option>';
+
+    const mapDocRef = doc(db, "MapVersions", mapId);
+    const mapDocSnap = await getDoc(mapDocRef);
+    if (!mapDocSnap.exists()) return;
+
+    const mapData = mapDocSnap.data();
+    const currentVersion = mapData.current_version || "";
+
+    const versionsSnap = await getDocs(collection(db, "MapVersions", mapId, "versions"));
+
+    versionsSnap.forEach(docSnap => {
+        const version = docSnap.id;
+        const option = document.createElement("option");
+        option.value = version;
+        option.textContent = version + (version === currentVersion ? " ✅" : "");
+        versionSelect.appendChild(option);
+    });
+
+    // Set dropdown to current version
+    if (currentVersion) versionSelect.value = currentVersion;
+
+    versionSelect.addEventListener("change", async () => {
+        const selectedVersion = versionSelect.value;
+        if (!selectedVersion) return;
+
+        try {
+            await updateDoc(mapDocRef, { current_version: selectedVersion });
+            alert(`Current version updated to ${selectedVersion}`);
+
+            Array.from(versionSelect.options).forEach(opt => {
+                opt.textContent = opt.value + (opt.value === selectedVersion ? " ✅" : "");
+            });
+        } catch (err) {
+            console.error("Error updating current version:", err);
+        }
+    });
+}
+
+// Run on page load
+document.addEventListener("DOMContentLoaded", () => {
+    populateMaps();
+});
+
+
+
+
+
+
+
+
+
 
   async function loadMap() {
     try {

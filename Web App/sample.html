@@ -1,108 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Leaflet + Firebase Map</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    #map {
-      height: 100vh;
-      width: 100%;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>Active Map & Campus Setter</title>
 </head>
 <body>
-  <div id="map"></div>
+  <h2>Set Current Active Map & Campus</h2>
 
-  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <label for="mapId">Map ID:</label>
+  <input type="text" id="mapId" placeholder="Enter Map ID"><br><br>
+
+  <label for="campusId">Campus ID:</label>
+  <input type="text" id="campusId" placeholder="Enter Campus ID"><br><br>
+
+  <button id="saveBtn">Save Active Map + Campus</button>
+
+  <p id="status"></p>
+
   <script type="module">
-    // ======================= FIREBASE SETUP ===========================
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-    import {
-      getFirestore, collection, getDocs, query, orderBy
-    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-    import { firebaseConfig } from "firebaseConfig.js"; // <-- make sure this file exists
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    import { firebaseConfig } from "./firebaseConfig.js";
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    async function loadMap() {
-      try {
-        // Fetch nodes from Firestore
-        const q = query(collection(db, "Nodes"), orderBy("created_at", "asc"));
-        const querySnapshot = await getDocs(q);
+    const saveBtn = document.getElementById("saveBtn");
+    const status = document.getElementById("status");
 
-        const nodes = [];
-        querySnapshot.forEach(docSnap => {
-          nodes.push(docSnap.data());
-        });
+    saveBtn.addEventListener("click", async () => {
+      const mapId = document.getElementById("mapId").value.trim();
+      const campusId = document.getElementById("campusId").value.trim();
 
-        // Create the map
-        const map = L.map("map", {
-          center: [6.9130, 122.0630],
-          zoom: 17,
-        });
-
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: "© OpenStreetMap contributors",
-        }).addTo(map);
-
-        // Separate data types
-        const barrierNodes = nodes.filter(d => d.type === "barrier");
-        const buildingNodes = nodes.filter(d => d.type === "infrastructure");
-        const roomNodes = nodes.filter(d => d.type === "room");
-
-        // --- Draw barrier polygon ---
-        if (barrierNodes.length > 0) {
-          const barrierCoords = barrierNodes.map(b => [b.latitude, b.longitude]);
-          const barrier = L.polygon(barrierCoords, {
-            color: "green",
-            weight: 3,
-            fillOpacity: 0.2,
-          }).addTo(map);
-          barrier.bindPopup("<b>Barrier</b><br>Campus boundary");
-
-          // Add corner markers
-          barrierNodes.forEach(node => {
-            const cornerMarker = L.circleMarker([node.latitude, node.longitude], {
-              radius: 5,
-              color: "darkgreen",
-              fillColor: "lightgreen",
-              fillOpacity: 0.9,
-            }).addTo(map);
-            cornerMarker.bindPopup(`<b>Barrier Corner</b><br>${node.name || "-"}`);
-          });
-        }
-
-        // --- Draw buildings ---
-        buildingNodes.forEach(building => {
-          const marker = L.circleMarker([building.latitude, building.longitude], {
-            radius: 8,
-            color: "blue",
-            fillColor: "lightblue",
-            fillOpacity: 0.7,
-          }).addTo(map);
-          marker.bindPopup(`<b>${building.name || "Building"}</b><br>Type: Infrastructure`);
-        });
-
-        // --- Draw rooms ---
-        roomNodes.forEach(room => {
-          const marker = L.marker([room.latitude, room.longitude]).addTo(map);
-          marker.bindPopup(`<b>${room.name || "Room"}</b><br>Type: Room`);
-        });
-
-        // --- Fit map to all nodes ---
-        const allCoords = nodes.map(d => [d.latitude, d.longitude]);
-        if (allCoords.length > 0) {
-          map.fitBounds(allCoords);
-        }
-
-      } catch (err) {
-        console.error("Error loading map data:", err);
+      if (!mapId || !campusId) {
+        status.textContent = "❌ Please enter both Map ID and Campus ID.";
+        return;
       }
-    }
 
-    document.addEventListener("DOMContentLoaded", loadMap);
+      try {
+        const mapRef = doc(db, "MapVersions", mapId);
+
+        // Add/Update the fields in the Map doc
+        await updateDoc(mapRef, {
+          current_active_map: mapId,
+          current_active_campus: campusId
+        });
+
+        status.textContent = `✅ Updated: Active Map = ${mapId}, Active Campus = ${campusId}`;
+      } catch (err) {
+        console.error("Error updating doc:", err);
+        status.textContent = "❌ Failed to update, check console.";
+      }
+    });
   </script>
 </body>
 </html>

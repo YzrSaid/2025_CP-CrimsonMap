@@ -1,7 +1,7 @@
 // ======================= FIREBASE SETUP ===========================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
-    getFirestore, collection, addDoc, getDocs, query, orderBy, where, updateDoc, doc, getDoc, arrayUnion, writeBatch, deleteField
+    getFirestore, collection, addDoc, getDocs, query, orderBy, where, updateDoc, doc, getDoc, arrayUnion, writeBatch, deleteField, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 import { firebaseConfig } from "./../firebaseConfig.js";
 
@@ -158,20 +158,20 @@ async function populateCampusDropdown(selectId = "campusDropdown") {
 
 
 
-// ----------- Load Nodes Table -----------
+// ----------- Load Nodes Table from Current Active Map/Campus/Version -----------
 async function renderNodesTable() {
     const tbody = document.querySelector(".nodetbl tbody");
+    if (!tbody) return;
     tbody.innerHTML = "";
 
     try {
-        // Fetch all needed collections for mapping IDs to names
+        // 🔹 Fetch Infrastructure, Rooms, Campus for mapping
         const [infraSnap, roomSnap, campusSnap] = await Promise.all([
             getDocs(collection(db, "Infrastructure")),
             getDocs(collection(db, "Rooms")),
             getDocs(collection(db, "Campus"))
         ]);
 
-        // Build lookup maps
         const infraMap = {};
         infraSnap.forEach(doc => {
             const d = doc.data();
@@ -190,54 +190,83 @@ async function renderNodesTable() {
             campusMap[d.campus_id] = d.campus_name;
         });
 
-        // Fetch nodes
-        const q = query(collection(db, "Nodes"), orderBy("created_at", "asc"));
-        const querySnapshot = await getDocs(q);
+        // 🔹 Get all MapVersions
+        const mapVersionsSnap = await getDocs(collection(db, "MapVersions"));
 
-        querySnapshot.forEach((docSnap) => {
-            const data = docSnap.data();
+        for (const mapDoc of mapVersionsSnap.docs) {
+            const mapData = mapDoc.data();
 
-            // Coordinates
-            const coords = (data.latitude && data.longitude) ? `${data.latitude}, ${data.longitude}` : "-";
+            // 👉 Use the "current active" fields
+            const currentMap = mapData.current_active_map;
+            const currentCampus = mapData.current_active_campus;
+            const currentVersion = mapData.current_version;
 
-            // Related infra/room names
-            const infraName = data.related_infra_id ? (infraMap[data.related_infra_id] || data.related_infra_id) : "-";
-            const roomName = data.related_room_id ? (roomMap[data.related_room_id] || data.related_room_id) : "-";
-
-            // Indoor/Outdoor
-            let indoorOutdoor = "Outdoor";
-            if (data.indoor) {
-                indoorOutdoor = `Indoor (Floor: ${data.indoor.floor || "-"}, X: ${data.indoor.x || "-"}, Y: ${data.indoor.y || "-"})`;
+            if (!currentMap || !currentCampus || !currentVersion) {
+                console.warn(`Skipping ${mapDoc.id}: Missing current active fields`);
+                continue;
             }
 
-            // Campus name
-            const campusName = data.campus_id ? (campusMap[data.campus_id] || data.campus_id) : "-";
+            // 🔹 Get the current version document
+            const versionRef = doc(db, "MapVersions", mapDoc.id, "versions", currentVersion);
+            const versionSnap = await getDoc(versionRef);
 
-            // Type
-            const type = data.type ? data.type.charAt(0).toUpperCase() + data.type.slice(1) : "-";
+            if (!versionSnap.exists()) {
+                console.warn(`No version data found for: ${mapDoc.id} → ${currentVersion}`);
+                continue;
+            }
 
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${data.node_id}</td>
-                <td>${data.name}</td>
-                <td>${type}</td>
-                <td>${coords}</td>
-                <td>${infraName}</td>
-                <td>${roomName}</td>
-                <td>${indoorOutdoor}</td>
-                <td>${campusName}</td>
-                <td class="actions">
-                    <i class="fas fa-edit"></i>
-                    <i class="fas fa-trash"></i>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+            const versionData = versionSnap.data();
+            const nodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
+
+            // 🔹 Filter nodes: must not be deleted + must belong to current campus
+            const filteredNodes = nodes.filter(n => !n.is_deleted && n.campus_id === currentCampus);
+
+            // 🔹 Sort by created_at
+            filteredNodes.sort((a, b) => {
+                if (!a.created_at || !b.created_at) return 0;
+                return a.created_at.seconds - b.created_at.seconds;
+            });
+
+            // 🔹 Render nodes
+            filteredNodes.forEach(data => {
+                const coords = (data.latitude && data.longitude) ? `${data.latitude}, ${data.longitude}` : "-";
+                const infraName = data.related_infra_id ? (infraMap[data.related_infra_id] || data.related_infra_id) : "-";
+                const roomName = data.related_room_id ? (roomMap[data.related_room_id] || data.related_room_id) : "-";
+                const campusName = data.campus_id ? (campusMap[data.campus_id] || data.campus_id) : "-";
+
+                let indoorOutdoor = "Outdoor";
+                if (data.indoor) {
+                    indoorOutdoor = `Indoor (Floor: ${data.indoor.floor || "-"}, X: ${data.indoor.x || "-"}, Y: ${data.indoor.y || "-"})`;
+                }
+
+                const type = data.type ? data.type.charAt(0).toUpperCase() + data.type.slice(1) : "-";
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${data.node_id}</td>
+                    <td>${data.name}</td>
+                    <td>${type}</td>
+                    <td>${coords}</td>
+                    <td>${infraName}</td>
+                    <td>${roomName}</td>
+                    <td>${indoorOutdoor}</td>
+                    <td>${campusName}</td>
+                    <td class="actions">
+                        <i class="fas fa-edit"></i>
+                        <i class="fas fa-trash" data-node-id="${data.node_id}"></i>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        setupNodeDeleteHandlers(); // ✅ Keep delete modal functionality
 
     } catch (err) {
-        console.error("Error loading nodes: ", err);
+        console.error("Error loading nodes from MapVersions:", err);
     }
 }
+
 
 
 
@@ -374,26 +403,23 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
+
+
+let pendingNodeData = null; // store node temporarily before user chooses
+
 // ----------- Add Node Handler -----------
 document.getElementById("nodeForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    // Gather node data
     const nodeId = document.getElementById("nodeId").value;
     const nodeName = document.getElementById("nodeName").value;
-
     const latitude = parseFloat(document.getElementById("latitude").value);
     const longitude = parseFloat(document.getElementById("longitude").value);
-
-    let typeEl = document.getElementById("nodeType");
-    let type = typeEl ? typeEl.value : "";
-    if (!type && typeEl && typeEl.tagName === "INPUT") {
-        type = typeEl.value;
-    }
-
+    const typeEl = document.getElementById("nodeType");
+    const type = typeEl ? typeEl.value : "";
     const relatedInfraId = document.getElementById("relatedInfra").value;
     const relatedRoomId = document.getElementById("relatedRoom").value;
-
-    // Indoor/Outdoor
     const isIndoor = document.getElementById("indoorCheckbox").checked;
     let indoor = null;
     if (isIndoor) {
@@ -403,25 +429,66 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
             y: parseFloat(document.getElementById("yCoord").value) || 0
         };
     }
-
     const campusId = document.getElementById("campusDropdown").value;
 
-    // ✅ Step A: Cartesian conversion helper
-    const origin = { lat: 6.913341, lng: 122.063693 }; // fixed origin
+    // Cartesian conversion
+    const origin = { lat: 6.913341, lng: 122.063693 };
     function latLngToXY(lat, lng, origin) {
-        const R = 6371000; // meters
+        const R = 6371000;
         const dLat = (lat - origin.lat) * Math.PI / 180;
         const dLng = (lng - origin.lng) * Math.PI / 180;
         const x = dLng * Math.cos(origin.lat * Math.PI / 180) * R;
         const y = dLat * R;
         return { x, y };
     }
-
-    // ✅ Step B: Convert current node’s lat/lng → Cartesian
     const { x, y } = latLngToXY(latitude, longitude, origin);
 
+    // Save pending node
+    pendingNodeData = {
+        node_id: nodeId,
+        name: nodeName,
+        latitude,
+        longitude,
+        x_coordinate: x,
+        y_coordinate: y,
+        type,
+        related_infra_id: relatedInfraId,
+        related_room_id: relatedRoomId,
+        indoor,
+        is_active: true,
+        campus_id: campusId,
+        created_at: new Date()
+    };
+
+    // Show modal
+    document.getElementById("nodeSaveModal").style.display = "flex";
+});
+
+// ----------- Modal Buttons -----------
+document.getElementById("closeNodeSaveModal").addEventListener("click", () => {
+    pendingNodeData = null;
+    document.getElementById("nodeSaveModal").style.display = "none";
+});
+
+document.getElementById("overwriteNodeBtn").addEventListener("click", async () => {
+    await saveNode("overwrite");
+    pendingNodeData = null;
+    document.getElementById("nodeSaveModal").style.display = "none";
+});
+
+document.getElementById("newVersionNodeBtn").addEventListener("click", async () => {
+    await saveNode("newVersion");
+    pendingNodeData = null;
+    document.getElementById("nodeSaveModal").style.display = "none";
+});
+
+async function saveNode(option) {
+    if (!pendingNodeData) return;
+
     try {
-        // 🔍 Step 1: Find the map that includes this campus
+        const campusId = pendingNodeData.campus_id;
+
+        // --- Get the map that includes this campus ---
         const mapsQuery = query(
             collection(db, "MapVersions"),
             where("campus_included", "array-contains", campusId)
@@ -435,48 +502,81 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
 
         const mapDoc = mapsSnapshot.docs[0];
         const mapDocId = mapDoc.id;
-        const currentVersion = mapDoc.data().current_version || "v1.0.0";
+        const mapData = mapDoc.data();
+        const currentVersion = mapData.current_version || "v1.0.0";
 
-        // 🔍 Step 2: Reference the current version document
+        // --- Reference the current version document ---
         const versionRef = doc(db, "MapVersions", mapDocId, "versions", currentVersion);
         const versionSnap = await getDoc(versionRef);
 
-        if (!versionSnap.exists()) {
-            await setDoc(versionRef, { nodes: [], edges: [] });
+        let oldNodes = [];
+        let oldEdges = [];
+
+        if (versionSnap.exists()) {
+            const versionData = versionSnap.data();
+            oldNodes = versionData.nodes || [];
+            oldEdges = versionData.edges || [];
         }
 
-        // 🔍 Step 3: Append new node to nodes array (with Cartesian coords)
-        await updateDoc(versionRef, {
-            nodes: arrayUnion({
-                node_id: nodeId,
-                name: nodeName,
-                latitude: latitude,
-                longitude: longitude,
-                x_coordinate: x,   // ✅ Cartesian X
-                y_coordinate: y,   // ✅ Cartesian Y
-                type: type,
-                related_infra_id: relatedInfraId,
-                related_room_id: relatedRoomId,
-                indoor: indoor,
-                is_active: true,
-                campus_id: campusId,
-                created_at: new Date()
-            })
-        });
+        if (option === "overwrite") {
+            // Find if node with same node_id already exists
+            const updatedNodes = oldNodes.filter(n => n.node_id !== pendingNodeData.node_id);
 
-        // ✅ Step 4: Reset UI
+            // Add the new/updated node
+            updatedNodes.push(pendingNodeData);
+
+            // Update the nodes array
+            await updateDoc(versionRef, {
+                nodes: updatedNodes
+            });
+
+            alert(`Node ${pendingNodeData.node_id} added/updated in current version ${currentVersion}`);
+        }
+
+        else if (option === "newVersion") {
+            // --- Compute new version string ---
+            let [major, minor, patch] = currentVersion.slice(1).split(".").map(Number);
+            if (patch < 99) {
+                patch += 1;
+            } else {
+                patch = 0;
+                minor += 1;
+            }
+            const newVersion = `v${major}.${minor}.${patch}`;
+
+            // --- Migrate all old nodes & edges + add new node to new version ---
+            const migratedNodes = oldNodes.map(n => ({ ...n }));  // deep copy
+            migratedNodes.push({ ...pendingNodeData });           // add new node
+
+            const migratedEdges = oldEdges.map(e => ({ ...e }));  // deep copy edges
+
+            // --- Save to new version document ---
+            await setDoc(doc(db, "MapVersions", mapDocId, "versions", newVersion), {
+                nodes: migratedNodes,
+                edges: migratedEdges
+            });
+
+            // --- Update current_version of map ---
+            await updateDoc(doc(db, "MapVersions", mapDocId), { current_version: newVersion });
+
+            alert(`New version created: ${newVersion} with migrated nodes and edges`);
+        }
+
+        // --- Reset UI ---
         document.getElementById("nodeForm").reset();
-        generateNextNodeId();
         document.getElementById("indoorDetails").style.display = "none";
-
-        hideNodeModal();
+        generateNextNodeId();
         renderNodesTable();
+        pendingNodeData = null;
+        document.getElementById("nodeSaveModal").style.display = "none";
 
     } catch (err) {
-        alert("Error adding node: " + err);
         console.error(err);
+        alert("Error saving node: " + err);
     }
-});
+}
+
+
 
 
 
@@ -736,7 +836,7 @@ async function generateNextEdgeId() {
     return nextId;
 }
 
-// ----------- Load Nodes into Edge Dropdowns -----------
+// ----------- Load Nodes into Edge Dropdowns (Current Active Map/Campus/Version) -----------
 async function loadNodesDropdownsForEdge() {
     const startNodeSelect = document.getElementById("startNode");
     const endNodeSelect = document.getElementById("endNode");
@@ -744,23 +844,64 @@ async function loadNodesDropdownsForEdge() {
     startNodeSelect.innerHTML = `<option value="">Select start node</option>`;
     endNodeSelect.innerHTML = `<option value="">Select end node</option>`;
 
-    const q = query(collection(db, "Nodes"), orderBy("created_at", "asc"));
-    const snapshot = await getDocs(q);
+    try {
+        // 🔹 Get all MapVersions
+        const mapVersionsSnap = await getDocs(collection(db, "MapVersions"));
 
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.node_id) {
-            const option1 = document.createElement("option");
-            option1.value = data.node_id;
-            option1.textContent = `${data.node_id} - ${data.name}`;
-            startNodeSelect.appendChild(option1);
+        for (const mapDoc of mapVersionsSnap.docs) {
+            const mapData = mapDoc.data();
 
-            const option2 = document.createElement("option");
-            option2.value = data.node_id;
-            option2.textContent = `${data.node_id} - ${data.name}`;
-            endNodeSelect.appendChild(option2);
+            // 👉 Use the "current active" fields
+            const currentMap = mapData.current_active_map;
+            const currentCampus = mapData.current_active_campus;
+            const currentVersion = mapData.current_version;
+
+            if (!currentMap || !currentCampus || !currentVersion) {
+                console.warn(`Skipping ${mapDoc.id}: Missing current active fields`);
+                continue;
+            }
+
+            // 🔹 Get the current version document
+            const versionRef = doc(db, "MapVersions", mapDoc.id, "versions", currentVersion);
+            const versionSnap = await getDoc(versionRef);
+
+            if (!versionSnap.exists()) {
+                console.warn(`No version data found for: ${mapDoc.id} → ${currentVersion}`);
+                continue;
+            }
+
+            const versionData = versionSnap.data();
+            const nodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
+
+            // 🔹 Filter nodes: not deleted + must belong to current campus
+            const filteredNodes = nodes.filter(n => !n.is_deleted && n.campus_id === currentCampus);
+
+            // 🔹 Sort nodes by created_at
+            filteredNodes.sort((a, b) => {
+                if (!a.created_at || !b.created_at) return 0;
+                return a.created_at.seconds - b.created_at.seconds;
+            });
+
+            // 🔹 Populate dropdowns
+            filteredNodes.forEach(node => {
+                if (node.node_id) {
+                    const label = `${node.node_id} - ${node.name || "Unnamed"}`;
+
+                    const option1 = document.createElement("option");
+                    option1.value = node.node_id;
+                    option1.textContent = label;
+                    startNodeSelect.appendChild(option1);
+
+                    const option2 = document.createElement("option");
+                    option2.value = node.node_id;
+                    option2.textContent = label;
+                    endNodeSelect.appendChild(option2);
+                }
+            });
         }
-    });
+    } catch (err) {
+        console.error("Error loading nodes into edge dropdowns:", err);
+    }
 }
 
 
@@ -769,6 +910,8 @@ async function loadNodesDropdownsForEdge() {
 
 
 
+
+let pendingEdgeData = null; // store edge temporarily
 
 // ----------- Add Edge Handler -----------
 document.querySelector("#addEdgeModal form").addEventListener("submit", async (e) => {
@@ -778,133 +921,258 @@ document.querySelector("#addEdgeModal form").addEventListener("submit", async (e
     const startNode = document.getElementById("startNode").value;
     const endNode = document.getElementById("endNode").value;
 
-    // Handle pathType (select OR custom input)
     let pathTypeEl = document.getElementById("pathType") || document.querySelector("input[name='pathType']");
     let pathType = pathTypeEl ? pathTypeEl.value.trim() : "";
 
-    // Handle elevation (select OR custom input)
     let elevationEl = document.getElementById("elevation") || document.querySelector("input[name='elevation']");
     let elevation = elevationEl ? elevationEl.value.trim() : "";
 
-    // Convert custom inputs into snake_case for DB storage
     const toSnakeCase = str => str.toLowerCase().replace(/\s+/g, "_");
+    if (pathType && !["via_overpass", "via_underpass", "stairs", "ramp"].includes(pathType)) pathType = toSnakeCase(pathType);
+    if (elevation && !["slope_up", "slope_down", "flat"].includes(elevation)) elevation = toSnakeCase(elevation);
 
-    if (pathType && !["via_overpass", "via_underpass", "stairs", "ramp"].includes(pathType)) {
-        pathType = toSnakeCase(pathType);
-    }
-    if (elevation && !["slope_up", "slope_down", "flat"].includes(elevation)) {
-        elevation = toSnakeCase(elevation);
-    }
+    pendingEdgeData = {
+        edge_id: edgeId,
+        from_node: startNode,
+        to_node: endNode,
+        distance: null,
+        path_type: pathType || null,
+        elevations: elevation || null,
+        is_active: true,
+        is_deleted: false,
+        created_at: new Date()
+    };
+
+    document.getElementById("edgeSaveModal").style.display = "flex";
+});
+
+// ----------- Modal Buttons -----------
+document.getElementById("closeEdgeSaveModal").addEventListener("click", () => {
+    pendingEdgeData = null;
+    document.getElementById("edgeSaveModal").style.display = "none";
+});
+
+document.getElementById("overwriteEdgeBtn").addEventListener("click", async () => {
+    await saveEdge("overwrite");
+    pendingEdgeData = null;
+    document.getElementById("edgeSaveModal").style.display = "none";
+});
+
+document.getElementById("newVersionEdgeBtn").addEventListener("click", async () => {
+    await saveEdge("newVersion");
+    pendingEdgeData = null;
+    document.getElementById("edgeSaveModal").style.display = "none";
+});
+
+// 🌍 Haversine formula for lat/lng
+function haversineDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // meters
+    const toRad = (deg) => deg * Math.PI / 180;
+
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // distance in meters
+}
+
+async function saveEdge(option) {
+    if (!pendingEdgeData) return;
 
     try {
-        // 🔍 Step 1: Get node details
-        const nodesSnap = await getDocs(collection(db, "Nodes"));
-        const startNodeData = nodesSnap.docs.find(d => d.data().node_id === startNode)?.data();
-        const endNodeData = nodesSnap.docs.find(d => d.data().node_id === endNode)?.data();
+        // ✅ Step 1: Get the active map (instead of campus)
+        const activeMapQuery = query(
+            collection(db, "MapVersions"),
+            where("current_active_map", "==", pendingEdgeData.map_id || null)
+        );
 
-        if (!startNodeData || !endNodeData) {
-            alert("Start or End node not found.");
+        let mapDoc, mapDocId, mapData;
+
+        // If you already store active map globally, you can simplify:
+        const mapsSnapshot = await getDocs(collection(db, "MapVersions"));
+        mapDoc = mapsSnapshot.docs.find(d => d.data().current_active_map === d.id);
+
+        if (!mapDoc) {
+            alert("No active map found.");
             return;
         }
 
-        // 🔍 Step 2: Find which maps each node's campus belongs to
-        const getMapForCampus = async (campusId) => {
-            const q = query(collection(db, "MapVersions"), where("campus_included", "array-contains", campusId));
-            const snap = await getDocs(q);
-            return snap.empty ? null : snap.docs[0]; // Assume one map per campus
-        };
+        mapDocId = mapDoc.id;
+        mapData = mapDoc.data();
+        const currentVersion = mapData.current_version || "v1.0.0";
 
-        const startMapDoc = await getMapForCampus(startNodeData.campus_id);
-        const endMapDoc = await getMapForCampus(endNodeData.campus_id);
-
-        if (!startMapDoc || !endMapDoc) {
-            alert("One or both campuses are not linked to any map.");
-            return;
-        }
-
-        // 🔍 Step 3: Check if both nodes are in the same map
-        if (startMapDoc.id !== endMapDoc.id) {
-            alert("❌ Cannot connect nodes from different maps (e.g., Campus A-B with Campus C).");
-            return;
-        }
-
-        const mapDocId = startMapDoc.id;
-        const currentVersion = startMapDoc.data().current_version || "v1.0.0";
-
-        // 🔍 Step 4: Reference the current version
+        // ✅ Step 2: Fetch current version document
         const versionRef = doc(db, "MapVersions", mapDocId, "versions", currentVersion);
         const versionSnap = await getDoc(versionRef);
 
-        if (!versionSnap.exists()) {
-            await setDoc(versionRef, { nodes: [], edges: [] });
+        let oldNodes = [];
+        let oldEdges = [];
+
+        if (versionSnap.exists()) {
+            const versionData = versionSnap.data();
+            oldNodes = versionData.nodes || [];
+            oldEdges = versionData.edges || [];
         }
 
-        // 🔍 Step 5: Add edge to edges array
-        await updateDoc(versionRef, {
-            edges: arrayUnion({
-                edge_id: edgeId,
-                from_node: startNode,
-                to_node: endNode,
-                distance: null,
-                path_type: pathType || null,
-                elevations: elevation || null,
-                is_active: true,
-                is_deleted: false,
-                created_at: new Date()
-            })
-        });
+        // ✅ Step 3: Find start & end node inside versioned nodes array
+        const startNode = oldNodes.find(n => n.node_id === pendingEdgeData.from_node);
+        const endNode = oldNodes.find(n => n.node_id === pendingEdgeData.to_node);
 
-        alert("✅ Edge saved!");
-        document.getElementById("addEdgeModal").style.display = "none";
+        if (!startNode || !endNode) {
+            alert("Start or End node not found in MapVersion.");
+            return;
+        }
+
+        // ✅ Step 4: Calculate distance from lat/lng
+        const distance = haversineDistance(
+            startNode.latitude, startNode.longitude,
+            endNode.latitude, endNode.longitude
+        );
+
+        // ✅ Step 5: Add distance into edge data
+        pendingEdgeData.distance = Number(distance.toFixed(2)); // meters
+
+        // ✅ Step 6: Continue with overwrite/newVersion logic
+        if (option === "overwrite") {
+            await updateDoc(versionRef, {
+                edges: arrayUnion(pendingEdgeData)
+            });
+            alert(`Edge added to current version ${currentVersion}`);
+        } else if (option === "newVersion") {
+            let versionMatch = /^v(\d+)\.(\d+)\.(\d+)$/.exec(currentVersion);
+            let major = 1, minor = 0, patch = 0;
+
+            if (versionMatch) {
+                major = parseInt(versionMatch[1], 10);
+                minor = parseInt(versionMatch[2], 10);
+                patch = parseInt(versionMatch[3], 10);
+            }
+
+            if (patch < 99) patch += 1;
+            else { patch = 0; minor += 1; }
+
+            const newVersion = `v${major}.${minor}.${patch}`;
+
+            const migratedNodes = oldNodes.map(n => ({ ...n }));
+            const migratedEdges = oldEdges.map(e => ({ ...e }));
+            migratedEdges.push({ ...pendingEdgeData });
+
+            await setDoc(doc(db, "MapVersions", mapDocId, "versions", newVersion), {
+                nodes: migratedNodes,
+                edges: migratedEdges
+            });
+
+            await updateDoc(doc(db, "MapVersions", mapDocId), { current_version: newVersion });
+            alert(`New version created: ${newVersion} with migrated nodes and edges`);
+        }
+
         renderEdgesTable();
+        pendingEdgeData = null;
 
     } catch (err) {
-        alert("Error adding edge: " + err);
         console.error(err);
+        alert("Error saving edge: " + err);
     }
-});
+}
 
 
-// ----------- Load Edges Table -----------
+
+
+
+// ----------- Load Edges Table from Current Active Map/Campus/Version -----------
 async function renderEdgesTable() {
     const tbody = document.querySelector(".edgetbl tbody");
     if (!tbody) return;
     tbody.innerHTML = "";
 
-    const q = query(collection(db, "Edges"), orderBy("created_at", "asc"));
-    const snapshot = await getDocs(q);
+    try {
+        // 🔹 Get all MapVersions
+        const mapVersionsSnap = await getDocs(collection(db, "MapVersions"));
 
-    snapshot.forEach(doc => {
-        const data = doc.data();
+        for (const mapDoc of mapVersionsSnap.docs) {
+            const mapData = mapDoc.data();
 
-        // Formatter helper
-        const formatText = (value) => {
-            if (!value) return "-";
-            return value
-                .split("_")
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(" ");
-        };
+            // 👉 Use the "current active" fields
+            const currentMap = mapData.current_active_map;
+            const currentCampus = mapData.current_active_campus;
+            const currentVersion = mapData.current_version;
 
-        const formattedPathType = formatText(data.path_type);
-        const formattedElevation = formatText(data.elevations);
+            if (!currentMap || !currentCampus || !currentVersion) {
+                console.warn(`Skipping ${mapDoc.id}: Missing current active fields`);
+                continue;
+            }
 
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${data.edge_id}</td>
-            <td>${data.from_node} > ${data.to_node}</td>
-            <td>${data.distance || "-"}</td>
-            <td>${formattedPathType}</td>
-            <td>${formattedElevation}</td>
-            <td class="actions">
-                <i class="fas fa-edit"></i>
-                <i class="fas fa-trash"></i>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
+            // 🔹 Get the current version document
+            const versionRef = doc(db, "MapVersions", mapDoc.id, "versions", currentVersion);
+            const versionSnap = await getDoc(versionRef);
+
+            if (!versionSnap.exists()) {
+                console.warn(`No version data found for: ${mapDoc.id} → ${currentVersion}`);
+                continue;
+            }
+
+            const versionData = versionSnap.data();
+            const edges = Array.isArray(versionData.edges) ? versionData.edges : [];
+
+            // 🔹 Filter edges: not deleted + must belong to the active campus
+            const filteredEdges = edges.filter(e => {
+                if (e.is_deleted) return false;
+
+                // Case 1: Edge has its own campus_id
+                if (e.campus_id) {
+                    return e.campus_id === currentCampus;
+                }
+
+                // Case 2: Edge relies on parent MapVersion's campus_included
+                return mapData.campus_included?.includes(currentCampus);
+            });
+
+            // 🔹 Sort edges by created_at
+            filteredEdges.sort((a, b) => {
+                if (!a.created_at || !b.created_at) return 0;
+                return a.created_at.seconds - b.created_at.seconds;
+            });
+
+            // 🔹 Render edges
+            filteredEdges.forEach(data => {
+                const formatText = (value) => {
+                    if (!value) return "-";
+                    return value
+                        .toString()
+                        .split("_")
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(" ");
+                };
+
+                const formattedPathType = formatText(data.path_type);
+                const formattedElevation = formatText(data.elevations);
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${data.edge_id}</td>
+                    <td>${data.from_node} → ${data.to_node}</td>
+                    <td>${data.distance || "-"}</td>
+                    <td>${formattedPathType}</td>
+                    <td>${formattedElevation}</td>
+                    <td class="actions">
+                        <i class="fas fa-edit"></i>
+                        <i class="fas fa-trash" data-id="${data.edge_id}"></i>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        setupEdgeDeleteHandlers(); // ✅ Keep delete modal functionality
+    } catch (err) {
+        console.error("Error loading edges from MapVersions:", err);
+    }
 }
-
 
 
 
@@ -1327,3 +1595,295 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
   
+
+
+
+
+
+
+
+
+let edgeToDelete = null;
+
+// ----------- Edge Delete Modal Logic -----------
+function setupEdgeDeleteHandlers() {
+    const tbody = document.querySelector(".edgetbl tbody");
+    if (!tbody) return;
+
+    tbody.querySelectorAll(".fa-trash").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const tr = btn.closest("tr");
+            const edgeId = tr.children[0]?.textContent || "";
+            const docId = btn.dataset.id;
+
+            edgeToDelete = { docId, edgeId };
+            document.getElementById("deleteEdgePrompt").textContent =
+                `Are you sure you want to delete edge "${edgeId}"?`;
+            document.getElementById("deleteEdgeModal").style.display = "flex";
+        });
+    });
+}
+
+// ----------- Confirm Edge Deletion -----------
+document.getElementById("confirmDeleteEdgeBtn").addEventListener("click", async () => {
+    if (!edgeToDelete) return;
+    try {
+        await updateDoc(doc(db, "Edges", edgeToDelete.docId), {
+            is_deleted: true,
+            deletedAt: new Date()
+        });
+        document.getElementById("deleteEdgeModal").style.display = "none";
+        edgeToDelete = null;
+        renderEdgesTable();
+    } catch (err) {
+        alert("Error deleting edge: " + err);
+    }
+});
+
+// ----------- Cancel Edge Deletion -----------
+document.getElementById("cancelDeleteEdgeBtn").addEventListener("click", () => {
+    document.getElementById("deleteEdgeModal").style.display = "none";
+    edgeToDelete = null;
+});
+
+// ----------- Close modal if click outside -----------
+document.getElementById("deleteEdgeModal").addEventListener("click", (e) => {
+    if (e.target === document.getElementById("deleteEdgeModal")) {
+        document.getElementById("deleteEdgeModal").style.display = "none";
+        edgeToDelete = null;
+    }
+});
+
+
+
+
+let nodeToDelete = null;
+
+// ----------- Node Delete Modal Logic -----------
+function setupNodeDeleteHandlers() {
+    const tbody = document.querySelector(".nodetbl tbody");
+    if (!tbody) return;
+
+    tbody.querySelectorAll(".fa-trash").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const tr = btn.closest("tr");
+            const nodeId = tr.children[0]?.textContent || "";
+            const docId = btn.dataset.id;
+
+            nodeToDelete = { docId, nodeId };
+            document.getElementById("deleteNodePrompt").textContent =
+                `Are you sure you want to delete node "${nodeId}"?`;
+            document.getElementById("deleteNodeModal").style.display = "flex";
+        });
+    });
+}
+
+// ----------- Confirm Node Deletion -----------
+document.getElementById("confirmDeleteNodeBtn").addEventListener("click", async () => {
+    if (!nodeToDelete) return;
+    try {
+        await updateDoc(doc(db, "Nodes", nodeToDelete.docId), {
+            is_deleted: true,
+            deletedAt: new Date()
+        });
+        document.getElementById("deleteNodeModal").style.display = "none";
+        nodeToDelete = null;
+        renderNodesTable();
+    } catch (err) {
+        alert("Error deleting node: " + err);
+    }
+});
+
+// ----------- Cancel Node Deletion -----------
+document.getElementById("cancelDeleteNodeBtn").addEventListener("click", () => {
+    document.getElementById("deleteNodeModal").style.display = "none";
+    nodeToDelete = null;
+});
+
+// ----------- Close modal if click outside -----------
+document.getElementById("deleteNodeModal").addEventListener("click", (e) => {
+    if (e.target === document.getElementById("deleteNodeModal")) {
+        document.getElementById("deleteNodeModal").style.display = "none";
+        nodeToDelete = null;
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ----------- Populate Maps -----------
+async function populateMaps() {
+    const mapSelect = document.getElementById("mapSelect");
+    const campusSelect = document.getElementById("campusSelect");
+    const versionSelect = document.getElementById("versionSelect");
+
+    mapSelect.innerHTML = '<option value="">Select Map</option>';
+    campusSelect.innerHTML = '<option value="">Select Campus</option>';
+    versionSelect.innerHTML = '<option value="">Select Version</option>';
+
+    try {
+        const mapsSnap = await getDocs(collection(db, "MapVersions"));
+
+        mapsSnap.forEach(docSnap => {
+            const mapData = docSnap.data();
+            const mapId = docSnap.id;
+            const option = document.createElement("option");
+            option.value = mapId;
+            option.textContent = `${mapData.map_name} (${mapId})`;
+            mapSelect.appendChild(option);
+        });
+
+        if (mapsSnap.docs.length > 0) {
+            const firstMapId = mapsSnap.docs[0].id;
+            mapSelect.value = firstMapId;
+            await setActiveMap(firstMapId);
+            await populateCampuses(firstMapId);
+            await populateVersions(firstMapId);
+
+            // 🔹 Initial load of tables
+            await renderNodesTable();
+            await renderEdgesTable();
+        }
+
+        // 🔹 When Map changes
+        mapSelect.addEventListener("change", async () => {
+            const selectedMapId = mapSelect.value;
+            if (!selectedMapId) return;
+            await setActiveMap(selectedMapId);
+            await populateCampuses(selectedMapId);
+            await populateVersions(selectedMapId);
+
+            // 🔹 Refresh tables
+            await renderNodesTable();
+            await renderEdgesTable();
+        });
+
+    } catch (err) {
+        console.error("Error loading maps:", err);
+    }
+}
+
+// ----------- Populate Campuses -----------
+async function populateCampuses(mapId) {
+    const campusSelect = document.getElementById("campusSelect");
+    campusSelect.innerHTML = '<option value="">Select Campus</option>';
+
+    const mapDocRef = doc(db, "MapVersions", mapId);
+    const mapDocSnap = await getDoc(mapDocRef);
+    if (!mapDocSnap.exists()) return;
+
+    const mapData = mapDocSnap.data();
+    const campuses = mapData.campus_included || [];
+    const currentCampus = mapData.current_active_campus || "";
+
+    campuses.forEach(campusId => {
+        const option = document.createElement("option");
+        option.value = campusId;
+        option.textContent = campusId;
+        campusSelect.appendChild(option);
+    });
+
+    if (currentCampus && campuses.includes(currentCampus)) {
+        campusSelect.value = currentCampus;
+    } else if (campuses.length > 0) {
+        campusSelect.value = campuses[0];
+        await updateDoc(mapDocRef, { current_active_campus: campuses[0] });
+    }
+
+    // 🔹 Update Firestore + refresh tables when campus changes
+    campusSelect.addEventListener("change", async () => {
+        const selectedCampus = campusSelect.value;
+        if (!selectedCampus) return;
+        try {
+            await updateDoc(mapDocRef, { current_active_campus: selectedCampus });
+            console.log(`Current active campus updated to ${selectedCampus}`);
+
+            await renderNodesTable();
+            await renderEdgesTable();
+        } catch (err) {
+            console.error("Error updating current campus:", err);
+        }
+    });
+}
+
+// ----------- Populate Versions -----------
+async function populateVersions(mapId) {
+    const versionSelect = document.getElementById("versionSelect");
+    versionSelect.innerHTML = '<option value="">Select Version</option>';
+
+    const mapDocRef = doc(db, "MapVersions", mapId);
+    const mapDocSnap = await getDoc(mapDocRef);
+    if (!mapDocSnap.exists()) return;
+
+    const mapData = mapDocSnap.data();
+    const currentVersion = mapData.current_version || "";
+
+    const versionsSnap = await getDocs(collection(db, "MapVersions", mapId, "versions"));
+
+    versionsSnap.forEach(docSnap => {
+        const version = docSnap.id;
+        const option = document.createElement("option");
+        option.value = version;
+        option.textContent = version + (version === currentVersion ? " ✅" : "");
+        versionSelect.appendChild(option);
+    });
+
+    if (currentVersion) {
+        versionSelect.value = currentVersion;
+    } else if (versionsSnap.docs.length > 0) {
+        const firstVersion = versionsSnap.docs[0].id;
+        versionSelect.value = firstVersion;
+        await updateDoc(mapDocRef, { current_version: firstVersion });
+    }
+
+    // 🔹 Update Firestore + refresh tables when version changes
+    versionSelect.addEventListener("change", async () => {
+        const selectedVersion = versionSelect.value;
+        if (!selectedVersion) return;
+
+        try {
+            await updateDoc(mapDocRef, { current_version: selectedVersion });
+            console.log(`Current version updated to ${selectedVersion}`);
+
+            Array.from(versionSelect.options).forEach(opt => {
+                opt.textContent = opt.value + (opt.value === selectedVersion ? " ✅" : "");
+            });
+
+            await renderNodesTable();
+            await renderEdgesTable();
+        } catch (err) {
+            console.error("Error updating current version:", err);
+        }
+    });
+}
+
+// ----------- Helper: set current active map -----------
+async function setActiveMap(mapId) {
+    const mapDocRef = doc(db, "MapVersions", mapId);
+    try {
+        await updateDoc(mapDocRef, { current_active_map: mapId });
+        console.log(`Current active map updated to ${mapId}`);
+    } catch (err) {
+        console.error("Error updating current active map:", err);
+    }
+}
+
+// Run on page load
+document.addEventListener("DOMContentLoaded", () => {
+    populateMaps();
+});
