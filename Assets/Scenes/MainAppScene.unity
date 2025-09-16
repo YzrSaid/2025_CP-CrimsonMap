@@ -9268,8 +9268,8 @@ GameObject:
   - component: {fileID: 1465186274}
   - component: {fileID: 1465186281}
   - component: {fileID: 1465186283}
-  - component: {fileID: 1465186284}
   - component: {fileID: 1465186285}
+  - component: {fileID: 1465186286}
   m_Layer: 0
   m_Name: MainAppManager
   m_TagString: Untagged
@@ -9334,7 +9334,6 @@ MonoBehaviour:
   panelForBG: {fileID: 1259183061}
   mapButtonPrefab: {fileID: 3037807014215756060, guid: 09ec938df77e6ce35b6d2258b8973e4b, type: 3}
   buttonContainer: {fileID: 166517715}
-  mapManager: {fileID: 0}
 --- !u!114 &1465186283
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9351,18 +9350,6 @@ MonoBehaviour:
   categoryButton: {fileID: 1168828893}
   panelContent: {fileID: 1484055793}
   categoryItemPrefab: {fileID: 5559652562326166308, guid: ba047aed895f80082837dfceeada90bd, type: 3}
---- !u!114 &1465186284
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1465186272}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7c641ad89e106e19a875946415a58581, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1465186285
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9376,6 +9363,28 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   useMockLocationInEditor: 1
+--- !u!114 &1465186286
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1465186272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 932d8839ab0bdf4a0ab84a487fdbd864, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dropdownButtonText: {fileID: 1664784864}
+  barrierSpawner: {fileID: 1699060737}
+  infrastructureSpawner: {fileID: 1699060740}
+  pathRenderer: {fileID: 1699060741}
+  currentMap:
+    map_id: 
+    map_name: 
+    campus_included: []
+  currentCampusIds: []
+  enableDebugLogs: 1
 --- !u!1 &1484055792
 GameObject:
   m_ObjectHideFlags: 0

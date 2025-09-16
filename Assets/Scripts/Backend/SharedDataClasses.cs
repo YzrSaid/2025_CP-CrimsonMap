@@ -113,6 +113,20 @@ public class IndoorInfo
     public int floor;
 }
 
+// Campus data class
+[System.Serializable]
+public class CampusData
+{
+    public string campus_id;
+    public string campus_name;
+}
+
+[System.Serializable]
+public class CampusList
+{
+    public List<CampusData> campuses;
+}
+
 [System.Serializable]
 public class MapInfo
 {
@@ -144,6 +158,7 @@ public class StaticDataVersionInfo
 {
     public bool infrastructure_updated;
     public bool categories_updated;
+    public bool campus_updated;
     public long last_check;
 }
 
@@ -152,6 +167,7 @@ public class LocalStaticDataCache
 {
     public bool infrastructure_synced;
     public bool categories_synced;
+    public bool campus_synced;
     public long cache_timestamp;
 }
 

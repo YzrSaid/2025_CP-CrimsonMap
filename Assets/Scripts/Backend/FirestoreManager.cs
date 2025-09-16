@@ -18,22 +18,21 @@ public class FirestoreManager : MonoBehaviour
 
     // Collections configuration
     private readonly string MAPS_COLLECTION = "Maps";
-    private readonly string MAP_VERSIONS_COLLECTION = "mapVersions";
+    private readonly string MAP_VERSIONS_COLLECTION = "MapVersions";
     private readonly string VERSIONS_SUBCOLLECTION = "versions";
     private readonly string STATIC_DATA_VERSIONS_COLLECTION = "StaticDataVersions";
 
-    // Collections that need to be synced (non-versioned data)
+    // Collections that need to be synced (non-versioned data) - Campus moved here
     private readonly string[] staticCollections = {
         "Infrastructure", // Building info, room details (not affected by map versions)
-        "Categories"      // Category definitions
+        "Categories",     // Category definitions
+        "Campus"          // Campus data - now static instead of versioned
     };
 
-    // Version-controlled collections (these come from map versions)
+    // Version-controlled collections (only Nodes and Edges now)
     private readonly string[] versionedCollections = {
-        "Campus",
-        "Maps",
-        "Nodes"
-        // "Edges" - if you have edges, add it here
+        "Nodes",
+        "Edges"
     };
 
     public bool IsReady => isFirebaseReady;
@@ -112,12 +111,12 @@ public class FirestoreManager : MonoBehaviour
 
         Debug.Log($"Found {availableMaps.Count} maps to check for updates");
 
-        // Step 3: Check versions for all maps
+        // Step 3: Check versions for all maps (only for Nodes and Edges now)
         bool allMapsChecked = false;
         CheckAllMapVersions(() => allMapsChecked = true);
         yield return new WaitUntil(() => allMapsChecked);
 
-        // Step 4: Always check static collections (infrastructure, categories)
+        // Step 4: Check static collections (Infrastructure, Categories, Campus)
         bool staticSyncComplete = false;
         SyncStaticCollections(() => staticSyncComplete = true);
         yield return new WaitUntil(() => staticSyncComplete);
@@ -125,8 +124,6 @@ public class FirestoreManager : MonoBehaviour
         Debug.Log("Comprehensive data sync check completed");
         onComplete?.Invoke();
     }
-
-
 
     private void LoadAvailableMaps()
     {
@@ -156,7 +153,6 @@ public class FirestoreManager : MonoBehaviour
             }
         }
     }
-
 
     private void CheckAllMapVersions(System.Action onComplete)
     {
@@ -220,119 +216,217 @@ public class FirestoreManager : MonoBehaviour
 
         onComplete?.Invoke();
     }
-
-    private void CheckSingleMapVersion(string mapId, System.Action<bool, MapVersionInfo> onComplete)
+private void CheckSingleMapVersion(string mapId, System.Action<bool, MapVersionInfo> onComplete)
+{
+    // Get server version for specific map
+    DocumentReference mapRef = db.Collection(MAP_VERSIONS_COLLECTION).Document(mapId);
+    mapRef.GetSnapshotAsync().ContinueWithOnMainThread(task =>
     {
-        // Get server version for specific map
-        DocumentReference mapRef = db.Collection(MAP_VERSIONS_COLLECTION).Document(mapId);
-        mapRef.GetSnapshotAsync().ContinueWithOnMainThread(task =>
+        if (task.IsCompletedSuccessfully)
         {
-            if (task.IsCompletedSuccessfully)
+            DocumentSnapshot snapshot = task.Result;
+            if (snapshot.Exists)
             {
-                DocumentSnapshot snapshot = task.Result;
-                if (snapshot.Exists)
+                var data = snapshot.ToDictionary();
+                
+                // Debug log to see what fields are actually available
+                Debug.Log($"MapVersions document fields for {mapId}:");
+                foreach (var kvp in data)
                 {
-                    var data = snapshot.ToDictionary();
-                    MapVersionInfo serverVersion = new MapVersionInfo
-                    {
-                        map_id = mapId,
-                        current_version = data.ContainsKey("current_version") ? data["current_version"].ToString() : "v1.0.0",
-                        map_name = data.ContainsKey("map_name") ? data["map_name"].ToString() : "Campus Map",
-                        last_updated = data.ContainsKey("last_updated") ? Convert.ToInt64(data["last_updated"]) : 0
-                    };
-
-                    // Compare with local cached version for this specific map
-                    LocalVersionCache localCache = GetLocalVersionCache(mapId);
-                    bool needsUpdate = localCache == null || localCache.cached_version != serverVersion.current_version;
-
-                    Debug.Log($"Map {mapId} - Server: {serverVersion.current_version}, Local: {localCache?.cached_version ?? "none"}");
-                    onComplete?.Invoke(needsUpdate, serverVersion);
+                    Debug.Log($"  {kvp.Key}: {kvp.Value} (Type: {kvp.Value?.GetType()})");
                 }
-                else
+
+                MapVersionInfo serverVersion = new MapVersionInfo
                 {
-                    Debug.LogWarning($"Map document {mapId} not found in mapVersions collection");
-                    onComplete?.Invoke(false, null);
+                    map_id = mapId,
+                    // Try different possible field names for current_version
+                    current_version = GetStringValue(data, "current_version") ?? 
+                                     GetStringValue(data, "currentVersion") ?? 
+                                     GetStringValue(data, "version") ?? 
+                                     "v1.0.0",
+                    // Try different possible field names for map_name
+                    map_name = GetStringValue(data, "map_name") ?? 
+                              GetStringValue(data, "mapName") ?? 
+                              GetStringValue(data, "name") ?? 
+                              "Campus Map",
+                    // Handle timestamp conversion more safely
+                    last_updated = GetTimestampValue(data)
+                };
+
+                Debug.Log($"Extracted server version info:");
+                Debug.Log($"  map_id: {serverVersion.map_id}");
+                Debug.Log($"  current_version: {serverVersion.current_version}");
+                Debug.Log($"  map_name: {serverVersion.map_name}");
+                Debug.Log($"  last_updated: {serverVersion.last_updated}");
+
+                // Compare with local cached version for this specific map
+                LocalVersionCache localCache = GetLocalVersionCache(mapId);
+                bool needsUpdate = localCache == null || 
+                                  string.IsNullOrEmpty(localCache.cached_version) || 
+                                  localCache.cached_version != serverVersion.current_version;
+
+                Debug.Log($"Map {mapId} version check:");
+                Debug.Log($"  Server version: '{serverVersion.current_version}'");
+                Debug.Log($"  Local cached version: '{localCache?.cached_version ?? "none"}'");
+                Debug.Log($"  Needs update: {needsUpdate}");
+
+                onComplete?.Invoke(needsUpdate, serverVersion);
+            }
+            else
+            {
+                Debug.LogWarning($"Map document {mapId} not found in mapVersions collection");
+                onComplete?.Invoke(false, null);
+            }
+        }
+        else
+        {
+            Debug.LogError($"Failed to check version for map {mapId}: {task.Exception}");
+            onComplete?.Invoke(false, null);
+        }
+    });
+}
+
+// Helper method to safely extract string values
+private string GetStringValue(Dictionary<string, object> data, string key)
+{
+    if (data.ContainsKey(key) && data[key] != null)
+    {
+        return data[key].ToString();
+    }
+    return null;
+}
+
+// Helper method to safely extract timestamp values
+private long GetTimestampValue(Dictionary<string, object> data)
+{
+    // Try different possible timestamp field names
+    string[] timestampFields = { "last_updated", "lastUpdated", "createdAt", "created_at", "updatedAt", "updated_at" };
+    
+    foreach (string field in timestampFields)
+    {
+        if (data.ContainsKey(field) && data[field] != null)
+        {
+            var value = data[field];
+            
+            // Handle Firebase Timestamp
+            if (value is Firebase.Firestore.Timestamp timestamp)
+            {
+                return (long)timestamp.ToDateTime().ToUniversalTime().Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            }
+            // Handle long/int values
+            else if (value is long longVal)
+            {
+                return longVal;
+            }
+            else if (value is int intVal)
+            {
+                return intVal;
+            }
+            // Try parsing string values
+            else if (long.TryParse(value.ToString(), out long parsedVal))
+            {
+                return parsedVal;
+            }
+        }
+    }
+    
+    // Return current timestamp if no valid timestamp found
+    return DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+}
+
+// Also update your SyncSingleMapVersionCoroutine method to add debug logging
+private IEnumerator SyncSingleMapVersionCoroutine(MapVersionInfo mapVersion, System.Action onComplete)
+{
+    Debug.Log($"Syncing map {mapVersion.map_id} to version: {mapVersion.current_version}");
+
+    int completedSyncs = 0;
+    int totalSyncs = versionedCollections.Length;
+
+    // Get the specific version data from subcollection
+    DocumentReference versionRef = db.Collection(MAP_VERSIONS_COLLECTION)
+        .Document(mapVersion.map_id)
+        .Collection(VERSIONS_SUBCOLLECTION)
+        .Document(mapVersion.current_version);
+
+    Debug.Log($"Looking for version document at: {MAP_VERSIONS_COLLECTION}/{mapVersion.map_id}/{VERSIONS_SUBCOLLECTION}/{mapVersion.current_version}");
+
+    versionRef.GetSnapshotAsync().ContinueWithOnMainThread(task =>
+    {
+        if (task.IsCompletedSuccessfully)
+        {
+            DocumentSnapshot snapshot = task.Result;
+            if (snapshot.Exists)
+            {
+                var versionData = snapshot.ToDictionary();
+                
+                // Debug log to see what's in the version document
+                Debug.Log($"Version document fields for {mapVersion.map_id} v{mapVersion.current_version}:");
+                foreach (var kvp in versionData)
+                {
+                    if (kvp.Value is IEnumerable<object> list && !(kvp.Value is string))
+                    {
+                        Debug.Log($"  {kvp.Key}: Array with {((IEnumerable<object>)kvp.Value).Count()} items");
+                    }
+                    else
+                    {
+                        Debug.Log($"  {kvp.Key}: {kvp.Value} (Type: {kvp.Value?.GetType()})");
+                    }
+                }
+
+                // Extract each collection data from the version document (only Nodes and Edges)
+                foreach (string collectionName in versionedCollections)
+                {
+                    string collectionKey = collectionName.ToLower();
+                    Debug.Log($"Looking for collection key: '{collectionKey}' in version data");
+                    
+                    if (versionData.ContainsKey(collectionKey))
+                    {
+                        // The data should be an array of documents
+                        var collectionData = versionData[collectionKey];
+                        Debug.Log($"Found {collectionName} data for {mapVersion.map_id}");
+                        ProcessVersionedCollection(mapVersion.map_id, collectionName, collectionData, () => completedSyncs++);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Collection key '{collectionKey}' not found in version {mapVersion.current_version} for map {mapVersion.map_id}");
+                        Debug.Log($"Available keys: {string.Join(", ", versionData.Keys)}");
+                        completedSyncs++;
+                    }
                 }
             }
             else
             {
-                Debug.LogError($"Failed to check version for map {mapId}: {task.Exception}");
-                onComplete?.Invoke(false, null);
+                Debug.LogError($"Version document {mapVersion.current_version} not found for map {mapVersion.map_id}");
+                completedSyncs = totalSyncs; // Skip all syncs
             }
-        });
-    }
+        }
+        else
+        {
+            Debug.LogError($"Failed to fetch version {mapVersion.current_version} for map {mapVersion.map_id}: {task.Exception}");
+            completedSyncs = totalSyncs; // Skip all syncs
+        }
+    });
+
+    yield return new WaitUntil(() => completedSyncs >= totalSyncs);
+
+    // Update local version cache for this specific map
+    UpdateLocalVersionCache(mapVersion);
+
+    Debug.Log($"Map {mapVersion.map_id} sync completed for version: {mapVersion.current_version}");
+    onComplete?.Invoke();
+}
 
     private void SyncSingleMapVersion(MapVersionInfo mapVersion, System.Action onComplete)
     {
         StartCoroutine(SyncSingleMapVersionCoroutine(mapVersion, onComplete));
     }
 
-    private IEnumerator SyncSingleMapVersionCoroutine(MapVersionInfo mapVersion, System.Action onComplete)
-    {
-        Debug.Log($"Syncing map {mapVersion.map_id} to version: {mapVersion.current_version}");
-
-        int completedSyncs = 0;
-        int totalSyncs = versionedCollections.Length;
-
-        // Get the specific version data from subcollection
-        DocumentReference versionRef = db.Collection(MAP_VERSIONS_COLLECTION)
-            .Document(mapVersion.map_id)
-            .Collection(VERSIONS_SUBCOLLECTION)
-            .Document(mapVersion.current_version);
-
-        versionRef.GetSnapshotAsync().ContinueWithOnMainThread(task =>
-        {
-            if (task.IsCompletedSuccessfully)
-            {
-                DocumentSnapshot snapshot = task.Result;
-                if (snapshot.Exists)
-                {
-                    var versionData = snapshot.ToDictionary();
-
-                    // Extract each collection data from the version document
-                    foreach (string collectionName in versionedCollections)
-                    {
-                        string collectionKey = collectionName.ToLower();
-                        if (versionData.ContainsKey(collectionKey))
-                        {
-                            // The data should be an array of documents
-                            var collectionData = versionData[collectionKey];
-                            ProcessVersionedCollection(mapVersion.map_id, collectionName, collectionData, () => completedSyncs++);
-                        }
-                        else
-                        {
-                            Debug.LogWarning($"Collection {collectionName} not found in version {mapVersion.current_version} for map {mapVersion.map_id}");
-                            completedSyncs++;
-                        }
-                    }
-                }
-                else
-                {
-                    Debug.LogError($"Version {mapVersion.current_version} not found for map {mapVersion.map_id}");
-                    completedSyncs = totalSyncs; // Skip all syncs
-                }
-            }
-            else
-            {
-                Debug.LogError($"Failed to fetch version {mapVersion.current_version} for map {mapVersion.map_id}: {task.Exception}");
-                completedSyncs = totalSyncs; // Skip all syncs
-            }
-        });
-
-        yield return new WaitUntil(() => completedSyncs >= totalSyncs);
-
-        // Update local version cache for this specific map
-        UpdateLocalVersionCache(mapVersion);
-
-        Debug.Log($"Map {mapVersion.map_id} sync completed for version: {mapVersion.current_version}");
-        onComplete?.Invoke();
-    }
-
+    
     private void ProcessVersionedCollection(string mapId, string collectionName, object collectionData, System.Action onComplete)
     {
         try
         {
-            // Create map-specific filename to avoid conflicts
+            // Create map-specific filename only for versioned collections (Nodes and Edges)
             string fileName = $"{collectionName.ToLower()}_{mapId}.json";
             string jsonContent;
 
@@ -403,6 +497,7 @@ public class FirestoreManager : MonoBehaviour
                     {
                         infrastructure_updated = data.ContainsKey("infrastructure_updated") ? (bool)data["infrastructure_updated"] : false,
                         categories_updated = data.ContainsKey("categories_updated") ? (bool)data["categories_updated"] : false,
+                        campus_updated = data.ContainsKey("campus_updated") ? (bool)data["campus_updated"] : false, // Added campus flag
                         last_check = data.ContainsKey("last_check") ? Convert.ToInt64(data["last_check"]) : 0
                     };
 
@@ -410,10 +505,12 @@ public class FirestoreManager : MonoBehaviour
                     LocalStaticDataCache localCache = GetLocalStaticDataCache();
                     bool needsUpdate = localCache == null ||
                                      (serverInfo.infrastructure_updated && !localCache.infrastructure_synced) ||
-                                     (serverInfo.categories_updated && !localCache.categories_synced);
+                                     (serverInfo.categories_updated && !localCache.categories_synced) ||
+                                     (serverInfo.campus_updated && !localCache.campus_synced); // Added campus check
 
                     Debug.Log($"Static data check - Infrastructure: {(serverInfo.infrastructure_updated ? "UPDATE NEEDED" : "OK")}, " +
-                             $"Categories: {(serverInfo.categories_updated ? "UPDATE NEEDED" : "OK")}");
+                             $"Categories: {(serverInfo.categories_updated ? "UPDATE NEEDED" : "OK")}, " +
+                             $"Campus: {(serverInfo.campus_updated ? "UPDATE NEEDED" : "OK")}");
 
                     onComplete?.Invoke(needsUpdate, serverInfo);
                 }
@@ -424,6 +521,7 @@ public class FirestoreManager : MonoBehaviour
                     {
                         infrastructure_updated = true, // Force initial sync
                         categories_updated = true,
+                        campus_updated = true, // Force initial campus sync
                         last_check = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
                     };
                     onComplete?.Invoke(true, defaultInfo);
@@ -452,6 +550,7 @@ public class FirestoreManager : MonoBehaviour
         // Count what needs to be synced
         if (versionInfo.infrastructure_updated) totalSyncs++;
         if (versionInfo.categories_updated) totalSyncs++;
+        if (versionInfo.campus_updated) totalSyncs++; // Added campus count
 
         if (totalSyncs == 0)
         {
@@ -472,6 +571,13 @@ public class FirestoreManager : MonoBehaviour
         {
             Debug.Log("Syncing Categories collection...");
             SyncCollectionToLocal("Categories", () => completedSyncs++);
+        }
+
+        // Sync Campus if needed
+        if (versionInfo.campus_updated)
+        {
+            Debug.Log("Syncing Campus collection...");
+            SyncCollectionToLocal("Campus", () => completedSyncs++);
         }
 
         yield return new WaitUntil(() => completedSyncs >= totalSyncs);
@@ -552,6 +658,7 @@ public class FirestoreManager : MonoBehaviour
         {
             infrastructure_synced = true, // Mark as synced after successful download
             categories_synced = true,
+            campus_synced = true, // Added campus sync flag
             cache_timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         };
 
@@ -572,6 +679,7 @@ public class FirestoreManager : MonoBehaviour
         {
             { "infrastructure_updated", false },
             { "categories_updated", false },
+            { "campus_updated", false }, // Reset campus flag too
             { "last_check", DateTimeOffset.UtcNow.ToUnixTimeSeconds() }
         };
 
@@ -650,7 +758,6 @@ public class FirestoreManager : MonoBehaviour
             }
         });
     }
-
 
     // Method to get available versions for a specific map
     public void GetAvailableMapVersions(string mapId, System.Action<List<string>> onComplete)
@@ -848,11 +955,7 @@ public class FirestoreManager : MonoBehaviour
         });
     }
 
-
-
-    // FALLBACK
-    // Add these methods to your FirestoreManager class
-
+    // FALLBACK METHODS
     public void SyncFromIndividualCollections(System.Action onComplete = null)
     {
         StartCoroutine(SyncFromIndividualCollectionsCoroutine(onComplete));
@@ -862,15 +965,15 @@ public class FirestoreManager : MonoBehaviour
     {
         Debug.Log("Starting sync from individual collections (fallback mode)...");
 
-        // Define all collections you want to sync
+        // Updated collections to sync - Campus moved to static collections
         string[] collectionsToSync = {
-        "Maps",           // Main maps collection
-        "Infrastructure", // Building info, room details  
-        "Categories",     // Category definitions
-        "Campus",         // Campus data
-        "Nodes",          // Map nodes
-        "Edges"           // Map edges
-    };
+            "Maps",           // Main maps collection
+            "Infrastructure", // Building info, room details  
+            "Categories",     // Category definitions
+            "Campus",         // Campus data (now static)
+            "Nodes",          // Map nodes (will be synced as individual collection in fallback)
+            "Edges"           // Map edges (will be synced as individual collection in fallback)
+        };
 
         int completedSyncs = 0;
         int totalSyncs = collectionsToSync.Length;
@@ -944,7 +1047,7 @@ public class FirestoreManager : MonoBehaviour
             CheckAllMapVersions(() => allMapsChecked = true);
             yield return new WaitUntil(() => allMapsChecked);
 
-            // Check static collections
+            // Check static collections (Infrastructure, Categories, Campus)
             bool staticSyncComplete = false;
             SyncStaticCollections(() => staticSyncComplete = true);
             yield return new WaitUntil(() => staticSyncComplete);
@@ -981,4 +1084,3 @@ public class FirestoreManager : MonoBehaviour
         });
     }
 }
-
