@@ -42,3 +42,7 @@ sysinfo.txt
 *.aab
 *.ipa
 
+# Firebase config
+google-services.json
+GoogleService-Info.plist
+

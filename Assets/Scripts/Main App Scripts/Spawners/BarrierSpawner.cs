@@ -19,7 +19,7 @@ public class BarrierSpawner : MonoBehaviour
     [Header("JSON Files")]
     public string nodesFileName = "nodes.json";
     public string edgesFileName = "edges.json";
-    public string polygonsFileName = "polygons.json"; // Optional polygon data
+    public string polygonsFileName = "polygons.json"; 
 
     [Header("Settings")]
     public bool enableDebugLogs = true;
