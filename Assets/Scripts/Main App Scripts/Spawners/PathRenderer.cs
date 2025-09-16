@@ -14,24 +14,22 @@ public class PathRenderer : MonoBehaviour
     [Header("Path Prefabs")]
     public GameObject pathPrefab; // Single prefab for all pathway connections
 
-    [Header("JSON Files")]
-    public string nodesFileName = "nodes.json";
-    public string edgesFileName = "edges.json";
-
     [Header("Settings")]
     public bool enableDebugLogs = true;
-    public List<string> targetCampusIds = new List<string>();
     public float pathWidth = 1f;
     public float pathHeightOffset = 1f;
 
     [Header("Path Appearance")]
     public Color pathwayColor = new Color(0.8f, 0.6f, 0.4f, 0.9f); // Default pathway color
 
+    // Current map data - set by MapManager
+    private string currentMapId;
+    private List<string> currentCampusIds = new List<string>();
+
     // Track spawned paths with their location components
     private List<PathEdge> spawnedPaths = new List<PathEdge>();
     private Dictionary<string, Node> allNodes = new Dictionary<string, Node>();
 
-    private bool hasRendered = false;
     private bool isRendering = false;
 
     void Awake()
@@ -45,7 +43,7 @@ public class PathRenderer : MonoBehaviour
 
     void Start()
     {
-        DebugLog("🛤️ PathRenderer started");
+        DebugLog("🛤️ PathRenderer started - waiting for MapManager");
 
         if (mapboxMap == null)
         {
@@ -53,17 +51,96 @@ public class PathRenderer : MonoBehaviour
             return;
         }
 
-        DebugLog("📍 Found AbstractMap, starting automatic render process");
-
-        // Start the render process immediately
-        StartCoroutine(WaitForMapAndRender());
+        // Subscribe to MapManager events
+        if (MapManager.Instance != null)
+        {
+            MapManager.Instance.OnMapChanged += OnMapChanged;
+            MapManager.Instance.OnMapLoadingStarted += OnMapLoadingStarted;
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ MapManager.Instance is null - PathRenderer will not receive map change events");
+        }
     }
 
-    private IEnumerator WaitForMapAndRender()
+    void OnDestroy()
+    {
+        // Unsubscribe from MapManager events
+        if (MapManager.Instance != null)
+        {
+            MapManager.Instance.OnMapChanged -= OnMapChanged;
+            MapManager.Instance.OnMapLoadingStarted -= OnMapLoadingStarted;
+        }
+    }
+
+    #region MapManager Integration
+
+    /// <summary>
+    /// Called by MapManager to set current map data
+    /// </summary>
+    public void SetCurrentMapData(string mapId, List<string> campusIds)
+    {
+        DebugLog($"🗺️ Setting map data - Map ID: {mapId}, Campuses: {string.Join(", ", campusIds)}");
+        
+        currentMapId = mapId;
+        currentCampusIds.Clear();
+        if (campusIds != null)
+        {
+            currentCampusIds.AddRange(campusIds);
+        }
+    }
+
+    /// <summary>
+    /// Called when MapManager changes the map
+    /// </summary>
+    private void OnMapChanged(MapInfo mapInfo)
+    {
+        DebugLog($"🔄 Map changed to: {mapInfo.map_name} (ID: {mapInfo.map_id})");
+        SetCurrentMapData(mapInfo.map_id, mapInfo.campus_included);
+    }
+
+    /// <summary>
+    /// Called when MapManager starts loading a new map
+    /// </summary>
+    private void OnMapLoadingStarted()
+    {
+        DebugLog("🧹 Map loading started - clearing existing paths");
+        ClearSpawnedPaths();
+    }
+
+    /// <summary>
+    /// Main method called by MapManager to load and render paths for a specific map
+    /// </summary>
+    public IEnumerator LoadAndRenderPathsForMap(string mapId, List<string> campusIds)
+    {
+        if (isRendering)
+        {
+            DebugLog("⚠️ Already rendering paths, skipping");
+            yield break;
+        }
+
+        DebugLog($"🛤️ LoadAndRenderPathsForMap called - Map: {mapId}, Campuses: {string.Join(", ", campusIds ?? new List<string>())}");
+
+        // Update current map data
+        SetCurrentMapData(mapId, campusIds);
+
+        // Wait for map to be ready
+        yield return StartCoroutine(WaitForMapReady());
+
+        // Start rendering
+        yield return StartCoroutine(LoadAndRenderPaths());
+
+        DebugLog($"✅ Map '{mapId}' path rendering completed");
+    }
+
+    #endregion
+
+    #region Map Readiness Check
+
+    private IEnumerator WaitForMapReady()
     {
         DebugLog("⏳ Waiting for map to be ready...");
 
-        // Wait for map initialization
         float timeout = 30f;
         float elapsed = 0f;
 
@@ -71,7 +148,7 @@ public class PathRenderer : MonoBehaviour
         {
             if (mapboxMap != null && mapboxMap.gameObject.activeInHierarchy)
             {
-                DebugLog($"🗺️ Map seems ready after {elapsed:F1}s, attempting render...");
+                DebugLog($"🗺️ Map ready after {elapsed:F1}s");
                 break;
             }
 
@@ -90,12 +167,48 @@ public class PathRenderer : MonoBehaviour
             yield break;
         }
 
-        // Additional delay to ensure map is fully ready
-        yield return new WaitForSeconds(2f);
-
-        // Start rendering
-        yield return StartCoroutine(LoadAndRenderPaths());
+        yield return new WaitForSeconds(1f); // Extra buffer time
     }
+
+    #endregion
+
+    #region File Name Generation
+
+    /// <summary>
+    /// Get the appropriate nodes file name based on current map
+    /// </summary>
+    private string GetNodesFileName()
+    {
+        if (string.IsNullOrEmpty(currentMapId))
+        {
+            Debug.LogWarning("⚠️ No current map ID set, using default nodes.json");
+            return "nodes.json";
+        }
+        
+        string fileName = $"nodes_{currentMapId}.json";
+        DebugLog($"📁 Using nodes file: {fileName}");
+        return fileName;
+    }
+
+    /// <summary>
+    /// Get the appropriate edges file name based on current map
+    /// </summary>
+    private string GetEdgesFileName()
+    {
+        if (string.IsNullOrEmpty(currentMapId))
+        {
+            Debug.LogWarning("⚠️ No current map ID set, using default edges.json");
+            return "edges.json";
+        }
+        
+        string fileName = $"edges_{currentMapId}.json";
+        DebugLog($"📁 Using edges file: {fileName}");
+        return fileName;
+    }
+
+    #endregion
+
+    #region Main Loading and Rendering
 
     public IEnumerator LoadAndRenderPaths()
     {
@@ -106,39 +219,32 @@ public class PathRenderer : MonoBehaviour
         }
 
         isRendering = true;
-        DebugLog("🛤️ Starting LoadAndRenderPaths...");
+        DebugLog($"🛤️ Starting LoadAndRenderPaths for map: {currentMapId}");
+
+        if (string.IsNullOrEmpty(currentMapId))
+        {
+            Debug.LogError("❌ No current map ID set - cannot load paths");
+            isRendering = false;
+            yield break;
+        }
 
         List<Edge> validEdges = null;
-        List<string> campusIds = null;
-
-        // Get campus IDs to render
         bool errorOccurred = false;
-        System.Exception caughtException = null;
-
-        yield return StartCoroutine(GetTargetCampusIdsAsync((ids) => {
-            campusIds = ids;
-        }));
 
         try
         {
-            if (campusIds == null || campusIds.Count == 0)
+            if (currentCampusIds == null || currentCampusIds.Count == 0)
             {
-                Debug.LogError("❌ No campus IDs found in data");
-                errorOccurred = true;
+                Debug.LogWarning("⚠️ No campus IDs available for path loading");
             }
-            else
-            {
-                DebugLog($"🏫 Target campus IDs: {string.Join(", ", campusIds)}");
 
-                // Clear existing paths first
-                ClearSpawnedPaths();
-            }
+            // Clear existing paths first
+            ClearSpawnedPaths();
         }
         catch (System.Exception e)
         {
             Debug.LogError($"❌ Error in LoadAndRenderPaths: {e.Message}");
             errorOccurred = true;
-            caughtException = e;
         }
         finally
         {
@@ -150,8 +256,8 @@ public class PathRenderer : MonoBehaviour
             yield break;
         }
 
-        // Load and filter nodes (yield must be outside try-catch)
-        yield return StartCoroutine(LoadFilteredNodes(campusIds));
+        // Load and filter nodes from map-specific file
+        yield return StartCoroutine(LoadFilteredNodes(currentCampusIds));
 
         if (allNodes.Count == 0)
         {
@@ -159,11 +265,11 @@ public class PathRenderer : MonoBehaviour
             yield break;
         }
 
-        // Load and filter edges
+        // Load and filter edges from map-specific file
         yield return StartCoroutine(LoadEdgesFromJSONAsync((edges) => {
             if (edges == null || edges.Length == 0)
             {
-                Debug.LogError("❌ Failed to load edges from JSON");
+                Debug.LogError($"❌ Failed to load edges from {GetEdgesFileName()}");
                 return;
             }
 
@@ -187,79 +293,21 @@ public class PathRenderer : MonoBehaviour
         // Render the paths
         yield return StartCoroutine(RenderPathEdges(validEdges));
 
-        hasRendered = true;
-        Debug.Log($"✅ PathRenderer completed: {spawnedPaths.Count} paths rendered");
+        Debug.Log($"✅ PathRenderer completed: {spawnedPaths.Count} paths rendered for map {currentMapId}");
     }
 
-    private IEnumerator GetTargetCampusIdsAsync(System.Action<List<string>> onComplete)
-    {
-        // If specific campus IDs are set in inspector, use those
-        if (targetCampusIds != null && targetCampusIds.Count > 0)
-        {
-            var validIds = targetCampusIds.Where(id => !string.IsNullOrEmpty(id)).ToList();
-            onComplete?.Invoke(validIds);
-            yield break;
-        }
+    #endregion
 
-        // Otherwise, get all available campus IDs from the data
-        yield return StartCoroutine(GetAllCampusIdsFromDataAsync(onComplete));
-    }
-
-    private IEnumerator GetAllCampusIdsFromDataAsync(System.Action<List<string>> onComplete)
-    {
-        DebugLog($"📂 Loading campus IDs from nodes file: {nodesFileName}");
-
-        var campusIds = new List<string>();
-        bool loadCompleted = false;
-
-        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(nodesFileName,
-            // onSuccess
-            (jsonContent) => {
-                try
-                {
-                    Node[] nodes = JsonHelper.FromJson<Node>(jsonContent);
-
-                    if (nodes == null || nodes.Length == 0)
-                    {
-                        Debug.LogError("❌ No nodes found in JSON file");
-                        loadCompleted = true;
-                        return;
-                    }
-
-                    campusIds = nodes
-                        .Where(n => n != null && n.is_active && (n.type == "pathway" || n.type == "infrastructure") && !string.IsNullOrEmpty(n.campus_id))
-                        .Select(n => n.campus_id)
-                        .Distinct()
-                        .ToList();
-
-                    DebugLog($"🏫 Found {campusIds.Count} unique campus IDs with pathways and infrastructure");
-                    loadCompleted = true;
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogError($"❌ Error parsing nodes JSON: {e.Message}");
-                    loadCompleted = true;
-                }
-            },
-            // onError
-            (error) => {
-                Debug.LogError($"❌ Error loading nodes file: {error}");
-                loadCompleted = true;
-            }
-        ));
-
-        // Wait for load to complete
-        yield return new WaitUntil(() => loadCompleted);
-        onComplete?.Invoke(campusIds);
-    }
+    #region Node and Edge Loading
 
     private IEnumerator LoadFilteredNodes(List<string> campusIds)
     {
-        DebugLog($"📂 Loading filtered nodes from: {nodesFileName}");
+        DebugLog($"📂 Loading filtered nodes from: {GetNodesFileName()}");
 
         bool loadCompleted = false;
 
-        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(nodesFileName,
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
+            GetNodesFileName(),
             // onSuccess
             (jsonContent) => {
                 try
@@ -276,7 +324,7 @@ public class PathRenderer : MonoBehaviour
                         n != null &&
                         n.is_active &&
                         (n.type == "pathway" || n.type == "infrastructure") &&
-                        campusIds.Contains(n.campus_id) &&
+                        (campusIds == null || campusIds.Count == 0 || campusIds.Contains(n.campus_id)) &&
                         IsValidCoordinate(n.latitude, n.longitude)
                     ).ToList();
 
@@ -285,10 +333,10 @@ public class PathRenderer : MonoBehaviour
                         allNodes[node.node_id] = node;
                     }
 
-                    DebugLog($"🔍 Node filtering process:");
+                    DebugLog($"🔍 Node filtering process for map {currentMapId}:");
                     DebugLog($"  - Total nodes: {nodes.Length}");
                     DebugLog($"  - Active nodes: {nodes.Count(n => n?.is_active == true)}");
-                    DebugLog($"  - Pathway nodes in target campus: {allNodes.Count}");
+                    DebugLog($"  - Pathway nodes in target campuses ({string.Join(", ", campusIds ?? new List<string>())}): {allNodes.Count}");
 
                     loadCompleted = true;
                 }
@@ -311,12 +359,13 @@ public class PathRenderer : MonoBehaviour
 
     private IEnumerator LoadEdgesFromJSONAsync(System.Action<Edge[]> onComplete)
     {
-        DebugLog($"📂 Loading edges from: {edgesFileName}");
+        DebugLog($"📂 Loading edges from: {GetEdgesFileName()}");
 
         bool loadCompleted = false;
         Edge[] edges = null;
 
-        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(edgesFileName,
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
+            GetEdgesFileName(),
             // onSuccess
             (jsonContent) => {
                 try
@@ -346,9 +395,13 @@ public class PathRenderer : MonoBehaviour
         onComplete?.Invoke(edges);
     }
 
+    #endregion
+
+    #region Edge Filtering and Rendering
+
     private List<Edge> FilterValidPathwayEdges(Edge[] allEdges)
     {
-        DebugLog($"🔍 Available pathway nodes: {string.Join(", ", allNodes.Keys)}");
+        DebugLog($"🔍 Available pathway nodes: {allNodes.Count} nodes loaded");
 
         var validEdges = new List<Edge>();
         var activeEdges = allEdges.Where(e => e != null && e.is_active).ToList();
@@ -369,7 +422,7 @@ public class PathRenderer : MonoBehaviour
             }
         }
 
-        DebugLog($"🔍 Edge filtering process:");
+        DebugLog($"🔍 Edge filtering process for map {currentMapId}:");
         DebugLog($"  - Total edges: {allEdges.Length}");
         DebugLog($"  - Active edges: {activeEdges.Count}");
         DebugLog($"  - Valid pathway connections: {validEdges.Count}");
@@ -379,7 +432,7 @@ public class PathRenderer : MonoBehaviour
 
     private IEnumerator RenderPathEdges(List<Edge> edges)
     {
-        DebugLog($"🛤️ Rendering {edges.Count} pathway edges...");
+        DebugLog($"🛤️ Rendering {edges.Count} pathway edges for map {currentMapId}...");
 
         int renderedCount = 0;
         foreach (var edge in edges)
@@ -431,8 +484,12 @@ public class PathRenderer : MonoBehaviour
             }
         }
 
-        DebugLog($"✅ Successfully rendered {renderedCount} pathway edges");
+        DebugLog($"✅ Successfully rendered {renderedCount} pathway edges for map {currentMapId}");
     }
+
+    #endregion
+
+    #region Public Utility Methods
 
     public void ClearSpawnedPaths()
     {
@@ -448,16 +505,37 @@ public class PathRenderer : MonoBehaviour
 
         spawnedPaths.Clear();
         allNodes.Clear();
-        hasRendered = false;
 
         DebugLog("✅ Cleared all pathway edges");
     }
+
+    public void ForceUpdateAllPaths()
+    {
+        foreach (var path in spawnedPaths)
+        {
+            if (path != null)
+            {
+                path.ForceUpdate();
+            }
+        }
+    }
+
+    #endregion
+
+    #region Legacy/Debug Methods
 
     // Manual render methods for testing
     public void ManualRender()
     {
         DebugLog("🔄 Manual render triggered");
-        StartCoroutine(LoadAndRenderPaths());
+        if (!string.IsNullOrEmpty(currentMapId))
+        {
+            StartCoroutine(LoadAndRenderPaths());
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ No current map set - cannot manually render");
+        }
     }
 
     [System.Obsolete("Debug method - remove in production")]
@@ -465,16 +543,19 @@ public class PathRenderer : MonoBehaviour
     {
         DebugLog("🔄 Force resetting rendering state");
         isRendering = false;
-        hasRendered = false;
         StopAllCoroutines();
         DebugLog($"✅ Reset complete");
     }
 
+    #endregion
+
+    #region Utility Methods
+
     private bool IsValidCoordinate(float lat, float lon)
     {
         return !float.IsNaN(lat) && !float.IsNaN(lon) &&
-            !float.IsInfinity(lat) && !float.IsInfinity(lon) &&
-            lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+               !float.IsInfinity(lat) && !float.IsInfinity(lon) &&
+               lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
     }
 
     private void DebugLog(string message)
@@ -485,6 +566,10 @@ public class PathRenderer : MonoBehaviour
         }
     }
 
+    #endregion
+
+    #region Debug Input Handling
+
     void Update()
     {
         // Debug controls
@@ -493,11 +578,14 @@ public class PathRenderer : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.P))
             {
                 Debug.Log($"=== PATH RENDERER STATUS ===");
-                Debug.Log($"Has rendered: {hasRendered}");
+                Debug.Log($"Current Map ID: {currentMapId ?? "None"}");
+                Debug.Log($"Current Campus IDs: {string.Join(", ", currentCampusIds)}");
                 Debug.Log($"Is rendering: {isRendering}");
                 Debug.Log($"Paths rendered: {spawnedPaths.Count}");
                 Debug.Log($"Pathway nodes loaded: {allNodes.Count}");
                 Debug.Log($"Map assigned: {mapboxMap != null}");
+                Debug.Log($"Nodes file: {GetNodesFileName()}");
+                Debug.Log($"Edges file: {GetEdgesFileName()}");
             }
 
             if (Input.GetKeyDown(KeyCode.O))
@@ -511,18 +599,11 @@ public class PathRenderer : MonoBehaviour
             }
         }
     }
-    public void ForceUpdateAllPaths()
-    {
-        foreach (var path in spawnedPaths)
-        {
-            if (path != null)
-            {
-                path.ForceUpdate();
-            }
-        }
-    }
+
+    #endregion
 }
 
+// PathEdge class remains the same as before
 public class PathEdge : MonoBehaviour
 {
     private AbstractMap map;

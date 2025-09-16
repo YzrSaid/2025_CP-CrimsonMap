@@ -17,7 +17,7 @@
     <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-firestore-unity/13.1.0/firebase-firestore-unity-13.1.0.pom</file>
   </files>
   <settings>
-    <setting name="androidAbis" value="armeabi-v7a" />
+    <setting name="androidAbis" value="arm64-v8a,armeabi-v7a" />
     <setting name="bundleId" value="com.WMSU.CrimsonMap" />
     <setting name="explodeAars" value="True" />
     <setting name="gradleBuildEnabled" value="True" />

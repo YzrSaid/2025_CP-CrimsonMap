@@ -15,29 +15,9 @@ public class OnboardingManager : MonoBehaviour
     
     private int currentPage = 0;
 
-    void Awake()
-    {
-        // Hide everything immediately if onboarding is complete
-        if (GlobalManager.Instance != null && GlobalManager.Instance.onboardingComplete)
-        {
-            if (onboardingCanvas != null)
-                onboardingCanvas.gameObject.SetActive(false);
-            
-            foreach (var page in pages)
-            {
-                page.SetActive(false);
-            }
-        }
-    }
 
     void Start()
-    {
-        if (GlobalManager.Instance.onboardingComplete)
-        {
-            SceneManager.LoadScene("MainAppScene");
-            return;
-        }
-        
+    {   
         if (onboardingCanvas != null)
             onboardingCanvas.gameObject.SetActive(true);
             

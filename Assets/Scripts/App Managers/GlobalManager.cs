@@ -276,7 +276,7 @@ public class GlobalManager : MonoBehaviour
         }
     }
 
-   
+
     private void PostSyncInitialization()
     {
         // Load available maps and update current versions
@@ -311,6 +311,17 @@ public class GlobalManager : MonoBehaviour
 
         // Notify other systems that data is ready
         OnDataInitializationComplete?.Invoke();
+
+        if (!onboardingComplete)
+        {
+            Debug.Log("First launch detected - loading Onboarding scene...");
+            UnityEngine.SceneManagement.SceneManager.LoadScene("OnboardingScene");
+        }
+        else
+        {
+            Debug.Log("Onboarding already complete - loading Main App scene...");
+            UnityEngine.SceneManagement.SceneManager.LoadScene("MainAppScene");
+        }
     }
 
     private void LoadAvailableMaps()

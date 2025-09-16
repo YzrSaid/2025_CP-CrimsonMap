@@ -15,22 +15,23 @@ public class InfrastructureSpawner : MonoBehaviour
     [Header("Prefabs")]
     public GameObject infrastructurePrefab;
 
-    [Header("JSON Files")]
-    public string nodesFileName = "nodes.json";
+    [Header("JSON Files - Static Files")]
     public string infrastructureFileName = "infrastructure.json";
     public string categoriesFileName = "categories.json";
 
     [Header("Settings")]
     public bool enableDebugLogs = true;
-    public List<string> targetCampusIds = new List<string>();
     public float infrastructureSize = 3.0f;
     public float heightOffset = 1f;
+
+    // Current map data - set by MapManager
+    private string currentMapId;
+    private List<string> currentCampusIds = new List<string>();
 
     // Track spawned infrastructure with their location components
     private List<InfrastructureNode> spawnedInfrastructure = new List<InfrastructureNode>();
     private Dictionary<string, InfrastructureNode> infraIdToComponent = new Dictionary<string, InfrastructureNode>();
 
-    private bool hasSpawned = false;
     private bool isSpawning = false;
 
     void Awake()
@@ -44,7 +45,7 @@ public class InfrastructureSpawner : MonoBehaviour
 
     void Start()
     {
-        DebugLog("🏢 InfrastructureSpawner started");
+        DebugLog("🏢 InfrastructureSpawner started - waiting for MapManager");
 
         if (mapboxMap == null)
         {
@@ -52,17 +53,110 @@ public class InfrastructureSpawner : MonoBehaviour
             return;
         }
 
-        DebugLog("📍 Found AbstractMap, starting automatic spawn process");
-
-        // Start the spawn process immediately
-        StartCoroutine(WaitForMapAndSpawn());
+        // Subscribe to MapManager events
+        if (MapManager.Instance != null)
+        {
+            MapManager.Instance.OnMapChanged += OnMapChanged;
+            MapManager.Instance.OnMapLoadingStarted += OnMapLoadingStarted;
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ MapManager.Instance is null - InfrastructureSpawner will not receive map change events");
+        }
     }
 
-    private IEnumerator WaitForMapAndSpawn()
+    void OnDestroy()
+    {
+        // Unsubscribe from MapManager events
+        if (MapManager.Instance != null)
+        {
+            MapManager.Instance.OnMapChanged -= OnMapChanged;
+            MapManager.Instance.OnMapLoadingStarted -= OnMapLoadingStarted;
+        }
+    }
+
+    #region MapManager Integration
+
+    /// <summary>
+    /// Called by MapManager to set current map data
+    /// </summary>
+    public void SetTargetCampusIds(List<string> campusIds)
+    {
+        DebugLog($"🗺️ Setting campus IDs: {string.Join(", ", campusIds)}");
+        
+        currentCampusIds.Clear();
+        if (campusIds != null)
+        {
+            currentCampusIds.AddRange(campusIds);
+        }
+    }
+
+    /// <summary>
+    /// Called by MapManager to set current map data (extended version)
+    /// </summary>
+    public void SetCurrentMapData(string mapId, List<string> campusIds)
+    {
+        DebugLog($"🗺️ Setting map data - Map ID: {mapId}, Campuses: {string.Join(", ", campusIds)}");
+        
+        currentMapId = mapId;
+        currentCampusIds.Clear();
+        if (campusIds != null)
+        {
+            currentCampusIds.AddRange(campusIds);
+        }
+    }
+
+    /// <summary>
+    /// Called when MapManager changes the map
+    /// </summary>
+    private void OnMapChanged(MapInfo mapInfo)
+    {
+        DebugLog($"🔄 Map changed to: {mapInfo.map_name} (ID: {mapInfo.map_id})");
+        SetCurrentMapData(mapInfo.map_id, mapInfo.campus_included);
+    }
+
+    /// <summary>
+    /// Called when MapManager starts loading a new map
+    /// </summary>
+    private void OnMapLoadingStarted()
+    {
+        DebugLog("🧹 Map loading started - clearing existing infrastructure");
+        ClearSpawnedInfrastructure();
+    }
+
+    /// <summary>
+    /// Main method called by MapManager to load infrastructure for specific campuses
+    /// </summary>
+    public IEnumerator LoadAndSpawnForCampuses(List<string> campusIds)
+    {
+        if (isSpawning)
+        {
+            DebugLog("⚠️ Already spawning infrastructure, skipping");
+            yield break;
+        }
+
+        DebugLog($"🏢 LoadAndSpawnForCampuses called - Campuses: {string.Join(", ", campusIds ?? new List<string>())}");
+
+        // Update current campus data
+        SetTargetCampusIds(campusIds);
+
+        // Wait for map to be ready
+        yield return StartCoroutine(WaitForMapReady());
+
+        // Start spawning
+        yield return StartCoroutine(LoadAndSpawnInfrastructure());
+
+        DebugLog($"✅ Infrastructure spawning completed for campuses: {string.Join(", ", campusIds ?? new List<string>())}");
+    }
+
+    #endregion
+
+    #region Map Readiness Check
+
+    private IEnumerator WaitForMapReady()
     {
         DebugLog("⏳ Waiting for map to be ready...");
 
-        // Wait for map initialization
         float timeout = 30f;
         float elapsed = 0f;
 
@@ -70,7 +164,7 @@ public class InfrastructureSpawner : MonoBehaviour
         {
             if (mapboxMap != null && mapboxMap.gameObject.activeInHierarchy)
             {
-                DebugLog($"🗺️ Map seems ready after {elapsed:F1}s, attempting spawn...");
+                DebugLog($"🗺️ Map ready after {elapsed:F1}s");
                 break;
             }
 
@@ -89,12 +183,32 @@ public class InfrastructureSpawner : MonoBehaviour
             yield break;
         }
 
-        // Additional delay to ensure map is fully ready
-        yield return new WaitForSeconds(2f);
-
-        // Start spawning
-        yield return StartCoroutine(LoadAndSpawnInfrastructure());
+        yield return new WaitForSeconds(1f); // Extra buffer time
     }
+
+    #endregion
+
+    #region File Name Generation
+
+    /// <summary>
+    /// Get the appropriate nodes file name based on current map
+    /// </summary>
+    private string GetNodesFileName()
+    {
+        if (string.IsNullOrEmpty(currentMapId))
+        {
+            Debug.LogWarning("⚠️ No current map ID set, using default nodes.json");
+            return "nodes.json";
+        }
+        
+        string fileName = $"nodes_{currentMapId}.json";
+        DebugLog($"📁 Using nodes file: {fileName}");
+        return fileName;
+    }
+
+    #endregion
+
+    #region Main Loading and Spawning
 
     public IEnumerator LoadAndSpawnInfrastructure()
     {
@@ -105,174 +219,189 @@ public class InfrastructureSpawner : MonoBehaviour
         }
 
         isSpawning = true;
-        DebugLog("🏢 Starting LoadAndSpawnInfrastructure...");
+        DebugLog($"🏢 Starting LoadAndSpawnInfrastructure for campuses: {string.Join(", ", currentCampusIds)}");
 
         List<InfrastructureData> infrastructureToSpawn = null;
+        bool errorOccurred = false;
+
+        // Declare variables to hold loaded data
+        Node[] nodes = null;
+        Infrastructure[] infrastructures = null;
+        Category[] categories = null;
+
+        // Clear existing objects first
+        ClearSpawnedInfrastructure();
+
+        // Load all required JSON files (yielding outside try-catch)
+        yield return StartCoroutine(LoadNodesFromJSONAsync((loadedNodes) => {
+            nodes = loadedNodes;
+        }));
+
+        yield return StartCoroutine(LoadInfrastructureFromJSONAsync((loadedInfra) => {
+            infrastructures = loadedInfra;
+        }));
+
+        yield return StartCoroutine(LoadCategoriesFromJSONAsync((loadedCategories) => {
+            categories = loadedCategories;
+        }));
+
         try
         {
-            // Get campus IDs to spawn
-            List<string> campusIds = GetTargetCampusIds();
-            if (campusIds.Count == 0)
+            if (currentCampusIds == null || currentCampusIds.Count == 0)
             {
-                Debug.LogError("No campus IDs found in data");
-                yield break;
+                Debug.LogWarning("⚠️ No campus IDs available for infrastructure loading");
             }
-
-            DebugLog($"Target campus IDs: {string.Join(", ", campusIds)}");
-
-            // Clear existing objects first
-            ClearSpawnedInfrastructure();
-
-            // Load all required JSON files
-            Node[] nodes = LoadNodesFromJSONSync();
-            Infrastructure[] infrastructures = LoadInfrastructureFromJSONSync();
-            Category[] categories = LoadCategoriesFromJSONSync();
 
             if (nodes == null || infrastructures == null)
             {
-                Debug.LogError("Failed to load required JSON files");
-                yield break;
+                Debug.LogError("❌ Failed to load required JSON files");
+                errorOccurred = true;
             }
-
-            // Build infrastructure data with location info
-            infrastructureToSpawn = BuildInfrastructureData(nodes, infrastructures, categories, campusIds);
-            DebugLog($"Found {infrastructureToSpawn.Count} infrastructure items to spawn");
-
-            if (infrastructureToSpawn.Count == 0)
+            else
             {
-                Debug.LogWarning("No infrastructure found matching criteria");
-                yield break;
+                // Build infrastructure data with location info, filtering by campus
+                infrastructureToSpawn = BuildInfrastructureData(nodes, infrastructures, categories, currentCampusIds);
+                DebugLog($"🏢 Found {infrastructureToSpawn.Count} infrastructure items to spawn");
+
+                if (infrastructureToSpawn.Count == 0)
+                {
+                    Debug.LogWarning("⚠️ No infrastructure found matching criteria");
+                }
             }
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"Error in LoadAndSpawnInfrastructure: {e.Message}");
-            yield break;
+            Debug.LogError($"❌ Error in LoadAndSpawnInfrastructure: {e.Message}");
+            errorOccurred = true;
         }
         finally
         {
             isSpawning = false;
         }
 
+        if (errorOccurred || infrastructureToSpawn == null)
+        {
+            yield break;
+        }
+
         // Spawn the infrastructure outside the try-catch block
         yield return StartCoroutine(SpawnInfrastructureItems(infrastructureToSpawn));
 
-        hasSpawned = true;
-        Debug.Log($"InfrastructureSpawner completed: {spawnedInfrastructure.Count} infrastructure items spawned");
+        Debug.Log($"✅ InfrastructureSpawner completed: {spawnedInfrastructure.Count} infrastructure items spawned");
     }
 
-    private List<string> GetTargetCampusIds()
+    #endregion
+
+    #region JSON Loading Methods
+
+    private IEnumerator LoadNodesFromJSONAsync(System.Action<Node[]> onComplete)
     {
-        // If specific campus IDs are set in inspector, use those
-        if (targetCampusIds != null && targetCampusIds.Count > 0)
-        {
-            return targetCampusIds.Where(id => !string.IsNullOrEmpty(id)).ToList();
-        }
+        DebugLog($"📂 Loading nodes from: {GetNodesFileName()}");
 
-        // Otherwise, get all available campus IDs from the data
-        return GetAllCampusIdsFromDataSync();
+        bool loadCompleted = false;
+        Node[] nodes = null;
+
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
+            GetNodesFileName(),
+            // onSuccess
+            (jsonContent) => {
+                try
+                {
+                    DebugLog($"📄 Read {jsonContent.Length} characters from nodes file");
+                    nodes = JsonHelper.FromJson<Node>(jsonContent);
+                    DebugLog($"📊 Parsed {nodes?.Length ?? 0} nodes from JSON");
+                    loadCompleted = true;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"❌ Error parsing nodes JSON: {e.Message}");
+                    loadCompleted = true;
+                }
+            },
+            // onError
+            (error) => {
+                Debug.LogError($"❌ Error loading nodes file: {error}");
+                loadCompleted = true;
+            }
+        ));
+
+        yield return new WaitUntil(() => loadCompleted);
+        onComplete?.Invoke(nodes);
     }
 
-    private List<string> GetAllCampusIdsFromDataSync()
+    private IEnumerator LoadInfrastructureFromJSONAsync(System.Action<Infrastructure[]> onComplete)
     {
-        List<string> campusIds = new List<string>();
-        Node[] nodes = LoadNodesFromJSONSync();
+        DebugLog($"📂 Loading infrastructure from: {infrastructureFileName}");
 
-        if (nodes != null && nodes.Length > 0)
-        {
-            campusIds = nodes
-                .Where(n => n != null && n.type == "infrastructure" && n.is_active && !string.IsNullOrEmpty(n.campus_id))
-                .Select(n => n.campus_id)
-                .Distinct()
-                .ToList();
+        bool loadCompleted = false;
+        Infrastructure[] infrastructures = null;
 
-            DebugLog($"Found {campusIds.Count} unique campus IDs with infrastructure");
-        }
-        else
-        {
-            Debug.LogError("No nodes found in JSON file");
-        }
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
+            infrastructureFileName,
+            // onSuccess
+            (jsonContent) => {
+                try
+                {
+                    DebugLog($"📄 Read {jsonContent.Length} characters from infrastructure file");
+                    infrastructures = JsonHelper.FromJson<Infrastructure>(jsonContent);
+                    DebugLog($"📊 Parsed {infrastructures?.Length ?? 0} infrastructures from JSON");
+                    loadCompleted = true;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"❌ Error parsing infrastructure JSON: {e.Message}");
+                    loadCompleted = true;
+                }
+            },
+            // onError
+            (error) => {
+                Debug.LogError($"❌ Error loading infrastructure file: {error}");
+                loadCompleted = true;
+            }
+        ));
 
-        return campusIds;
+        yield return new WaitUntil(() => loadCompleted);
+        onComplete?.Invoke(infrastructures);
     }
 
-    private Node[] LoadNodesFromJSONSync()
+    private IEnumerator LoadCategoriesFromJSONAsync(System.Action<Category[]> onComplete)
     {
-        try
-        {
-            string path = Path.Combine(Application.streamingAssetsPath, nodesFileName);
-            if (File.Exists(path))
-            {
-                string json = File.ReadAllText(path);
-                DebugLog($"Read {json.Length} characters from nodes file");
-                Node[] nodes = JsonHelper.FromJson<Node>(json);
-                DebugLog($"Parsed {nodes?.Length ?? 0} nodes from JSON");
-                return nodes;
+        DebugLog($"📂 Loading categories from: {categoriesFileName}");
+
+        bool loadCompleted = false;
+        Category[] categories = null;
+
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
+            categoriesFileName,
+            // onSuccess
+            (jsonContent) => {
+                try
+                {
+                    DebugLog($"📄 Read {jsonContent.Length} characters from categories file");
+                    categories = JsonHelper.FromJson<Category>(jsonContent);
+                    DebugLog($"📊 Parsed {categories?.Length ?? 0} categories from JSON");
+                    loadCompleted = true;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogWarning($"⚠️ Error parsing categories JSON: {e.Message}");
+                    loadCompleted = true;
+                }
+            },
+            // onError
+            (error) => {
+                Debug.LogWarning($"⚠️ Categories file not found (optional): {error}");
+                loadCompleted = true;
             }
-            else
-            {
-                Debug.LogError($"Nodes file not found at path: {path}");
-                return null;
-            }
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"Error loading nodes JSON: {e.Message}");
-            return null;
-        }
+        ));
+
+        yield return new WaitUntil(() => loadCompleted);
+        onComplete?.Invoke(categories);
     }
 
-    private Infrastructure[] LoadInfrastructureFromJSONSync()
-    {
-        try
-        {
-            string path = Path.Combine(Application.streamingAssetsPath, infrastructureFileName);
-            if (File.Exists(path))
-            {
-                string json = File.ReadAllText(path);
-                DebugLog($"Read {json.Length} characters from infrastructure file");
-                Infrastructure[] infrastructures = JsonHelper.FromJson<Infrastructure>(json);
-                DebugLog($"Parsed {infrastructures?.Length ?? 0} infrastructures from JSON");
-                return infrastructures;
-            }
-            else
-            {
-                Debug.LogError($"Infrastructure file not found at path: {path}");
-                return null;
-            }
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"Error loading infrastructure JSON: {e.Message}");
-            return null;
-        }
-    }
+    #endregion
 
-    private Category[] LoadCategoriesFromJSONSync()
-    {
-        try
-        {
-            string path = Path.Combine(Application.streamingAssetsPath, categoriesFileName);
-            if (File.Exists(path))
-            {
-                string json = File.ReadAllText(path);
-                DebugLog($"📄 Read {json.Length} characters from categories file");
-                Category[] categories = JsonHelper.FromJson<Category>(json);
-                DebugLog($"📊 Parsed {categories?.Length ?? 0} categories from JSON");
-                return categories;
-            }
-            else
-            {
-                Debug.LogWarning($"⚠️ Categories file not found at path: {path}");
-                return null;
-            }
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogWarning($"⚠️ Error loading categories JSON: {e.Message}");
-            return null;
-        }
-    }
+    #region Data Processing
 
     private List<InfrastructureData> BuildInfrastructureData(Node[] nodes, Infrastructure[] infrastructures,
                                                             Category[] categories, List<string> campusIds)
@@ -286,15 +415,21 @@ public class InfrastructureSpawner : MonoBehaviour
         DebugLog($"🔍 Created infrastructure dictionary with {infraDict.Count} entries");
         DebugLog($"🔍 Created category dictionary with {categoryDict.Count} entries");
 
-        // Filter infrastructure nodes
+        // Filter infrastructure nodes by campus IDs
         var infrastructureNodes = nodes.Where(n =>
             n != null &&
             n.type == "infrastructure" &&
             n.is_active &&
-            campusIds.Contains(n.campus_id) &&
+            (campusIds == null || campusIds.Count == 0 || campusIds.Contains(n.campus_id)) &&
             !string.IsNullOrEmpty(n.related_infra_id) &&
             IsValidCoordinate(n.latitude, n.longitude)
         ).ToList();
+
+        DebugLog($"🔍 Infrastructure node filtering for campuses ({string.Join(", ", campusIds ?? new List<string>())}):");
+        DebugLog($"  - Total nodes: {nodes.Length}");
+        DebugLog($"  - Infrastructure nodes: {nodes.Count(n => n?.type == "infrastructure")}");
+        DebugLog($"  - Active infrastructure nodes: {nodes.Count(n => n?.type == "infrastructure" && n.is_active)}");
+        DebugLog($"  - Campus-filtered infrastructure nodes: {infrastructureNodes.Count}");
 
         // Build combined data
         foreach (var node in infrastructureNodes)
@@ -311,7 +446,7 @@ public class InfrastructureSpawner : MonoBehaviour
                 };
 
                 infrastructureData.Add(data);
-                DebugLog($"✅ Matched: Node {node.node_id} -> Infrastructure {infrastructure.name}");
+                DebugLog($"✅ Matched: Node {node.node_id} (Campus: {node.campus_id}) -> Infrastructure {infrastructure.name}");
             }
             else
             {
@@ -321,6 +456,10 @@ public class InfrastructureSpawner : MonoBehaviour
 
         return infrastructureData;
     }
+
+    #endregion
+
+    #region Infrastructure Spawning
 
     private IEnumerator SpawnInfrastructureItems(List<InfrastructureData> infrastructureData)
     {
@@ -354,7 +493,7 @@ public class InfrastructureSpawner : MonoBehaviour
 
                 spawnedCount++;
 
-                DebugLog($"🏢 Spawned infrastructure: {data.Infrastructure.name} (ID: {data.Infrastructure.infra_id})");
+                DebugLog($"🏢 Spawned infrastructure: {data.Infrastructure.name} (ID: {data.Infrastructure.infra_id}, Campus: {data.Node.campus_id})");
                 DebugLog($"   Geo: ({data.Node.latitude}, {data.Node.longitude})");
 
                 // Mark for yielding periodically to avoid frame drops
@@ -377,6 +516,10 @@ public class InfrastructureSpawner : MonoBehaviour
         DebugLog($"✅ Successfully spawned {spawnedCount} infrastructure items");
     }
 
+    #endregion
+
+    #region Public Utility Methods
+
     public void ClearSpawnedInfrastructure()
     {
         DebugLog($"🧹 Clearing {spawnedInfrastructure.Count} infrastructure items");
@@ -391,16 +534,26 @@ public class InfrastructureSpawner : MonoBehaviour
 
         spawnedInfrastructure.Clear();
         infraIdToComponent.Clear();
-        hasSpawned = false;
 
         DebugLog("✅ Cleared all infrastructure items");
     }
+
+    #endregion
+
+    #region Legacy/Debug Methods
 
     // Manual spawn methods for testing
     public void ManualSpawn()
     {
         DebugLog("🔄 Manual spawn triggered");
-        StartCoroutine(LoadAndSpawnInfrastructure());
+        if (currentCampusIds != null && currentCampusIds.Count > 0)
+        {
+            StartCoroutine(LoadAndSpawnInfrastructure());
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ No current campus IDs set - cannot manually spawn");
+        }
     }
 
     [System.Obsolete("Debug method - remove in production")]
@@ -408,10 +561,13 @@ public class InfrastructureSpawner : MonoBehaviour
     {
         DebugLog("🔄 Force resetting spawning state");
         isSpawning = false;
-        hasSpawned = false;
         StopAllCoroutines();
         DebugLog($"✅ Reset complete");
     }
+
+    #endregion
+
+    #region Utility Methods
 
     private bool IsValidCoordinate(float lat, float lon)
     {
@@ -428,6 +584,10 @@ public class InfrastructureSpawner : MonoBehaviour
         }
     }
 
+    #endregion
+
+    #region Debug Input Handling
+
     void Update()
     {
         // Debug controls
@@ -436,10 +596,14 @@ public class InfrastructureSpawner : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.I))
             {
                 Debug.Log($"=== INFRASTRUCTURE SPAWNER STATUS ===");
-                Debug.Log($"Has spawned: {hasSpawned}");
+                Debug.Log($"Current Map ID: {currentMapId ?? "None"}");
+                Debug.Log($"Current Campus IDs: {string.Join(", ", currentCampusIds)}");
                 Debug.Log($"Is spawning: {isSpawning}");
                 Debug.Log($"Infrastructure spawned: {spawnedInfrastructure.Count}");
                 Debug.Log($"Map assigned: {mapboxMap != null}");
+                Debug.Log($"Nodes file: {GetNodesFileName()}");
+                Debug.Log($"Infrastructure file: {infrastructureFileName}");
+                Debug.Log($"Categories file: {categoriesFileName}");
             }
 
             if (Input.GetKeyDown(KeyCode.T))
@@ -453,6 +617,8 @@ public class InfrastructureSpawner : MonoBehaviour
             }
         }
     }
+
+    #endregion
 }
 
 // Helper class to combine infrastructure data with location
@@ -559,8 +725,6 @@ public class InfrastructureNode : MonoBehaviour
             Debug.LogWarning($"⚠️ Could not load infra-specific icon: {resourcePath}");
         }
     }
-
-
 
     private void SetupCircleBackground()
     {
@@ -761,4 +925,3 @@ public class InfrastructureNode : MonoBehaviour
         }
     }
 }
-

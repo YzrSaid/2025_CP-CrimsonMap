@@ -191,11 +191,11 @@ public class MapManager : MonoBehaviour
         UpdateSpawnersForCurrentMap();
         
         // Load paths for the current map
-        // if (pathRenderer != null)
-        // {
-        //     DebugLog("🛤️ Loading pathways for current map...");
-        //     yield return StartCoroutine(pathRenderer.LoadAndRenderPathsForMap(currentMap.map_id, currentCampusIds));
-        // }
+        if (pathRenderer != null)
+        {
+            DebugLog("🛤️ Loading pathways for current map...");
+            yield return StartCoroutine(pathRenderer.LoadAndRenderPathsForMap(currentMap.map_id, currentCampusIds));
+        }
         
         // Load barriers for the current map
         if (barrierSpawner != null)
@@ -205,11 +205,11 @@ public class MapManager : MonoBehaviour
         }
         
         // Load infrastructure for the current map campuses
-        // if (infrastructureSpawner != null)
-        // {
-        //     DebugLog("🏢 Loading infrastructure for current map...");
-        //     yield return StartCoroutine(infrastructureSpawner.LoadAndSpawnForCampuses(currentCampusIds));
-        // }
+        if (infrastructureSpawner != null)
+        {
+            DebugLog("🏢 Loading infrastructure for current map...");
+            yield return StartCoroutine(infrastructureSpawner.LoadAndSpawnForCampuses(currentCampusIds));
+        }
 
         // Fire completion event
         OnMapLoadingComplete?.Invoke();
@@ -220,11 +220,11 @@ public class MapManager : MonoBehaviour
     void UpdateSpawnersForCurrentMap()
     {
         // Update PathRenderer with current campus IDs and map ID
-        // if (pathRenderer != null)
-        // {
-        //     DebugLog($"🛤️ Updating PathRenderer for map: {currentMap.map_id}, campuses: {string.Join(", ", currentCampusIds)}");
-        //     pathRenderer.SetCurrentMapData(currentMap.map_id, currentCampusIds);
-        // }
+        if (pathRenderer != null)
+        {
+            DebugLog($"🛤️ Updating PathRenderer for map: {currentMap.map_id}, campuses: {string.Join(", ", currentCampusIds)}");
+            pathRenderer.SetCurrentMapData(currentMap.map_id, currentCampusIds);
+        }
         
         // Update BarrierSpawner with current map ID and campus IDs
         if (barrierSpawner != null)
@@ -234,11 +234,11 @@ public class MapManager : MonoBehaviour
         }
         
         // Update InfrastructureSpawner with current campus IDs
-        // if (infrastructureSpawner != null)
-        // {
-        //     DebugLog($"🏢 Updating InfrastructureSpawner for campuses: {string.Join(", ", currentCampusIds)}");
-        //     infrastructureSpawner.SetTargetCampusIds(currentCampusIds);
-        // }
+        if (infrastructureSpawner != null)
+        {
+            DebugLog($"🏢 Updating InfrastructureSpawner for campuses: {string.Join(", ", currentCampusIds)}");
+            infrastructureSpawner.SetTargetCampusIds(currentCampusIds);
+        }
     }
     
     void UpdateDropdownButtonText(string mapName)
