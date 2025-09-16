@@ -1,1 +1,33 @@
-[]
+[
+  {
+    "map_id": "MAP-01",
+    "createdAt": {},
+    "campus_name": "Campus A",
+    "campus_id": "CAMP-01",
+    "id": "LPdTcLknVfDaBGJyvUnH"
+  },
+  {
+    "updatedAt": {},
+    "is_deleted": true,
+    "deletedAt": {},
+    "map_id": "MAP-03",
+    "createdAt": {},
+    "campus_name": "sdasdsadasg",
+    "campus_id": "CAMP-04",
+    "id": "OMYVL8mDyYmfkz5NsImA"
+  },
+  {
+    "map_id": "MAP-01",
+    "createdAt": {},
+    "campus_name": "Campus B",
+    "campus_id": "CAMP-02",
+    "id": "RlcqVPExr5Q8lpWjc3HF"
+  },
+  {
+    "map_id": "MAP-01",
+    "createdAt": {},
+    "campus_name": "Campus C",
+    "campus_id": "CAMP-03",
+    "id": "gFc6dcNnpMdsnr2e9ZoO"
+  }
+]

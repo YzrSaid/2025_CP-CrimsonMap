@@ -203,7 +203,7 @@ public class GlobalManager : MonoBehaviour
 
         yield return new WaitUntil(() => jsonInitComplete);
 
-        // Initialize Firebase and perform comprehensive sync WITH FALLBACK
+        // Initialize Firebase and perform comprehensive sync
         bool firebaseInitComplete = false;
         FirestoreManager.Instance.InitializeFirebase((success) =>
         {
@@ -211,11 +211,11 @@ public class GlobalManager : MonoBehaviour
 
             if (success)
             {
-                Debug.Log("Firebase initialized successfully - starting comprehensive data sync with fallback...");
-                // Use the new fallback method
-                FirestoreManager.Instance.CheckAndSyncDataWithFallback(() =>
+                Debug.Log("Firebase initialized successfully - starting comprehensive data sync...");
+                // Use the standard CheckAndSyncData method (no fallback needed since MapVersions is implemented)
+                FirestoreManager.Instance.CheckAndSyncData(() =>
                 {
-                    Debug.Log("Comprehensive sync with fallback completed!");
+                    Debug.Log("Comprehensive sync completed!");
                     PostSyncInitialization();
                 });
             }
@@ -229,15 +229,15 @@ public class GlobalManager : MonoBehaviour
         yield return new WaitUntil(() => firebaseInitComplete);
     }
 
-    // Also update your SmartDataSync method to use the fallback:
+    // Fix the SmartDataSync method too:
     public void SmartDataSync(System.Action onComplete = null)
     {
         if (FirestoreManager.Instance != null && FirestoreManager.Instance.IsReady)
         {
             var oldVersions = new Dictionary<string, string>(currentMapVersions);
 
-            // Use fallback-enabled sync
-            FirestoreManager.Instance.CheckAndSyncDataWithFallback(() =>
+            // Use standard CheckAndSyncData method
+            FirestoreManager.Instance.CheckAndSyncData(() =>
             {
                 UpdateCurrentMapVersions();
 
@@ -276,6 +276,7 @@ public class GlobalManager : MonoBehaviour
         }
     }
 
+   
     private void PostSyncInitialization()
     {
         // Load available maps and update current versions
@@ -362,8 +363,6 @@ public class GlobalManager : MonoBehaviour
     // Get system status for debugging
     public string GetSystemStatus()
     {
-        bool staticDataFresh = IsStaticDataFresh();
-
         string status = "=== CRIMSON MAP SYSTEM STATUS ===\n";
         status += $"Data Initialized: {isDataInitialized}\n";
         status += $"Available Maps: {availableMaps.Count}\n";
@@ -377,72 +376,9 @@ public class GlobalManager : MonoBehaviour
         status += $"JSON Manager Ready: {JSONFileManager.Instance != null}\n";
         status += $"Firestore Manager Ready: {FirestoreManager.Instance?.IsReady ?? false}\n";
         status += $"Onboarding Complete: {onboardingComplete}\n";
-        status += $"Static Data Fresh: {staticDataFresh}\n";
         status += $"System Ready: {IsSystemReady()}";
 
         return status;
-    }
-
-    // Helper method to check if static data is fresh
-    private bool IsStaticDataFresh()
-    {
-        if (JSONFileManager.Instance != null)
-        {
-            return JSONFileManager.Instance.IsStaticDataFresh();
-        }
-        return false;
-    }
-
-    // Method to force refresh only static data (infrastructure/categories)
-    public void ForceRefreshStaticData(System.Action onComplete = null)
-    {
-        if (!IsSystemReady())
-        {
-            Debug.LogWarning("System not ready for static data refresh");
-            onComplete?.Invoke();
-            return;
-        }
-
-        Debug.Log("Force refreshing static data (Infrastructure & Categories)...");
-
-        if (JSONFileManager.Instance != null)
-        {
-            // Clear static data cache to force re-download
-            var defaultCache = new LocalStaticDataCache
-            {
-                infrastructure_synced = false,
-                categories_synced = false,
-                cache_timestamp = 0
-            };
-            string jsonContent = JsonUtility.ToJson(defaultCache, true);
-            JSONFileManager.Instance.WriteJSONFile("static_data_cache.json", jsonContent);
-        }
-
-        // Re-sync only static data
-        if (FirestoreManager.Instance != null && FirestoreManager.Instance.IsReady)
-        {
-            // Sync static collections
-            StartCoroutine(RefreshStaticDataCoroutine(onComplete));
-        }
-        else
-        {
-            Debug.LogWarning("Firestore not ready for static data refresh");
-            onComplete?.Invoke();
-        }
-    }
-
-    private IEnumerator RefreshStaticDataCoroutine(System.Action onComplete)
-    {
-        int completedSyncs = 0;
-        int totalSyncs = 2; // Infrastructure and Categories
-
-        FirestoreManager.Instance.SyncCollectionToLocal("Infrastructure", () => completedSyncs++);
-        FirestoreManager.Instance.SyncCollectionToLocal("Categories", () => completedSyncs++);
-
-        yield return new WaitUntil(() => completedSyncs >= totalSyncs);
-
-        Debug.Log("Static data refresh completed");
-        onComplete?.Invoke();
     }
 
     private void LoadOnboardingData()

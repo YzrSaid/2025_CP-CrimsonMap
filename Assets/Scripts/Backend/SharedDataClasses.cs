@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic;
+using Firebase.Firestore;
 
 // CategoryData
 [System.Serializable]
@@ -159,7 +160,6 @@ public class StaticDataVersionInfo
     public bool infrastructure_updated;
     public bool categories_updated;
     public bool campus_updated;
-    public long last_check;
 }
 
 [System.Serializable]
@@ -168,7 +168,6 @@ public class LocalStaticDataCache
     public bool infrastructure_synced;
     public bool categories_synced;
     public bool campus_synced;
-    public long cache_timestamp;
 }
 
 [System.Serializable]

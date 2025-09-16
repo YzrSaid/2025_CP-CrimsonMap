@@ -254,8 +254,7 @@ public class JSONFileManager : MonoBehaviour
         {
             infrastructure_synced = false,
             categories_synced = false,
-            campus_synced = false, // Added campus sync flag
-            cache_timestamp = 0
+            campus_synced = false,
         };
         return JsonUtility.ToJson(defaultData, true);
     }
@@ -338,31 +337,7 @@ public class JSONFileManager : MonoBehaviour
         return false;
     }
 
-    // Method to check if static data is fresh - Updated to include campus
-    public bool IsStaticDataFresh(int maxAgeHours = 24)
-    {
-        string cacheContent = ReadJSONFile("static_data_cache.json");
-        if (!string.IsNullOrEmpty(cacheContent))
-        {
-            try
-            {
-                var cache = JsonUtility.FromJson<LocalStaticDataCache>(cacheContent);
-                long currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                long ageHours = (currentTime - cache.cache_timestamp) / 3600;
-                
-                return ageHours < maxAgeHours && 
-                       cache.infrastructure_synced && 
-                       cache.categories_synced && 
-                       cache.campus_synced; // Added campus check
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogWarning($"Failed to check static data freshness: {ex.Message}");
-            }
-        }
-        return false;
-    }
-
+  
     // Get all available map IDs from maps.json
     public List<string> GetAvailableMapIds()
     {
@@ -660,7 +635,6 @@ public class JSONFileManager : MonoBehaviour
             status += $"  - {mapId}: {versions.GetValueOrDefault(mapId, "unknown")}\n";
         }
         
-        status += $"Static Data Fresh: {IsStaticDataFresh()}\n";
         status += "Base Files Status:\n";
         
         foreach (string file in baseRequiredFiles)
