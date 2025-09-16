@@ -16,14 +16,8 @@ public class BarrierSpawner : MonoBehaviour
     public GameObject edgePrefab;
     public GameObject polygonPrefab; // For background polygons
 
-    [Header("JSON Files")]
-    public string nodesFileName = "nodes.json";
-    public string edgesFileName = "edges.json";
-    public string polygonsFileName = "polygons.json"; 
-
     [Header("Settings")]
     public bool enableDebugLogs = true;
-    public List<string> targetCampusIds = new List<string>();
     public float nodeSize = 2.5f;
     public float heightOffset = 10f;
 
@@ -37,12 +31,16 @@ public class BarrierSpawner : MonoBehaviour
     public Color defaultPolygonColor = new Color(0.2f, 0.8f, 0.2f, 0.3f);
     public Material polygonMaterial;
 
+    // Current map data - set by MapManager
+    private string currentMapId;
+    private List<string> currentCampusIds = new List<string>();
+
+    // Spawned objects tracking
     private List<BarrierNode> spawnedNodes = new List<BarrierNode>();
     private List<BarrierEdge> spawnedEdges = new List<BarrierEdge>();
     private List<CampusPolygon> spawnedPolygons = new List<CampusPolygon>();
     private Dictionary<string, BarrierNode> nodeIdToComponent = new Dictionary<string, BarrierNode>();
 
-    private bool hasSpawned = false;
     private bool isSpawning = false;
 
     void Awake()
@@ -55,7 +53,7 @@ public class BarrierSpawner : MonoBehaviour
 
     void Start()
     {
-        DebugLog("🚧 BarrierSpawner started");
+        DebugLog("🚧 BarrierSpawner started - waiting for MapManager");
 
         if (mapboxMap == null)
         {
@@ -63,10 +61,102 @@ public class BarrierSpawner : MonoBehaviour
             return;
         }
 
-        StartCoroutine(WaitForMapAndSpawn());
+        // Subscribe to MapManager events
+        if (MapManager.Instance != null)
+        {
+            MapManager.Instance.OnMapChanged += OnMapChanged;
+            MapManager.Instance.OnMapLoadingStarted += OnMapLoadingStarted;
+        }
+        else
+        {
+            Debug.LogWarning("MapManager.Instance is null - BarrierSpawner will not receive map change events");
+        }
     }
 
-    private IEnumerator WaitForMapAndSpawn()
+    void OnDestroy()
+    {
+        // Unsubscribe from MapManager events
+        if (MapManager.Instance != null)
+        {
+            MapManager.Instance.OnMapChanged -= OnMapChanged;
+            MapManager.Instance.OnMapLoadingStarted -= OnMapLoadingStarted;
+        }
+    }
+
+    #region MapManager Integration
+
+    /// <summary>
+    /// Called by MapManager to set current map data
+    /// </summary>
+    public void SetCurrentMapData(string mapId, List<string> campusIds)
+    {
+        DebugLog($"🗺️ Setting map data - Map ID: {mapId}, Campuses: {string.Join(", ", campusIds)}");
+        
+        currentMapId = mapId;
+        currentCampusIds.Clear();
+        if (campusIds != null)
+        {
+            currentCampusIds.AddRange(campusIds);
+        }
+    }
+
+    /// <summary>
+    /// Called when MapManager changes the map
+    /// </summary>
+    private void OnMapChanged(MapInfo mapInfo)
+    {
+        DebugLog($"🔄 Map changed to: {mapInfo.map_name} (ID: {mapInfo.map_id})");
+        SetCurrentMapData(mapInfo.map_id, mapInfo.campus_included);
+    }
+
+    /// <summary>
+    /// Called when MapManager starts loading a new map
+    /// </summary>
+    private void OnMapLoadingStarted()
+    {
+        DebugLog("🧹 Map loading started - clearing existing barriers");
+        ClearSpawnedNodes();
+    }
+
+    /// <summary>
+    /// Main method called by MapManager to load barriers for a specific map
+    /// </summary>
+    public IEnumerator LoadAndSpawnForMap(string mapId, List<string> campusIds)
+    {
+        if (isSpawning)
+        {
+            DebugLog("Already spawning barriers, skipping");
+            yield break;
+        }
+
+        DebugLog($"🚧 LoadAndSpawnForMap called - Map: {mapId}, Campuses: {string.Join(", ", campusIds ?? new List<string>())}");
+
+        // Update current map data
+        SetCurrentMapData(mapId, campusIds);
+
+        // Wait for map to be ready
+        yield return StartCoroutine(WaitForMapReady());
+
+        // Spawn polygons first (background layer)
+        if (enablePolygonBackgrounds)
+        {
+            yield return StartCoroutine(LoadAndSpawnPolygons());
+        }
+
+        // Spawn barrier nodes
+        yield return StartCoroutine(LoadAndSpawnBarrierNodes());
+
+        // Spawn barrier edges
+        yield return StartCoroutine(LoadAndSpawnBarrierEdges());
+
+        DebugLog($"✅ Map '{mapId}' barrier spawning completed");
+    }
+
+    #endregion
+
+    #region Map Readiness Check
+
+    private IEnumerator WaitForMapReady()
     {
         DebugLog("⏳ Waiting for map to be ready...");
 
@@ -77,7 +167,7 @@ public class BarrierSpawner : MonoBehaviour
         {
             if (mapboxMap != null && mapboxMap.gameObject.activeInHierarchy)
             {
-                DebugLog($"🗺️ Map seems ready after {elapsed:F1}s, attempting spawn...");
+                DebugLog($"🗺️ Map ready after {elapsed:F1}s");
                 break;
             }
 
@@ -96,26 +186,61 @@ public class BarrierSpawner : MonoBehaviour
             yield break;
         }
 
-        yield return new WaitForSeconds(2f);
-
-        // Spawn polygons first (background layer)
-        if (enablePolygonBackgrounds)
-        {
-            yield return StartCoroutine(LoadAndSpawnPolygons());
-        }
-
-        yield return StartCoroutine(LoadAndSpawnBarrierNodes());
-        yield return StartCoroutine(LoadAndSpawnBarrierEdges());
+        yield return new WaitForSeconds(1f); // Extra buffer time
     }
+
+    #endregion
+
+    #region File Name Generation
+
+    /// <summary>
+    /// Get the appropriate nodes file name based on current map
+    /// </summary>
+    private string GetNodesFileName()
+    {
+        if (string.IsNullOrEmpty(currentMapId))
+        {
+            Debug.LogWarning("⚠️ No current map ID set, using default nodes.json");
+            return "nodes.json";
+        }
+        
+        string fileName = $"nodes_{currentMapId}.json";
+        DebugLog($"📁 Using nodes file: {fileName}");
+        return fileName;
+    }
+
+    /// <summary>
+    /// Get the appropriate edges file name based on current map
+    /// </summary>
+    private string GetEdgesFileName()
+    {
+        if (string.IsNullOrEmpty(currentMapId))
+        {
+            Debug.LogWarning("⚠️ No current map ID set, using default edges.json");
+            return "edges.json";
+        }
+        
+        string fileName = $"edges_{currentMapId}.json";
+        DebugLog($"📁 Using edges file: {fileName}");
+        return fileName;
+    }
+
+    #endregion
+
+    #region Polygon Background Creation
 
     public IEnumerator LoadAndSpawnPolygons()
     {
         DebugLog("🔷 Starting LoadAndSpawnPolygons...");
 
-        List<string> campusIds = GetTargetCampusIds();
+        if (currentCampusIds == null || currentCampusIds.Count == 0)
+        {
+            DebugLog("⚠️ No campus IDs available for polygon creation");
+            yield break;
+        }
 
-        // Create simple polygon backgrounds for each campus
-        foreach (string campusId in campusIds)
+        // Create simple polygon backgrounds for each campus in current map
+        foreach (string campusId in currentCampusIds)
         {
             yield return StartCoroutine(CreateCampusPolygon(campusId));
         }
@@ -131,7 +256,7 @@ public class BarrierSpawner : MonoBehaviour
         List<Vector2d> campusPoints = new List<Vector2d>();
 
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
-            nodesFileName,
+            GetNodesFileName(), // Use map-specific nodes file
             (jsonContent) =>
             {
                 try
@@ -231,6 +356,10 @@ public class BarrierSpawner : MonoBehaviour
         return (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x);
     }
 
+    #endregion
+
+    #region Barrier Node Loading and Spawning
+
     public IEnumerator LoadAndSpawnBarrierNodes()
     {
         if (isSpawning)
@@ -240,19 +369,24 @@ public class BarrierSpawner : MonoBehaviour
         }
 
         isSpawning = true;
-        DebugLog("🚧 Starting LoadAndSpawnBarrierNodes...");
+        DebugLog($"🚧 Starting LoadAndSpawnBarrierNodes for map: {currentMapId}");
+
+        if (string.IsNullOrEmpty(currentMapId))
+        {
+            Debug.LogError("❌ No current map ID set - cannot load barrier nodes");
+            isSpawning = false;
+            yield break;
+        }
 
         List<Node> barrierNodes = null;
         bool loadingComplete = false;
         string errorMessage = null;
 
-        List<string> campusIds = null;
         try
         {
-            campusIds = GetTargetCampusIds();
-            if (campusIds.Count == 0)
+            if (currentCampusIds == null || currentCampusIds.Count == 0)
             {
-                DebugLog("No specific campus IDs set, will load all barriers");
+                Debug.LogWarning("⚠️ No campus IDs available for barrier loading");
             }
             ClearSpawnedNodes();
         }
@@ -263,8 +397,9 @@ public class BarrierSpawner : MonoBehaviour
             yield break;
         }
 
+        // Load from map-specific nodes file
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
-            nodesFileName,
+            GetNodesFileName(),
             (jsonContent) =>
             {
                 try
@@ -272,21 +407,21 @@ public class BarrierSpawner : MonoBehaviour
                     Node[] nodes = JsonHelper.FromJson<Node>(jsonContent);
                     if (nodes == null || nodes.Length == 0)
                     {
-                        errorMessage = "Failed to parse nodes from JSON";
+                        errorMessage = $"Failed to parse nodes from {GetNodesFileName()}";
                         return;
                     }
 
-                    barrierNodes = FilterBarrierNodes(nodes, campusIds);
+                    barrierNodes = FilterBarrierNodes(nodes, currentCampusIds);
                     loadingComplete = true;
                 }
                 catch (System.Exception e)
                 {
-                    errorMessage = $"Error parsing nodes JSON: {e.Message}";
+                    errorMessage = $"Error parsing nodes JSON from {GetNodesFileName()}: {e.Message}";
                 }
             },
             (error) =>
             {
-                errorMessage = error;
+                errorMessage = $"Error loading {GetNodesFileName()}: {error}";
             }
         ));
 
@@ -304,7 +439,7 @@ public class BarrierSpawner : MonoBehaviour
 
         if (barrierNodes == null || barrierNodes.Count == 0)
         {
-            Debug.LogWarning("⚠️ No barrier nodes found matching criteria");
+            Debug.LogWarning($"⚠️ No barrier nodes found for map {currentMapId} and campuses {string.Join(", ", currentCampusIds)}");
             isSpawning = false;
             yield break;
         }
@@ -313,13 +448,16 @@ public class BarrierSpawner : MonoBehaviour
 
         yield return StartCoroutine(SpawnNodes(barrierNodes));
 
-        hasSpawned = true;
-        Debug.Log($"✅ BarrierSpawner completed: {spawnedNodes.Count} barrier nodes spawned");
+        Debug.Log($"✅ BarrierSpawner completed: {spawnedNodes.Count} barrier nodes spawned for map {currentMapId}");
     }
+
+    #endregion
+
+    #region Barrier Edge Loading and Spawning
 
     public IEnumerator LoadAndSpawnBarrierEdges()
     {
-        DebugLog("🔗 Starting LoadAndSpawnBarrierEdges...");
+        DebugLog($"🔗 Starting LoadAndSpawnBarrierEdges for map: {currentMapId}");
 
         if (spawnedNodes.Count == 0)
         {
@@ -327,12 +465,19 @@ public class BarrierSpawner : MonoBehaviour
             yield break;
         }
 
+        if (string.IsNullOrEmpty(currentMapId))
+        {
+            Debug.LogError("❌ No current map ID set - cannot load barrier edges");
+            yield break;
+        }
+
         List<Edge> validEdges = null;
         bool loadingComplete = false;
         string errorMessage = null;
 
+        // Load from map-specific edges file
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
-            edgesFileName,
+            GetEdgesFileName(),
             (jsonContent) =>
             {
                 try
@@ -340,22 +485,22 @@ public class BarrierSpawner : MonoBehaviour
                     Edge[] edges = JsonHelper.FromJson<Edge>(jsonContent);
                     if (edges == null || edges.Length == 0)
                     {
-                        errorMessage = "No edges found in JSON";
+                        errorMessage = $"No edges found in {GetEdgesFileName()}";
                         return;
                     }
 
                     validEdges = FilterValidEdges(edges);
-                    DebugLog($"🔗 Found {validEdges.Count} valid edges to spawn");
+                    DebugLog($"🔗 Found {validEdges.Count} valid edges to spawn from {GetEdgesFileName()}");
                     loadingComplete = true;
                 }
                 catch (System.Exception e)
                 {
-                    errorMessage = $"Error parsing edges JSON: {e.Message}";
+                    errorMessage = $"Error parsing edges JSON from {GetEdgesFileName()}: {e.Message}";
                 }
             },
             (error) =>
             {
-                errorMessage = error;
+                errorMessage = $"Error loading {GetEdgesFileName()}: {error}";
             }
         ));
 
@@ -373,20 +518,13 @@ public class BarrierSpawner : MonoBehaviour
         if (validEdges != null && validEdges.Count > 0)
         {
             yield return StartCoroutine(SpawnEdges(validEdges));
-            Debug.Log($"✅ EdgeSpawner completed: {spawnedEdges.Count} edges spawned");
+            Debug.Log($"✅ EdgeSpawner completed: {spawnedEdges.Count} edges spawned for map {currentMapId}");
         }
     }
 
-    private List<string> GetTargetCampusIds()
-    {
-        if (targetCampusIds != null && targetCampusIds.Count > 0)
-        {
-            return targetCampusIds.Where(id => !string.IsNullOrEmpty(id)).ToList();
-        }
+    #endregion
 
-        DebugLog("📱 No campus IDs set in inspector - will load all barriers");
-        return new List<string>();
-    }
+    #region Node and Edge Filtering
 
     private List<Node> FilterBarrierNodes(Node[] allNodes, List<string> campusIds)
     {
@@ -394,15 +532,15 @@ public class BarrierSpawner : MonoBehaviour
             n != null &&
             n.type == "barrier" &&
             n.is_active &&
-            (campusIds.Count == 0 || campusIds.Contains(n.campus_id)) &&
+            (campusIds == null || campusIds.Count == 0 || campusIds.Contains(n.campus_id)) &&
             IsValidCoordinate(n.latitude, n.longitude)
         ).ToList();
 
-        DebugLog($"🔍 Filtering process:");
+        DebugLog($"🔍 Filtering process for map {currentMapId}:");
         DebugLog($"  - Total nodes: {allNodes.Length}");
         DebugLog($"  - Barrier nodes: {allNodes.Count(n => n?.type == "barrier")}");
         DebugLog($"  - Active barriers: {allNodes.Count(n => n?.type == "barrier" && n.is_active)}");
-        DebugLog($"  - Campus matched: {filteredNodes.Count}");
+        DebugLog($"  - Campus matched ({string.Join(", ", campusIds ?? new List<string>())}): {filteredNodes.Count}");
 
         return filteredNodes;
     }
@@ -416,7 +554,7 @@ public class BarrierSpawner : MonoBehaviour
             nodeIdToComponent.ContainsKey(edge.to_node)
         ).ToList();
 
-        DebugLog($"🔍 Edge filtering process:");
+        DebugLog($"🔍 Edge filtering process for map {currentMapId}:");
         DebugLog($"  - Total edges: {allEdges.Length}");
         DebugLog($"  - Active edges: {allEdges.Count(e => e?.is_active == true)}");
         DebugLog($"  - Valid connections: {validEdges.Count}");
@@ -424,9 +562,13 @@ public class BarrierSpawner : MonoBehaviour
         return validEdges;
     }
 
+    #endregion
+
+    #region Spawning Implementation
+
     private IEnumerator SpawnNodes(List<Node> nodes)
     {
-        DebugLog($"🚧 Spawning {nodes.Count} barrier nodes...");
+        DebugLog($"🚧 Spawning {nodes.Count} barrier nodes for map {currentMapId}...");
 
         int spawnedCount = 0;
         foreach (var node in nodes)
@@ -452,7 +594,7 @@ public class BarrierSpawner : MonoBehaviour
 
                 spawnedCount++;
 
-                DebugLog($"🚧 Spawned barrier node: {node.name} (ID: {node.node_id})");
+                DebugLog($"🚧 Spawned barrier node: {node.name} (ID: {node.node_id}, Campus: {node.campus_id})");
 
                 if (spawnedCount % 10 == 0)
                 {
@@ -469,12 +611,12 @@ public class BarrierSpawner : MonoBehaviour
             }
         }
 
-        DebugLog($"✅ Successfully spawned {spawnedCount} barrier nodes");
+        DebugLog($"✅ Successfully spawned {spawnedCount} barrier nodes for map {currentMapId}");
     }
 
     private IEnumerator SpawnEdges(List<Edge> edges)
     {
-        DebugLog($"🔗 Spawning {edges.Count} edges...");
+        DebugLog($"🔗 Spawning {edges.Count} edges for map {currentMapId}...");
 
         int spawnedCount = 0;
         foreach (var edge in edges)
@@ -522,13 +664,18 @@ public class BarrierSpawner : MonoBehaviour
             }
         }
 
-        DebugLog($"✅ Successfully spawned {spawnedCount} edges");
+        DebugLog($"✅ Successfully spawned {spawnedCount} edges for map {currentMapId}");
     }
+
+    #endregion
+
+    #region Public Utility Methods
 
     public void ClearSpawnedNodes()
     {
         DebugLog($"🧹 Clearing {spawnedNodes.Count} barrier nodes, {spawnedEdges.Count} edges, and {spawnedPolygons.Count} polygons");
 
+        // Clear polygons
         foreach (var polygon in spawnedPolygons)
         {
             if (polygon != null && polygon.gameObject != null)
@@ -538,6 +685,7 @@ public class BarrierSpawner : MonoBehaviour
         }
         spawnedPolygons.Clear();
 
+        // Clear edges
         foreach (var edge in spawnedEdges)
         {
             if (edge != null && edge.gameObject != null)
@@ -547,6 +695,7 @@ public class BarrierSpawner : MonoBehaviour
         }
         spawnedEdges.Clear();
 
+        // Clear nodes
         foreach (var barrierNode in spawnedNodes)
         {
             if (barrierNode != null && barrierNode.gameObject != null)
@@ -557,31 +706,8 @@ public class BarrierSpawner : MonoBehaviour
 
         spawnedNodes.Clear();
         nodeIdToComponent.Clear();
-        hasSpawned = false;
 
         DebugLog("✅ Cleared all barrier nodes, edges, and polygons");
-    }
-
-    public void ManualSpawn()
-    {
-        DebugLog("🔄 Manual spawn triggered");
-        StartCoroutine(LoadAndSpawnBarrierNodes());
-    }
-
-    public void ManualSpawnEdges()
-    {
-        DebugLog("🔄 Manual edge spawn triggered");
-        StartCoroutine(LoadAndSpawnBarrierEdges());
-    }
-
-    [System.Obsolete("Debug method - remove in production")]
-    public void ForceResetSpawning()
-    {
-        DebugLog("🔄 Force resetting spawning state");
-        isSpawning = false;
-        hasSpawned = false;
-        StopAllCoroutines();
-        DebugLog($"✅ Reset complete");
     }
 
     public void ForceUpdateAllEdges()
@@ -594,6 +720,49 @@ public class BarrierSpawner : MonoBehaviour
             }
         }
     }
+
+    #endregion
+
+    #region Legacy/Debug Methods
+
+    public void ManualSpawn()
+    {
+        DebugLog("🔄 Manual spawn triggered");
+        if (!string.IsNullOrEmpty(currentMapId))
+        {
+            StartCoroutine(LoadAndSpawnBarrierNodes());
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ No current map set - cannot manually spawn");
+        }
+    }
+
+    public void ManualSpawnEdges()
+    {
+        DebugLog("🔄 Manual edge spawn triggered");
+        if (!string.IsNullOrEmpty(currentMapId))
+        {
+            StartCoroutine(LoadAndSpawnBarrierEdges());
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ No current map set - cannot manually spawn edges");
+        }
+    }
+
+    [System.Obsolete("Debug method - remove in production")]
+    public void ForceResetSpawning()
+    {
+        DebugLog("🔄 Force resetting spawning state");
+        isSpawning = false;
+        StopAllCoroutines();
+        DebugLog($"✅ Reset complete");
+    }
+
+    #endregion
+
+    #region Utility Methods
 
     private bool IsValidCoordinate(float lat, float lon)
     {
@@ -610,6 +779,10 @@ public class BarrierSpawner : MonoBehaviour
         }
     }
 
+    #endregion
+
+    #region Debug Input Handling
+
     void Update()
     {
         if (Application.isEditor && enableDebugLogs)
@@ -617,12 +790,15 @@ public class BarrierSpawner : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.B))
             {
                 Debug.Log($"=== BARRIER SPAWNER STATUS ===");
-                Debug.Log($"Has spawned: {hasSpawned}");
+                Debug.Log($"Current Map ID: {currentMapId ?? "None"}");
+                Debug.Log($"Current Campus IDs: {string.Join(", ", currentCampusIds)}");
                 Debug.Log($"Is spawning: {isSpawning}");
                 Debug.Log($"Nodes spawned: {spawnedNodes.Count}");
                 Debug.Log($"Edges spawned: {spawnedEdges.Count}");
                 Debug.Log($"Polygons spawned: {spawnedPolygons.Count}");
                 Debug.Log($"Map assigned: {mapboxMap != null}");
+                Debug.Log($"Nodes file: {GetNodesFileName()}");
+                Debug.Log($"Edges file: {GetEdgesFileName()}");
             }
 
             if (Input.GetKeyDown(KeyCode.R))
@@ -651,9 +827,13 @@ public class BarrierSpawner : MonoBehaviour
             }
         }
     }
+
+    #endregion
 }
 
-// CORRECTED BarrierEdge class - exact same approach as your working PathRenderer
+// BarrierEdge, BarrierNode, and CampusPolygon classes remain the same as in original
+// (keeping them unchanged since they work properly)
+
 public class BarrierEdge : MonoBehaviour
 {
     private AbstractMap map;

@@ -9,6 +9,7 @@ using System.Linq;
 /// Central manager for handling map switching and coordinating with MapDropdown
 /// Updated to work with FirestoreManager and MapInfo instead of local JSON files
 /// Manages multiple campuses per map and handles UI updates
+/// Now supports map-specific node and edge files (nodes_map_id.json, edges_map_id.json)
 /// </summary>
 public class MapManager : MonoBehaviour
 {
@@ -18,7 +19,7 @@ public class MapManager : MonoBehaviour
     [Header("Spawner References")]
     public BarrierSpawner barrierSpawner;
     public InfrastructureSpawner infrastructureSpawner;
-    // public PathRenderer pathRenderer;
+    public PathRenderer pathRenderer;
     
     [Header("Current Map Info")]
     public MapInfo currentMap;
@@ -186,26 +187,27 @@ public class MapManager : MonoBehaviour
         // Clear existing spawned objects first
         yield return StartCoroutine(ClearAllSpawnedObjects());
         
-        // Update spawners with the new campus IDs
+        // Update spawners with the new map data
         UpdateSpawnersForCurrentMap();
         
-        // For now, just load paths since that's what you have working
+        // Load paths for the current map
         // if (pathRenderer != null)
         // {
         //     DebugLog("🛤️ Loading pathways for current map...");
-        //     yield return StartCoroutine(pathRenderer.LoadAndRenderPaths());
+        //     yield return StartCoroutine(pathRenderer.LoadAndRenderPathsForMap(currentMap.map_id, currentCampusIds));
         // }
         
-        // TODO: Load barriers and infrastructure when ready
-        // if (barrierSpawner != null)
-        // {
-        //     DebugLog("🚧 Loading barriers...");
-        //     yield return StartCoroutine(barrierSpawner.LoadAndSpawnForCampuses(currentCampusIds));
-        // }
+        // Load barriers for the current map
+        if (barrierSpawner != null)
+        {
+            DebugLog("🚧 Loading barriers for current map...");
+            yield return StartCoroutine(barrierSpawner.LoadAndSpawnForMap(currentMap.map_id, currentCampusIds));
+        }
         
+        // Load infrastructure for the current map campuses
         // if (infrastructureSpawner != null)
         // {
-        //     DebugLog("🏢 Loading infrastructure...");
+        //     DebugLog("🏢 Loading infrastructure for current map...");
         //     yield return StartCoroutine(infrastructureSpawner.LoadAndSpawnForCampuses(currentCampusIds));
         // }
 
@@ -217,25 +219,25 @@ public class MapManager : MonoBehaviour
     
     void UpdateSpawnersForCurrentMap()
     {
-        // Update PathRenderer with current campus IDs
+        // Update PathRenderer with current campus IDs and map ID
         // if (pathRenderer != null)
         // {
-        //     DebugLog($"🛤️ Updating PathRenderer for campuses: {string.Join(", ", currentCampusIds)}");
-        //     pathRenderer.targetCampusIds.Clear();
-        //     pathRenderer.targetCampusIds.AddRange(currentCampusIds);
+        //     DebugLog($"🛤️ Updating PathRenderer for map: {currentMap.map_id}, campuses: {string.Join(", ", currentCampusIds)}");
+        //     pathRenderer.SetCurrentMapData(currentMap.map_id, currentCampusIds);
         // }
         
-        // TODO: Update other spawners when ready
-        // if (barrierSpawner != null)
-        // {
-        //     // You might need to add a similar targetCampusIds property to BarrierSpawner
-        //     DebugLog("🚧 Updating BarrierSpawner for current map");
-        // }
+        // Update BarrierSpawner with current map ID and campus IDs
+        if (barrierSpawner != null)
+        {
+            DebugLog($"🚧 Updating BarrierSpawner for map: {currentMap.map_id}, campuses: {string.Join(", ", currentCampusIds)}");
+            barrierSpawner.SetCurrentMapData(currentMap.map_id, currentCampusIds);
+        }
         
+        // Update InfrastructureSpawner with current campus IDs
         // if (infrastructureSpawner != null)
         // {
-        //     // You might need to add a similar targetCampusIds property to InfrastructureSpawner
-        //     DebugLog("🏢 Updating InfrastructureSpawner for current map");
+        //     DebugLog($"🏢 Updating InfrastructureSpawner for campuses: {string.Join(", ", currentCampusIds)}");
+        //     infrastructureSpawner.SetTargetCampusIds(currentCampusIds);
         // }
     }
     
@@ -257,24 +259,25 @@ public class MapManager : MonoBehaviour
         DebugLog("🧹 Clearing all spawned objects...");
         
         // Clear path renderer objects
-        // if (pathRenderer != null)
-        // {
-        //     pathRenderer.ClearSpawnedPaths();
-        //     yield return null; // Wait a frame
-        // }
+        if (pathRenderer != null)
+        {
+            pathRenderer.ClearSpawnedPaths();
+            yield return null; // Wait a frame
+        }
         
-        // TODO: Clear other spawners when ready
-        // if (barrierSpawner != null)
-        // {
-        //     barrierSpawner.ClearSpawnedObjects();
-        //     yield return null; // Wait a frame
-        // }
+        // Clear barrier spawner objects
+        if (barrierSpawner != null)
+        {
+            barrierSpawner.ClearSpawnedNodes();
+            yield return null; // Wait a frame
+        }
         
-        // if (infrastructureSpawner != null)
-        // {
-        //     infrastructureSpawner.ClearSpawnedObjects();
-        //     yield return null; // Wait a frame
-        // }
+        // Clear infrastructure spawner objects
+        if (infrastructureSpawner != null)
+        {
+            infrastructureSpawner.ClearSpawnedInfrastructure();
+            yield return null; // Wait a frame
+        }
         
         DebugLog("✅ All spawned objects cleared");
         yield break;
@@ -361,6 +364,22 @@ public class MapManager : MonoBehaviour
         {
             Debug.LogWarning("⚠️ Cannot refresh - no current map or not initialized");
         }
+    }
+    
+    /// <summary>
+    /// Get the file name for nodes based on map ID
+    /// </summary>
+    public string GetNodesFileNameForMap(string mapId)
+    {
+        return $"nodes_{mapId}.json";
+    }
+    
+    /// <summary>
+    /// Get the file name for edges based on map ID
+    /// </summary>
+    public string GetEdgesFileNameForMap(string mapId)
+    {
+        return $"edges_{mapId}.json";
     }
     
     private void DebugLog(string message)

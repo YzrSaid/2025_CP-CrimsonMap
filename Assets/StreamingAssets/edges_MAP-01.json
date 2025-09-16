@@ -1,5 +1,53 @@
 [
-{
+    {
+        "to_node": "ND-027",
+        "path_type": null,
+        "is_deleted": false,
+        "is_active": true,
+        "from_node": "ND-026",
+        "elevations": null,
+        "edge_id": "EDG-001",
+        "distance": null,
+        "created_at": {},
+        "id": "EGohxSSF1wNtGiWz10yL"
+    },
+    {
+        "to_node": "ND-026",
+        "path_type": null,
+        "is_deleted": false,
+        "is_active": true,
+        "from_node": "ND-029",
+        "elevations": null,
+        "edge_id": "EDG-004",
+        "distance": null,
+        "created_at": {},
+        "id": "LOkIYIyloHQOIZLLyFC8"
+    },
+    {
+        "to_node": "ND-029",
+        "path_type": null,
+        "is_deleted": false,
+        "is_active": true,
+        "from_node": "ND-028",
+        "elevations": null,
+        "edge_id": "EDG-003",
+        "distance": null,
+        "created_at": {},
+        "id": "i92A89tLWDI2kTmyAPJV"
+    },
+    {
+        "to_node": "ND-028",
+        "path_type": null,
+        "is_deleted": false,
+        "is_active": true,
+        "from_node": "ND-027",
+        "elevations": null,
+        "edge_id": "EDG-002",
+        "distance": null,
+        "created_at": {},
+        "id": "xWyCI7XR9TMtCRc8cGHQ"
+    },
+    {
         "to_node": "ND-032",
         "path_type": "walkway",
         "is_deleted": false,
@@ -10,7 +58,7 @@
         "distance": 17.18,
         "created_at": "2025-09-16T08:31:52.578Z"
     },
-{
+    {
         "to_node": "ND-017",
         "path_type": "walkway",
         "is_deleted": false,
@@ -21,7 +69,7 @@
         "distance": 36.44,
         "created_at": "2025-09-16T08:37:51.525Z"
     },
-{
+    {
         "to_node": "ND-032",
         "path_type": "walkway",
         "is_deleted": false,
@@ -32,7 +80,7 @@
         "distance": 36.44,
         "created_at": "2025-09-16T08:38:54.515Z"
     },
-{
+    {
         "to_node": "ND-013",
         "path_type": "walkway",
         "is_deleted": false,
