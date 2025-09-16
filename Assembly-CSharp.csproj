@@ -228,6 +228,7 @@
     <Compile Include="Assets/Mapbox/Examples/Scripts/PoiMarkerHelper.cs" />
     <Compile Include="Assets/Scripts/App Managers/AccordionManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/PanelOpener.cs" />
+    <Compile Include="Assets/Scripts/App Managers/GPSManager.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/PanelCloser.cs" />
     <Compile Include="Assets/Mapbox/Core/Plugins/Android/UniAndroidPermission/UniAndroidPermission.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_PhoneNumberValidator.cs" />
@@ -260,7 +261,6 @@
     <Compile Include="Assets/Mapbox/Unity/Location/UnityLocationWrappers/MapboxLocationInfoMock.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/PrefabModifier.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/AngleSmoothing/AngleSmoothingNoOp.cs" />
-    <Compile Include="Assets/Scripts/Main App Scripts/GPS/GPSManager.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Utils/Vector2d/RectD.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/FileSource.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/IAsyncRequestFactory.cs" />
@@ -271,8 +271,8 @@
     <Compile Include="Assets/Scripts/Backend/FirestoreManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/LayerProperties/CoreVectorLayerProperties.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/ModifierBase.cs" />
-    <Compile Include="Assets/Mapbox/Unity/Map/AbstractMapVisualizer.cs" />
     <Compile Include="Assets/Scripts/App Managers/OnboardingManager.cs" />
+    <Compile Include="Assets/Mapbox/Unity/Map/AbstractMapVisualizer.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/CanonicalTileId.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/MapLocationOptions.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Utils/Vector2d/Vector2d.cs" />

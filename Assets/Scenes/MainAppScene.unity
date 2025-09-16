@@ -7892,7 +7892,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114478715909612932, guid: e6b749c6d877f4c19a5a5c3c0783d53b, type: 3}
       propertyPath: _previewOptions.isPreviewEnabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 114478715909612932, guid: e6b749c6d877f4c19a5a5c3c0783d53b, type: 3}
       propertyPath: _imagery._layerProperty.sourceType
@@ -9363,7 +9363,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c641ad89e106e19a875946415a58581, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gpsText: {fileID: 1408601673}
 --- !u!114 &1465186285
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10210,12 +10209,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mapboxMap: {fileID: 1699060734}
-  pathRenderer: {fileID: 0}
   dragSensitivity: 0.000001
   zoomSensitivity: 0.5
   minZoom: 16
   maxZoom: 23
   dragThreshold: 0.5
+  myLocationZoomLevel: 20
+  useSmoothedCoordinates: 1
+  enableLocationDebugging: 1
 --- !u!1 &1617147661
 GameObject:
   m_ObjectHideFlags: 0
@@ -10911,7 +10912,7 @@ MonoBehaviour:
   mapboxMap: {fileID: 1699060734}
   userIndicatorPrefab: {fileID: 2531190016571084963, guid: 4a7abfc3061df376ab00315da1deb1cd, type: 3}
   shadowConePrefab: {fileID: 5720313531753482208, guid: 22769e8ad43aabd6492c58e34bf5e09b, type: 3}
-  heightOffset: 15
+  heightOffset: 20
   updateInterval: 0.2
   positionSmoothness: 4
   rotationSmoothness: 1
@@ -12701,9 +12702,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: MapButtonsAndControlsScript, Assembly-CSharp
-        m_MethodName: CenterOnUserPin
+      - m_Target: {fileID: 1607769277}
+        m_TargetAssemblyTypeName: MapInteraction, Assembly-CSharp
+        m_MethodName: CenterOnMyLocation
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
