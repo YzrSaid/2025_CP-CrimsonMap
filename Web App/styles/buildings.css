@@ -125,11 +125,12 @@ body {
 
 /* Right content */
 .right {
-    flex: 1;
+    flex: 1 1 0%;
+    min-width: 0;
     display: flex;
     flex-direction: column;
+    overflow-x: auto;
 }
-
 /* Top Bar */
 .topbar {
     background-color: #fff;
