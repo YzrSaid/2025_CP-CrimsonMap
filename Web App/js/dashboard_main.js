@@ -1,7 +1,7 @@
   // ======================= FIREBASE SETUP ===========================
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
   import {
-    getFirestore, collection, getDocs, query, orderBy, limit, doc, getDoc, updateDoc
+    getFirestore, collection, getDocs, query, orderBy, limit, doc, getDoc
   } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
   import { firebaseConfig } from "./../firebaseConfig.js";
 
@@ -128,6 +128,7 @@ async function populateMaps() {
     try {
         const mapsSnap = await getDocs(collection(db, "MapVersions"));
 
+        // 🔹 Populate map dropdown
         mapsSnap.forEach(docSnap => {
             const mapData = docSnap.data();
             const mapId = docSnap.id;
@@ -138,18 +139,23 @@ async function populateMaps() {
         });
 
         if (mapsSnap.docs.length > 0) {
-            const firstMapId = mapsSnap.docs[0].id;
-            mapSelect.value = firstMapId;
-            await populateCampuses(firstMapId);
-            await populateVersions(firstMapId);
+            // 🔹 Select the current active map by default
+            const currentMapDoc = mapsSnap.docs.find(d => d.data().current_active_map === d.id) || mapsSnap.docs[0];
+            const mapId = currentMapDoc.id;
+            mapSelect.value = mapId;
+
+            await populateCampuses(mapId, true);
+            await populateVersions(mapId, true);
+            await loadMap(mapId); // Load initial map view
         }
 
-        // When Map changes
+        // 🔹 When Map changes (view only)
         mapSelect.addEventListener("change", async () => {
             const selectedMapId = mapSelect.value;
             if (!selectedMapId) return;
-            await populateCampuses(selectedMapId);
-            await populateVersions(selectedMapId);
+            await populateCampuses(selectedMapId, false);
+            await populateVersions(selectedMapId, false);
+            await loadMap(selectedMapId); // Load map view for selected map
         });
 
     } catch (err) {
@@ -157,7 +163,7 @@ async function populateMaps() {
     }
 }
 
-async function populateCampuses(mapId) {
+async function populateCampuses(mapId, selectCurrent = true) {
     const campusSelect = document.getElementById("campusSelect");
     campusSelect.innerHTML = '<option value="">Select Campus</option>';
 
@@ -167,26 +173,31 @@ async function populateCampuses(mapId) {
 
     const mapData = mapDocSnap.data();
     const campuses = mapData.campus_included || [];
+    const currentCampus = mapData.current_active_campus || "";
 
     campuses.forEach(campusId => {
         const option = document.createElement("option");
         option.value = campusId;
-        option.textContent = campusId; // You can fetch the campus name if needed
+        option.textContent = campusId;
         campusSelect.appendChild(option);
     });
 
-    // Optional: select first campus by default
-    if (campuses.length > 0) campusSelect.value = campuses[0];
+    // Select the current campus by default if requested
+    if (selectCurrent && currentCampus && campuses.includes(currentCampus)) {
+        campusSelect.value = currentCampus;
+    } else if (campuses.length > 0) {
+        campusSelect.value = campuses[0];
+    }
 
-    // When campus changes, you could filter nodes/edges tables here
-    campusSelect.addEventListener("change", () => {
+    // 🔹 When campus changes, only update view
+    campusSelect.addEventListener("change", async () => {
         const selectedCampus = campusSelect.value;
-        // e.g., renderNodesTable(selectedCampus)
-        // e.g., renderEdgesTable(selectedCampus)
+        if (!selectedCampus) return;
+        await loadMap(mapId, selectedCampus); // View selected campus
     });
 }
 
-async function populateVersions(mapId) {
+async function populateVersions(mapId, selectCurrent = true) {
     const versionSelect = document.getElementById("versionSelect");
     versionSelect.innerHTML = '<option value="">Select Version</option>';
 
@@ -207,27 +218,21 @@ async function populateVersions(mapId) {
         versionSelect.appendChild(option);
     });
 
-    // Set dropdown to current version
-    if (currentVersion) versionSelect.value = currentVersion;
+    if (selectCurrent && currentVersion) {
+        versionSelect.value = currentVersion;
+    } else if (versionsSnap.docs.length > 0) {
+        versionSelect.value = versionsSnap.docs[0].id;
+    }
 
+    // 🔹 When version changes, only update view
     versionSelect.addEventListener("change", async () => {
         const selectedVersion = versionSelect.value;
         if (!selectedVersion) return;
-
-        try {
-            await updateDoc(mapDocRef, { current_version: selectedVersion });
-            alert(`Current version updated to ${selectedVersion}`);
-
-            Array.from(versionSelect.options).forEach(opt => {
-                opt.textContent = opt.value + (opt.value === selectedVersion ? " ✅" : "");
-            });
-        } catch (err) {
-            console.error("Error updating current version:", err);
-        }
+        await loadMap(mapId, document.getElementById("campusSelect").value, selectedVersion); // View selected version
     });
 }
 
-// Run on page load
+// Call on page load
 document.addEventListener("DOMContentLoaded", () => {
     populateMaps();
 });
@@ -241,188 +246,227 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-  async function loadMap() {
-    try {
-      const [infraSnap, campusSnap] = await Promise.all([
-        getDocs(collection(db, "Infrastructure")),
-        getDocs(collection(db, "Campus"))
-      ]);
+async function loadMap(mapId = null, campusId = null, versionId = null) {
+  try {
+    // ---- Get map versions ----
+    const mapVersionsRef = collection(db, "MapVersions");
+    const mapsSnapshot = await getDocs(mapVersionsRef);
 
-      const infraMap = {};
-      infraSnap.forEach(doc => infraMap[doc.data().infra_id] = doc.data().name);
+    if (mapsSnapshot.empty) {
+      console.error("No MapVersions found");
+      return;
+    }
 
-      const campusMap = {};
-      campusSnap.forEach(doc => campusMap[doc.data().campus_id] = doc.data().campus_name);
+    // Use provided mapId or fallback to first
+    let mapDoc;
+    if (mapId) {
+      mapDoc = mapsSnapshot.docs.find(d => d.id === mapId);
+    }
+    if (!mapDoc) mapDoc = mapsSnapshot.docs[0];
 
-      // ---- Fetch Nodes ----
-      const q = query(collection(db, "Nodes"), orderBy("created_at", "asc"));
-      const querySnapshot = await getDocs(q);
+    const mapDocId = mapDoc.id;
+    const mapData = mapDoc.data();
 
-      const nodes = [];
-      querySnapshot.forEach(docSnap => {
-        const d = docSnap.data();
-        nodes.push({
-          ...d,
-          infraName: d.related_infra_id ? (infraMap[d.related_infra_id] || d.related_infra_id) : "-",
-          campusName: d.campus_id ? (campusMap[d.campus_id] || d.campus_id) : "-"
-        });
-      });
+    // Use provided versionId or current_version or fallback
+    const currentVersion = versionId || mapData.current_version || "v1.0.0";
 
-      // ------------------ Convert Lat/Lng to X/Y ------------------
-const origin = { lat: 6.913341, lng: 122.063693 }; // your point of origin
+    // Fetch nodes from version
+    const versionRef = doc(db, "MapVersions", mapDocId, "versions", currentVersion);
+    const versionSnap = await getDoc(versionRef);
+    if (!versionSnap.exists()) {
+      console.error("Version not found:", currentVersion);
+      return;
+    }
 
-function latLngToXY(lat, lng, origin) {
-  const R = 6371000; // Earth radius in meters
-  const dLat = (lat - origin.lat) * Math.PI / 180;
-  const dLng = (lng - origin.lng) * Math.PI / 180;
+    let nodes = versionSnap.data().nodes || [];
+    const edges = versionSnap.data().edges || [];
 
-  const x = dLng * Math.cos(origin.lat * Math.PI / 180) * R;
-  const y = dLat * R;
+    // Filter nodes by campusId if provided
+    if (campusId) {
+      nodes = nodes.filter(n => n.campus_id === campusId);
+    }
 
-  return { x, y };
+    // Fetch Infra + Campus names
+    const [infraSnap, campusSnap] = await Promise.all([
+      getDocs(collection(db, "Infrastructure")),
+      getDocs(collection(db, "Campus"))
+    ]);
+
+    const infraMap = {};
+    infraSnap.forEach(doc => infraMap[doc.data().infra_id] = doc.data().name);
+
+    const campusMap = {};
+    campusSnap.forEach(doc => campusMap[doc.data().campus_id] = doc.data().campus_name);
+
+    nodes.forEach(d => {
+      d.infraName = d.related_infra_id ? (infraMap[d.related_infra_id] || d.related_infra_id) : "-";
+      d.campusName = d.campus_id ? (campusMap[d.campus_id] || d.campus_id) : "-";
+    });
+
+    // Convert Lat/Lng to X/Y
+    const origin = { lat: 6.913341, lng: 122.063693 };
+    function latLngToXY(lat, lng, origin) {
+      const R = 6371000;
+      const dLat = (lat - origin.lat) * Math.PI / 180;
+      const dLng = (lng - origin.lng) * Math.PI / 180;
+      const x = dLng * Math.cos(origin.lat * Math.PI / 180) * R;
+      const y = dLat * R;
+      return { x, y };
+    }
+    nodes.filter(n => n.type === "infrastructure")
+         .forEach(b => b.cartesian = latLngToXY(b.latitude, b.longitude, origin));
+
+    // ---- Render map ----
+    const mapContainer = document.getElementById("map-overview");
+
+    // Remove existing Leaflet map if any
+    if (mapContainer._leaflet_id) {
+      mapContainer._leaflet_id = null;
+      mapContainer.innerHTML = "";
+    }
+
+    const map = L.map("map-overview", {
+      center: [6.9130, 122.0630],
+      zoom: 18,
+      zoomControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      boxZoom: false,
+      keyboard: false
+    });
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors"
+    }).addTo(map);
+
+    renderDataOnMap(map, nodes);
+
+    // Modal logic
+    const modal = document.getElementById("mapModal");
+    const closeBtn = document.getElementById("closeModal");
+
+    mapContainer.addEventListener("click", () => {
+      modal.style.display = "block";
+      setTimeout(() => {
+        const mapFull = L.map("map-full", { center: [6.9130, 122.0630], zoom: 18, zoomControl: true });
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(mapFull);
+        renderDataOnMap(mapFull, nodes, true);
+      }, 200);
+    });
+
+    closeBtn.addEventListener("click", () => { modal.style.display = "none"; });
+
+  } catch (err) {
+    console.error("Error loading map data:", err);
+  }
 }
 
-// Loop through buildings only
-nodes
-  .filter(n => n.type === "infrastructure")
-  .forEach(building => {
-    const { x, y } = latLngToXY(building.latitude, building.longitude, origin);
-    console.log(`Building: ${building.name} → X: ${x.toFixed(2)}, Y: ${y.toFixed(2)}`);
-    building.cartesian = { x, y }; // optional: store inside the node
+
+
+// ---- Show details in popup ----
+function showDetails(node) {
+  let content = `
+    <b>${node.name || "Unnamed"}</b><br>
+    Type: ${node.type || "-"}<br>
+    Lat: ${node.latitude}<br>
+    Lng: ${node.longitude}
+  `;
+
+  if (node.campusName) content += `<br>Campus: ${node.campusName}`;
+  if (node.infraName) content += `<br>Infrastructure: ${node.infraName}`;
+
+  L.popup()
+    .setLatLng([node.latitude, node.longitude])
+    .setContent(content)
+    .openOn(node._map || window._activeMap);
+}
+
+// ---- Render barriers, buildings, rooms ----
+function renderDataOnMap(map, data, enableClick = false) {
+  window._activeMap = map; // keep reference for popups
+
+  // --- Barriers (polygon + corner markers) ---
+  const barrierNodes = data.filter(d => d.type === "barrier");
+
+  if (barrierNodes.length > 0) {
+    // 🔑 Step 1: Get centroid
+    const centroid = barrierNodes.reduce(
+      (acc, n) => {
+        acc.lat += n.latitude;
+        acc.lng += n.longitude;
+        return acc;
+      },
+      { lat: 0, lng: 0 }
+    );
+    centroid.lat /= barrierNodes.length;
+    centroid.lng /= barrierNodes.length;
+
+    // 🔑 Step 2: Sort nodes by angle around centroid
+    const sortedNodes = [...barrierNodes].sort((a, b) => {
+      const angleA = Math.atan2(a.latitude - centroid.lat, a.longitude - centroid.lng);
+      const angleB = Math.atan2(b.latitude - centroid.lat, b.longitude - centroid.lng);
+      return angleA - angleB;
+    });
+
+    // 🔑 Step 3: Build ordered coordinates
+    const barrierCoords = sortedNodes.map(b => [b.latitude, b.longitude]);
+
+    // Draw polygon
+    const polygon = L.polygon(barrierCoords, {
+      color: "green",
+      weight: 3,
+      fillOpacity: 0.1
+    }).addTo(map);
+
+    if (enableClick) {
+      polygon.on("click", (e) => {
+        showDetails({
+          name: "Campus Area",
+          type: "Barrier Fence",
+          latitude: e.latlng.lat.toFixed(6),
+          longitude: e.latlng.lng.toFixed(6)
+        });
+      });
+
+      // Corner markers
+      sortedNodes.forEach(node => {
+        const cornerMarker = L.circleMarker([node.latitude, node.longitude], {
+          radius: 6,
+          color: "darkgreen",
+          fillColor: "lightgreen",
+          fillOpacity: 0.9
+        }).addTo(map);
+
+        cornerMarker.on("click", () => showDetails({ ...node, _map: map }));
+      });
+    }
+  }
+
+  // --- Infrastructure (Buildings) ---
+  data.filter(d => d.type === "infrastructure").forEach(building => {
+    const marker = L.circleMarker([building.latitude, building.longitude], {
+      radius: 8,
+      color: "blue",
+      fillColor: "lightblue",
+      fillOpacity: 0.7
+    }).addTo(map);
+
+    if (enableClick) {
+      marker.on("click", () => showDetails({ ...building, _map: map }));
+    }
   });
 
-      // ---- Small overview map ----
-      const map = L.map("map-overview", {
-        center: [6.9130, 122.0630],
-        zoom: 18,
-        zoomControl: false,
-        dragging: false,
-        scrollWheelZoom: false,
-        doubleClickZoom: false,
-        boxZoom: false,
-        keyboard: false
-      });
+  // --- Rooms ---
+  data.filter(d => d.type === "room").forEach(room => {
+    const marker = L.marker([room.latitude, room.longitude]).addTo(map);
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap contributors"
-      }).addTo(map);
-
-      renderDataOnMap(map, nodes);
-
-      // ---- Modal logic ----
-      const modal = document.getElementById("mapModal");
-      const closeBtn = document.getElementById("closeModal");
-
-      document.getElementById("map-overview").addEventListener("click", () => {
-        modal.style.display = "block";
-
-        setTimeout(() => {
-          const mapFull = L.map("map-full", {
-            center: [6.9130, 122.0630],
-            zoom: 18,
-            zoomControl: true
-          });
-
-          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution: "© OpenStreetMap"
-          }).addTo(mapFull);
-
-          renderDataOnMap(mapFull, nodes, true);
-        }, 200);
-      });
-
-      closeBtn.addEventListener("click", () => {
-        modal.style.display = "none";
-      });
-
-    } catch (err) {
-      console.error("Error loading map data:", err);
+    if (enableClick) {
+      marker.on("click", () => showDetails({ ...room, _map: map }));
     }
-  }
+  });
+}
 
-  // ---- Show details in popup ----
-  function showDetails(node) {
-    let content = `
-      <b>${node.name || "Unnamed"}</b><br>
-      Type: ${node.type || "-"}<br>
-      Lat: ${node.latitude}<br>
-      Lng: ${node.longitude}
-    `;
-
-    if (node.campusName) content += `<br>Campus: ${node.campusName}`;
-    if (node.infraName) content += `<br>Infrastructure: ${node.infraName}`;
-
-    L.popup()
-      .setLatLng([node.latitude, node.longitude])
-      .setContent(content)
-      .openOn(node._map || window._activeMap); // fallback if needed
-  }
-
-  // ---- Render barriers, buildings, rooms ----
-  function renderDataOnMap(map, data, enableClick = false) {
-    window._activeMap = map; // keep reference for popups
-
-    // --- Barriers (polygon + corner markers) ---
-    const barrierNodes = data.filter(d => d.type === "barrier");
-    const barrierCoords = barrierNodes.map(b => [b.latitude, b.longitude]);
-
-    if (barrierCoords.length > 0) {
-      // Draw polygon
-      const polygon = L.polygon(barrierCoords, {
-        color: "green",
-        weight: 3,
-        fillOpacity: 0.1
-      }).addTo(map);
-
-      if (enableClick) {
-        // Click inside polygon → campus info
-        polygon.on("click", (e) => {
-          showDetails({
-            name: "WMSU Camp B",
-            type: "Campus Area",
-            latitude: e.latlng.lat.toFixed(6),
-            longitude: e.latlng.lng.toFixed(6)
-          });
-        });
-
-        // Corner markers
-        barrierNodes.forEach(node => {
-          const cornerMarker = L.circleMarker([node.latitude, node.longitude], {
-            radius: 6,
-            color: "darkgreen",
-            fillColor: "lightgreen",
-            fillOpacity: 0.9
-          }).addTo(map);
-
-          cornerMarker.on("click", () => showDetails({ ...node, _map: map }));
-        });
-      }
-    }
-
-    // --- Infrastructure (Buildings) ---
-    data.filter(d => d.type === "infrastructure").forEach(building => {
-      const marker = L.circleMarker([building.latitude, building.longitude], {
-        radius: 8,
-        color: "blue",
-        fillColor: "lightblue",
-        fillOpacity: 0.7
-      }).addTo(map);
-
-      if (enableClick) {
-        marker.on("click", () => showDetails({ ...building, _map: map }));
-      }
-    });
-
-    // --- Rooms ---
-    data.filter(d => d.type === "room").forEach(room => {
-      const marker = L.marker([room.latitude, room.longitude]).addTo(map);
-
-      if (enableClick) {
-        marker.on("click", () => showDetails({ ...room, _map: map }));
-      }
-    });
-
-  }
   
 
   document.addEventListener("DOMContentLoaded", loadMap);
