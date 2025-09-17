@@ -1,7 +1,7 @@
 // ======================= FIREBASE SETUP ===========================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import { getFirestore, setDoc, collection, addDoc, getDocs, query, orderBy, where, updateDoc, doc, deleteField, getDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-import { firebaseConfig } from "./../firebaseConfig.js";
+import { firebaseConfig } from "../firebaseConfig.mjs";
 
 
 // Initialize Firebase and Firestore
@@ -40,13 +40,30 @@ async function renderCategoriesTable() {
     tbody.innerHTML = "";
 
     try {
-        const querySnapshot = await getDocs(collection(db, "Categories"));
-        const categories = querySnapshot.docs
-            .map(doc => doc.data())
-            .filter(data => !data.is_deleted); // ✅ Only show categories not deleted
+        let categories = [];
 
-        categories.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
+        if (navigator.onLine) {
+            // 🔹 Online: Firestore
+            const querySnapshot = await getDocs(collection(db, "Categories"));
+            categories = querySnapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(data => !data.is_deleted);
+        } else {
+            // 🔹 Offline: JSON fallback
+            const res = await fetch("../assets/firestore/Categories.json");
+            const dataJson = await res.json();
+            categories = dataJson.filter(data => !data.is_deleted);
+            console.log("📂 Offline → Categories loaded from JSON");
+        }
 
+        // Sort by createdAt
+        categories.sort((a, b) => {
+            const timeA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+            const timeB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+            return timeA - timeB;
+        });
+
+        // Render rows
         categories.forEach((data, index) => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
@@ -61,10 +78,15 @@ async function renderCategoriesTable() {
             `;
             tbody.appendChild(tr);
         });
+
     } catch (err) {
         console.error("Error loading categories: ", err);
     }
 }
+
+// Call on page load
+document.addEventListener("DOMContentLoaded", renderCategoriesTable);
+
 
 
 // ----------- Add Category Handler -----------
@@ -225,19 +247,44 @@ async function renderInfraTable() {
     tbody.innerHTML = "";
 
     try {
-        const querySnapshot = await getDocs(collection(db, "Infrastructure"));
-        const infras = querySnapshot.docs.map(doc => doc.data()).filter(data => !data.is_deleted);
-        infras.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
+        let infras = [];
+        let categories = [];
 
-        // Get all categories once
-        const catSnap = await getDocs(collection(db, "Categories"));
-        const catMap = {};
-        catSnap.forEach(c => {
-            const data = c.data();
-            catMap[data.category_id] = data.name;
+        if (navigator.onLine) {
+            // 🔹 Online: Firestore
+            const infraSnap = await getDocs(collection(db, "Infrastructure"));
+            infras = infraSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(d => !d.is_deleted);
+
+            const catSnap = await getDocs(collection(db, "Categories"));
+            categories = catSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(d => !d.is_deleted);
+        } else {
+            // 🔹 Offline: JSON fallback
+            const [infraRes, catRes] = await Promise.all([
+                fetch("../assets/firestore/Infrastructure.json"),
+                fetch("../assets/firestore/Categories.json")
+            ]);
+
+            infras = (await infraRes.json()).filter(d => !d.is_deleted);
+            categories = (await catRes.json()).filter(d => !d.is_deleted);
+
+            console.log("📂 Offline → Infrastructure and Categories loaded from JSON");
+        }
+
+        // Sort infrastructure by createdAt
+        infras.sort((a, b) => {
+            const timeA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+            const timeB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+            return timeA - timeB;
         });
 
-        for (const data of infras) {
+        // Create category map
+        const catMap = {};
+        categories.forEach(c => {
+            catMap[c.category_id || c.id] = c.name;
+        });
+
+        // Render rows
+        infras.forEach(data => {
             const categoryName = catMap[data.category_id] || "N/A";
             const tr = document.createElement("tr");
             tr.innerHTML = `
@@ -252,11 +299,16 @@ async function renderInfraTable() {
                 </td>
             `;
             tbody.appendChild(tr);
-        }
+        });
+
     } catch (err) {
         console.error("Error loading infrastructure: ", err);
     }
 }
+
+// Call on page load
+document.addEventListener("DOMContentLoaded", renderInfraTable);
+
 
 
 // ======================= ROOM SECTION =========================
@@ -400,43 +452,68 @@ async function renderRoomsTable() {
     tbody.innerHTML = "";
 
     try {
-        const querySnapshot = await getDocs(collection(db, "Rooms"));
-        let rooms = querySnapshot.docs.map(doc => doc.data());
+        let rooms = [];
+        let buildings = [];
 
-        // Filter out deleted rooms
-        rooms = rooms.filter(room => !room.is_deleted);
+        if (navigator.onLine) {
+            // 🔹 Online: Firestore
+            const roomsSnap = await getDocs(collection(db, "Rooms"));
+            rooms = roomsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(r => !r.is_deleted);
 
-        // Sort by createdAt
-        rooms.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
+            const buildingSnap = await getDocs(collection(db, "Buildings"));
+            buildings = buildingSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } else {
+            // 🔹 Offline: JSON fallback
+            const [roomsRes, buildingRes] = await Promise.all([
+                fetch("../assets/firestore/Rooms.json"),
+                fetch("../assets/firestore/Buildings.json")
+            ]);
 
-        // Get all buildings once to avoid many queries
-        const buildingSnap = await getDocs(collection(db, "Buildings"));
-        const buildingsMap = {};
-        buildingSnap.forEach(b => {
-            const data = b.data();
-            buildingsMap[data.building_id] = data.name;
+            rooms = (await roomsRes.json()).filter(r => !r.is_deleted);
+            buildings = await buildingRes.json();
+
+            console.log("📂 Offline → Rooms and Buildings loaded from JSON");
+        }
+
+        // Sort rooms by createdAt
+        rooms.sort((a, b) => {
+            const timeA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+            const timeB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+            return timeA - timeB;
         });
 
-        for (const data of rooms) {
+        // Map building names
+        const buildingsMap = {};
+        buildings.forEach(b => {
+            buildingsMap[b.building_id || b.id] = b.name;
+        });
+
+        // Render table rows
+        rooms.forEach(data => {
             const buildingName = buildingsMap[data.building_id] || "N/A";
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${data.room_id}</td>
                 <td>${data.name}</td>
                 <td>${buildingName}</td>
-                <td>${data.location}</td>
-                <td>${data.latitude}, ${data.longitude}</td>
+                <td>${data.location || ""}</td>
+                <td>${data.latitude || ""}, ${data.longitude || ""}</td>
                 <td class="actions">
                     <button class="edit"><i class="fas fa-edit"></i></button>
                     <button class="delete"><i class="fas fa-trash"></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
-        }
+        });
+
     } catch (err) {
         console.error("Error loading rooms: ", err);
     }
 }
+
+// Call on page load
+document.addEventListener("DOMContentLoaded", renderRoomsTable);
+
 
 
 
@@ -651,31 +728,40 @@ async function renderMapsTable() {
     tbody.innerHTML = "";
 
     try {
-        const querySnapshot = await getDocs(collection(db, "MapVersions"));
-        if (querySnapshot.empty) {
-            console.warn("No maps found in MapVersions.");
-            return;
+        let maps = [];
+        let campuses = [];
+
+        if (navigator.onLine) {
+            // 🔹 Online: Firestore
+            const mapsSnap = await getDocs(collection(db, "MapVersions"));
+            maps = mapsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(m => !m.is_deleted);
+
+            const campusSnap = await getDocs(collection(db, "Campus"));
+            campuses = campusSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } else {
+            // 🔹 Offline: JSON fallback
+            const [mapsRes, campusRes] = await Promise.all([
+                fetch("../assets/firestore/MapVersions.json"),
+                fetch("../assets/firestore/Campus.json")
+            ]);
+
+            maps = (await mapsRes.json()).filter(m => !m.is_deleted);
+            campuses = await campusRes.json();
+            console.log("📂 Offline → Maps and Campuses loaded from JSON");
         }
 
-        const maps = querySnapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(data => !data.is_deleted); // ✅ Only show maps not deleted
-
-        // Sort by createdAt
+        // Sort maps by createdAt
         maps.sort((a, b) => {
-            if (a.createdAt && b.createdAt) return a.createdAt.toMillis() - b.createdAt.toMillis();
-            return 0;
+            const tA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt?.toMillis?.() || 0;
+            const tB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt?.toMillis?.() || 0;
+            return tA - tB;
         });
 
-        // Get all campuses for display
-        const campusSnap = await getDocs(collection(db, "Campus"));
+        // Build campus lookup
         const campusMap = {};
-        campusSnap.forEach(c => {
-            const data = c.data();
-            campusMap[data.campus_id] = data.campus_name;
-        });
+        campuses.forEach(c => campusMap[c.campus_id || c.id] = c.campus_name);
 
-        maps.forEach((data) => {
+        maps.forEach(data => {
             let campusNames = "—";
             if (Array.isArray(data.campus_included) && data.campus_included.length > 0) {
                 campusNames = data.campus_included.map(id => campusMap[id] || id).join(", ");
@@ -685,15 +771,11 @@ async function renderMapsTable() {
             tr.innerHTML = `
                 <td>${data.map_id || "—"}</td>
                 <td>${data.map_name || "—"}</td>
-                <td>${data.current_version || "—"}</td>
+                <td>${data.current_version || (data.versions && data.versions[0]?.id) || "—"}</td>
                 <td>${campusNames}</td>
                 <td class="actions">
-                    <button class="edit" data-id="${data.id}">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="delete" data-id="${data.id}">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <button class="edit" data-id="${data.id}"><i class="fas fa-edit"></i></button>
+                    <button class="delete" data-id="${data.id}"><i class="fas fa-trash"></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -704,6 +786,7 @@ async function renderMapsTable() {
         console.error("Error loading maps: ", err);
     }
 }
+
 
 
 // ======================= CAMPUS SECTION =========================
@@ -805,23 +888,40 @@ async function renderCampusTable() {
     tbody.innerHTML = "";
 
     try {
-        const querySnapshot = await getDocs(collection(db, "Campus"));
-        const campuses = querySnapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(data => !data.is_deleted); // ✅ Only show not deleted
+        let campuses = [];
+        let maps = [];
 
-        campuses.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
+        if (navigator.onLine) {
+            // 🔹 Online: Firestore
+            const campusSnap = await getDocs(collection(db, "Campus"));
+            campuses = campusSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(c => !c.is_deleted);
 
-        // Get all maps for display
-        const mapSnap = await getDocs(collection(db, "Maps"));
-        const mapMap = {};
-        mapSnap.forEach(m => {
-            const data = m.data();
-            mapMap[data.map_id] = data.map_name;
+            const mapsSnap = await getDocs(collection(db, "MapVersions"));
+            maps = mapsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(m => !m.is_deleted);
+        } else {
+            // 🔹 Offline: JSON fallback
+            const [campusRes, mapsRes] = await Promise.all([
+                fetch("../assets/firestore/Campus.json"),
+                fetch("../assets/firestore/MapVersions.json")
+            ]);
+            campuses = (await campusRes.json()).filter(c => !c.is_deleted);
+            maps = (await mapsRes.json()).filter(m => !m.is_deleted);
+            console.log("📂 Offline → Campuses and Maps loaded from JSON");
+        }
+
+        // Sort campuses by createdAt
+        campuses.sort((a, b) => {
+            const tA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt?.toMillis?.() || 0;
+            const tB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt?.toMillis?.() || 0;
+            return tA - tB;
         });
 
-        campuses.forEach((data) => {
-            const mapName = mapMap[data.map_id] || data.map_id;
+        // Build map lookup
+        const mapMap = {};
+        maps.forEach(m => mapMap[m.map_id || m.id] = m.map_name);
+
+        campuses.forEach(data => {
+            const mapName = mapMap[data.map_id] || data.map_id || "—";
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${data.campus_id}</td>
@@ -840,6 +940,7 @@ async function renderCampusTable() {
         console.error("Error loading campuses: ", err);
     }
 }
+
 
 
 

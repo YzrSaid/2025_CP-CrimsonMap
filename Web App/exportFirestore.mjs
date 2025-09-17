@@ -1,17 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firestore Nested Data Fetch</title>
-</head>
-<body>
-  <h1>Firestore Nested Data Fetch</h1>
-  <p>Open your browser console (F12) to see the data.</p>
-
-  <script type="module">
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getFirestore, collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { writeFileSync, mkdirSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -21,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ======================= FIREBASE CONFIG ===========================
-import { firebaseConfig } from "./firebaseConfig.js";
+import { firebaseConfig } from "./firebaseConfig.mjs";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -35,19 +23,35 @@ const collections = [
   "Categories",
   "Edges",
   "Infrastructure",
-  "MapVersions",
+  "MapVersions", // this one has nested data
   "Maps",
   "Nodes",
   "Rooms"
 ];
 
-// ======================= FETCH COLLECTION ===========================
+// ======================= FETCH TOP-LEVEL COLLECTION ===========================
 async function fetchCollection(colName) {
   const docsArray = [];
   const querySnapshot = await getDocs(collection(db, colName));
-  querySnapshot.forEach((docSnap) => {
-    docsArray.push({ id: docSnap.id, ...docSnap.data() });
-  });
+
+  for (const docSnap of querySnapshot.docs) {
+    const data = { id: docSnap.id, ...docSnap.data() };
+
+    // Special case: MapVersions has subcollection "versions"
+    if (colName === "MapVersions") {
+      const versionsSnap = await getDocs(collection(db, `${colName}/${docSnap.id}/versions`));
+      data.versions = [];
+
+      for (const verDoc of versionsSnap.docs) {
+        const verData = { id: verDoc.id, ...verDoc.data() };
+        // At this point, verData may already have arrays like nodes and edges
+        data.versions.push(verData);
+      }
+    }
+
+    docsArray.push(data);
+  }
+
   return docsArray;
 }
 
@@ -69,7 +73,3 @@ async function exportFirestore() {
 }
 
 exportFirestore();
-
-  </script>
-</body>
-</html>

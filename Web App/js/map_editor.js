@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/fireba
 import {
     getFirestore, collection, addDoc, getDocs, query, orderBy, where, updateDoc, doc, getDoc, arrayUnion, writeBatch, deleteField, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-import { firebaseConfig } from "./../firebaseConfig.js";
+import { firebaseConfig } from "./../firebaseConfig.mjs";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -165,107 +165,121 @@ async function renderNodesTable() {
     tbody.innerHTML = "";
 
     try {
-        // 🔹 Fetch Infrastructure, Rooms, Campus for mapping
-        const [infraSnap, roomSnap, campusSnap] = await Promise.all([
-            getDocs(collection(db, "Infrastructure")),
-            getDocs(collection(db, "Rooms")),
-            getDocs(collection(db, "Campus"))
-        ]);
+        let nodes = [];
+        let infra = [];
+        let rooms = [];
+        let campuses = [];
 
-        const infraMap = {};
-        infraSnap.forEach(doc => {
-            const d = doc.data();
-            infraMap[d.infra_id] = d.name;
-        });
+        if (navigator.onLine) {
+            // 🔹 Online: Firestore
+            const [infraSnap, roomSnap, campusSnap, mapVersionsSnap] = await Promise.all([
+                getDocs(collection(db, "Infrastructure")),
+                getDocs(collection(db, "Rooms")),
+                getDocs(collection(db, "Campus")),
+                getDocs(collection(db, "MapVersions"))
+            ]);
 
-        const roomMap = {};
-        roomSnap.forEach(doc => {
-            const d = doc.data();
-            roomMap[d.room_id] = d.name;
-        });
+            infra = infraSnap.docs.map(d => d.data());
+            rooms = roomSnap.docs.map(d => d.data());
+            campuses = campusSnap.docs.map(d => d.data());
 
-        const campusMap = {};
-        campusSnap.forEach(doc => {
-            const d = doc.data();
-            campusMap[d.campus_id] = d.campus_name;
-        });
+            // Collect nodes from current versions
+            for (const mapDoc of mapVersionsSnap.docs) {
+                const mapData = mapDoc.data();
+                const currentCampus = mapData.current_active_campus;
+                const currentVersion = mapData.current_version;
 
-        // 🔹 Get all MapVersions
-        const mapVersionsSnap = await getDocs(collection(db, "MapVersions"));
+                if (!currentCampus || !currentVersion) continue;
 
-        for (const mapDoc of mapVersionsSnap.docs) {
-            const mapData = mapDoc.data();
+                const versionRef = doc(db, "MapVersions", mapDoc.id, "versions", currentVersion);
+                const versionSnap = await getDoc(versionRef);
+                if (!versionSnap.exists()) continue;
 
-            // 👉 Use the "current active" fields
-            const currentMap = mapData.current_active_map;
-            const currentCampus = mapData.current_active_campus;
-            const currentVersion = mapData.current_version;
-
-            if (!currentMap || !currentCampus || !currentVersion) {
-                console.warn(`Skipping ${mapDoc.id}: Missing current active fields`);
-                continue;
+                const versionData = versionSnap.data();
+                const mapNodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
+                nodes.push(...mapNodes.filter(n => !n.is_deleted && n.campus_id === currentCampus));
             }
 
-            // 🔹 Get the current version document
-            const versionRef = doc(db, "MapVersions", mapDoc.id, "versions", currentVersion);
-            const versionSnap = await getDoc(versionRef);
+        } else {
+            // 🔹 Offline: JSON fallback
+            const [nodesRes, infraRes, roomsRes, campusesRes] = await Promise.all([
+                fetch("../assets/firestore/MapVersions.json"),
+                fetch("../assets/firestore/Infrastructure.json"),
+                fetch("../assets/firestore/Rooms.json"),
+                fetch("../assets/firestore/Campus.json")
+            ]);
 
-            if (!versionSnap.exists()) {
-                console.warn(`No version data found for: ${mapDoc.id} → ${currentVersion}`);
-                continue;
+            const mapVersions = await nodesRes.json();
+            infra = (await infraRes.json()).filter(i => !i.is_deleted);
+            rooms = (await roomsRes.json()).filter(r => !r.is_deleted);
+            campuses = (await campusesRes.json()).filter(c => !c.is_deleted);
+
+            // Collect nodes from current versions
+            for (const mapData of mapVersions) {
+                const currentCampus = mapData.current_active_campus;
+                const currentVersion = mapData.current_version;
+                if (!currentCampus || !currentVersion) continue;
+
+                const version = mapData.versions.find(v => v.id === currentVersion);
+                if (!version) continue;
+
+                const mapNodes = Array.isArray(version.nodes) ? version.nodes : [];
+                nodes.push(...mapNodes.filter(n => !n.is_deleted && n.campus_id === currentCampus));
             }
 
-            const versionData = versionSnap.data();
-            const nodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
-
-            // 🔹 Filter nodes: must not be deleted + must belong to current campus
-            const filteredNodes = nodes.filter(n => !n.is_deleted && n.campus_id === currentCampus);
-
-            // 🔹 Sort by created_at
-            filteredNodes.sort((a, b) => {
-                if (!a.created_at || !b.created_at) return 0;
-                return a.created_at.seconds - b.created_at.seconds;
-            });
-
-            // 🔹 Render nodes
-            filteredNodes.forEach(data => {
-                const coords = (data.latitude && data.longitude) ? `${data.latitude}, ${data.longitude}` : "-";
-                const infraName = data.related_infra_id ? (infraMap[data.related_infra_id] || data.related_infra_id) : "-";
-                const roomName = data.related_room_id ? (roomMap[data.related_room_id] || data.related_room_id) : "-";
-                const campusName = data.campus_id ? (campusMap[data.campus_id] || data.campus_id) : "-";
-
-                let indoorOutdoor = "Outdoor";
-                if (data.indoor) {
-                    indoorOutdoor = `Indoor (Floor: ${data.indoor.floor || "-"}, X: ${data.indoor.x || "-"}, Y: ${data.indoor.y || "-"})`;
-                }
-
-                const type = data.type ? data.type.charAt(0).toUpperCase() + data.type.slice(1) : "-";
-
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>${data.node_id}</td>
-                    <td>${data.name}</td>
-                    <td>${type}</td>
-                    <td>${coords}</td>
-                    <td>${infraName}</td>
-                    <td>${roomName}</td>
-                    <td>${indoorOutdoor}</td>
-                    <td>${campusName}</td>
-                    <td class="actions">
-                        <i class="fas fa-edit"></i>
-                        <i class="fas fa-trash" data-node-id="${data.node_id}"></i>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+            console.log("📂 Offline → Nodes, Infra, Rooms, Campuses loaded from JSON");
         }
+
+        // 🔹 Build lookup maps
+        const infraMap = Object.fromEntries(infra.map(i => [i.infra_id, i.name]));
+        const roomMap = Object.fromEntries(rooms.map(r => [r.room_id, r.name]));
+        const campusMap = Object.fromEntries(campuses.map(c => [c.campus_id, c.campus_name]));
+
+        // 🔹 Sort nodes by created_at
+        nodes.sort((a, b) => {
+            if (!a.created_at || !b.created_at) return 0;
+            return (a.created_at.seconds || 0) - (b.created_at.seconds || 0);
+        });
+
+        // 🔹 Render nodes
+        nodes.forEach(data => {
+            const coords = (data.latitude && data.longitude) ? `${data.latitude}, ${data.longitude}` : "-";
+            const infraName = data.related_infra_id ? (infraMap[data.related_infra_id] || data.related_infra_id) : "-";
+            const roomName = data.related_room_id ? (roomMap[data.related_room_id] || data.related_room_id) : "-";
+            const campusName = data.campus_id ? (campusMap[data.campus_id] || data.campus_id) : "-";
+
+            let indoorOutdoor = "Outdoor";
+            if (data.indoor) {
+                indoorOutdoor = `Indoor (Floor: ${data.indoor.floor || "-"}, X: ${data.indoor.x || "-"}, Y: ${data.indoor.y || "-"})`;
+            }
+
+            const type = data.type ? data.type.charAt(0).toUpperCase() + data.type.slice(1) : "-";
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${data.node_id}</td>
+                <td>${data.name}</td>
+                <td>${type}</td>
+                <td>${coords}</td>
+                <td>${infraName}</td>
+                <td>${roomName}</td>
+                <td>${indoorOutdoor}</td>
+                <td>${campusName}</td>
+                <td class="actions">
+                    <i class="fas fa-edit"></i>
+                    <i class="fas fa-trash" data-node-id="${data.node_id}"></i>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
 
         setupNodeDeleteHandlers(); // ✅ Keep delete modal functionality
 
     } catch (err) {
-        console.error("Error loading nodes from MapVersions:", err);
+        console.error("Error loading nodes:", err);
     }
 }
+
 
 
 
@@ -1091,88 +1105,101 @@ async function renderEdgesTable() {
     tbody.innerHTML = "";
 
     try {
-        // 🔹 Get all MapVersions
-        const mapVersionsSnap = await getDocs(collection(db, "MapVersions"));
+        let edges = [];
+        let mapVersions = [];
 
-        for (const mapDoc of mapVersionsSnap.docs) {
-            const mapData = mapDoc.data();
+        if (navigator.onLine) {
+            // 🔹 Online: Firestore
+            const mapVersionsSnap = await getDocs(collection(db, "MapVersions"));
+            mapVersions = mapVersionsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-            // 👉 Use the "current active" fields
-            const currentMap = mapData.current_active_map;
-            const currentCampus = mapData.current_active_campus;
-            const currentVersion = mapData.current_version;
+            for (const mapData of mapVersions) {
+                const currentCampus = mapData.current_active_campus;
+                const currentVersion = mapData.current_version;
+                if (!currentCampus || !currentVersion) continue;
 
-            if (!currentMap || !currentCampus || !currentVersion) {
-                console.warn(`Skipping ${mapDoc.id}: Missing current active fields`);
-                continue;
+                const versionRef = doc(db, "MapVersions", mapData.id, "versions", currentVersion);
+                const versionSnap = await getDoc(versionRef);
+                if (!versionSnap.exists()) continue;
+
+                const versionData = versionSnap.data();
+                const mapEdges = Array.isArray(versionData.edges) ? versionData.edges : [];
+                edges.push(
+                    ...mapEdges.filter(e => {
+                        if (e.is_deleted) return false;
+                        if (e.campus_id) return e.campus_id === currentCampus;
+                        return mapData.campus_included?.includes(currentCampus);
+                    })
+                );
+            }
+        } else {
+            // 🔹 Offline: JSON fallback
+            const mapRes = await fetch("../assets/firestore/MapVersions.json");
+            mapVersions = (await mapRes.json()).filter(m => !m.is_deleted);
+
+            for (const mapData of mapVersions) {
+                const currentCampus = mapData.current_active_campus;
+                const currentVersion = mapData.current_version;
+                if (!currentCampus || !currentVersion) continue;
+
+                const version = mapData.versions.find(v => v.id === currentVersion);
+                if (!version) continue;
+
+                const mapEdges = Array.isArray(version.edges) ? version.edges : [];
+                edges.push(
+                    ...mapEdges.filter(e => {
+                        if (e.is_deleted) return false;
+                        if (e.campus_id) return e.campus_id === currentCampus;
+                        return mapData.campus_included?.includes(currentCampus);
+                    })
+                );
             }
 
-            // 🔹 Get the current version document
-            const versionRef = doc(db, "MapVersions", mapDoc.id, "versions", currentVersion);
-            const versionSnap = await getDoc(versionRef);
-
-            if (!versionSnap.exists()) {
-                console.warn(`No version data found for: ${mapDoc.id} → ${currentVersion}`);
-                continue;
-            }
-
-            const versionData = versionSnap.data();
-            const edges = Array.isArray(versionData.edges) ? versionData.edges : [];
-
-            // 🔹 Filter edges: not deleted + must belong to the active campus
-            const filteredEdges = edges.filter(e => {
-                if (e.is_deleted) return false;
-
-                // Case 1: Edge has its own campus_id
-                if (e.campus_id) {
-                    return e.campus_id === currentCampus;
-                }
-
-                // Case 2: Edge relies on parent MapVersion's campus_included
-                return mapData.campus_included?.includes(currentCampus);
-            });
-
-            // 🔹 Sort edges by created_at
-            filteredEdges.sort((a, b) => {
-                if (!a.created_at || !b.created_at) return 0;
-                return a.created_at.seconds - b.created_at.seconds;
-            });
-
-            // 🔹 Render edges
-            filteredEdges.forEach(data => {
-                const formatText = (value) => {
-                    if (!value) return "-";
-                    return value
-                        .toString()
-                        .split("_")
-                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                        .join(" ");
-                };
-
-                const formattedPathType = formatText(data.path_type);
-                const formattedElevation = formatText(data.elevations);
-
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>${data.edge_id}</td>
-                    <td>${data.from_node} → ${data.to_node}</td>
-                    <td>${data.distance || "-"}</td>
-                    <td>${formattedPathType}</td>
-                    <td>${formattedElevation}</td>
-                    <td class="actions">
-                        <i class="fas fa-edit"></i>
-                        <i class="fas fa-trash" data-id="${data.edge_id}"></i>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+            console.log("📂 Offline → Edges loaded from JSON");
         }
 
+        // 🔹 Sort edges by created_at
+        edges.sort((a, b) => {
+            if (!a.created_at || !b.created_at) return 0;
+            return (a.created_at.seconds || 0) - (b.created_at.seconds || 0);
+        });
+
+        // 🔹 Render edges
+        edges.forEach(data => {
+            const formatText = (value) => {
+                if (!value) return "-";
+                return value
+                    .toString()
+                    .split("_")
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(" ");
+            };
+
+            const formattedPathType = formatText(data.path_type);
+            const formattedElevation = formatText(data.elevations);
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${data.edge_id}</td>
+                <td>${data.from_node} → ${data.to_node}</td>
+                <td>${data.distance || "-"}</td>
+                <td>${formattedPathType}</td>
+                <td>${formattedElevation}</td>
+                <td class="actions">
+                    <i class="fas fa-edit"></i>
+                    <i class="fas fa-trash" data-id="${data.edge_id}"></i>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
         setupEdgeDeleteHandlers(); // ✅ Keep delete modal functionality
+
     } catch (err) {
-        console.error("Error loading edges from MapVersions:", err);
+        console.error("Error loading edges:", err);
     }
 }
+
 
 
 
@@ -1726,7 +1753,7 @@ document.getElementById("deleteNodeModal").addEventListener("click", (e) => {
 
 
 
-// ----------- Populate Maps -----------
+// ----------- Populate Maps (Online + Offline) -----------
 async function populateMaps() {
     const mapSelect = document.getElementById("mapSelect");
     const campusSelect = document.getElementById("campusSelect");
@@ -1737,19 +1764,30 @@ async function populateMaps() {
     versionSelect.innerHTML = '<option value="">Select Version</option>';
 
     try {
-        const mapsSnap = await getDocs(collection(db, "MapVersions"));
+        let mapsData = [];
 
-        mapsSnap.forEach(docSnap => {
-            const mapData = docSnap.data();
-            const mapId = docSnap.id;
+        if (navigator.onLine) {
+            // 🔹 Online: Firestore
+            const mapsSnap = await getDocs(collection(db, "MapVersions"));
+            mapsData = mapsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } else {
+            // 🔹 Offline: JSON fallback
+            const res = await fetch("../assets/firestore/MapVersions.json");
+            mapsData = await res.json();
+            console.log("📂 Offline → Maps loaded from JSON");
+        }
+
+        // Populate map select options
+        mapsData.forEach(map => {
             const option = document.createElement("option");
-            option.value = mapId;
-            option.textContent = `${mapData.map_name} (${mapId})`;
+            option.value = map.id;  // Use the document ID like "MAP-01"
+            option.textContent = `${map.map_name || map.id} (${map.id})`;
             mapSelect.appendChild(option);
         });
 
-        if (mapsSnap.docs.length > 0) {
-            const firstMapId = mapsSnap.docs[0].id;
+        // Select first map as default
+        if (mapsData.length > 0) {
+            const firstMapId = mapsData[0].id;
             mapSelect.value = firstMapId;
             await setActiveMap(firstMapId);
             await populateCampuses(firstMapId);
@@ -1777,6 +1815,7 @@ async function populateMaps() {
         console.error("Error loading maps:", err);
     }
 }
+
 
 // ----------- Populate Campuses -----------
 async function populateCampuses(mapId) {
@@ -1839,7 +1878,7 @@ async function populateVersions(mapId) {
         const version = docSnap.id;
         const option = document.createElement("option");
         option.value = version;
-        option.textContent = version + (version === currentVersion ? " ✅" : "");
+        option.textContent = version + (version === currentVersion ? "  🟢" : "");
         versionSelect.appendChild(option);
     });
 
@@ -1861,7 +1900,7 @@ async function populateVersions(mapId) {
             console.log(`Current version updated to ${selectedVersion}`);
 
             Array.from(versionSelect.options).forEach(opt => {
-                opt.textContent = opt.value + (opt.value === selectedVersion ? " ✅" : "");
+                opt.textContent = opt.value + (opt.value === selectedVersion ? "  🟢" : "");
             });
 
             await renderNodesTable();
@@ -1899,116 +1938,130 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 async function loadMap() {
-    try {
-      // ---- Fetch lookup data first ----
-      const [infraSnap, roomSnap, campusSnap] = await Promise.all([
+  try {
+    let nodes = [];
+    let infraMap = {};
+    let roomMap = {};
+    let campusMap = {};
+
+    if (navigator.onLine) {
+      // 🔹 Online: Fetch from Firestore
+      const [infraSnap, roomSnap, campusSnap, nodesSnap] = await Promise.all([
         getDocs(collection(db, "Infrastructure")),
         getDocs(collection(db, "Rooms")),
-        getDocs(collection(db, "Campus"))
+        getDocs(collection(db, "Campus")),
+        getDocs(query(collection(db, "Nodes"), orderBy("created_at", "asc")))
       ]);
 
-      const infraMap = {};
       infraSnap.forEach(doc => infraMap[doc.data().infra_id] = doc.data().name);
-
-      const roomMap = {};
       roomSnap.forEach(doc => roomMap[doc.data().room_id] = doc.data().name);
-
-      const campusMap = {};
       campusSnap.forEach(doc => campusMap[doc.data().campus_id] = doc.data().campus_name);
 
-      // ---- Fetch Nodes ----
-      const q = query(collection(db, "Nodes"), orderBy("created_at", "asc"));
-      const querySnapshot = await getDocs(q);
-
-      const nodes = [];
-      querySnapshot.forEach(docSnap => {
+      nodesSnap.forEach(docSnap => {
         const d = docSnap.data();
         nodes.push({
-        ...d,
-        latitude: d.latitude,     // ✅ fallback for old docs
-        longitude: d.longitude,   // ✅ fallback for old docs
-        infraName: d.related_infra_id ? (infraMap[d.related_infra_id] || d.related_infra_id) : "-",
-        roomName: d.related_room_id ? (roomMap[d.related_room_id] || d.related_room_id) : "-",
-        campusName: d.campus_id ? (campusMap[d.campus_id] || d.campus_id) : "-"
+          ...d,
+          latitude: d.latitude,
+          longitude: d.longitude,
+          infraName: d.related_infra_id ? (infraMap[d.related_infra_id] || d.related_infra_id) : "-",
+          roomName: d.related_room_id ? (roomMap[d.related_room_id] || d.related_room_id) : "-",
+          campusName: d.campus_id ? (campusMap[d.campus_id] || d.campus_id) : "-"
         });
       });
 
-      // ------------------ Convert Lat/Lng to X/Y ------------------
-        const origin = { lat: 6.913341, lng: 122.063693 }; // your chosen origin
+    } else {
+      // 🔹 Offline: Fetch from JSON
+      const [nodesRes, infraRes, roomRes, campusRes] = await Promise.all([
+        fetch("../assets/firestore/Nodes.json"),
+        fetch("../assets/firestore/Infrastructure.json"),
+        fetch("../assets/firestore/Rooms.json"),
+        fetch("../assets/firestore/Campus.json")
+      ]);
 
-        function latLngToXY(lat, lng, origin) {
-        const R = 6371000; // Earth radius in meters
-        const dLat = (lat - origin.lat) * Math.PI / 180;
-        const dLng = (lng - origin.lng) * Math.PI / 180;
-
-        const x = dLng * Math.cos(origin.lat * Math.PI / 180) * R;
-        const y = dLat * R;
-
-        return { x, y };
-        }
-
-        // Attach Cartesian coords to infrastructure nodes
-        nodes
-        .filter(n => n.type === "infrastructure")
-        .forEach(building => {
-            const { x, y } = latLngToXY(building.latitude, building.longitude, origin);
-            building.cartesian = { x, y };
-            console.log(`Building: ${building.name} → x-coordinate: ${x.toFixed(2)}, y-coordinate: ${y.toFixed(2)}`);
-        });
-
-      // ---- Small fixed overview map ----
-      const map = L.map("map-overview", {
-        center: [6.9130, 122.0630],
-        zoom: 18,
-        zoomControl: false,
-        dragging: false,
-        scrollWheelZoom: false,
-        doubleClickZoom: false,
-        boxZoom: false,
-        keyboard: false
+      nodes = (await nodesRes.json()).sort((a, b) => {
+        const tA = a.created_at?.seconds || 0;
+        const tB = b.created_at?.seconds || 0;
+        return tA - tB;
       });
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap contributors"
-      }).addTo(map);
+      (await infraRes.json()).forEach(i => infraMap[i.infra_id] = i.name);
+      (await roomRes.json()).forEach(r => roomMap[r.room_id] = r.name);
+      (await campusRes.json()).forEach(c => campusMap[c.campus_id] = c.campus_name);
 
-      renderDataOnMap(map, nodes);
-
-      // ---- Modal logic ----
-      const modal = document.getElementById("mapModal");
-      const closeBtn = document.querySelector(".close-btn");
-
-      document.getElementById("map-overview").addEventListener("click", () => {
-        modal.style.display = "block";
-
-        setTimeout(() => {
-          const mapFull = L.map("map-full", {
-            center: [6.9130, 122.0630],
-            zoom: 18,
-            zoomControl: true,
-            dragging: true,
-            scrollWheelZoom: true,
-            doubleClickZoom: true,
-            boxZoom: true,
-            keyboard: true
-          });
-
-          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution: "© OpenStreetMap"
-          }).addTo(mapFull);
-
-          renderDataOnMap(mapFull, nodes, true); // enable sidebar details
-        }, 200);
+      nodes.forEach(d => {
+        d.infraName = d.related_infra_id ? (infraMap[d.related_infra_id] || d.related_infra_id) : "-";
+        d.roomName = d.related_room_id ? (roomMap[d.related_room_id] || d.related_room_id) : "-";
+        d.campusName = d.campus_id ? (campusMap[d.campus_id] || d.campus_id) : "-";
       });
 
-      closeBtn.addEventListener("click", () => {
-        modal.style.display = "none";
-      });
-
-    } catch (err) {
-      console.error("Error loading map data:", err);
+      console.log("📂 Offline → Nodes loaded from JSON");
     }
+
+    // ------------------ Convert Lat/Lng to X/Y ------------------
+    const origin = { lat: 6.913341, lng: 122.063693 };
+    function latLngToXY(lat, lng, origin) {
+      const R = 6371000; 
+      const dLat = (lat - origin.lat) * Math.PI / 180;
+      const dLng = (lng - origin.lng) * Math.PI / 180;
+      const x = dLng * Math.cos(origin.lat * Math.PI / 180) * R;
+      const y = dLat * R;
+      return { x, y };
+    }
+
+    nodes.filter(n => n.type === "infrastructure")
+         .forEach(building => {
+           building.cartesian = latLngToXY(building.latitude, building.longitude, origin);
+           console.log(`Building: ${building.name} → x: ${building.cartesian.x.toFixed(2)}, y: ${building.cartesian.y.toFixed(2)}`);
+         });
+
+    // ---- Small overview map ----
+    const mapContainer = document.getElementById("map-overview");
+    if (mapContainer._leaflet_id) { mapContainer._leaflet_id = null; mapContainer.innerHTML = ""; }
+
+    const map = L.map("map-overview", {
+      center: [6.9130, 122.0630],
+      zoom: 18,
+      zoomControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      boxZoom: false,
+      keyboard: false
+    });
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap contributors" }).addTo(map);
+    renderDataOnMap(map, nodes);
+
+    // ---- Modal map ----
+    const modal = document.getElementById("mapModal");
+    const closeBtn = document.querySelector(".close-btn");
+
+    mapContainer.addEventListener("click", () => {
+      modal.style.display = "block";
+      setTimeout(() => {
+        const mapFull = L.map("map-full", {
+          center: [6.9130, 122.0630],
+          zoom: 18,
+          zoomControl: true,
+          dragging: true,
+          scrollWheelZoom: true,
+          doubleClickZoom: true,
+          boxZoom: true,
+          keyboard: true
+        });
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(mapFull);
+        renderDataOnMap(mapFull, nodes, true);
+      }, 200);
+    });
+
+    closeBtn.addEventListener("click", () => { modal.style.display = "none"; });
+
+  } catch (err) {
+    console.error("Error loading map data:", err);
   }
+}
+
 
 // ---- Sidebar details ----
 function showDetails(node) {
