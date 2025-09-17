@@ -18,9 +18,48 @@ public class InfrastructurePopulator : MonoBehaviour
 
     void Start()
     {
-        LoadInfrastructures();
-        PopulateDropdown(dropdownFrom);
-        PopulateDropdown(dropdownTo);
+        StartCoroutine(LoadInfrastructuresCoroutine());
+    }
+
+    private IEnumerator LoadInfrastructuresCoroutine()
+    {
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
+            "infrastructure.json",
+            OnInfrastructureDataLoaded,
+            OnInfrastructureDataError
+        ));
+    }
+
+    private void OnInfrastructureDataLoaded(string jsonContent)
+    {
+        try
+        {
+            // wrap it
+            string wrappedJson = "{\"infrastructures\":" + jsonContent + "}";
+
+            infrastructureList = JsonUtility.FromJson<InfrastructureList>(wrappedJson);
+
+            if (infrastructureList == null || infrastructureList.infrastructures.Length == 0)
+            {
+                Debug.LogWarning("No infrastructure data loaded.");
+                return;
+            }
+
+            // Populate dropdowns after successful loading
+            PopulateDropdown(dropdownFrom);
+            PopulateDropdown(dropdownTo);
+
+            Debug.Log($"Successfully loaded {infrastructureList.infrastructures.Length} infrastructures");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error parsing infrastructure JSON: {e.Message}");
+        }
+    }
+
+    private void OnInfrastructureDataError(string errorMessage)
+    {
+        Debug.LogError($"Failed to load infrastructure data: {errorMessage}");
     }
 
     private void PopulateDropdown(TMP_Dropdown dropdown)
@@ -51,29 +90,5 @@ public class InfrastructurePopulator : MonoBehaviour
             return infrastructureList.infrastructures[index];
         }
         return null;
-    }
-
-    private void LoadInfrastructures()
-    {
-        string path = Path.Combine(Application.streamingAssetsPath, "infrastructure.json");
-
-        if (!File.Exists(path))
-        {
-            Debug.LogError("infrastructure.json not found at " + path);
-        }
-        else
-        {
-            string json = File.ReadAllText(path);
-
-            // wrap it
-            string wrappedJson = "{\"infrastructures\":" + json + "}";
-
-            infrastructureList = JsonUtility.FromJson<InfrastructureList>(wrappedJson);
-
-            if (infrastructureList == null || infrastructureList.infrastructures.Length == 0)
-            {
-                 Debug.LogWarning("No infrastructure data loaded.");
-            }
-        }
     }
 }
