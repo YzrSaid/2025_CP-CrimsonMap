@@ -19,25 +19,45 @@ public class CategoryDropdown : MonoBehaviour
     void Start()
     {
         panel.SetActive(false);
-        PopulatePanel();
+        StartCoroutine(PopulatePanel());
     }
 
-    void PopulatePanel()
+    IEnumerator PopulatePanel()
     {
-        // load data
-        string path = Path.Combine(Application.streamingAssetsPath, "categories.json");
+        bool dataLoaded = false;
+        CategoryList categoryList = null;
+        string errorMessage = "";
 
-        // Check if the file exists or not
-        if (!File.Exists(path))
+        // Use the CrossPlatformFileLoader to load the JSON
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile("categories.json", 
+            (jsonContent) => {
+                try
+                {
+                    // wrap it manually
+                    categoryList = JsonUtility.FromJson<CategoryList>("{\"categories\":" + jsonContent + "}");
+                    dataLoaded = true;
+                }
+                catch (System.Exception e)
+                {
+                    errorMessage = $"Error parsing JSON: {e.Message}";
+                }
+            },
+            (error) => {
+                errorMessage = error;
+            }));
+
+        // Check if data was loaded successfully
+        if (!dataLoaded)
         {
-            Debug.LogError("categories.json is not found in StreamingAssets!");
-            return;
+            Debug.LogError($"CategoryDropdown: Failed to load categories.json - {errorMessage}");
+            yield break;
         }
 
-        string json = File.ReadAllText(path);
-
-        // wrap it manually
-        CategoryList categoryList = JsonUtility.FromJson<CategoryList>("{\"categories\":" + json + "}");
+        if (categoryList == null || categoryList.categories == null)
+        {
+            Debug.LogError("CategoryDropdown: categoryList or categories array is null!");
+            yield break;
+        }
 
         // instantiate it and generate prefabs
         foreach (Category category in categoryList.categories)
