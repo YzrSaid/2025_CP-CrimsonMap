@@ -191,6 +191,7 @@
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/Cache/SQLiteCache/Tiles.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/AngleSmoothing/AngleSmoothingAbstractBase.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/LabelTextSetter.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/MainAppLoader.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Utils/JsonConverters/BboxToGeoCoordinateBoundsConverter.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/Benchmark01_UGUI.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/SimpleScript.cs" />
@@ -261,6 +262,7 @@
     <Compile Include="Assets/Mapbox/Unity/Location/UnityLocationWrappers/MapboxLocationInfoMock.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/PrefabModifier.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/AngleSmoothing/AngleSmoothingNoOp.cs" />
+    <Compile Include="Assets/Scripts/App Managers/FirestoreManager.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Utils/Vector2d/RectD.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/FileSource.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/IAsyncRequestFactory.cs" />
@@ -268,7 +270,6 @@
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_DigitValidator.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_FrameRateCounter.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Geocoding/ReverseGeocodeResource.cs" />
-    <Compile Include="Assets/Scripts/Backend/FirestoreManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/LayerProperties/CoreVectorLayerProperties.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/ModifierBase.cs" />
     <Compile Include="Assets/Scripts/App Managers/OnboardingManager.cs" />
@@ -386,7 +387,6 @@
     <Compile Include="Assets/Mapbox/Unity/DataContainers/ElevationModificationOptions.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/ISubLayerFantasyStyle.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/LayerSourceOptions.cs" />
-    <Compile Include="Assets/Scripts/Backend/JSONFileManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/UnityLocationWrappers/MapboxLocationInfoUnityWrapper.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/ISubLayerStyle.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/SQLite/SQLite.cs" />
@@ -409,6 +409,7 @@
     <Compile Include="Assets/Mapbox/Unity/Map/Interfaces/IMapScalingStrategy.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Factories/AbstractTileFactory.cs" />
     <Compile Include="Assets/Mapbox/Examples/1_DataExplorer/HighlightBuildings.cs" />
+    <Compile Include="Assets/Scripts/App Managers/JSONFileManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Interfaces/LayerVisualizerBase.cs" />
     <Compile Include="Assets/Mapbox/Unity/Utilities/MapVisualizerPerformance.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/TileResource.cs" />
@@ -420,7 +421,6 @@
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/MapboxStylesColorModifier.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/MapboxDataProperty.cs" />
     <Compile Include="Assets/Mapbox/Examples/8_VoxelMap/Scripts/VoxelData.cs" />
-    <Compile Include="Assets/Scripts/Launcher/LauncherScene.cs" />
     <Compile Include="Assets/Mapbox/Unity/Map/Strategies/MapScalingAtUnityScaleStrategy.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/UnityLayerOptions.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/SubLayerLightStyle.cs" />

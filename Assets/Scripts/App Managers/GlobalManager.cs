@@ -17,7 +17,7 @@ public class GlobalManager : MonoBehaviour
     public Dictionary<string, string> currentMapVersions = new Dictionary<string, string>();
     public List<MapInfo> availableMaps = new List<MapInfo>();
 
-    // Managers
+    // Managers - these will be created later in MainApp
     public GameObject jsonFileManagerPrefab;
     public GameObject firestoreManagerPrefab;
 
@@ -48,7 +48,8 @@ public class GlobalManager : MonoBehaviour
 
             onboardingSavePath = Application.persistentDataPath + "/saveData.json";
 
-            InitializeManagers();
+            //check onboarding status and navigate - NO DATA SYNC HERE
+            CheckOnboardingAndNavigate();
         }
         else
         {
@@ -57,96 +58,41 @@ public class GlobalManager : MonoBehaviour
         }
     }
 
-    private void InitializeManagers()
+    private void CheckOnboardingAndNavigate()
     {
+        // Load onboarding status immediately - NO heavy operations
+        LoadOnboardingData();
+        
+        Debug.Log($"Onboarding check complete: {onboardingComplete}");
+        
+        if (!onboardingComplete)
+        {
+            Debug.Log("First launch detected - loading Onboarding scene...");
+            UnityEngine.SceneManagement.SceneManager.LoadScene("OnboardingScene");
+        }
+        else
+        {
+            Debug.Log("Onboarding complete - loading Main App scene...");
+            UnityEngine.SceneManagement.SceneManager.LoadScene("MainAppScene");
+        }
+    }
+
+    public void InitializeDataSystems()
+    {
+        if (isDataInitialized)
+        {
+            Debug.Log("Data systems already initialized");
+            OnDataInitializationComplete?.Invoke();
+            return;
+        }
+
+        Debug.Log("Starting data systems initialization in MainApp...");
         StartCoroutine(InitializeManagersCoroutine());
     }
 
-    // private IEnumerator InitializeManagersCoroutine()
-    // {
-    //     Debug.Log("Initializing managers...");
-
-    //     // Create JSON File Manager if it doesn't exist
-    //     if (JSONFileManager.Instance == null)
-    //     {
-    //         if (jsonFileManagerPrefab != null)
-    //         {
-    //             Instantiate(jsonFileManagerPrefab);
-    //         }
-    //         else
-    //         {
-    //             GameObject jsonManager = new GameObject("JSONFileManager");
-    //             jsonManager.AddComponent<JSONFileManager>();
-    //         }
-    //     }
-
-    //     // Create Firestore Manager if it doesn't exist
-    //     if (FirestoreManager.Instance == null)
-    //     {
-    //         if (firestoreManagerPrefab != null)
-    //         {
-    //             Instantiate(firestoreManagerPrefab);
-    //         }
-    //         else
-    //         {
-    //             GameObject firestoreManager = new GameObject("FirestoreManager");
-    //             firestoreManager.AddComponent<FirestoreManager>();
-    //         }
-    //     }
-
-    //     yield return null; // Wait a frame for managers to initialize
-
-    //     // Load local onboarding data first
-    //     LoadOnboardingData();
-
-    //     // Initialize base JSON files (creates default files if they don't exist)
-    //     if (JSONFileManager.Instance != null)
-    //     {
-    //         bool jsonInitComplete = false;
-    //         JSONFileManager.Instance.InitializeJSONFiles(() => {
-    //             jsonInitComplete = true;
-    //         });
-
-    //         yield return new WaitUntil(() => jsonInitComplete);
-    //     }
-
-    //     // Initialize Firebase and perform comprehensive sync
-    //     if (FirestoreManager.Instance != null)
-    //     {
-    //         bool firebaseInitComplete = false;
-    //         FirestoreManager.Instance.InitializeFirebase((success) => {
-    //             firebaseInitComplete = true;
-
-    //             if (success)
-    //             {
-    //                 Debug.Log("Firebase initialized successfully - starting comprehensive data sync...");
-    //                 // Use the new multi-map intelligent sync
-    //                 FirestoreManager.Instance.CheckAndSyncData(() => {
-    //                     Debug.Log("Comprehensive multi-map sync completed!");
-    //                     PostSyncInitialization();
-    //                 });
-    //             }
-    //             else
-    //             {
-    //                 Debug.Log("Firebase failed to initialize - using cached/local data only");
-    //                 PostSyncInitialization();
-    //             }
-    //         });
-
-    //         yield return new WaitUntil(() => firebaseInitComplete);
-    //     }
-    //     else
-    //     {
-    //         Debug.Log("Data initialization complete (local only)");
-    //         PostSyncInitialization();
-    //     }
-    // }
-
-    // Replace your InitializeManagersCoroutine in GlobalManager with this version:
-
     private IEnumerator InitializeManagersCoroutine()
     {
-        Debug.Log("Initializing managers...");
+        Debug.Log("Creating and initializing managers...");
 
         // Create JSON File Manager if it doesn't exist
         if (JSONFileManager.Instance == null)
@@ -165,6 +111,9 @@ public class GlobalManager : MonoBehaviour
                 jsonManager = new GameObject("JSONFileManager");
                 jsonManager.AddComponent<JSONFileManager>();
             }
+            
+            // Make it persist across scenes (DontDestroyOnLoad handled in JSONFileManager's Awake)
+            DontDestroyOnLoad(jsonManager);
         }
 
         // Create Firestore Manager if it doesn't exist
@@ -184,15 +133,15 @@ public class GlobalManager : MonoBehaviour
                 firestoreManager = new GameObject("FirestoreManager");
                 firestoreManager.AddComponent<FirestoreManager>();
             }
+            
+            // Make it persist across scenes (DontDestroyOnLoad handled in FirestoreManager's Awake)
+            DontDestroyOnLoad(firestoreManager);
         }
 
         // Wait for managers to properly initialize their singletons
         yield return new WaitUntil(() => JSONFileManager.Instance != null && FirestoreManager.Instance != null);
 
         Debug.Log("Managers created, continuing initialization...");
-
-        // Load local onboarding data first
-        LoadOnboardingData();
 
         // Initialize base JSON files (creates default files if they don't exist)
         bool jsonInitComplete = false;
@@ -212,7 +161,6 @@ public class GlobalManager : MonoBehaviour
             if (success)
             {
                 Debug.Log("Firebase initialized successfully - starting comprehensive data sync...");
-                // Use the standard CheckAndSyncData method (no fallback needed since MapVersions is implemented)
                 FirestoreManager.Instance.CheckAndSyncData(() =>
                 {
                     Debug.Log("Comprehensive sync completed!");
@@ -229,14 +177,134 @@ public class GlobalManager : MonoBehaviour
         yield return new WaitUntil(() => firebaseInitComplete);
     }
 
-    // Fix the SmartDataSync method too:
+    private void PostSyncInitialization()
+    {
+        // Load available maps and update current versions
+        LoadAvailableMaps();
+        UpdateCurrentMapVersions();
+
+        // Initialize map-specific files now that we know what maps exist
+        if (JSONFileManager.Instance != null && availableMaps.Count > 0)
+        {
+            List<string> mapIds = availableMaps.Select(m => m.map_id).ToList();
+            JSONFileManager.Instance.InitializeMapSpecificFiles(mapIds, () =>
+            {
+                FinalizeDataInitialization();
+            });
+        }
+        else
+        {
+            FinalizeDataInitialization();
+        }
+    }
+
+    private void FinalizeDataInitialization()
+    {
+        isDataInitialized = true;
+        Debug.Log($"All systems ready! Available maps: {availableMaps.Count}");
+
+        // Log map versions
+        foreach (var kvp in currentMapVersions)
+        {
+            Debug.Log($"Map {kvp.Key}: Version {kvp.Value}");
+        }
+
+        // Notify other systems that data is ready
+        OnDataInitializationComplete?.Invoke();
+    }
+
+    private void LoadAvailableMaps()
+    {
+        availableMaps.Clear();
+
+        if (JSONFileManager.Instance != null)
+        {
+            string mapsJson = JSONFileManager.Instance.ReadJSONFile("maps.json");
+            if (!string.IsNullOrEmpty(mapsJson))
+            {
+                try
+                {
+                    var mapsArray = JsonConvert.DeserializeObject<List<MapInfo>>(mapsJson);
+                    availableMaps.AddRange(mapsArray);
+
+                    Debug.Log($"Loaded {availableMaps.Count} available maps:");
+                    foreach (var map in availableMaps)
+                    {
+                        Debug.Log($"  - {map.map_id}: {map.map_name}");
+                        Debug.Log($"    campuses: {string.Join(", ", map.campus_included)}");
+                    }
+
+                    OnAvailableMapsChanged?.Invoke(availableMaps);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Failed to load available maps: {ex.Message}\nJSON Content:\n{mapsJson}");
+                }
+            }
+        }
+    }
+
+    private void UpdateCurrentMapVersions()
+    {
+        currentMapVersions.Clear();
+
+        if (JSONFileManager.Instance != null && FirestoreManager.Instance != null)
+        {
+            foreach (var map in availableMaps)
+            {
+                LocalVersionCache cache = JSONFileManager.Instance.GetMapVersionCache(map.map_id);
+                currentMapVersions[map.map_id] = cache?.cached_version ?? "none";
+            }
+
+            Debug.Log($"Updated current map versions: {currentMapVersions.Count} maps");
+        }
+    }
+
+    // LIGHTWEIGHT method - only loads onboarding data from local file, no heavy operations
+    private void LoadOnboardingData()
+    {
+        if (File.Exists(onboardingSavePath))
+        {
+            try
+            {
+                string json = File.ReadAllText(onboardingSavePath);
+                SaveData data = JsonUtility.FromJson<SaveData>(json);
+                this.onboardingComplete = data.onboardingComplete;
+                Debug.Log($"Onboarding data loaded: onboardingComplete = {onboardingComplete}");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"Failed to load onboarding data: {ex.Message}");
+                // Set default values if file is corrupted
+                this.onboardingComplete = false;
+            }
+        }
+        else
+        {
+            // Set default values for first-time users
+            this.onboardingComplete = false;
+            Debug.Log("No onboarding save file found, using default values");
+        }
+    }
+
+    public void SaveOnboardingData()
+    {
+        SaveData data = new SaveData();
+        data.onboardingComplete = this.onboardingComplete;
+
+        string json = JsonUtility.ToJson(data);
+        File.WriteAllText(onboardingSavePath, json);
+        Debug.Log("Onboarding data saved locally");
+    }
+
+    // All the other methods remain the same...
+    // Smart data sync method
     public void SmartDataSync(System.Action onComplete = null)
     {
         if (FirestoreManager.Instance != null && FirestoreManager.Instance.IsReady)
         {
             var oldVersions = new Dictionary<string, string>(currentMapVersions);
 
-            // Use standard CheckAndSyncData method
             FirestoreManager.Instance.CheckAndSyncData(() =>
             {
                 UpdateCurrentMapVersions();
@@ -276,101 +344,6 @@ public class GlobalManager : MonoBehaviour
         }
     }
 
-
-    private void PostSyncInitialization()
-    {
-        // Load available maps and update current versions
-        LoadAvailableMaps();
-        UpdateCurrentMapVersions();
-
-        // Initialize map-specific files now that we know what maps exist
-        if (JSONFileManager.Instance != null && availableMaps.Count > 0)
-        {
-            List<string> mapIds = availableMaps.Select(m => m.map_id).ToList();
-            JSONFileManager.Instance.InitializeMapSpecificFiles(mapIds, () =>
-            {
-                FinalizeDataInitialization();
-            });
-        }
-        else
-        {
-            FinalizeDataInitialization();
-        }
-    }
-
-    private void FinalizeDataInitialization()
-    {
-        isDataInitialized = true;
-        Debug.Log($"All systems ready! Available maps: {availableMaps.Count}");
-
-        // Log map versions
-        foreach (var kvp in currentMapVersions)
-        {
-            Debug.Log($"Map {kvp.Key}: Version {kvp.Value}");
-        }
-
-        // Notify other systems that data is ready
-        OnDataInitializationComplete?.Invoke();
-
-        if (!onboardingComplete)
-        {
-            Debug.Log("First launch detected - loading Onboarding scene...");
-            UnityEngine.SceneManagement.SceneManager.LoadScene("OnboardingScene");
-        }
-        else
-        {
-            Debug.Log("Onboarding already complete - loading Main App scene...");
-            UnityEngine.SceneManagement.SceneManager.LoadScene("MainAppScene");
-        }
-    }
-
-    private void LoadAvailableMaps()
-    {
-        availableMaps.Clear();
-
-        if (JSONFileManager.Instance != null)
-        {
-            string mapsJson = JSONFileManager.Instance.ReadJSONFile("maps.json");
-            if (!string.IsNullOrEmpty(mapsJson))
-            {
-                try
-                {
-                    // Use Newtonsoft instead of JsonHelper
-                    var mapsArray = JsonConvert.DeserializeObject<List<MapInfo>>(mapsJson);
-                    availableMaps.AddRange(mapsArray);
-
-                    Debug.Log($"Loaded {availableMaps.Count} available maps:");
-                    foreach (var map in availableMaps)
-                    {
-                        Debug.Log($"  - {map.map_id}: {map.map_name}");
-                        Debug.Log($"    campuses: {string.Join(", ", map.campus_included)}");
-                    }
-
-                    OnAvailableMapsChanged?.Invoke(availableMaps);
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"Failed to load available maps: {ex.Message}\nJSON Content:\n{mapsJson}");
-                }
-            }
-        }
-    }
-    private void UpdateCurrentMapVersions()
-    {
-        currentMapVersions.Clear();
-
-        if (JSONFileManager.Instance != null && FirestoreManager.Instance != null)
-        {
-            foreach (var map in availableMaps)
-            {
-                LocalVersionCache cache = JSONFileManager.Instance.GetMapVersionCache(map.map_id);
-                currentMapVersions[map.map_id] = cache?.cached_version ?? "none";
-            }
-
-            Debug.Log($"Updated current map versions: {currentMapVersions.Count} maps");
-        }
-    }
-
     // Get system status for debugging
     public string GetSystemStatus()
     {
@@ -390,33 +363,6 @@ public class GlobalManager : MonoBehaviour
         status += $"System Ready: {IsSystemReady()}";
 
         return status;
-    }
-
-    private void LoadOnboardingData()
-    {
-        if (File.Exists(onboardingSavePath))
-        {
-            string json = File.ReadAllText(onboardingSavePath);
-            SaveData data = JsonUtility.FromJson<SaveData>(json);
-            this.onboardingComplete = data.onboardingComplete;
-            Debug.Log($"Onboarding data loaded: onboardingComplete = {onboardingComplete}");
-        }
-        else
-        {
-            // Set default values for first-time users
-            this.onboardingComplete = false;
-            Debug.Log("No onboarding save file found, using default values");
-        }
-    }
-
-    public void SaveOnboardingData()
-    {
-        SaveData data = new SaveData();
-        data.onboardingComplete = this.onboardingComplete;
-
-        string json = JsonUtility.ToJson(data);
-        File.WriteAllText(onboardingSavePath, json);
-        Debug.Log("Onboarding data saved locally");
     }
 
     // Helper methods to access data through the managers
@@ -501,52 +447,6 @@ public class GlobalManager : MonoBehaviour
             onComplete?.Invoke();
         }
     }
-
-    // Smart data sync (checks versions first) - now handles multiple maps
-    // public void SmartDataSync(System.Action onComplete = null)
-    // {
-    //     if (FirestoreManager.Instance != null && FirestoreManager.Instance.IsReady)
-    //     {
-    //         var oldVersions = new Dictionary<string, string>(currentMapVersions);
-
-    //         FirestoreManager.Instance.CheckAndSyncData(() =>
-    //         {
-    //             UpdateCurrentMapVersions();
-
-    //             // Check if any versions changed
-    //             bool versionsChanged = false;
-    //             List<string> updatedMaps = new List<string>();
-
-    //             foreach (var kvp in currentMapVersions)
-    //             {
-    //                 string oldVersion = oldVersions.GetValueOrDefault(kvp.Key, "unknown");
-    //                 if (oldVersion != kvp.Value)
-    //                 {
-    //                     versionsChanged = true;
-    //                     updatedMaps.Add(kvp.Key);
-    //                     Debug.Log($"Map {kvp.Key} updated from {oldVersion} to {kvp.Value}");
-    //                 }
-    //             }
-
-    //             if (versionsChanged)
-    //             {
-    //                 Debug.Log($"Map versions updated for: {string.Join(", ", updatedMaps)}");
-    //                 OnMapVersionsChanged?.Invoke(currentMapVersions);
-    //             }
-    //             else
-    //             {
-    //                 Debug.Log("All map data is already up to date");
-    //             }
-
-    //             onComplete?.Invoke();
-    //         });
-    //     }
-    //     else
-    //     {
-    //         Debug.LogWarning("Firestore not ready for sync");
-    //         onComplete?.Invoke();
-    //     }
-    // }
 
     // Get available versions for a specific map
     public void GetAvailableMapVersions(string mapId, System.Action<List<string>> onComplete)
