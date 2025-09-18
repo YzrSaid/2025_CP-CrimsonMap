@@ -3,7 +3,7 @@
   import {
     getFirestore, collection, getDocs, query, orderBy, limit, doc, getDoc
   } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-  import { firebaseConfig } from "./../firebaseConfig.js";
+  import { firebaseConfig } from "../firebaseConfig.mjs";
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
@@ -11,32 +11,35 @@
 
 async function updateDashboardStats() {
     try {
-        // --- Buildings (Infrastructure nodes) ---
-        const nodesSnap = await getDocs(collection(db, "Nodes"));
-        const buildingsCount = nodesSnap.docs
-            .map(doc => doc.data())
-            .filter(d => d.type === "infrastructure" && !d.is_deleted)
-            .length;
+        let nodes, categories, rooms, mapVersions;
 
-        // --- Categories ---
-        const categoriesSnap = await getDocs(collection(db, "Categories"));
-        const categoriesCount = categoriesSnap.docs
-            .map(doc => doc.data())
-            .filter(d => !d.is_deleted)
-            .length;
+        if (navigator.onLine) {
+            // Online: fetch from Firestore
+            nodes = (await getDocs(collection(db, "Nodes"))).docs.map(d => d.data());
+            categories = (await getDocs(collection(db, "Categories"))).docs.map(d => d.data());
+            rooms = (await getDocs(collection(db, "Rooms"))).docs.map(d => d.data());
+            mapVersions = (await getDocs(query(collection(db, "MapVersions"), orderBy("createdAt", "desc"), limit(1)))).docs.map(d => d.data());
+        } else {
+            // Offline: fetch from local JSON
+            nodes = await fetch("../assets/firestore/Nodes.json").then(res => res.json());
+            categories = await fetch("../assets/firestore/Categories.json").then(res => res.json());
+            rooms = await fetch("../assets/firestore/Rooms.json").then(res => res.json());
+            mapVersions = await fetch("../assets/firestore/MapVersions.json").then(res => res.json());
+        }
 
-        // --- Rooms & Offices ---
-        const roomsSnap = await getDocs(collection(db, "Rooms"));
-        const roomsCount = roomsSnap.docs
-            .map(doc => doc.data())
-            .filter(d => !d.is_deleted)
-            .length;
+        // --- Count calculations ---
+        const buildingsCount = nodes.filter(d => d.type === "infrastructure" && !d.is_deleted).length;
+        const categoriesCount = categories.filter(d => !d.is_deleted).length;
+        const roomsCount = rooms.filter(d => !d.is_deleted).length;
 
-        // --- Current Map Version ---
-        const mapVersionsSnap = await getDocs(query(collection(db, "MapVersions"), orderBy("createdAt", "desc"), limit(1)));
         let currentVersion = "—";
-        if (!mapVersionsSnap.empty) {
-            const latestMap = mapVersionsSnap.docs[0].data();
+        if (mapVersions.length > 0) {
+            // Pick latest by createdAt (handle Firestore timestamps and JSON timestamps)
+            const latestMap = mapVersions.reduce((prev, curr) => {
+                const prevTime = prev.createdAt ? (prev.createdAt.seconds ?? prev.createdAt._seconds) : 0;
+                const currTime = curr.createdAt ? (curr.createdAt.seconds ?? curr.createdAt._seconds) : 0;
+                return currTime > prevTime ? curr : prev;
+            });
             currentVersion = latestMap.current_version || "—";
         }
 
@@ -48,13 +51,19 @@ async function updateDashboardStats() {
             statsCards[2].textContent = currentVersion;      // Current Map
             statsCards[3].textContent = roomsCount;          // Rooms & Offices
         }
+
     } catch (err) {
         console.error("Error updating dashboard stats:", err);
     }
 }
 
 // Call on page load
-updateDashboardStats();
+document.addEventListener("DOMContentLoaded", updateDashboardStats);
+
+// Re-run if online/offline status changes
+window.addEventListener("online", updateDashboardStats);
+window.addEventListener("offline", updateDashboardStats);
+
 
 
 
@@ -68,29 +77,47 @@ async function renderRecentActivity() {
     tbody.innerHTML = ""; // Clear table
 
     try {
-        const q = query(collection(db, "ActivityLogs"), orderBy("timestamp", "desc")); // show latest first
-        const querySnapshot = await getDocs(q);
+        let logs;
+
+        if (navigator.onLine) {
+            // Online: fetch from Firestore
+            const q = query(collection(db, "ActivityLogs"), orderBy("timestamp", "desc"));
+            const querySnapshot = await getDocs(q);
+            logs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            console.log("🌐 Online → Firestore");
+        } else {
+            // Offline: fetch from JSON
+            logs = await fetch("../assets/firestore/ActivityLogs.json").then(res => res.json());
+            // Sort descending by timestamp
+            logs.sort((a, b) => {
+                const aTime = a.timestamp?.seconds ?? a.timestamp?._seconds ?? 0;
+                const bTime = b.timestamp?.seconds ?? b.timestamp?._seconds ?? 0;
+                return bTime - aTime;
+            });
+            console.log("📂 Offline → JSON fallback");
+        }
 
         let counter = 1;
-        querySnapshot.forEach(docSnap => {
-            const data = docSnap.data();
-
+        logs.forEach(data => {
             // Format timestamp
             let formattedDate = "-";
-            if (data.timestamp && typeof data.timestamp.toDate === "function") {
-                const d = data.timestamp.toDate();
-                const dateStr = d.toLocaleDateString("en-CA"); // YYYY-MM-DD
-                const timeStr = d.toLocaleTimeString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                    hour12: true
-                });
-                formattedDate = `${dateStr} ${timeStr}`; // ✅ fixed template literal
+            if (data.timestamp) {
+                if (typeof data.timestamp.toDate === "function") {
+                    // Firestore Timestamp
+                    formattedDate = formatDate(data.timestamp.toDate());
+                } else if (data.timestamp.seconds !== undefined) {
+                    // JSON export format
+                    const d = new Date(data.timestamp.seconds * 1000 + Math.floor(data.timestamp.nanoseconds / 1e6));
+                    formattedDate = formatDate(d);
+                } else if (data.timestamp._seconds !== undefined) {
+                    const d = new Date(data.timestamp._seconds * 1000 + Math.floor((data.timestamp._nanoseconds || 0) / 1e6));
+                    formattedDate = formatDate(d);
+                }
             }
 
             // Combine activity + item
             const activityText = data.item 
-                ? `${data.activity || "-"} <i>${data.item}</i>`  // ✅ fixed template literal
+                ? `${data.activity || "-"} <i>${data.item}</i>` 
                 : data.activity || "-";
 
             // Create table row
@@ -102,10 +129,26 @@ async function renderRecentActivity() {
             `;
             tbody.appendChild(tr);
         });
+
     } catch (err) {
         console.error("Error loading recent activity:", err);
     }
 }
+
+// Helper function to format Date objects
+function formatDate(d) {
+    const dateStr = d.toLocaleDateString("en-CA"); // YYYY-MM-DD
+    const timeStr = d.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true
+    });
+    return `${dateStr} ${timeStr}`;
+}
+
+// Auto re-render on network changes
+window.addEventListener("online", renderRecentActivity);
+window.addEventListener("offline", renderRecentActivity);
 
 // Run when page loads
 document.addEventListener("DOMContentLoaded", renderRecentActivity);
@@ -126,35 +169,44 @@ async function populateMaps() {
     versionSelect.innerHTML = '<option value="">Select Version</option>';
 
     try {
-        const mapsSnap = await getDocs(collection(db, "MapVersions"));
+        let maps;
 
-        // 🔹 Populate map dropdown
-        mapsSnap.forEach(docSnap => {
-            const mapData = docSnap.data();
-            const mapId = docSnap.id;
+        if (navigator.onLine) {
+            // Online: fetch from Firestore
+            const mapsSnap = await getDocs(collection(db, "MapVersions"));
+            maps = mapsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            console.log("🌐 Online → Firestore: MapVersions");
+        } else {
+            // Offline: fetch from JSON
+            maps = await fetch("../assets/firestore/MapVersions.json").then(res => res.json());
+            console.log("📂 Offline → JSON fallback: MapVersions");
+        }
+
+        // Populate map dropdown
+        maps.forEach(mapData => {
+            const mapId = mapData.id;
             const option = document.createElement("option");
             option.value = mapId;
             option.textContent = `${mapData.map_name} (${mapId})`;
             mapSelect.appendChild(option);
         });
 
-        if (mapsSnap.docs.length > 0) {
-            // 🔹 Select the current active map by default
-            const currentMapDoc = mapsSnap.docs.find(d => d.data().current_active_map === d.id) || mapsSnap.docs[0];
-            const mapId = currentMapDoc.id;
-            mapSelect.value = mapId;
+        if (maps.length > 0) {
+            // Select the current active map by default
+            const currentMap = maps.find(m => m.current_active_map === m.id) || maps[0];
+            mapSelect.value = currentMap.id;
 
-            await populateCampuses(mapId, true);
-            await populateVersions(mapId, true);
-            await loadMap(mapId); // Load initial map view
+            await populateCampuses(currentMap.id, true, maps);
+            await populateVersions(currentMap.id, true, maps);
+            await loadMap(currentMap.id); // Load initial map view
         }
 
-        // 🔹 When Map changes (view only)
+        // When Map changes (view only)
         mapSelect.addEventListener("change", async () => {
             const selectedMapId = mapSelect.value;
             if (!selectedMapId) return;
-            await populateCampuses(selectedMapId, false);
-            await populateVersions(selectedMapId, false);
+            await populateCampuses(selectedMapId, false, maps);
+            await populateVersions(selectedMapId, false, maps);
             await loadMap(selectedMapId); // Load map view for selected map
         });
 
@@ -163,15 +215,31 @@ async function populateMaps() {
     }
 }
 
-async function populateCampuses(mapId, selectCurrent = true) {
+
+async function populateCampuses(mapId, selectCurrent = true, mapsData = null) {
     const campusSelect = document.getElementById("campusSelect");
     campusSelect.innerHTML = '<option value="">Select Campus</option>';
 
-    const mapDocRef = doc(db, "MapVersions", mapId);
-    const mapDocSnap = await getDoc(mapDocRef);
-    if (!mapDocSnap.exists()) return;
+    let mapData;
 
-    const mapData = mapDocSnap.data();
+    if (navigator.onLine) {
+        // Online: fetch the specific map document from Firestore
+        const mapDocRef = doc(db, "MapVersions", mapId);
+        const mapDocSnap = await getDoc(mapDocRef);
+        if (!mapDocSnap.exists()) return;
+        mapData = mapDocSnap.data();
+        console.log(`🌐 Online → Firestore: Map ${mapId}`);
+    } else {
+        // Offline: find the map data in the JSON
+        if (!mapsData) {
+            // Load JSON if mapsData not provided
+            mapsData = await fetch("../assets/firestore/MapVersions.json").then(res => res.json());
+        }
+        mapData = mapsData.find(m => m.id === mapId);
+        if (!mapData) return;
+        console.log(`📂 Offline → JSON fallback: Map ${mapId}`);
+    }
+
     const campuses = mapData.campus_included || [];
     const currentCampus = mapData.current_active_campus || "";
 
@@ -201,34 +269,51 @@ async function populateVersions(mapId, selectCurrent = true) {
     const versionSelect = document.getElementById("versionSelect");
     versionSelect.innerHTML = '<option value="">Select Version</option>';
 
-    const mapDocRef = doc(db, "MapVersions", mapId);
-    const mapDocSnap = await getDoc(mapDocRef);
-    if (!mapDocSnap.exists()) return;
+    let mapData, currentVersion, versions = [];
 
-    const mapData = mapDocSnap.data();
-    const currentVersion = mapData.current_version || "";
+    if (navigator.onLine) {
+        // -------- ONLINE --------
+        const mapDocRef = doc(db, "MapVersions", mapId);
+        const mapDocSnap = await getDoc(mapDocRef);
+        if (!mapDocSnap.exists()) return;
 
-    const versionsSnap = await getDocs(collection(db, "MapVersions", mapId, "versions"));
+        mapData = mapDocSnap.data();
+        currentVersion = mapData.current_version || "";
 
-    versionsSnap.forEach(docSnap => {
-        const version = docSnap.id;
+        // Get versions subcollection
+        const versionsSnap = await getDocs(collection(db, "MapVersions", mapId, "versions"));
+        versions = versionsSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+
+    } else {
+        // -------- OFFLINE --------
+        const mapsJson = await fetch("../assets/firestore/MapVersions.json").then(res => res.json());
+        mapData = mapsJson.find(m => m.id === mapId);
+        if (!mapData) return;
+
+        currentVersion = mapData.current_version || "";
+        versions = mapData.versions || []; // <- Use the versions array directly from JSON
+        console.log(`📂 Offline → Loaded versions for map ${mapId} from JSON`);
+    }
+
+    // Populate dropdown
+    versions.forEach(v => {
         const option = document.createElement("option");
-        option.value = version;
-        option.textContent = version + (version === currentVersion ? " ✅" : "");
+        option.value = v.id;
+        option.textContent = v.id + (v.id === currentVersion ? "  🟢" : "");
         versionSelect.appendChild(option);
     });
 
     if (selectCurrent && currentVersion) {
         versionSelect.value = currentVersion;
-    } else if (versionsSnap.docs.length > 0) {
-        versionSelect.value = versionsSnap.docs[0].id;
+    } else if (versions.length > 0) {
+        versionSelect.value = versions[0].id;
     }
 
-    // 🔹 When version changes, only update view
+    // 🔹 When version changes, update map
     versionSelect.addEventListener("change", async () => {
         const selectedVersion = versionSelect.value;
         if (!selectedVersion) return;
-        await loadMap(mapId, document.getElementById("campusSelect").value, selectedVersion); // View selected version
+        await loadMap(mapId, document.getElementById("campusSelect").value, selectedVersion);
     });
 }
 
@@ -248,62 +333,96 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function loadMap(mapId = null, campusId = null, versionId = null) {
   try {
-    // ---- Get map versions ----
-    const mapVersionsRef = collection(db, "MapVersions");
-    const mapsSnapshot = await getDocs(mapVersionsRef);
+    let mapData = null;
+    let versionData = null;
+    let nodes = [];
+    let edges = [];
 
-    if (mapsSnapshot.empty) {
-      console.error("No MapVersions found");
-      return;
+    if (navigator.onLine) {
+      // 🔹 Online: Firestore
+      const mapVersionsRef = collection(db, "MapVersions");
+      const mapsSnapshot = await getDocs(mapVersionsRef);
+      if (mapsSnapshot.empty) {
+        console.error("No MapVersions found");
+        return;
+      }
+
+      // Use provided mapId or fallback to first
+      let mapDoc = mapId ? mapsSnapshot.docs.find(d => d.id === mapId) : null;
+      if (!mapDoc) mapDoc = mapsSnapshot.docs[0];
+
+      mapData = mapDoc.data();
+      mapId = mapDoc.id;
+
+      const currentVersion = versionId || mapData.current_version || "v1.0.0";
+
+      // Get the version document
+      const versionRef = doc(db, "MapVersions", mapId, "versions", currentVersion);
+      const versionSnap = await getDoc(versionRef);
+      if (!versionSnap.exists()) {
+        console.error("Version not found:", currentVersion);
+        return;
+      }
+
+      versionData = versionSnap.data();
+      nodes = versionData.nodes || [];
+      edges = versionData.edges || [];
+
+    } else {
+      // 🔹 Offline: JSON
+      const res = await fetch("../assets/firestore/MapVersions.json");
+      const mapsJson = await res.json();
+
+      // Find the map
+      mapData = mapsJson.find(m => m.map_id === mapId) || mapsJson[0];
+      if (!mapData) {
+        console.error("No maps found in JSON");
+        return;
+      }
+      mapId = mapData.map_id;
+
+      const currentVersion = versionId || mapData.current_version || (mapData.versions?.[0]?.id || "v1.0.0");
+
+      versionData = mapData.versions.find(v => v.id === currentVersion);
+      if (!versionData) {
+        console.error("Version not found in JSON:", currentVersion);
+        return;
+      }
+
+      nodes = versionData.nodes || [];
+      edges = versionData.edges || [];
+      console.log("📂 Offline → Map and version loaded from JSON");
     }
 
-    // Use provided mapId or fallback to first
-    let mapDoc;
-    if (mapId) {
-      mapDoc = mapsSnapshot.docs.find(d => d.id === mapId);
+    // 🔹 Filter nodes by campusId if provided
+    if (campusId) nodes = nodes.filter(n => n.campus_id === campusId);
+
+    // 🔹 Fetch Infra + Campus names (from Firestore if online, JSON fallback if offline)
+    let infraMap = {}, campusMap = {};
+    if (navigator.onLine) {
+      const [infraSnap, campusSnap] = await Promise.all([
+        getDocs(collection(db, "Infrastructure")),
+        getDocs(collection(db, "Campus"))
+      ]);
+      infraSnap.forEach(doc => infraMap[doc.data().infra_id] = doc.data().name);
+      campusSnap.forEach(doc => campusMap[doc.data().campus_id] = doc.data().campus_name);
+    } else {
+      const [infraRes, campusRes] = await Promise.all([
+        fetch("../assets/firestore/Infrastructure.json"),
+        fetch("../assets/firestore/Campus.json")
+      ]);
+      const infraJson = await infraRes.json();
+      const campusJson = await campusRes.json();
+      infraJson.forEach(i => infraMap[i.infra_id] = i.name);
+      campusJson.forEach(c => campusMap[c.campus_id] = c.campus_name);
     }
-    if (!mapDoc) mapDoc = mapsSnapshot.docs[0];
-
-    const mapDocId = mapDoc.id;
-    const mapData = mapDoc.data();
-
-    // Use provided versionId or current_version or fallback
-    const currentVersion = versionId || mapData.current_version || "v1.0.0";
-
-    // Fetch nodes from version
-    const versionRef = doc(db, "MapVersions", mapDocId, "versions", currentVersion);
-    const versionSnap = await getDoc(versionRef);
-    if (!versionSnap.exists()) {
-      console.error("Version not found:", currentVersion);
-      return;
-    }
-
-    let nodes = versionSnap.data().nodes || [];
-    const edges = versionSnap.data().edges || [];
-
-    // Filter nodes by campusId if provided
-    if (campusId) {
-      nodes = nodes.filter(n => n.campus_id === campusId);
-    }
-
-    // Fetch Infra + Campus names
-    const [infraSnap, campusSnap] = await Promise.all([
-      getDocs(collection(db, "Infrastructure")),
-      getDocs(collection(db, "Campus"))
-    ]);
-
-    const infraMap = {};
-    infraSnap.forEach(doc => infraMap[doc.data().infra_id] = doc.data().name);
-
-    const campusMap = {};
-    campusSnap.forEach(doc => campusMap[doc.data().campus_id] = doc.data().campus_name);
 
     nodes.forEach(d => {
       d.infraName = d.related_infra_id ? (infraMap[d.related_infra_id] || d.related_infra_id) : "-";
       d.campusName = d.campus_id ? (campusMap[d.campus_id] || d.campus_id) : "-";
     });
 
-    // Convert Lat/Lng to X/Y
+    // 🔹 Convert Lat/Lng to X/Y
     const origin = { lat: 6.913341, lng: 122.063693 };
     function latLngToXY(lat, lng, origin) {
       const R = 6371000;
@@ -316,10 +435,8 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
     nodes.filter(n => n.type === "infrastructure")
          .forEach(b => b.cartesian = latLngToXY(b.latitude, b.longitude, origin));
 
-    // ---- Render map ----
+    // 🔹 Render map
     const mapContainer = document.getElementById("map-overview");
-
-    // Remove existing Leaflet map if any
     if (mapContainer._leaflet_id) {
       mapContainer._leaflet_id = null;
       mapContainer.innerHTML = "";
@@ -342,7 +459,7 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
 
     renderDataOnMap(map, nodes);
 
-    // Modal logic
+    // 🔹 Modal logic
     const modal = document.getElementById("mapModal");
     const closeBtn = document.getElementById("closeModal");
 
@@ -361,6 +478,7 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
     console.error("Error loading map data:", err);
   }
 }
+
 
 
 
