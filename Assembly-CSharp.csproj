@@ -441,6 +441,7 @@
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/TileJSON/TileJSONObjectVectorLayer.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/MapScalingOptions.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Geocoding/Response/Geometry.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/Map/MapboxOfflineManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/Telemetry/ITelemetryLibrary.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/LocationSmoothing/KalmanFilter.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/LayerModifierOptions.cs" />

@@ -4,17 +4,10 @@ using TMPro;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
-
-/// <summary>
-/// Central manager for handling map switching and coordinating with MapDropdown
-/// Updated to work with FirestoreManager and MapInfo instead of local JSON files
-/// Manages multiple campuses per map and handles UI updates
-/// Now supports map-specific node and edge files (nodes_map_id.json, edges_map_id.json)
-/// </summary>
 public class MapManager : MonoBehaviour
 {
     [Header("UI References")]
-    public TextMeshProUGUI dropdownButtonText; // Text component of the dropdown button to show current map
+    public TextMeshProUGUI dropdownButtonText;
     
     [Header("Spawner References")]
     public BarrierSpawner barrierSpawner;
@@ -143,10 +136,6 @@ public class MapManager : MonoBehaviour
         yield return new WaitUntil(() => loadCompleted);
     }
     
-    /// <summary>
-    /// Main method to switch to a different map
-    /// Called by MapDropdown when user selects a map
-    /// </summary>
     public void LoadMap(MapInfo mapInfo)
     {
         if (!isInitialized)
@@ -282,42 +271,26 @@ public class MapManager : MonoBehaviour
         DebugLog("✅ All spawned objects cleared");
         yield break;
     }
-    
-    /// <summary>
-    /// Get all available maps for dropdown population
-    /// </summary>
     public List<MapInfo> GetAvailableMaps()
     {
         return availableMaps;
     }
     
-    /// <summary>
-    /// Get current map info
-    /// </summary>
     public MapInfo GetCurrentMap()
     {
         return currentMap;
     }
     
-    /// <summary>
-    /// Get current campus IDs for the active map
-    /// </summary>
     public List<string> GetCurrentCampusIds()
     {
         return new List<string>(currentCampusIds);
     }
     
-    /// <summary>
-    /// Get campus name by ID (if campus data is available)
-    /// </summary>
     public string GetCampusName(string campusId)
     {
         return allCampuses.ContainsKey(campusId) ? allCampuses[campusId].campus_name : campusId;
     }
     
-    /// <summary>
-    /// Get current map info for debugging
-    /// </summary>
     public string GetCurrentMapInfo()
     {
         if (currentMap == null) return "No map loaded";
@@ -325,10 +298,6 @@ public class MapManager : MonoBehaviour
         string campusNames = string.Join(", ", currentCampusIds.Select(id => GetCampusName(id)));
         return $"Map: {currentMap.map_name} | Campuses: {campusNames} | Campus IDs: {string.Join(", ", currentCampusIds)}";
     }
-    
-    /// <summary>
-    /// Method to load a map by ID (useful for external calls)
-    /// </summary>
     public void LoadMapById(string mapId)
     {
         MapInfo targetMap = availableMaps.Find(m => m.map_id == mapId);
@@ -341,18 +310,12 @@ public class MapManager : MonoBehaviour
             Debug.LogWarning($"⚠️ Map with ID {mapId} not found in available maps");
         }
     }
-    
-    /// <summary>
-    /// Check if manager is ready for map operations
-    /// </summary>
+
     public bool IsReady()
     {
         return isInitialized && availableMaps.Count > 0;
     }
-    
-    /// <summary>
-    /// Force refresh all spawners for current map (useful for debugging)
-    /// </summary>
+
     public void RefreshCurrentMap()
     {
         if (currentMap != null && isInitialized)
@@ -365,18 +328,12 @@ public class MapManager : MonoBehaviour
             Debug.LogWarning("⚠️ Cannot refresh - no current map or not initialized");
         }
     }
-    
-    /// <summary>
-    /// Get the file name for nodes based on map ID
-    /// </summary>
+
     public string GetNodesFileNameForMap(string mapId)
     {
         return $"nodes_{mapId}.json";
     }
-    
-    /// <summary>
-    /// Get the file name for edges based on map ID
-    /// </summary>
+
     public string GetEdgesFileNameForMap(string mapId)
     {
         return $"edges_{mapId}.json";
@@ -389,8 +346,6 @@ public class MapManager : MonoBehaviour
             Debug.Log($"[MapManager] {message}");
         }
     }
-    
-    // Debug methods for editor
     void Update()
     {
         if (Application.isEditor && enableDebugLogs)
