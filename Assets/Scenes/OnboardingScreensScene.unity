@@ -812,6 +812,7 @@ MonoBehaviour:
   nextButton: {fileID: 2093388418}
   skipButton: {fileID: 1566799390}
   getStartedButton: {fileID: 1757000421}
+  onboardingCanvas: {fileID: 0}
 --- !u!1 &922129239
 GameObject:
   m_ObjectHideFlags: 0

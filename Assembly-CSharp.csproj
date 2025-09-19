@@ -401,6 +401,7 @@
     <Compile Include="Assets/Mapbox/Unity/DataContainers/TileStatsFetcher.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/AbstractLayer.cs" />
     <Compile Include="Assets/Mapbox/Core/probe-extractor-cs/ProbeExtractor.cs" />
+    <Compile Include="Assets/Scripts/Effects/BreathingIconEffect.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/ExtentOptions.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/AccordionSpawner.cs" />
     <Compile Include="Assets/Mapbox/Unity/Map/TileProviders/QuadTreeTileProvider.cs" />
