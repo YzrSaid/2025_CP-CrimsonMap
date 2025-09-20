@@ -4,7 +4,7 @@ using System.IO;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
-
+using System.Collections;
 
 public class AccordionSpawner : MonoBehaviour
 {
@@ -22,16 +22,24 @@ public class AccordionSpawner : MonoBehaviour
             SpawnAccordionItem(name);
         }
 
-        LoadDynamicCategoriesFromFirebase();
+        // Start the coroutine to load dynamic categories
+        StartCoroutine(LoadDynamicCategoriesFromFirebase());
     }
 
-    void LoadDynamicCategoriesFromFirebase()
+    IEnumerator LoadDynamicCategoriesFromFirebase()
     {
-        string filePath = Path.Combine(Application.streamingAssetsPath, "categories.json");
+        // Use the CrossPlatformFileLoader to load categories.json
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
+            "categories.json", 
+            OnCategoriesLoadSuccess, 
+            OnCategoriesLoadError
+        ));
+    }
 
-        if (File.Exists(filePath))
+    void OnCategoriesLoadSuccess(string jsonData)
+    {
+        try
         {
-            string jsonData = File.ReadAllText(filePath);
             // Create a wrapper for this json utility, we will manually create wrapper for this
             string wrappedJson = "{\"categories\":" + jsonData + "}";
             CategoryList categoryList = JsonUtility.FromJson<CategoryList>(wrappedJson);
@@ -40,12 +48,22 @@ public class AccordionSpawner : MonoBehaviour
             foreach (Category cat in categoryList.categories)
             {
                 SpawnAccordionItem(cat.name);
-            }   
+            }
+
+            Debug.Log($"Successfully loaded {categoryList.categories.Count} categories from file");
         }
-        else
+        catch (Exception e)
         {
-            Debug.LogError("Categories.json not found in StreamingAssets!");
+            Debug.LogError($"Error parsing categories JSON: {e.Message}");
         }
+    }
+
+    void OnCategoriesLoadError(string errorMessage)
+    {
+        Debug.LogError($"Failed to load categories: {errorMessage}");
+        
+        // Optional: Add fallback categories or show error UI
+        Debug.LogWarning("Continuing with static categories only");
     }
 
     void SpawnAccordionItem(string categoryName)
@@ -63,7 +81,7 @@ public class AccordionSpawner : MonoBehaviour
 
         if (categoryName == "Saved" || categoryName == "Recent")
         {
-         
+            // Handle static categories if needed
         }
     }
 }
