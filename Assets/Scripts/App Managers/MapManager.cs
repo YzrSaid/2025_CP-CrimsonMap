@@ -4,6 +4,8 @@ using TMPro;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
+using UnityEngine.InputSystem;
+
 public class MapManager : MonoBehaviour
 {
     [Header("UI References")]
@@ -348,9 +350,10 @@ public class MapManager : MonoBehaviour
     }
     void Update()
     {
-        if (Application.isEditor && enableDebugLogs)
+        if (Application.isEditor && enableDebugLogs && Keyboard.current != null)
         {
-            if (Input.GetKeyDown(KeyCode.M))
+            // NEW INPUT SYSTEM: Use Keyboard.current instead of Input.GetKeyDown
+            if (Keyboard.current.mKey.wasPressedThisFrame)
             {
                 Debug.Log($"=== MAP MANAGER STATUS ===");
                 Debug.Log($"Initialized: {isInitialized}");
@@ -360,7 +363,7 @@ public class MapManager : MonoBehaviour
                 Debug.Log($"Current map info: {GetCurrentMapInfo()}");
             }
             
-            if (Input.GetKeyDown(KeyCode.R))
+            if (Keyboard.current.rKey.wasPressedThisFrame)
             {
                 RefreshCurrentMap();
             }

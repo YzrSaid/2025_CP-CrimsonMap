@@ -591,31 +591,31 @@ public class InfrastructureSpawner : MonoBehaviour
     void Update()
     {
         // Debug controls
-        if (Application.isEditor && enableDebugLogs)
-        {
-            if (Input.GetKeyDown(KeyCode.I))
-            {
-                Debug.Log($"=== INFRASTRUCTURE SPAWNER STATUS ===");
-                Debug.Log($"Current Map ID: {currentMapId ?? "None"}");
-                Debug.Log($"Current Campus IDs: {string.Join(", ", currentCampusIds)}");
-                Debug.Log($"Is spawning: {isSpawning}");
-                Debug.Log($"Infrastructure spawned: {spawnedInfrastructure.Count}");
-                Debug.Log($"Map assigned: {mapboxMap != null}");
-                Debug.Log($"Nodes file: {GetNodesFileName()}");
-                Debug.Log($"Infrastructure file: {infrastructureFileName}");
-                Debug.Log($"Categories file: {categoriesFileName}");
-            }
+        // if (Application.isEditor && enableDebugLogs)
+        // {
+        //     if (Input.GetKeyDown(KeyCode.I))
+        //     {
+        //         Debug.Log($"=== INFRASTRUCTURE SPAWNER STATUS ===");
+        //         Debug.Log($"Current Map ID: {currentMapId ?? "None"}");
+        //         Debug.Log($"Current Campus IDs: {string.Join(", ", currentCampusIds)}");
+        //         Debug.Log($"Is spawning: {isSpawning}");
+        //         Debug.Log($"Infrastructure spawned: {spawnedInfrastructure.Count}");
+        //         Debug.Log($"Map assigned: {mapboxMap != null}");
+        //         Debug.Log($"Nodes file: {GetNodesFileName()}");
+        //         Debug.Log($"Infrastructure file: {infrastructureFileName}");
+        //         Debug.Log($"Categories file: {categoriesFileName}");
+        //     }
 
-            if (Input.GetKeyDown(KeyCode.T))
-            {
-                ManualSpawn();
-            }
+        //     if (Input.GetKeyDown(KeyCode.T))
+        //     {
+        //         ManualSpawn();
+        //     }
 
-            if (Input.GetKeyDown(KeyCode.Y))
-            {
-                ClearSpawnedInfrastructure();
-            }
-        }
+        //     if (Input.GetKeyDown(KeyCode.Y))
+        //     {
+        //         ClearSpawnedInfrastructure();
+        //     }
+        // }
     }
 
     #endregion

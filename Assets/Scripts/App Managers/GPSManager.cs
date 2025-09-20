@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Mapbox.Utils;
 using Mapbox.Unity.Map;
+using UnityEngine.InputSystem;
 
 public class GPSManager : MonoBehaviour
 {
@@ -95,11 +96,14 @@ public class GPSManager : MonoBehaviour
 #if UNITY_EDITOR
         if (useMockLocationInEditor)
         {
-            // In editor, simulate rotation with input keys for testing
-            if (Input.GetKey(KeyCode.Q))
-                mockHeading -= 90f * Time.deltaTime;
-            if (Input.GetKey(KeyCode.E))
-                mockHeading += 90f * Time.deltaTime;
+            // NEW INPUT SYSTEM: Use Keyboard.current instead of Input.GetKey
+            if (Keyboard.current != null)
+            {
+                if (Keyboard.current.qKey.isPressed)
+                    mockHeading -= 90f * Time.deltaTime;
+                if (Keyboard.current.eKey.isPressed)
+                    mockHeading += 90f * Time.deltaTime;
+            }
             
             mockHeading = mockHeading % 360f;
             if (mockHeading < 0) mockHeading += 360f;
@@ -155,9 +159,9 @@ public class GPSManager : MonoBehaviour
 
     void Update()
     {
-        // Debug info in editor
+        // Debug info in editor - NEW INPUT SYSTEM
 #if UNITY_EDITOR
-        if (useMockLocationInEditor && Input.GetKeyDown(KeyCode.G))
+        if (useMockLocationInEditor && Keyboard.current != null && Keyboard.current.gKey.wasPressedThisFrame)
         {
             Debug.Log($"Mock GPS: {mockLatitude}, {mockLongitude}, Heading: {mockHeading:F1}°");
             Debug.Log("Use Q/E keys to rotate the mock heading");

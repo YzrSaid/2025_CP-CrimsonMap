@@ -573,31 +573,31 @@ public class PathRenderer : MonoBehaviour
     void Update()
     {
         // Debug controls
-        if (Application.isEditor && enableDebugLogs)
-        {
-            if (Input.GetKeyDown(KeyCode.P))
-            {
-                Debug.Log($"=== PATH RENDERER STATUS ===");
-                Debug.Log($"Current Map ID: {currentMapId ?? "None"}");
-                Debug.Log($"Current Campus IDs: {string.Join(", ", currentCampusIds)}");
-                Debug.Log($"Is rendering: {isRendering}");
-                Debug.Log($"Paths rendered: {spawnedPaths.Count}");
-                Debug.Log($"Pathway nodes loaded: {allNodes.Count}");
-                Debug.Log($"Map assigned: {mapboxMap != null}");
-                Debug.Log($"Nodes file: {GetNodesFileName()}");
-                Debug.Log($"Edges file: {GetEdgesFileName()}");
-            }
+        // if (Application.isEditor && enableDebugLogs)
+        // {
+        //     if (Input.GetKeyDown(KeyCode.P))
+        //     {
+        //         Debug.Log($"=== PATH RENDERER STATUS ===");
+        //         Debug.Log($"Current Map ID: {currentMapId ?? "None"}");
+        //         Debug.Log($"Current Campus IDs: {string.Join(", ", currentCampusIds)}");
+        //         Debug.Log($"Is rendering: {isRendering}");
+        //         Debug.Log($"Paths rendered: {spawnedPaths.Count}");
+        //         Debug.Log($"Pathway nodes loaded: {allNodes.Count}");
+        //         Debug.Log($"Map assigned: {mapboxMap != null}");
+        //         Debug.Log($"Nodes file: {GetNodesFileName()}");
+        //         Debug.Log($"Edges file: {GetEdgesFileName()}");
+        //     }
 
-            if (Input.GetKeyDown(KeyCode.O))
-            {
-                ManualRender();
-            }
+        //     if (Input.GetKeyDown(KeyCode.O))
+        //     {
+        //         ManualRender();
+        //     }
 
-            if (Input.GetKeyDown(KeyCode.L))
-            {
-                ClearSpawnedPaths();
-            }
-        }
+        //     if (Input.GetKeyDown(KeyCode.L))
+        //     {
+        //         ClearSpawnedPaths();
+        //     }
+        // }
     }
 
     #endregion

@@ -785,47 +785,47 @@ public class BarrierSpawner : MonoBehaviour
 
     void Update()
     {
-        if (Application.isEditor && enableDebugLogs)
-        {
-            if (Input.GetKeyDown(KeyCode.B))
-            {
-                Debug.Log($"=== BARRIER SPAWNER STATUS ===");
-                Debug.Log($"Current Map ID: {currentMapId ?? "None"}");
-                Debug.Log($"Current Campus IDs: {string.Join(", ", currentCampusIds)}");
-                Debug.Log($"Is spawning: {isSpawning}");
-                Debug.Log($"Nodes spawned: {spawnedNodes.Count}");
-                Debug.Log($"Edges spawned: {spawnedEdges.Count}");
-                Debug.Log($"Polygons spawned: {spawnedPolygons.Count}");
-                Debug.Log($"Map assigned: {mapboxMap != null}");
-                Debug.Log($"Nodes file: {GetNodesFileName()}");
-                Debug.Log($"Edges file: {GetEdgesFileName()}");
-            }
+        // if (Application.isEditor && enableDebugLogs)
+        // {
+        //     if (Input.GetKeyDown(KeyCode.B))
+        //     {
+        //         Debug.Log($"=== BARRIER SPAWNER STATUS ===");
+        //         Debug.Log($"Current Map ID: {currentMapId ?? "None"}");
+        //         Debug.Log($"Current Campus IDs: {string.Join(", ", currentCampusIds)}");
+        //         Debug.Log($"Is spawning: {isSpawning}");
+        //         Debug.Log($"Nodes spawned: {spawnedNodes.Count}");
+        //         Debug.Log($"Edges spawned: {spawnedEdges.Count}");
+        //         Debug.Log($"Polygons spawned: {spawnedPolygons.Count}");
+        //         Debug.Log($"Map assigned: {mapboxMap != null}");
+        //         Debug.Log($"Nodes file: {GetNodesFileName()}");
+        //         Debug.Log($"Edges file: {GetEdgesFileName()}");
+        //     }
 
-            if (Input.GetKeyDown(KeyCode.R))
-            {
-                ForceResetSpawning();
-            }
+        //     if (Input.GetKeyDown(KeyCode.R))
+        //     {
+        //         ForceResetSpawning();
+        //     }
 
-            if (Input.GetKeyDown(KeyCode.S))
-            {
-                ManualSpawn();
-            }
+        //     if (Input.GetKeyDown(KeyCode.S))
+        //     {
+        //         ManualSpawn();
+        //     }
 
-            if (Input.GetKeyDown(KeyCode.E))
-            {
-                ManualSpawnEdges();
-            }
+        //     if (Input.GetKeyDown(KeyCode.E))
+        //     {
+        //         ManualSpawnEdges();
+        //     }
 
-            if (Input.GetKeyDown(KeyCode.C))
-            {
-                ClearSpawnedNodes();
-            }
+        //     if (Input.GetKeyDown(KeyCode.C))
+        //     {
+        //         ClearSpawnedNodes();
+        //     }
 
-            if (Input.GetKeyDown(KeyCode.U))
-            {
-                ForceUpdateAllEdges();
-            }
-        }
+        //     if (Input.GetKeyDown(KeyCode.U))
+        //     {
+        //         ForceUpdateAllEdges();
+        //     }
+        // }
     }
 
     #endregion
