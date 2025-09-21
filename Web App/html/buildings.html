@@ -130,23 +130,12 @@
                             <th>ID</th>
                             <th>Indoor Infrastructure</th> <!-- updated label -->
                             <th>Building</th>
-                            <th>Location</th>
                             <th>Indoor Type</th> <!-- replaced Coordinates with Indoor Type -->
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>RM-001</td>
-                            <td>Lecture Room 1</td>
-                            <td>College of Computing Studies</td>
-                            <td>Near Gymnasium (Campus A)</td>
-                            <td>Lecture Room</td> <!-- Indoor Type value -->
-                            <td class="actions">
-                                <button class="edit"><i class="fas fa-edit"></i></button>
-                                <button class="delete"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
+
                     </tbody>
                 </table>
             </div>
@@ -274,11 +263,11 @@
             <!-- Room Name + Room ID (same row) --> 
             <div class="form-row"> 
                 <div class="form-group">
-                    <label>Indoor Infrastructure Name</label> <!-- updated label -->
+                    <label>Indoor Infra Name</label> <!-- updated label -->
                     <input type="text" placeholder="e.g. Lecture Room 1">
                 </div>
                 <div class="form-group">
-                    <label>Indoor Infrastructure ID</label> <!-- updated label -->
+                    <label>Indoor Infra ID</label> <!-- updated label -->
                     <input type="text" id="roomId" name="room_id" disabled>
                 </div>
             </div>
@@ -302,11 +291,6 @@
                 </select>
             </div>
 
-            <!-- Location Description -->
-            <div class="form-group">
-                <label>Location Description</label>
-                <input type="text" placeholder="e.g. Near Gate 6 and College of Engineering">
-            </div>
 
 
             <!-- Actions --> 

@@ -325,23 +325,27 @@ function hideRoomModal() {
 window.showRoomModal = showRoomModal;
 window.hideRoomModal = hideRoomModal;
 
-// ----------- Auto-Increment Room ID -----------
+// ----------- Auto-Increment Indoor ID (always IND) -----------
 async function generateNextRoomId() {
-    const q = query(collection(db, "Rooms"));
-    const snapshot = await getDocs(q);
+  const q = query(collection(db, "Rooms"));
+  const snapshot = await getDocs(q);
 
-    let maxNum = 0;
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.room_id) {
-            const num = parseInt(data.room_id.replace("RM-", ""));
-            if (!isNaN(num) && num > maxNum) maxNum = num;
-        }
-    });
+  let maxNum = 0;
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    if (data.room_id) {
+      // Always strip RM- or IND- just in case old data exists
+      const num = parseInt(data.room_id.replace(/^RM-|^IND-/, ""));
+      if (!isNaN(num) && num > maxNum) maxNum = num;
+    }
+  });
 
-    const nextId = `RM-${String(maxNum + 1).padStart(3, "0")}`;
-    document.getElementById("roomId").value = nextId;
+  // Always use IND as prefix
+  const nextId = `IND-${String(maxNum + 1).padStart(3, "0")}`;
+  document.getElementById("roomId").value = nextId;
 }
+
+
 
 // ----------- Populate Infrastructure Dropdown for Rooms -----------
 async function populateInfraDropdownForRooms() {
@@ -392,35 +396,37 @@ async function populateInfraDropdownForRooms() {
 
 
 
-// ----------- Add Room Handler -----------
+// ----------- Add Indoor Infrastructure Handler -----------
 document.querySelector("#addRoomModal form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const name = document.querySelector('#addRoomModal input[placeholder="e.g. Lecture Room 1"]').value.trim();
-    const roomId = document.querySelector('#addRoomModal input[name="room_id"]').value.trim();
-    const selectEl = document.querySelector('#addRoomModal select');
-    const infraId = selectEl.value; // now infra, not building
-    const infraName = selectEl.selectedOptions[0]?.dataset.name || infraId; // ✅ get infra name
-    const latitude = document.querySelector('#addRoomModal input[placeholder="Latitude"]').value.trim();
-    const longitude = document.querySelector('#addRoomModal input[placeholder="Longitude"]').value.trim();
-    const location = document.querySelector('#addRoomModal input[placeholder="e.g. Near Gate 6 and College of Engineering"]').value.trim();
-    const phone = document.querySelector('#addRoomModal input[type="text"][placeholder=""]').value.trim();
+    // Indoor Infrastructure Name
+    const name = document.querySelector('#addRoomModal input[placeholder="e.g. Lecture Room 1"]')?.value.trim();
 
-    if (!name || !roomId || !infraId || !latitude || !longitude || !location) {
+    // Indoor Infrastructure ID
+    const roomId = document.querySelector('#addRoomModal input[name="room_id"]')?.value.trim();
+
+    // Infrastructure dropdown
+    const infraSelect = document.querySelectorAll('#addRoomModal select')[0];
+    const infraId = infraSelect?.value || "";
+    const infraName = infraSelect?.selectedOptions[0]?.dataset.name || infraId;
+
+    // Indoor Type dropdown
+    const indoorType = document.querySelectorAll('#addRoomModal select')[1]?.value || "";
+
+    // Validation
+    if (!name || !roomId || !infraId || !indoorType) {
         alert("Please fill in all required fields.");
         return;
     }
 
     try {
-        // Save Room
-        await addDoc(collection(db, "Rooms"), {
+        // ✅ Save into IndoorInfrastructure collection
+        await addDoc(collection(db, "IndoorInfrastructure"), {
             room_id: roomId,
             name: name,
-            infra_id: infraId, // ✅ updated key
-            location: location,
-            latitude: latitude,
-            longitude: longitude,
-            phone: phone || "",
+            infra_id: infraId,
+            indoor_type: indoorType,
             is_deleted: false,
             createdAt: new Date()
         });
@@ -428,91 +434,103 @@ document.querySelector("#addRoomModal form")?.addEventListener("submit", async (
         // Save Activity Log
         await addDoc(collection(db, "ActivityLogs"), {
             timestamp: new Date(),
-            activity: "Added Room",
-            item: `Room ${roomId}`,
-            description: `Added room "${name}" under infrastructure "${infraName}".`
+            activity: "Added Indoor Infrastructure",
+            item: `Indoor ${roomId}`,
+            description: `Added "${name}" under infrastructure "${infraName}" (Type: ${indoorType}).`
         });
 
-        alert("Room saved successfully!");
+        alert("Indoor Infrastructure saved successfully!");
+
+        // ✅ Clear form fields
         e.target.reset();
+        document.querySelector('#addRoomModal input[name="room_id"]').value = "";
+
+        // ✅ Hide modal + refresh table
         hideRoomModal();
         renderRoomsTable();
     } catch (err) {
-        console.error("Error adding room:", err);
-        alert("Error saving room.");
+        console.error("Error adding infrastructure:", err);
+        alert("Error saving infrastructure.");
     }
 });
 
 
 
-// ----------- Load Rooms Table (ignore deleted) -----------
+
+// ----------- Load Indoor Infrastructure Table (ignore deleted) -----------
 async function renderRoomsTable() {
-    const tbody = document.querySelector(".rooms-table tbody");
-    if (!tbody) return;
-    tbody.innerHTML = "";
+  const tbody = document.querySelector(".rooms-table tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
 
-    try {
-        let rooms = [];
-        let buildings = [];
+  try {
+    // 🔹 Load Indoor Infrastructure (instead of Rooms)
+    const indoorSnap = await getDocs(collection(db, "IndoorInfrastructure"));
+    const rooms = indoorSnap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(r => !r.is_deleted);
 
-        if (navigator.onLine) {
-            // 🔹 Online: Firestore
-            const roomsSnap = await getDocs(collection(db, "Rooms"));
-            rooms = roomsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(r => !r.is_deleted);
+    // 🔹 Load Infrastructure
+    const infraSnap = await getDocs(collection(db, "Infrastructure"));
+    const infrastructures = infraSnap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(i => !i.is_deleted);
 
-            const buildingSnap = await getDocs(collection(db, "Buildings"));
-            buildings = buildingSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        } else {
-            // 🔹 Offline: JSON fallback
-            const [roomsRes, buildingRes] = await Promise.all([
-                fetch("../assets/firestore/Rooms.json"),
-                fetch("../assets/firestore/Buildings.json")
-            ]);
+    // ✅ Build infra map
+    const infraMap = {};
+    infrastructures.forEach(infra => {
+      const key = infra.infra_id?.trim() || infra.id;
+      if (!infraMap[key]) {
+        infraMap[key] = `${infra.name} (${infra.infra_id || infra.id})`;
+      }
+    });
 
-            rooms = (await roomsRes.json()).filter(r => !r.is_deleted);
-            buildings = await buildingRes.json();
+    console.log("📂 InfraMap:", infraMap);
 
-            console.log("📂 Offline → Rooms and Buildings loaded from JSON");
-        }
+    // Sort by createdAt
+    rooms.sort((a, b) => {
+      const timeA = a.createdAt?.seconds
+        ? a.createdAt.seconds * 1000
+        : a.createdAt?.toMillis
+        ? a.createdAt.toMillis()
+        : 0;
+      const timeB = b.createdAt?.seconds
+        ? b.createdAt.seconds * 1000
+        : b.createdAt?.toMillis
+        ? b.createdAt.toMillis()
+        : 0;
+      return timeA - timeB;
+    });
 
-        // Sort rooms by createdAt
-        rooms.sort((a, b) => {
-            const timeA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-            const timeB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-            return timeA - timeB;
-        });
+    // ✅ Render table rows
+    rooms.forEach(room => {
+      const infraKey = room.infra_id?.trim() || room.infrastructure_id?.trim() || "";
+      const infraName = infraMap[infraKey] || `⚠️ Missing infra for ${infraKey}`;
 
-        // Map building names
-        const buildingsMap = {};
-        buildings.forEach(b => {
-            buildingsMap[b.building_id || b.id] = b.name;
-        });
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${room.room_id}</td>
+        <td>${room.name}</td>
+        <td>${infraName}</td>
+        <td>${room.indoor_type || ""}</td>
+        <td class="actions">
+          <button class="edit"><i class="fas fa-edit"></i></button>
+          <button class="delete"><i class="fas fa-trash"></i></button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
 
-        // Render table rows
-        rooms.forEach(data => {
-            const buildingName = buildingsMap[data.building_id] || "N/A";
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${data.room_id}</td>
-                <td>${data.name}</td>
-                <td>${buildingName}</td>
-                <td>${data.location || ""}</td>
-                <td>${data.latitude || ""}, ${data.longitude || ""}</td>
-                <td class="actions">
-                    <button class="edit"><i class="fas fa-edit"></i></button>
-                    <button class="delete"><i class="fas fa-trash"></i></button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-    } catch (err) {
-        console.error("Error loading rooms: ", err);
-    }
+  } catch (err) {
+    console.error("❌ Error loading Indoor Infrastructure: ", err);
+  }
 }
 
 // Call on page load
 document.addEventListener("DOMContentLoaded", renderRoomsTable);
+
+
+
 
 
 
@@ -1307,8 +1325,8 @@ document.getElementById("editCampusModal").addEventListener("click", (e) => {
 window.onload = () => {
     renderCategoriesTable();
     populateCategoryDropdownForInfra();
-    renderInfraTable();
-    renderRoomsTable();
+
+
     renderMapsTable();
     renderCampusTable();
 };
