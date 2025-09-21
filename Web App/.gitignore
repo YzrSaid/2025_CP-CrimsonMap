@@ -1,5 +1,5 @@
 # Ignore Firebase config
-firebaseConfig.mjs
+firebaseConfig.js
 
 # Ignore node_modules if you ever use npm
 node_modules/

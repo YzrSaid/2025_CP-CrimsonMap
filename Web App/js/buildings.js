@@ -1,7 +1,7 @@
 // ======================= FIREBASE SETUP ===========================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import { getFirestore, setDoc, collection, addDoc, getDocs, query, orderBy, where, updateDoc, doc, deleteField, getDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-import { firebaseConfig } from "../firebaseConfig.mjs";
+import { firebaseConfig } from "../firebaseConfig.js";
 
 
 // Initialize Firebase and Firestore

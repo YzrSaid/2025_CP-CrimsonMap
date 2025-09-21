@@ -77,7 +77,7 @@
             <!-- Tabs -->
             <div class="tabs">
                 <button class="tab active" data-target="infratbl">Infrastructure</button>
-                <button class="tab" data-target="roomstbl">Rooms</button>
+                <button class="tab" data-target="roomstbl">Indoor Infrastructure</button>
                 <button class="tab" data-target="categoriestbl">Categories</button>
                 <button class="tab" data-target="maptbl">Maps</button>
                 <button class="tab" data-target="campustbl">Campus</button>
@@ -122,15 +122,16 @@
                 </table>
             </div>
             
+            <!-- Updated Table -->
             <div class="roomstbl" style="display:none;">
                 <table class="rooms-table">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Name</th>
+                            <th>Indoor Infrastructure</th> <!-- updated label -->
                             <th>Building</th>
                             <th>Location</th>
-                            <th>Coordinates</th>
+                            <th>Indoor Type</th> <!-- replaced Coordinates with Indoor Type -->
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -140,7 +141,7 @@
                             <td>Lecture Room 1</td>
                             <td>College of Computing Studies</td>
                             <td>Near Gymnasium (Campus A)</td>
-                            <td>6.92012, 122.07910</td>
+                            <td>Lecture Room</td> <!-- Indoor Type value -->
                             <td class="actions">
                                 <button class="edit"><i class="fas fa-edit"></i></button>
                                 <button class="delete"><i class="fas fa-trash"></i></button>
@@ -267,17 +268,17 @@
 <!-- Add Room Modal Overlay -->
 <div id="addRoomModal" class="modal-overlay" style="display:none;">
     <div class="modal">
-        <h2>Add a Room</h2>
+        <h2>Add Indoor Infrastructure</h2> <!-- updated title -->
 
         <form> 
             <!-- Room Name + Room ID (same row) --> 
             <div class="form-row"> 
                 <div class="form-group">
-                    <label>Room Name</label>
+                    <label>Indoor Infrastructure Name</label> <!-- updated label -->
                     <input type="text" placeholder="e.g. Lecture Room 1">
                 </div>
                 <div class="form-group">
-                    <label>Room ID</label>
+                    <label>Indoor Infrastructure ID</label> <!-- updated label -->
                     <input type="text" id="roomId" name="room_id" disabled>
                 </div>
             </div>
@@ -290,22 +291,15 @@
                 </select>
             </div>
 
-            <!-- Coordinates -->
+            <!-- Indoor Type Dropdown (new) -->
             <div class="form-group">
-                <label class="section-title">
-                    Coordinates 
-                    <a href="#" style="font-size: 12px; color: #666; text-decoration: underline; margin-left: 5px;">
-                        Use Relative Measurement (m)
-                    </a>
-                </label>
-                <div class="form-row">
-                    <div class="form-group">
-                        <input type="text" placeholder="Latitude">
-                    </div>
-                    <div class="form-group">
-                        <input type="text" placeholder="Longitude">
-                    </div>
-                </div>
+                <label>Indoor Type</label>
+                <select>
+                    <option value="">Select type</option>
+                    <option value="lecture">Lecture Room</option>
+                    <option value="laboratory">Laboratory</option>
+                    <option value="stairs">Stairs</option>
+                </select>
             </div>
 
             <!-- Location Description -->
@@ -314,27 +308,6 @@
                 <input type="text" placeholder="e.g. Near Gate 6 and College of Engineering">
             </div>
 
-            <!-- Additional Info -->
-            <h3>Additional Information (Optional):</h3>
-            <div class="form-group">
-                <label>Contact Info</label>
-                <div style="display:flex; align-items:center; gap:5px;">
-                    <input type="text" placeholder="">
-                    <button type="button" class="plus-btn">+</button>
-                </div>
-            </div>
-
-            <!-- Upload Image -->
-            <div class="form-group">
-                <label>Upload Image</label>
-                <div class="upload-box">
-                    <input type="file" id="uploadImage" accept=".jpg,.jpeg,.png" hidden>
-                    <label for="uploadImage" class="upload-label">
-                        <span class="plus-icon">+</span>
-                        <p>(Accepted Formats: jpeg, png, jpg)</p>
-                    </label>
-                </div>
-            </div>
 
             <!-- Actions --> 
             <div class="modal-actions"> 

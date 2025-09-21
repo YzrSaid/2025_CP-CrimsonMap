@@ -3,7 +3,7 @@
   import {
     getFirestore, collection, getDocs, query, orderBy, limit, doc, getDoc
   } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-  import { firebaseConfig } from "../firebaseConfig.mjs";
+  import { firebaseConfig } from "../firebaseConfig.js";
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
@@ -223,7 +223,7 @@ async function populateCampuses(mapId, selectCurrent = true, mapsData = null) {
     let mapData;
 
     if (navigator.onLine) {
-        // Online: fetch the specific map document from Firestore
+        // Online: fetch the speci  fic map document from Firestore
         const mapDocRef = doc(db, "MapVersions", mapId);
         const mapDocSnap = await getDoc(mapDocRef);
         if (!mapDocSnap.exists()) return;
@@ -457,7 +457,8 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
       attribution: "© OpenStreetMap contributors"
     }).addTo(map);
 
-    renderDataOnMap(map, nodes);
+    renderDataOnMap(map, nodes, false, edges);
+
 
     // 🔹 Modal logic
     const modal = document.getElementById("mapModal");
@@ -468,7 +469,8 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
       setTimeout(() => {
         const mapFull = L.map("map-full", { center: [6.9130, 122.0630], zoom: 18, zoomControl: true });
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(mapFull);
-        renderDataOnMap(mapFull, nodes, true);
+        renderDataOnMap(mapFull, nodes, true, edges);
+
       }, 200);
     });
 
@@ -500,15 +502,14 @@ function showDetails(node) {
     .openOn(node._map || window._activeMap);
 }
 
-// ---- Render barriers, buildings, rooms ----
-function renderDataOnMap(map, data, enableClick = false) {
+// ---- Render barriers, buildings, rooms, edges ----
+function renderDataOnMap(map, data, enableClick = false, edges = []) {
   window._activeMap = map; // keep reference for popups
 
   // --- Barriers (polygon + corner markers) ---
   const barrierNodes = data.filter(d => d.type === "barrier");
 
   if (barrierNodes.length > 0) {
-    // 🔑 Step 1: Get centroid
     const centroid = barrierNodes.reduce(
       (acc, n) => {
         acc.lat += n.latitude;
@@ -520,17 +521,14 @@ function renderDataOnMap(map, data, enableClick = false) {
     centroid.lat /= barrierNodes.length;
     centroid.lng /= barrierNodes.length;
 
-    // 🔑 Step 2: Sort nodes by angle around centroid
     const sortedNodes = [...barrierNodes].sort((a, b) => {
       const angleA = Math.atan2(a.latitude - centroid.lat, a.longitude - centroid.lng);
       const angleB = Math.atan2(b.latitude - centroid.lat, b.longitude - centroid.lng);
       return angleA - angleB;
     });
 
-    // 🔑 Step 3: Build ordered coordinates
     const barrierCoords = sortedNodes.map(b => [b.latitude, b.longitude]);
 
-    // Draw polygon
     const polygon = L.polygon(barrierCoords, {
       color: "green",
       weight: 3,
@@ -547,7 +545,6 @@ function renderDataOnMap(map, data, enableClick = false) {
         });
       });
 
-      // Corner markers
       sortedNodes.forEach(node => {
         const cornerMarker = L.circleMarker([node.latitude, node.longitude], {
           radius: 6,
@@ -583,11 +580,50 @@ function renderDataOnMap(map, data, enableClick = false) {
       marker.on("click", () => showDetails({ ...room, _map: map }));
     }
   });
+
+  // --- Edges (lines between nodes, skip barriers) ---
+  if (edges.length > 0) {
+    // Build lookup (store both coords + node type)
+    const nodeMap = new Map();
+    data.forEach(node => {
+      if (node.node_id && node.latitude && node.longitude) {
+        nodeMap.set(node.node_id, {
+          coords: [node.latitude, node.longitude],
+          type: node.type
+        });
+      }
+    });
+
+    edges.forEach(edge => {
+      if (!edge.from_node || !edge.to_node) return;
+      const from = nodeMap.get(edge.from_node);
+      const to = nodeMap.get(edge.to_node);
+
+      // 🚫 Skip edges if either endpoint is a barrier
+      if (!from || !to || from.type === "barrier" || to.type === "barrier") return;
+
+      const line = L.polyline([from.coords, to.coords], {
+        color: "orange",
+        weight: 3,
+        opacity: 0.8
+      }).addTo(map);
+
+      if (enableClick) {
+        line.on("click", () => {
+          showDetails({
+            edge_id: edge.edge_id,
+            from: edge.from_node,
+            to: edge.to_node,
+            distance: edge.distance,
+            path_type: edge.path_type
+          });
+        });
+      }
+    });
+  }
 }
 
-  
 
-  document.addEventListener("DOMContentLoaded", loadMap);
 
 
 
