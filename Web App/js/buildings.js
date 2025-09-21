@@ -23,15 +23,6 @@ function hideCategoryModal() {
 window.showCategoryModal = showCategoryModal;
 window.hideCategoryModal = hideCategoryModal;
 
-// ----------- File to Base64 Utility -----------
-function convertFileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-        reader.readAsDataURL(file);
-    });
-}
 
 // ----------- Load Categories Table (exclude deleted categories) -----------
 async function renderCategoriesTable() {
@@ -66,10 +57,15 @@ async function renderCategoriesTable() {
         // Render rows
         categories.forEach((data, index) => {
             const tr = document.createElement("tr");
+            tr.dataset.id = data.id; // ✅ Store Firestore docId
+
             tr.innerHTML = `
                 <td>${index + 1}</td>
                 <td>${data.name}</td>
-                <td>${data.icon ? `<img src="${data.icon}" alt="${data.name}" style="width:24px;height:24px;">` : ""}</td>
+                <td>
+                    <span class="category-color" style="background:${data.color || '#b41c1c'}"></span>
+                    <span style="margin-left:8px;">${data.color || '#b41c1c'}</span>
+                </td>
                 <td>${data.buildings || 0}</td>
                 <td class="actions">
                     <button class="edit"><i class="fas fa-edit"></i></button>
@@ -84,6 +80,7 @@ async function renderCategoriesTable() {
     }
 }
 
+
 // Call on page load
 document.addEventListener("DOMContentLoaded", renderCategoriesTable);
 
@@ -93,10 +90,13 @@ document.addEventListener("DOMContentLoaded", renderCategoriesTable);
 document.getElementById('categoryForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const name = document.getElementById('categoryName').value;
-    const iconFile = document.getElementById('categoryIcon').files[0];
-    let iconBase64 = '';
-    if (iconFile) iconBase64 = await convertFileToBase64(iconFile);
+    const name = document.getElementById('categoryName').value.trim();
+    const color = document.getElementById('categoryColor').value; // <-- get color
+
+    if (!name || !color) {
+        alert("Please fill in all required fields.");
+        return;
+    }
 
     try {
         // ✅ Save category
@@ -104,7 +104,7 @@ document.getElementById('categoryForm')?.addEventListener('submit', async (e) =>
         await addDoc(collection(db, "Categories"), {
             category_id: categoryId,
             name: name,
-            icon: iconBase64,
+            color: color, // <-- save color
             buildings: 0,
             is_deleted: false,
             createdAt: new Date()
@@ -115,14 +115,14 @@ document.getElementById('categoryForm')?.addEventListener('submit', async (e) =>
             timestamp: new Date(),
             activity: "Added Category",
             item: `Category ${categoryId}`,
-            description: `Added category "${name}".`
+            description: `Added category "${name}" with color "${color}".`
         });
 
         alert("Category saved!");
         document.getElementById('categoryForm').reset();
         hideCategoryModal();
         renderCategoriesTable();
-        populateCategoryDropdownForBuildings();
+        populateCategoryDropdownForInfra();
     } catch (err) {
         alert("Error adding category: " + err);
     }
@@ -968,37 +968,27 @@ async function renderCampusTable() {
 
 // ----------- Open Edit Category Modal on Table Click -----------
 document.querySelector("#categoriesTableBody").addEventListener("click", async (e) => {
-    if (!(e.target.classList.contains("fa-edit") || (e.target.closest("button") && e.target.closest("button").classList.contains("edit")))) 
+    if (!(e.target.classList.contains("fa-edit") || (e.target.closest("button")?.classList.contains("edit")))) 
         return;
 
     const row = e.target.closest("tr");
     if (!row) return;
 
-    const index = row.querySelector("td")?.textContent?.trim();
-    if (!index) return;
+    const docId = row.dataset.id; // ✅ direct from row
+    if (!docId) return;
 
     try {
-        // Fetch all categories
-        const snapshot = await getDocs(collection(db, "Categories"));
-        const docSnap = snapshot.docs[parseInt(index) - 1]; // table index to doc
-        if (!docSnap) return;
+        const docRef = doc(db, "Categories", docId);
+        const docSnap = await getDoc(docRef);
 
+        if (!docSnap.exists()) return;
         const data = docSnap.data();
 
         // Prefill form fields
         document.getElementById("editCategoryName").value = data.name ?? "";
 
-        const preview = document.getElementById("editCategoryPreview");
-        if (data.icon) {
-            preview.src = data.icon;
-            preview.style.display = "block";
-        } else {
-            preview.src = "";
-            preview.style.display = "none";
-        }
-
         // Store docId in form for update
-        document.getElementById("editCategoryForm").dataset.docId = docSnap.id;
+        document.getElementById("editCategoryForm").dataset.docId = docId;
 
         // Show modal
         document.getElementById("editCategoryModal").style.display = "flex";
@@ -1006,6 +996,7 @@ document.querySelector("#categoriesTableBody").addEventListener("click", async (
         console.error("Error opening edit category modal:", err);
     }
 });
+
 
 // ----------- Save Edited Category -----------
 document.getElementById("editCategoryForm").addEventListener("submit", async (e) => {
@@ -1018,13 +1009,9 @@ document.getElementById("editCategoryForm").addEventListener("submit", async (e)
     }
 
     const name = document.getElementById("editCategoryName").value.trim();
-    let iconUrl = document.getElementById("editCategoryPreview").src || "";
-    const iconFile = document.getElementById("editCategoryIcon").files[0];
-    if (iconFile) {
-        iconUrl = await convertFileToBase64(iconFile);
-    }
+    const color = document.getElementById("editCategoryColor").value;
 
-    if (!name) {
+    if (!name || !color) {
         alert("Please fill in all required fields.");
         return;
     }
@@ -1032,7 +1019,7 @@ document.getElementById("editCategoryForm").addEventListener("submit", async (e)
     try {
         await updateDoc(doc(db, "Categories", docId), {
             name: name,
-            icon: iconUrl,
+            color: color,
             updatedAt: new Date()
         });
 
@@ -1056,6 +1043,18 @@ document.getElementById("editCategoryModal").addEventListener("click", (e) => {
         document.getElementById("editCategoryModal").style.display = "none";
     }
 });
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1323,7 +1322,6 @@ document.getElementById("editCampusModal").addEventListener("click", (e) => {
 
 // ----------- Initial Data Load -----------
 window.onload = () => {
-    renderCategoriesTable();
     populateCategoryDropdownForInfra();
 
 
@@ -1708,6 +1706,7 @@ document.getElementById("deleteRoomModal").addEventListener("click", (e) => {
 
 // ======================= DELETE CATEGORY SECTION =========================
 
+// ----------- Delete Category Modal Logic -----------
 let categoryToDelete = null; // Will store {docId, name}
 
 // Open delete modal when clicking the delete icon

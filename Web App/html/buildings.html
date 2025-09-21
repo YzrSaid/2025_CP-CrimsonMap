@@ -128,8 +128,8 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Indoor Infrastructure</th> <!-- updated label -->
-                            <th>Building</th>
+                            <th>Name</th> <!-- updated label -->
+                            <th>Infrastructure</th>
                             <th>Indoor Type</th> <!-- replaced Coordinates with Indoor Type -->
                             <th>Actions</th>
                         </tr>
@@ -146,13 +146,14 @@
                         <tr>
                             <th>No</th>
                             <th>Name/Label</th>
-                            <th>Icon (Icon, PNG)</th>
+                            <th>Legend/Label (Color)</th>
                             <th>Buildings</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="categoriesTableBody">
                         <!-- rows will be inserted here -->
+                         
                     </tbody>
                 </table>
             </div>
@@ -305,31 +306,25 @@
 
 
 
-<!-- Add Category Modal Overlay --> 
+<!-- Add Category Modal Overlay -->
 <div id="addCategoryModal" class="modal-overlay" style="display:none;">
     <div class="modal">
         <h2>Add Category</h2>
-
         <form id="categoryForm">
-            <!-- Name/Label -->
             <div class="form-group">
                 <label>Name/Label</label>
                 <input type="text" id="categoryName" placeholder="Category Name" required>
             </div>
-
-            <!-- Icon -->
             <div class="form-group">
-                <label>Icon (.ico/.png)</label>
-                <input type="file" id="categoryIcon" accept=".png,.ico">
+                <label>Legend/Label (Color)</label>
+                <input type="color" id="categoryColor" value="#b41c1c" required>
             </div>
-
-            <!-- Actions -->
             <div class="modal-actions">
                 <button type="submit" class="save-btn">Save</button>
                 <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
-            </div> 
-        </form> 
-    </div> 
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- Add Map Modal -->
@@ -451,28 +446,15 @@
 <div id="editCategoryModal" class="modal-overlay" style="display:none;">
     <div class="modal">
         <h2>Edit Category</h2>
-
         <form id="editCategoryForm">
-            <!-- Name/Label -->
             <div class="form-group">
                 <label>Name/Label</label>
                 <input type="text" id="editCategoryName" placeholder="Category Name" required>
             </div>
-
-            <!-- Icon -->
             <div class="form-group">
-                <label>Icon (.ico/.png)</label>
-                <div class="upload-box">
-                    <input type="file" id="editCategoryIcon" accept=".png,.ico" hidden>
-                    <label for="editCategoryIcon" class="upload-label">
-                        <span class="plus-icon">+</span>
-                        <p>(Accepted Formats: ico, png)</p>
-                    </label>
-                </div>
-                <img id="editCategoryPreview" src="" alt="Preview" style="max-width:80px; max-height:80px; display:none; margin-top:8px;">
+                <label>Legend/Label (Color)</label>
+                <input type="color" id="editCategoryColor" required>
             </div>
-
-            <!-- Actions -->
             <div class="modal-actions">
                 <button type="submit" class="save-btn">Save</button>
                 <button type="button" class="cancel-btn" id="cancelEditCategoryBtn">Cancel</button>

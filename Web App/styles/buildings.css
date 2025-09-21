@@ -740,3 +740,13 @@ h3 {
 .custom-multiselect .option.selected .checkmark {
   display: inline;
 }
+
+
+.category-color {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid #eee;
+    vertical-align: middle;
+}
