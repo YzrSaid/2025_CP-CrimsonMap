@@ -225,9 +225,9 @@
                 <label>Type</label>
                 <select id="nodeType">
                     <option value="">Select type</option>
-                    <option value="room">Room</option>
-                    <option value="barrier">Barrier</option>
                     <option value="infrastructure">Infrastructure</option>
+                    <option value="indoorInfra">Indoor Infrastructure</option>
+                    <option value="barrier">Barrier</option>
                     <option value="intermediate">Intermediate</option>
                 </select>
             </div>
@@ -240,11 +240,11 @@
                 </select>
             </div>
 
-            <!-- Related Room -->
+            <!-- Related Indoor Infra -->
             <div class="form-group">
-                <label>Related Room</label>
-                <select id="relatedRoom">
-                    <option value="">Select room</option>
+                <label>Related Indoor Infra</label>
+                <select id="relatedIndoorInfra">
+                    <option value="">Select Indoor Infra</option>
                 </select>
             </div>
 
@@ -259,14 +259,6 @@
                         <input id="longitude" type="text" placeholder="Longitude">
                     </div>
                 </div>
-            </div>
-
-            <!-- Indoor/Outdoor -->
-            <div class="form-group checkbox-row">
-                <label>Indoor</label>
-                <input type="checkbox" id="indoorCheckbox">
-                <label style="margin-left:20px;">Outdoor</label>
-                <input type="checkbox" id="outdoorCheckbox">
             </div>
 
             <!-- Indoor Details (hidden by default, shown if Indoor checked) -->
@@ -405,7 +397,7 @@
             </div>
             <div class="form-group">
                 <label for="editNodeId">Node ID</label>
-                <input id="editNodeId" name="nodeId_display" type="text" readonly disabled>
+                <input id="editNodeId" name="nodeId_display" type="text">
                 <input id="editNodeIdHidden" name="nodeId" type="hidden">
             </div>
         </div>

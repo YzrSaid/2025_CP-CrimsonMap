@@ -16,7 +16,7 @@ function showNodeModal() {
     document.getElementById('addNodeModal').style.display = 'flex';
     generateNextNodeId();
     populateInfraDropdown();
-    populateRoomDropdown();
+    populateIndoorInfraDropdown(); 
     populateCampusDropdown();
 }
 function hideNodeModal() {
@@ -419,31 +419,119 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 
+
+
+
+
+
+
+
+
+// ----------- Populate Related Indoor Infrastructure Dropdown -----------
+async function populateIndoorInfraDropdown(selectId = "relatedIndoorInfra") {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    select.innerHTML = `<option value="">Select Indoor Infra</option>`;
+    const q = query(collection(db, "IndoorInfrastructure"));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.room_id && data.name) {
+            const option = document.createElement("option");
+            option.value = data.room_id;
+            option.textContent = data.name;
+            select.appendChild(option);
+        }
+    });
+}
+
+
+
+
+
+
+
+
+
+document.addEventListener("DOMContentLoaded", function() {
+    const nodeTypeSelect = document.getElementById("nodeType");
+    const relatedInfraSelect = document.getElementById("relatedInfra");
+    const relatedIndoorInfraSelect = document.getElementById("relatedIndoorInfra");
+    const indoorDetails = document.getElementById("indoorDetails");
+
+    // Hide indoor details by default
+    indoorDetails.style.display = "none";
+
+    nodeTypeSelect.addEventListener("change", function() {
+        const type = this.value;
+
+        if (type === "indoorInfra") {
+            relatedInfraSelect.disabled = true;
+            relatedInfraSelect.classList.add("disabled");
+            relatedIndoorInfraSelect.disabled = false;
+            relatedIndoorInfraSelect.classList.remove("disabled");
+            indoorDetails.style.display = "block"; // Show indoor details
+        } else if (type === "infrastructure") {
+            relatedInfraSelect.disabled = false;
+            relatedInfraSelect.classList.remove("disabled");
+            relatedIndoorInfraSelect.disabled = true;
+            relatedIndoorInfraSelect.classList.add("disabled");
+            indoorDetails.style.display = "none"; // Hide indoor details
+        } else if (type === "intermediate" || type === "barrier") {
+            relatedInfraSelect.disabled = true;
+            relatedInfraSelect.classList.add("disabled");
+            relatedIndoorInfraSelect.disabled = true;
+            relatedIndoorInfraSelect.classList.add("disabled");
+            indoorDetails.style.display = "none"; // Hide indoor details
+        } else {
+            relatedInfraSelect.disabled = false;
+            relatedInfraSelect.classList.remove("disabled");
+            relatedIndoorInfraSelect.disabled = false;
+            relatedIndoorInfraSelect.classList.remove("disabled");
+            indoorDetails.style.display = "none";
+        }
+    });
+});
+
+
+
+
+
+
+
 let pendingNodeData = null; // store node temporarily before user chooses
 
 // ----------- Add Node Handler -----------
 document.getElementById("nodeForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // Gather node data
     const nodeId = document.getElementById("nodeId").value;
     const nodeName = document.getElementById("nodeName").value;
     const latitude = parseFloat(document.getElementById("latitude").value);
     const longitude = parseFloat(document.getElementById("longitude").value);
     const typeEl = document.getElementById("nodeType");
-    const type = typeEl ? typeEl.value : "";
+    const typeValue = typeEl ? typeEl.value : "";
     const relatedInfraId = document.getElementById("relatedInfra").value;
-    const relatedRoomId = document.getElementById("relatedRoom").value;
-    const isIndoor = document.getElementById("indoorCheckbox").checked;
+    const relatedIndoorInfraId = document.getElementById("relatedIndoorInfra").value;
+    const campusId = document.getElementById("campusDropdown").value;
+
+    let type = null;
     let indoor = null;
-    if (isIndoor) {
+
+    if (typeValue === "indoorInfra") {
+        type = "indoor";
         indoor = {
             floor: document.getElementById("floor").value,
             x: parseFloat(document.getElementById("xCoord").value) || 0,
             y: parseFloat(document.getElementById("yCoord").value) || 0
         };
+    } else if (typeValue === "infrastructure") {
+        type = "outdoor";
+        indoor = null;
+    } else if (typeValue === "barrier" || typeValue === "intermediate") {
+        type = null;
+        indoor = null;
     }
-    const campusId = document.getElementById("campusDropdown").value;
 
     // Cartesian conversion
     const origin = { lat: 6.913341, lng: 122.063693 };
@@ -457,7 +545,6 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
     }
     const { x, y } = latLngToXY(latitude, longitude, origin);
 
-    // Save pending node
     pendingNodeData = {
         node_id: nodeId,
         name: nodeName,
@@ -467,14 +554,13 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
         y_coordinate: y,
         type,
         related_infra_id: relatedInfraId,
-        related_room_id: relatedRoomId,
+        related_room_id: relatedIndoorInfraId, // Use indoor infra as related_room_id
         indoor,
         is_active: true,
         campus_id: campusId,
         created_at: new Date()
     };
 
-    // Show modal
     document.getElementById("nodeSaveModal").style.display = "flex";
 });
 
@@ -1086,6 +1172,7 @@ async function saveEdge(option) {
         }
 
         renderEdgesTable();
+        loadMap(mapId); 
         pendingEdgeData = null;
 
     } catch (err) {
