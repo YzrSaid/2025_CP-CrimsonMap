@@ -24,6 +24,10 @@ window.showCategoryModal = showCategoryModal;
 window.hideCategoryModal = hideCategoryModal;
 
 
+
+
+let categoriesTableData = [];
+
 // ----------- Load Categories Table (exclude deleted categories) -----------
 async function renderCategoriesTable() {
     const tbody = document.getElementById("categoriesTableBody");
@@ -34,17 +38,14 @@ async function renderCategoriesTable() {
         let categories = [];
 
         if (navigator.onLine) {
-            // 🔹 Online: Firestore
             const querySnapshot = await getDocs(collection(db, "Categories"));
             categories = querySnapshot.docs
                 .map(doc => ({ id: doc.id, ...doc.data() }))
                 .filter(data => !data.is_deleted);
         } else {
-            // 🔹 Offline: JSON fallback
             const res = await fetch("../assets/firestore/Categories.json");
             const dataJson = await res.json();
             categories = dataJson.filter(data => !data.is_deleted);
-            console.log("📂 Offline → Categories loaded from JSON");
         }
 
         // Sort by createdAt
@@ -54,31 +55,40 @@ async function renderCategoriesTable() {
             return timeA - timeB;
         });
 
-        // Render rows
-        categories.forEach((data, index) => {
-            const tr = document.createElement("tr");
-            tr.dataset.id = data.id; // ✅ Store Firestore docId
+        // Store for filtering/searching
+        categoriesTableData = categories;
 
-            tr.innerHTML = `
-                <td>${index + 1}</td>
-                <td>${data.name}</td>
-                <td>
-                    <span class="category-color" style="background:${data.color || '#b41c1c'}"></span>
-                    <span style="margin-left:8px;">${data.color || '#b41c1c'}</span>
-                </td>
-                <td>${data.buildings || 0}</td>
-                <td class="actions">
-                    <button class="edit"><i class="fas fa-edit"></i></button>
-                    <button class="delete"><i class="fas fa-trash"></i></button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+        renderCategoriesTableRows(categoriesTableData);
 
     } catch (err) {
         console.error("Error loading categories: ", err);
     }
 }
+
+function renderCategoriesTableRows(data) {
+    const tbody = document.getElementById("categoriesTableBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    data.forEach((data, index) => {
+        const tr = document.createElement("tr");
+        tr.dataset.id = data.id;
+        tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${data.name}</td>
+            <td>
+                <span class="category-color" style="background:${data.color || '#b41c1c'}"></span>
+                <span style="margin-left:8px;">${data.color || '#b41c1c'}</span>
+            </td>
+            <td>${data.buildings || 0}</td>
+            <td class="actions">
+                <button class="edit"><i class="fas fa-edit"></i></button>
+                <button class="delete"><i class="fas fa-trash"></i></button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
 
 
 // Call on page load
@@ -240,7 +250,13 @@ document.querySelector("#addInfraModal form")?.addEventListener("submit", async 
 });
 
 
-// ----------- Load Infrastructure Table -----------
+
+
+
+
+let infraTableData = []; // Store loaded infra for filtering
+
+// Update renderInfraTable to store data for filtering
 async function renderInfraTable() {
     const tbody = document.querySelector(".infra-table tbody");
     if (!tbody) return;
@@ -251,23 +267,18 @@ async function renderInfraTable() {
         let categories = [];
 
         if (navigator.onLine) {
-            // 🔹 Online: Firestore
             const infraSnap = await getDocs(collection(db, "Infrastructure"));
             infras = infraSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(d => !d.is_deleted);
 
             const catSnap = await getDocs(collection(db, "Categories"));
             categories = catSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(d => !d.is_deleted);
         } else {
-            // 🔹 Offline: JSON fallback
             const [infraRes, catRes] = await Promise.all([
                 fetch("../assets/firestore/Infrastructure.json"),
                 fetch("../assets/firestore/Categories.json")
             ]);
-
             infras = (await infraRes.json()).filter(d => !d.is_deleted);
             categories = (await catRes.json()).filter(d => !d.is_deleted);
-
-            console.log("📂 Offline → Infrastructure and Categories loaded from JSON");
         }
 
         // Sort infrastructure by createdAt
@@ -283,28 +294,74 @@ async function renderInfraTable() {
             catMap[c.category_id || c.id] = c.name;
         });
 
-        // Render rows
-        infras.forEach(data => {
-            const categoryName = catMap[data.category_id] || "N/A";
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${data.infra_id}</td>
-                <td>${data.name}</td>
-                <td>${categoryName}</td>
-                <td>${data.phone || ""}</td>
-                <td>${data.email || ""}</td>
-                <td class="actions">
-                    <button class="edit"><i class="fas fa-edit"></i></button>
-                    <button class="delete"><i class="fas fa-trash"></i></button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+        // Store for filtering
+        infraTableData = infras.map(data => ({
+            ...data,
+            categoryName: catMap[data.category_id] || "N/A"
+        }));
 
+        renderInfraTableRows(infraTableData);
     } catch (err) {
         console.error("Error loading infrastructure: ", err);
     }
 }
+
+// Helper to render rows based on filtered data
+function renderInfraTableRows(data) {
+    const tbody = document.querySelector(".infra-table tbody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    data.forEach(data => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${data.infra_id}</td>
+            <td>${data.name}</td>
+            <td>${data.categoryName}</td>
+            <td>${data.phone || ""}</td>
+            <td>${data.email || ""}</td>
+            <td class="actions">
+                <button class="edit"><i class="fas fa-edit"></i></button>
+                <button class="delete"><i class="fas fa-trash"></i></button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+
+document.getElementById("sortCategory").addEventListener("change", function() {
+    const sortVal = this.value.trim();
+    let filtered = infraTableData;
+    if (sortVal) {
+        filtered = filtered.filter(d => String(d.category_id).trim() === sortVal);
+    }
+    // If search is active, filter by search too
+    const searchVal = document.getElementById("searchInput").value.trim().toLowerCase();
+    if (searchVal) {
+        filtered = filtered.filter(d =>
+            d.name.toLowerCase().includes(searchVal) ||
+            d.infra_id.toLowerCase().includes(searchVal) ||
+            d.categoryName.toLowerCase().includes(searchVal) ||
+            (d.phone || "").toLowerCase().includes(searchVal) ||
+            (d.email || "").toLowerCase().includes(searchVal)
+        );
+    }
+    renderInfraTableRows(filtered);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Call on page load
 document.addEventListener("DOMContentLoaded", renderInfraTable);
@@ -456,74 +513,85 @@ document.querySelector("#addRoomModal form")?.addEventListener("submit", async (
 
 
 
+let roomsTableData = [];
 
 // ----------- Load Indoor Infrastructure Table (ignore deleted) -----------
 async function renderRoomsTable() {
-  const tbody = document.querySelector(".rooms-table tbody");
-  if (!tbody) return;
-  tbody.innerHTML = "";
+    const tbody = document.querySelector(".rooms-table tbody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
 
-  try {
-    // 🔹 Load Indoor Infrastructure (instead of Rooms)
-    const indoorSnap = await getDocs(collection(db, "IndoorInfrastructure"));
-    const rooms = indoorSnap.docs
-      .map(doc => ({ id: doc.id, ...doc.data() }))
-      .filter(r => !r.is_deleted);
+    try {
+        // Load Indoor Infrastructure
+        const indoorSnap = await getDocs(collection(db, "IndoorInfrastructure"));
+        const rooms = indoorSnap.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(r => !r.is_deleted);
 
-    // 🔹 Load Infrastructure
-    const infraSnap = await getDocs(collection(db, "Infrastructure"));
-    const infrastructures = infraSnap.docs
-      .map(doc => ({ id: doc.id, ...doc.data() }))
-      .filter(i => !i.is_deleted);
+        // Load Infrastructure
+        const infraSnap = await getDocs(collection(db, "Infrastructure"));
+        const infrastructures = infraSnap.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(i => !i.is_deleted);
 
-    // ✅ Build infra map
-    const infraMap = {};
-    infrastructures.forEach(infra => {
-      const key = infra.infra_id?.trim() || infra.id;
-      if (!infraMap[key]) {
-        infraMap[key] = `${infra.name} (${infra.infra_id || infra.id})`;
-      }
+        // Build infra map
+        const infraMap = {};
+        infrastructures.forEach(infra => {
+            const key = infra.infra_id?.trim() || infra.id;
+            if (!infraMap[key]) {
+                infraMap[key] = `${infra.name} (${infra.infra_id || infra.id})`;
+            }
+        });
+
+        // Store for filtering/searching
+        roomsTableData = rooms.map(room => {
+            const infraKey = room.infra_id?.trim() || room.infrastructure_id?.trim() || "";
+            return {
+                ...room,
+                infraName: infraMap[infraKey] || `⚠️ Missing infra for ${infraKey}`
+            };
+        });
+
+        // Sort by createdAt
+        roomsTableData.sort((a, b) => {
+            const timeA = a.createdAt?.seconds
+                ? a.createdAt.seconds * 1000
+                : a.createdAt?.toMillis
+                ? a.createdAt.toMillis()
+                : 0;
+            const timeB = b.createdAt?.seconds
+                ? b.createdAt.seconds * 1000
+                : b.createdAt?.toMillis
+                ? b.createdAt.toMillis()
+                : 0;
+            return timeA - timeB;
+        });
+
+        renderRoomsTableRows(roomsTableData);
+
+    } catch (err) {
+        console.error("❌ Error loading Indoor Infrastructure: ", err);
+    }
+}
+
+function renderRoomsTableRows(data) {
+    const tbody = document.querySelector(".rooms-table tbody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    data.forEach(room => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${room.room_id}</td>
+            <td>${room.name}</td>
+            <td>${room.infraName}</td>
+            <td>${room.indoor_type || ""}</td>
+            <td class="actions">
+                <button class="edit"><i class="fas fa-edit"></i></button>
+                <button class="delete"><i class="fas fa-trash"></i></button>
+            </td>
+        `;
+        tbody.appendChild(tr);
     });
-
-    console.log("📂 InfraMap:", infraMap);
-
-    // Sort by createdAt
-    rooms.sort((a, b) => {
-      const timeA = a.createdAt?.seconds
-        ? a.createdAt.seconds * 1000
-        : a.createdAt?.toMillis
-        ? a.createdAt.toMillis()
-        : 0;
-      const timeB = b.createdAt?.seconds
-        ? b.createdAt.seconds * 1000
-        : b.createdAt?.toMillis
-        ? b.createdAt.toMillis()
-        : 0;
-      return timeA - timeB;
-    });
-
-    // ✅ Render table rows
-    rooms.forEach(room => {
-      const infraKey = room.infra_id?.trim() || room.infrastructure_id?.trim() || "";
-      const infraName = infraMap[infraKey] || `⚠️ Missing infra for ${infraKey}`;
-
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${room.room_id}</td>
-        <td>${room.name}</td>
-        <td>${infraName}</td>
-        <td>${room.indoor_type || ""}</td>
-        <td class="actions">
-          <button class="edit"><i class="fas fa-edit"></i></button>
-          <button class="delete"><i class="fas fa-trash"></i></button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-  } catch (err) {
-    console.error("❌ Error loading Indoor Infrastructure: ", err);
-  }
 }
 
 // Call on page load
@@ -872,6 +940,8 @@ async function populateCampusDropdown() {
 populateCampusDropdown();
 
 
+let mapsTableData = [];
+
 // ----------- Load Maps Table (with current_version) -----------
 async function renderMapsTable() {
     const tbody = document.querySelector(".maps-table tbody");
@@ -883,22 +953,18 @@ async function renderMapsTable() {
         let campuses = [];
 
         if (navigator.onLine) {
-            // 🔹 Online: Firestore
             const mapsSnap = await getDocs(collection(db, "MapVersions"));
             maps = mapsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(m => !m.is_deleted);
 
             const campusSnap = await getDocs(collection(db, "Campus"));
             campuses = campusSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         } else {
-            // 🔹 Offline: JSON fallback
             const [mapsRes, campusRes] = await Promise.all([
                 fetch("../assets/firestore/MapVersions.json"),
                 fetch("../assets/firestore/Campus.json")
             ]);
-
             maps = (await mapsRes.json()).filter(m => !m.is_deleted);
             campuses = await campusRes.json();
-            console.log("📂 Offline → Maps and Campuses loaded from JSON");
         }
 
         // Sort maps by createdAt
@@ -912,18 +978,21 @@ async function renderMapsTable() {
         const campusMap = {};
         campuses.forEach(c => campusMap[c.campus_id || c.id] = c.campus_name);
 
-        maps.forEach(data => {
-            let campusNames = "—";
-            if (Array.isArray(data.campus_included) && data.campus_included.length > 0) {
-                campusNames = data.campus_included.map(id => campusMap[id] || id).join(", ");
-            }
+        // Store for search/filter
+        mapsTableData = maps.map(data => ({
+            ...data,
+            campusNames: Array.isArray(data.campus_included) && data.campus_included.length > 0
+                ? data.campus_included.map(id => campusMap[id] || id).join(", ")
+                : "—"
+        }));
 
+        mapsTableData.forEach(data => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${data.map_id || "—"}</td>
                 <td>${data.map_name || "—"}</td>
                 <td>${data.current_version || (data.versions && data.versions[0]?.id) || "—"}</td>
-                <td>${campusNames}</td>
+                <td>${data.campusNames}</td>
                 <td class="actions">
                     <button class="edit" data-id="${data.id}"><i class="fas fa-edit"></i></button>
                     <button class="delete" data-id="${data.id}"><i class="fas fa-trash"></i></button>
@@ -932,10 +1001,31 @@ async function renderMapsTable() {
             tbody.appendChild(tr);
         });
 
-        setupMapDeleteHandlers(); // ✅ Setup delete modal handlers
+        setupMapDeleteHandlers();
     } catch (err) {
         console.error("Error loading maps: ", err);
     }
+}
+
+
+function renderMapsTableRows(data) {
+    const tbody = document.querySelector(".maps-table tbody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    data.forEach(data => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${data.map_id || "—"}</td>
+            <td>${data.map_name || "—"}</td>
+            <td>${data.current_version || (data.versions && data.versions[0]?.id) || "—"}</td>
+            <td>${data.campusNames}</td>
+            <td class="actions">
+                <button class="edit" data-id="${data.id}"><i class="fas fa-edit"></i></button>
+                <button class="delete" data-id="${data.id}"><i class="fas fa-trash"></i></button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
 
@@ -1032,6 +1122,9 @@ document.querySelector("#addCampusModal form")?.addEventListener("submit", async
 });
 
 
+
+let campusTableData = [];
+
 // ----------- Load Campus Table -----------
 async function renderCampusTable() {
     const tbody = document.querySelector(".campus-table tbody");
@@ -1043,21 +1136,18 @@ async function renderCampusTable() {
         let maps = [];
 
         if (navigator.onLine) {
-            // 🔹 Online: Firestore
             const campusSnap = await getDocs(collection(db, "Campus"));
             campuses = campusSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(c => !c.is_deleted);
 
             const mapsSnap = await getDocs(collection(db, "MapVersions"));
             maps = mapsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(m => !m.is_deleted);
         } else {
-            // 🔹 Offline: JSON fallback
             const [campusRes, mapsRes] = await Promise.all([
                 fetch("../assets/firestore/Campus.json"),
                 fetch("../assets/firestore/MapVersions.json")
             ]);
             campuses = (await campusRes.json()).filter(c => !c.is_deleted);
             maps = (await mapsRes.json()).filter(m => !m.is_deleted);
-            console.log("📂 Offline → Campuses and Maps loaded from JSON");
         }
 
         // Sort campuses by createdAt
@@ -1071,25 +1161,38 @@ async function renderCampusTable() {
         const mapMap = {};
         maps.forEach(m => mapMap[m.map_id || m.id] = m.map_name);
 
-        campuses.forEach(data => {
-            const mapName = mapMap[data.map_id] || data.map_id || "—";
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${data.campus_id}</td>
-                <td>${data.campus_name}</td>
-                <td>${mapName}</td>
-                <td class="actions">
-                    <button class="edit"><i class="fas fa-edit"></i></button>
-                    <button class="delete" data-id="${data.id}"><i class="fas fa-trash"></i></button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+        // Store for search/filter
+        campusTableData = campuses.map(data => ({
+            ...data,
+            mapName: mapMap[data.map_id] || data.map_id || "—"
+        }));
 
-        setupCampusDeleteHandlers(); // ✅ Setup delete modal handlers
+        renderCampusTableRows(campusTableData);
+
+        setupCampusDeleteHandlers();
     } catch (err) {
         console.error("Error loading campuses: ", err);
     }
+}
+
+
+function renderCampusTableRows(data) {
+    const tbody = document.querySelector(".campus-table tbody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    data.forEach(data => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${data.campus_id}</td>
+            <td>${data.campus_name}</td>
+            <td>${data.mapName}</td>
+            <td class="actions">
+                <button class="edit"><i class="fas fa-edit"></i></button>
+                <button class="delete" data-id="${data.id}"><i class="fas fa-trash"></i></button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
 
@@ -2017,5 +2120,82 @@ document.getElementById("deleteCampusModal").addEventListener("click", (e) => {
     if (e.target === document.getElementById("deleteCampusModal")) {
         document.getElementById("deleteCampusModal").style.display = "none";
         campusToDelete = null;
+    }
+});
+
+
+
+async function populateSortDropdown() {
+    const sortSelect = document.getElementById("sortCategory");
+    if (!sortSelect) return;
+
+    sortSelect.innerHTML = `<option value="">Sort</option>`;
+    const q = query(collection(db, "Categories"), orderBy("createdAt", "asc"));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.category_id && data.name && !data.is_deleted) {
+            const option = document.createElement("option");
+            option.value = data.category_id;
+            option.textContent = data.name;
+            sortSelect.appendChild(option);
+        }
+    });
+}
+document.addEventListener("DOMContentLoaded", populateSortDropdown);
+
+
+document.getElementById("searchInput").addEventListener("input", function() {
+    const val = this.value.trim().toLowerCase();
+
+    // Infrastructure tab
+    if (tables.infratbl.style.display !== "none") {
+        let filtered = infraTableData.filter(d =>
+            d.name.toLowerCase().includes(val) ||
+            d.infra_id.toLowerCase().includes(val) ||
+            d.categoryName.toLowerCase().includes(val) ||
+            (d.phone || "").toLowerCase().includes(val) ||
+            (d.email || "").toLowerCase().includes(val)
+        );
+        const sortVal = document.getElementById("sortCategory").value;
+        if (sortVal) {
+            filtered = filtered.filter(d => String(d.category_id).trim() === sortVal);
+        }
+        renderInfraTableRows(filtered);
+
+    // Room tab
+    } else if (tables.roomstbl.style.display !== "none") {
+        let filtered = roomsTableData.filter(r =>
+            r.name.toLowerCase().includes(val) ||
+            r.room_id.toLowerCase().includes(val) ||
+            (r.infraName || "").toLowerCase().includes(val) ||
+            (r.indoor_type || "").toLowerCase().includes(val)
+        );
+        const sortVal = document.getElementById("sortInfra")?.value;
+        if (sortVal) {
+            filtered = filtered.filter(r => String(r.infra_id).trim() === sortVal);
+        }
+        renderRoomsTableRows(filtered);
+    } else if (tables.categoriestbl.style.display !== "none") {
+        let filtered = categoriesTableData.filter(c =>
+            c.name.toLowerCase().includes(val) ||
+            (c.color || "").toLowerCase().includes(val)
+        );
+        renderCategoriesTableRows(filtered);
+    } else if (tables.maptbl.style.display !== "none") {
+        let filtered = mapsTableData.filter(m =>
+            (m.map_id || "").toLowerCase().includes(val) ||
+            (m.map_name || "").toLowerCase().includes(val) ||
+            (m.current_version || "").toLowerCase().includes(val) ||
+            (m.campusNames || "").toLowerCase().includes(val)
+        );
+        renderMapsTableRows(filtered);
+    } else if (tables.campustbl.style.display !== "none") {
+        let filtered = campusTableData.filter(c =>
+            (c.campus_id || "").toLowerCase().includes(val) ||
+            (c.campus_name || "").toLowerCase().includes(val) ||
+            (c.mapName || "").toLowerCase().includes(val)
+        );
+        renderCampusTableRows(filtered);
     }
 });

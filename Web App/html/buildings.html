@@ -86,12 +86,14 @@
             <!-- Search, Sort, Add Button -->
             <div class="controls">
                 <div class="g1">
+                    <!-- Add IDs for JS targeting -->
                     <div class="searchbar">
-                        <input type="text" placeholder="Search...">
+                        <input type="text" id="searchInput" placeholder="Search...">
                     </div>
                     <div class="sort">
-                        <select>
-                            <option>Sort</option>
+                        <select id="sortCategory">
+                            <option value="">Sort by Category</option>
+                            <!-- JS will populate categories here -->
                         </select>
                     </div>
                 </div>
