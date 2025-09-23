@@ -30,14 +30,26 @@ window.closeNodeModal = hideNodeModal;
 
 // ----------- Auto-Increment Node ID -----------
 async function generateNextNodeId() {
-    const q = query(collection(db, "Nodes"));
-    const snapshot = await getDocs(q);
+    const mapSelect = document.getElementById("mapSelect");
+    const mapId = mapSelect ? mapSelect.value : null;
+    if (!mapId) return;
+
+    // Get current version from MapVersions
+    const mapDocRef = doc(db, "MapVersions", String(mapId));
+    const mapDocSnap = await getDoc(mapDocRef);
+    if (!mapDocSnap.exists()) return;
+
+    const currentVersion = mapDocSnap.data().current_version || "v1.0.0";
+    const versionRef = doc(db, "MapVersions", String(mapId), "versions", currentVersion);
+    const versionSnap = await getDoc(versionRef);
+    if (!versionSnap.exists()) return;
+
+    const nodes = Array.isArray(versionSnap.data().nodes) ? versionSnap.data().nodes : [];
 
     let maxNum = 0;
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.node_id) {
-            const num = parseInt(data.node_id.replace("ND-", ""));
+    nodes.forEach(node => {
+        if (node.node_id) {
+            const num = parseInt(node.node_id.replace("ND-", ""));
             if (!isNaN(num) && num > maxNum) maxNum = num;
         }
     });
@@ -919,14 +931,26 @@ document.getElementById("editNodeForm").addEventListener("submit", async (e) => 
 
 // ----------- Auto-Increment Edge ID -----------
 async function generateNextEdgeId() {
-    const q = query(collection(db, "Edges"));
-    const snapshot = await getDocs(q);
+    // Get current active map and version
+    const mapSelect = document.getElementById("mapSelect");
+    const mapId = mapSelect ? mapSelect.value : null;
+    if (!mapId) return;
+
+    const mapDocRef = doc(db, "MapVersions", String(mapId));
+    const mapDocSnap = await getDoc(mapDocRef);
+    if (!mapDocSnap.exists()) return;
+
+    const currentVersion = mapDocSnap.data().current_version || "v1.0.0";
+    const versionRef = doc(db, "MapVersions", String(mapId), "versions", currentVersion);
+    const versionSnap = await getDoc(versionRef);
+    if (!versionSnap.exists()) return;
+
+    const edges = Array.isArray(versionSnap.data().edges) ? versionSnap.data().edges : [];
 
     let maxNum = 0;
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.edge_id) {
-            const num = parseInt(data.edge_id.replace("EDG-", ""));
+    edges.forEach(edge => {
+        if (edge.edge_id) {
+            const num = parseInt(edge.edge_id.replace("EDG-", ""));
             if (!isNaN(num) && num > maxNum) maxNum = num;
         }
     });
@@ -935,6 +959,7 @@ async function generateNextEdgeId() {
     document.querySelector("#addEdgeModal input[type='text']").value = nextId;
     return nextId;
 }
+// ...existing code...
 
 // ----------- Load Nodes into Edge Dropdowns (Current Active Map/Campus/Version) -----------
 async function loadNodesDropdownsForEdge() {

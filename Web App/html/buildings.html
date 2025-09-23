@@ -527,7 +527,43 @@
 </div>
 
 
-
+<!-- Edit Room Modal Overlay -->
+<div id="editRoomModal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+        <h2>Edit Indoor Infrastructure</h2>
+        <form id="editRoomForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Indoor Infra Name</label>
+                    <input type="text" id="editRoomName" required>
+                </div>
+                <div class="form-group">
+                    <label>Indoor Infra ID</label>
+                    <input type="text" id="editRoomId" disabled>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Infrastructure</label>
+                <select id="editRoomInfra" required>
+                    <option value="">Select an infrastructure</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Indoor Type</label>
+                <select id="editRoomType" required>
+                    <option value="">Select type</option>
+                    <option value="lecture">Lecture Room</option>
+                    <option value="laboratory">Laboratory</option>
+                    <option value="stairs">Stairs</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="save-btn">Save</button>
+                <button type="button" class="cancel-btn" id="cancelEditRoomBtn">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 
 

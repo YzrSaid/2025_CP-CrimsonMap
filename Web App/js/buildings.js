@@ -535,6 +535,139 @@ document.addEventListener("DOMContentLoaded", renderRoomsTable);
 
 
 
+// ----------- Edit Room Modal Open Handler -----------
+document.querySelector(".rooms-table").addEventListener("click", async (e) => {
+    if (
+        !(e.target.classList.contains("fa-edit") ||
+          (e.target.closest("button") && e.target.closest("button").classList.contains("edit")))
+    ) return;
+
+    const row = e.target.closest("tr");
+    if (!row) return;
+
+    // Get room_id from the first cell
+    const roomId = row.querySelector("td")?.textContent?.trim();
+    if (!roomId) return;
+
+    try {
+        // Fetch room data from IndoorInfrastructure
+        const roomQ = query(collection(db, "IndoorInfrastructure"), where("room_id", "==", roomId));
+        const snap = await getDocs(roomQ);
+
+        if (snap.empty) {
+            alert("Indoor Infrastructure not found in Firestore");
+            return;
+        }
+
+        const docSnap = snap.docs[0];
+        const roomData = docSnap.data();
+
+        // Populate infrastructure dropdown and set value
+        await populateEditRoomInfraDropdown(roomData.infra_id);
+        document.getElementById("editRoomInfra").value = roomData.infra_id ?? "";
+
+        // Populate indoor type dropdown and set value
+        document.getElementById("editRoomType").value = roomData.indoor_type ?? "";
+
+        // Prefill fields
+        document.getElementById("editRoomId").value = roomData.room_id ?? "";
+        document.getElementById("editRoomName").value = roomData.name ?? "";
+
+        // Store docId for update
+        document.getElementById("editRoomForm").dataset.docId = docSnap.id;
+
+        // Show modal
+        document.getElementById("editRoomModal").style.display = "flex";
+    } catch (err) {
+        console.error("Error opening edit room modal:", err);
+    }
+});
+
+// ----------- Populate Infrastructure Dropdown for Edit Room Modal -----------
+async function populateEditRoomInfraDropdown(selectedId) {
+    const select = document.getElementById("editRoomInfra");
+    if (!select) return;
+    select.innerHTML = `<option value="">Select an infrastructure</option>`;
+    const q = query(collection(db, "Infrastructure"), orderBy("createdAt", "asc"));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.infra_id && data.name) {
+            const option = document.createElement("option");
+            option.value = data.infra_id;
+            option.textContent = data.name;
+            select.appendChild(option);
+        }
+    });
+    // Set selected value after options are loaded
+    if (selectedId) select.value = selectedId;
+}
+
+
+
+
+
+
+
+
+// ----------- Save Edited Room -----------
+document.getElementById("editRoomForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const docId = e.target.dataset.docId;
+    if (!docId) {
+        alert("No document ID found for update.");
+        return;
+    }
+
+    const name = document.getElementById("editRoomName").value.trim();
+    const roomId = document.getElementById("editRoomId").value.trim();
+    const infraId = document.getElementById("editRoomInfra").value;
+    const indoorType = document.getElementById("editRoomType").value;
+
+    if (!name || !roomId || !infraId || !indoorType) {
+        alert("Please fill in all required fields.");
+        return;
+    }
+
+    try {
+        await updateDoc(doc(db, "IndoorInfrastructure", docId), {
+            name: name,
+            room_id: roomId,
+            infra_id: infraId,
+            indoor_type: indoorType,
+            updatedAt: new Date()
+        });
+
+        alert("Indoor Infrastructure updated!");
+        document.getElementById("editRoomModal").style.display = "none";
+        renderRoomsTable();
+    } catch (err) {
+        alert("Error updating indoor infrastructure: " + err);
+    }
+});
+
+
+document.getElementById("cancelEditRoomBtn").addEventListener("click", () => {
+    document.getElementById("editRoomModal").style.display = "none";
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ======================= MAPS SECTION =========================
 
 // ----------- Modal Controls -----------
@@ -986,6 +1119,7 @@ document.querySelector("#categoriesTableBody").addEventListener("click", async (
 
         // Prefill form fields
         document.getElementById("editCategoryName").value = data.name ?? "";
+        document.getElementById("editCategoryColor").value = data.color ?? "#000000"; // <-- fix: prefill color
 
         // Store docId in form for update
         document.getElementById("editCategoryForm").dataset.docId = docId;
@@ -1646,7 +1780,7 @@ document.querySelector(".rooms-table").addEventListener("click", async (e) => {
 
     // Find Firestore docId for this room
     try {
-        const roomQ = query(collection(db, "Rooms"), where("room_id", "==", roomId));
+        const roomQ = query(collection(db, "IndoorInfrastructure"), where("room_id", "==", roomId));
         const snap = await getDocs(roomQ);
 
         if (snap.empty) {
@@ -1673,7 +1807,7 @@ document.getElementById("confirmDeleteRoomBtn").addEventListener("click", async 
     if (!roomToDelete) return;
 
     try {
-        await updateDoc(doc(db, "Rooms", roomToDelete.docId), {
+        await updateDoc(doc(db, "IndoorInfrastructure", roomToDelete.docId), {
             is_deleted: true,
             deletedAt: new Date()
         });
