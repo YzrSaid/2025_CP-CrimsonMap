@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -46,7 +47,8 @@ public class GlobalManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(this.gameObject);
 
-            onboardingSavePath = Application.persistentDataPath + "/saveData.json";
+            onboardingSavePath = Path.Combine(Application.persistentDataPath, "saveData.json");
+            Debug.Log($"Onboarding save path: {onboardingSavePath}");
 
             //check onboarding status and navigate - NO DATA SYNC HERE
             CheckOnboardingAndNavigate();
@@ -62,13 +64,14 @@ public class GlobalManager : MonoBehaviour
     {
         // Load onboarding status immediately - NO heavy operations
         LoadOnboardingData();
-        
+
         Debug.Log($"Onboarding check complete: {onboardingComplete}");
-        
+        Debug.Log($"Save file exists: {File.Exists(onboardingSavePath)}");
+
         if (!onboardingComplete)
         {
-            Debug.Log("First launch detected - loading Onboarding scene...");
-            UnityEngine.SceneManagement.SceneManager.LoadScene("OnboardingScene");
+            Debug.Log("First launch detected or onboarding not complete - loading Onboarding scene...");
+            UnityEngine.SceneManagement.SceneManager.LoadScene("OnboardingScreensScene");
         }
         else
         {
@@ -111,7 +114,7 @@ public class GlobalManager : MonoBehaviour
                 jsonManager = new GameObject("JSONFileManager");
                 jsonManager.AddComponent<JSONFileManager>();
             }
-            
+
             // Make it persist across scenes (DontDestroyOnLoad handled in JSONFileManager's Awake)
             DontDestroyOnLoad(jsonManager);
         }
@@ -133,7 +136,7 @@ public class GlobalManager : MonoBehaviour
                 firestoreManager = new GameObject("FirestoreManager");
                 firestoreManager.AddComponent<FirestoreManager>();
             }
-            
+
             // Make it persist across scenes (DontDestroyOnLoad handled in FirestoreManager's Awake)
             DontDestroyOnLoad(firestoreManager);
         }
@@ -260,43 +263,65 @@ public class GlobalManager : MonoBehaviour
         }
     }
 
-    // LIGHTWEIGHT method - only loads onboarding data from local file, no heavy operations
+    // FIXED: More robust onboarding data loading with explicit debug logging
     private void LoadOnboardingData()
     {
+        Debug.Log($"Checking onboarding save file at: {onboardingSavePath}");
+
         if (File.Exists(onboardingSavePath))
         {
+            Debug.Log("Save file found, attempting to load...");
             try
             {
                 string json = File.ReadAllText(onboardingSavePath);
-                SaveData data = JsonUtility.FromJson<SaveData>(json);
-                this.onboardingComplete = data.onboardingComplete;
-                Debug.Log($"Onboarding data loaded: onboardingComplete = {onboardingComplete}");
+                Debug.Log($"Save file content: {json}");
+
+                if (!string.IsNullOrEmpty(json.Trim()))
+                {
+                    SaveData data = JsonUtility.FromJson<SaveData>(json);
+                    this.onboardingComplete = data.onboardingComplete;
+                    Debug.Log($"Successfully loaded onboarding data: onboardingComplete = {onboardingComplete}");
+                }
+                else
+                {
+                    Debug.LogWarning("Save file is empty, treating as first launch");
+                    this.onboardingComplete = false;
+                }
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"Failed to load onboarding data: {ex.Message}");
+                Debug.LogError($"Failed to load onboarding data: {ex.Message}");
                 // Set default values if file is corrupted
                 this.onboardingComplete = false;
             }
         }
         else
         {
-            // Set default values for first-time users
+            Debug.Log("No save file found - this is a first launch");
+            // Explicitly set to false for first-time users
             this.onboardingComplete = false;
-            Debug.Log("No onboarding save file found, using default values");
         }
+
+        Debug.Log($"Final onboarding status: {onboardingComplete}");
     }
 
     public void SaveOnboardingData()
     {
-        SaveData data = new SaveData();
-        data.onboardingComplete = this.onboardingComplete;
+        try
+        {
+            SaveData data = new SaveData();
+            data.onboardingComplete = this.onboardingComplete;
 
-        string json = JsonUtility.ToJson(data);
-        File.WriteAllText(onboardingSavePath, json);
-        Debug.Log("Onboarding data saved locally");
+            string json = JsonUtility.ToJson(data, true);
+            File.WriteAllText(onboardingSavePath, json);
+            Debug.Log($"Onboarding data saved: {json}");
+            Debug.Log($"Saved to: {onboardingSavePath}");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"Failed to save onboarding data: {ex.Message}");
+        }
     }
-
     // All the other methods remain the same...
     // Smart data sync method
     public void SmartDataSync(System.Action onComplete = null)

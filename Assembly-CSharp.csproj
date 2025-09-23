@@ -173,8 +173,8 @@
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Utils/BearingFilter.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Directions/Response/Intersection.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/ISubLayerColorStyle.cs" />
-    <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/TileCover.cs" />
     <Compile Include="Assets/Mapbox/Unity/Utilities/DontDestroyOnLoad.cs" />
+    <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/TileCover.cs" />
     <Compile Include="Assets/Mapbox/Unity/LayerProperties/VectorLayerProperties.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/TerrainColliderOptions.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/MeshModifiers/LineMeshModifier.cs" />
@@ -1515,6 +1515,10 @@
       <HintPath>Library/ScriptAssemblies/Unity.VisualStudio.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.XR.ARCore">
+      <HintPath>Library/ScriptAssemblies/Unity.XR.ARCore.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>Library/ScriptAssemblies/UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
@@ -1593,6 +1597,10 @@
     </Reference>
     <Reference Include="Unity.PlasticSCM.Editor">
       <HintPath>Library/ScriptAssemblies/Unity.PlasticSCM.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.XR.ARCore.Editor">
+      <HintPath>Library/ScriptAssemblies/Unity.XR.ARCore.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.VisualScripting.State.Editor">
