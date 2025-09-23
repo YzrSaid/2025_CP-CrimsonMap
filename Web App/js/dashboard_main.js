@@ -337,6 +337,7 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
     let versionData = null;
     let nodes = [];
     let edges = [];
+    let infraMap = {}, campusMap = {};
 
     if (navigator.onLine) {
       // 🔹 Online: Firestore
@@ -368,6 +369,14 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
       nodes = versionData.nodes || [];
       edges = versionData.edges || [];
 
+      // Fetch Infra + Campus names
+      const [infraSnap, campusSnap] = await Promise.all([
+        getDocs(collection(db, "Infrastructure")),
+        getDocs(collection(db, "Campus"))
+      ]);
+      infraSnap.forEach(doc => infraMap[doc.data().infra_id] = doc.data().name);
+      campusSnap.forEach(doc => campusMap[doc.data().campus_id] = doc.data().campus_name);
+
     } else {
       // 🔹 Offline: JSON
       const res = await fetch("../assets/firestore/MapVersions.json");
@@ -392,21 +401,8 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
       nodes = versionData.nodes || [];
       edges = versionData.edges || [];
       console.log("📂 Offline → Map and version loaded from JSON");
-    }
 
-    // 🔹 Filter nodes by campusId if provided
-    if (campusId) nodes = nodes.filter(n => n.campus_id === campusId);
-
-    // 🔹 Fetch Infra + Campus names (from Firestore if online, JSON fallback if offline)
-    let infraMap = {}, campusMap = {};
-    if (navigator.onLine) {
-      const [infraSnap, campusSnap] = await Promise.all([
-        getDocs(collection(db, "Infrastructure")),
-        getDocs(collection(db, "Campus"))
-      ]);
-      infraSnap.forEach(doc => infraMap[doc.data().infra_id] = doc.data().name);
-      campusSnap.forEach(doc => campusMap[doc.data().campus_id] = doc.data().campus_name);
-    } else {
+      // Fetch Infra + Campus names from JSON
       const [infraRes, campusRes] = await Promise.all([
         fetch("../assets/firestore/Infrastructure.json"),
         fetch("../assets/firestore/Campus.json")
@@ -417,6 +413,10 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
       campusJson.forEach(c => campusMap[c.campus_id] = c.campus_name);
     }
 
+    // 🔹 Filter nodes by campusId if provided
+    if (campusId) nodes = nodes.filter(n => n.campus_id === campusId);
+
+    // Attach readable names
     nodes.forEach(d => {
       d.infraName = d.related_infra_id ? (infraMap[d.related_infra_id] || d.related_infra_id) : "-";
       d.campusName = d.campus_id ? (campusMap[d.campus_id] || d.campus_id) : "-";
@@ -459,7 +459,6 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
 
     renderDataOnMap(map, nodes, false, edges);
 
-
     // 🔹 Modal logic
     const modal = document.getElementById("mapModal");
     const closeBtn = document.getElementById("closeModal");
@@ -470,7 +469,6 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
         const mapFull = L.map("map-full", { center: [6.9130, 122.0630], zoom: 18, zoomControl: true });
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(mapFull);
         renderDataOnMap(mapFull, nodes, true, edges);
-
       }, 200);
     });
 

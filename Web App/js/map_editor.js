@@ -1662,27 +1662,28 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-// Show/hide indoor details based on checkbox
 document.addEventListener("DOMContentLoaded", function() {
     const indoorCheckbox = document.getElementById("indoorCheckbox");
     const outdoorCheckbox = document.getElementById("outdoorCheckbox");
     const indoorDetails = document.getElementById("indoorDetails");
 
-    indoorCheckbox.addEventListener("change", function() {
-        if (indoorCheckbox.checked) {
-            indoorDetails.style.display = "block";
-            outdoorCheckbox.checked = false;
-        } else {
-            indoorDetails.style.display = "none";
-        }
-    });
+    if (indoorCheckbox && outdoorCheckbox && indoorDetails) {
+        indoorCheckbox.addEventListener("change", function() {
+            if (indoorCheckbox.checked) {
+                indoorDetails.style.display = "block";
+                outdoorCheckbox.checked = false;
+            } else {
+                indoorDetails.style.display = "none";
+            }
+        });
 
-    outdoorCheckbox.addEventListener("change", function() {
-        if (outdoorCheckbox.checked) {
-            indoorCheckbox.checked = false;
-            indoorDetails.style.display = "none";
-        }
-    });
+        outdoorCheckbox.addEventListener("change", function() {
+            if (outdoorCheckbox.checked) {
+                indoorCheckbox.checked = false;
+                indoorDetails.style.display = "none";
+            }
+        });
+    }
 });
 
 
@@ -1877,51 +1878,53 @@ async function populateMaps() {
         let mapsData = [];
 
         if (navigator.onLine) {
-            // 🔹 Online: Firestore → use doc.id
+            // Online: Firestore
             const mapsSnap = await getDocs(collection(db, "MapVersions"));
             mapsData = mapsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         } else {
-            // 🔹 Offline: JSON fallback
+            // Offline: JSON fallback
             const res = await fetch("../assets/firestore/MapVersions.json");
             mapsData = await res.json();
-            console.log("📂 Offline → Maps loaded from JSON");
         }
 
         // Populate map select options
         mapsData.forEach(map => {
             const option = document.createElement("option");
-            option.value = map.id;  // ✅ Always use Firestore doc.id
+            option.value = map.id;
             option.textContent = `${map.map_name || map.id} (${map.id})`;
             mapSelect.appendChild(option);
         });
 
         // Select first map as default
         if (mapsData.length > 0) {
-            const firstMapId = mapsData[0].id;  // ✅ Firestore doc.id
+            const firstMapId = mapsData[0].id;
             mapSelect.value = firstMapId;
-            await setActiveMap(firstMapId);
-            await populateCampuses(firstMapId);
-            await populateVersions(firstMapId);
+            await populateCampuses(firstMapId, true, mapsData);
+            await populateVersions(firstMapId, true, mapsData);
 
-            // 🔹 Initial load of tables + map
             await renderNodesTable();
             await renderEdgesTable();
-            await loadMap(firstMapId);   // ✅ FIX: use firstMapId
+            await loadMap(firstMapId);
         }
 
-        // 🔹 When Map changes
+        // Remove previous event listeners before adding new one
+        mapSelect.onchange = null;
         mapSelect.addEventListener("change", async () => {
-            const selectedMapId = mapSelect.value;  // ✅ Firestore doc.id
+            const selectedMapId = mapSelect.value;
             if (!selectedMapId) return;
 
-            await setActiveMap(selectedMapId);
-            await populateCampuses(selectedMapId);
-            await populateVersions(selectedMapId);
+            // 🔹 Update current_active_map in Firestore if online
+            if (navigator.onLine) {
+                const mapDocRef = doc(db, "MapVersions", selectedMapId);
+                await updateDoc(mapDocRef, { current_active_map: selectedMapId });
+            }
 
-            // 🔹 Refresh tables + map
+            await populateCampuses(selectedMapId, true, mapsData);
+            await populateVersions(selectedMapId, true, mapsData);
+
             await renderNodesTable();
             await renderEdgesTable();
-            await loadMap(selectedMapId);  // ✅ FIX: use selectedMapId
+            await loadMap(selectedMapId);
         });
 
     } catch (err) {
@@ -1929,17 +1932,25 @@ async function populateMaps() {
     }
 }
 
-
-// ----------- Populate Campuses -----------
-async function populateCampuses(mapId) {
+async function populateCampuses(mapId, selectCurrent = true, mapsData = null) {
     const campusSelect = document.getElementById("campusSelect");
     campusSelect.innerHTML = '<option value="">Select Campus</option>';
 
-    const mapDocRef = doc(db, "MapVersions", String(mapId)); // ✅ enforce doc.id
-    const mapDocSnap = await getDoc(mapDocRef);
-    if (!mapDocSnap.exists()) return;
+    let mapData;
 
-    const mapData = mapDocSnap.data();
+    if (navigator.onLine) {
+        const mapDocRef = doc(db, "MapVersions", mapId);
+        const mapDocSnap = await getDoc(mapDocRef);
+        if (!mapDocSnap.exists()) return;
+        mapData = mapDocSnap.data();
+    } else {
+        if (!mapsData) {
+            mapsData = await fetch("../assets/firestore/MapVersions.json").then(res => res.json());
+        }
+        mapData = mapsData.find(m => m.id === mapId);
+        if (!mapData) return;
+    }
+
     const campuses = mapData.campus_included || [];
     const currentCampus = mapData.current_active_campus || "";
 
@@ -1950,81 +1961,92 @@ async function populateCampuses(mapId) {
         campusSelect.appendChild(option);
     });
 
-    if (currentCampus && campuses.includes(currentCampus)) {
+    if (selectCurrent && currentCampus && campuses.includes(currentCampus)) {
         campusSelect.value = currentCampus;
     } else if (campuses.length > 0) {
         campusSelect.value = campuses[0];
-        await updateDoc(mapDocRef, { current_active_campus: campuses[0] });
     }
 
-    // 🔹 Update Firestore + refresh tables when campus changes
+    campusSelect.onchange = null;
     campusSelect.addEventListener("change", async () => {
         const selectedCampus = campusSelect.value;
+        const selectedMapId = mapSelect.value;
+        const selectedVersion = versionSelect.value;
         if (!selectedCampus) return;
-        try {
-            await updateDoc(mapDocRef, { current_active_campus: selectedCampus });
-            console.log(`Current active campus updated to ${selectedCampus}`);
 
-            await renderNodesTable();
-            await renderEdgesTable();
-            await loadMap(mapId); 
-        } catch (err) {
-            console.error("Error updating current campus:", err);
+        // 🔹 Update current_active_campus in Firestore if online
+        if (navigator.onLine) {
+            const mapDocRef = doc(db, "MapVersions", selectedMapId);
+            await updateDoc(mapDocRef, { current_active_campus: selectedCampus });
         }
+
+        await renderNodesTable();
+        await renderEdgesTable();
+        await loadMap(selectedMapId, selectedCampus, selectedVersion);
     });
 }
 
-// ----------- Populate Versions -----------
-async function populateVersions(mapId) {
+async function populateVersions(mapId, selectCurrent = true, mapsData = null) {
     const versionSelect = document.getElementById("versionSelect");
     versionSelect.innerHTML = '<option value="">Select Version</option>';
 
-    const mapDocRef = doc(db, "MapVersions", String(mapId)); // ✅ enforce doc.id
-    const mapDocSnap = await getDoc(mapDocRef);
-    if (!mapDocSnap.exists()) return;
+    let mapData, currentVersion, versions = [];
 
-    const mapData = mapDocSnap.data();
-    const currentVersion = mapData.current_version || "";
+    if (navigator.onLine) {
+        const mapDocRef = doc(db, "MapVersions", mapId);
+        const mapDocSnap = await getDoc(mapDocRef);
+        if (!mapDocSnap.exists()) return;
 
-    const versionsSnap = await getDocs(collection(db, "MapVersions", String(mapId), "versions"));
+        mapData = mapDocSnap.data();
+        currentVersion = mapData.current_version || "";
 
-    versionsSnap.forEach(docSnap => {
-        const version = docSnap.id;
+        const versionsSnap = await getDocs(collection(db, "MapVersions", mapId, "versions"));
+        versions = versionsSnap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+
+    } else {
+        if (!mapsData) {
+            mapsData = await fetch("../assets/firestore/MapVersions.json").then(res => res.json());
+        }
+        mapData = mapsData.find(m => m.id === mapId);
+        if (!mapData) return;
+
+        currentVersion = mapData.current_version || "";
+        versions = mapData.versions || [];
+    }
+
+    versions.forEach(v => {
         const option = document.createElement("option");
-        option.value = version;
-        option.textContent = version + (version === currentVersion ? "  🟢" : "");
+        option.value = v.id;
+        option.textContent = v.id + (v.id === currentVersion ? "  🟢" : "");
         versionSelect.appendChild(option);
     });
 
-    if (currentVersion) {
+    if (selectCurrent && currentVersion) {
         versionSelect.value = currentVersion;
-    } else if (versionsSnap.docs.length > 0) {
-        const firstVersion = versionsSnap.docs[0].id;
-        versionSelect.value = firstVersion;
-        await updateDoc(mapDocRef, { current_version: firstVersion });
+    } else if (versions.length > 0) {
+        versionSelect.value = versions[0].id;
     }
 
-    // 🔹 Update Firestore + refresh tables when version changes
+    versionSelect.onchange = null;
     versionSelect.addEventListener("change", async () => {
         const selectedVersion = versionSelect.value;
+        const selectedMapId = mapSelect.value;
+        const selectedCampus = campusSelect.value;
         if (!selectedVersion) return;
 
-        try {
+        // 🔹 Update current_version in Firestore if online
+        if (navigator.onLine) {
+            const mapDocRef = doc(db, "MapVersions", selectedMapId);
             await updateDoc(mapDocRef, { current_version: selectedVersion });
-            console.log(`Current version updated to ${selectedVersion}`);
-
-            Array.from(versionSelect.options).forEach(opt => {
-                opt.textContent = opt.value + (opt.value === selectedVersion ? "  🟢" : "");
-            });
-
-            await renderNodesTable();
-            await renderEdgesTable();
-            await loadMap(mapId); 
-        } catch (err) {
-            console.error("Error updating current version:", err);
         }
+
+        await renderNodesTable();
+        await renderEdgesTable();
+        await loadMap(selectedMapId, selectedCampus, selectedVersion);
     });
 }
+
+
 
 // ----------- Helper: set current active map -----------
 async function setActiveMap(mapId) {
@@ -2051,43 +2073,98 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-async function loadMap(mapId) {
+async function loadMap(mapId, campusId = null, versionId = null) {
   try {
-    // Ensure mapId is a string
     const safeMapId = String(mapId);
 
-    // 🔹 Get current active data
-    const mapDocRef = doc(db, "MapVersions", safeMapId);
-    const mapDocSnap = await getDoc(mapDocRef);
+    let mapData, activeCampus, activeVersion, nodes = [], edges = [];
+    let infraMap = {}, roomMap = {}, campusMap = {};
 
-    if (!mapDocSnap.exists()) {
-      console.error("❌ Map not found:", safeMapId);
-      return;
+    if (navigator.onLine) {
+      // Online: Firestore
+      const mapDocRef = doc(db, "MapVersions", safeMapId);
+      const mapDocSnap = await getDoc(mapDocRef);
+
+      if (!mapDocSnap.exists()) {
+        console.error("❌ Map not found:", safeMapId);
+        return;
+      }
+
+      mapData = mapDocSnap.data();
+      activeCampus = campusId || mapData.current_active_campus;
+      activeVersion = String(versionId || mapData.current_version || "");
+
+      // Fetch nodes & edges for the selected version
+      const versionDocRef = doc(db, "MapVersions", safeMapId, "versions", activeVersion);
+      const versionDocSnap = await getDoc(versionDocRef);
+
+      if (!versionDocSnap.exists()) {
+        console.error("❌ Version not found:", activeVersion);
+        return;
+      }
+
+      const versionData = versionDocSnap.data();
+      nodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
+      edges = Array.isArray(versionData.edges) ? versionData.edges : [];
+
+      // Fetch Infra, Room, Campus names
+      const [infraSnap, roomSnap, campusSnap] = await Promise.all([
+        getDocs(collection(db, "Infrastructure")),
+        getDocs(collection(db, "Rooms")),
+        getDocs(collection(db, "Campus"))
+      ]);
+      infraSnap.forEach(doc => infraMap[doc.data().infra_id] = doc.data().name);
+      roomSnap.forEach(doc => roomMap[doc.data().room_id] = doc.data().name);
+      campusSnap.forEach(doc => campusMap[doc.data().campus_id] = doc.data().campus_name);
+
+    } else {
+      // Offline: JSON
+      const mapRes = await fetch("../assets/firestore/MapVersions.json");
+      const mapsJson = await mapRes.json();
+
+      mapData = mapsJson.find(m => m.map_id === safeMapId) || mapsJson[0];
+      if (!mapData) {
+        console.error("No maps found in JSON");
+        return;
+      }
+      activeCampus = campusId || mapData.current_active_campus;
+      activeVersion = String(versionId || mapData.current_version || (mapData.versions?.[0]?.id || ""));
+
+      const versionData = mapData.versions.find(v => v.id === activeVersion);
+      if (!versionData) {
+        console.error("Version not found in JSON:", activeVersion);
+        nodes = [];
+        edges = [];
+      } else {
+        nodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
+        edges = Array.isArray(versionData.edges) ? versionData.edges : [];
+      }
+
+      // Fetch Infra, Room, Campus names from JSON
+      const [infraRes, roomRes, campusRes] = await Promise.all([
+        fetch("../assets/firestore/Infrastructure.json"),
+        fetch("../assets/firestore/Rooms.json"),
+        fetch("../assets/firestore/Campus.json")
+      ]);
+      const infraJson = await infraRes.json();
+      const roomJson = await roomRes.json();
+      const campusJson = await campusRes.json();
+      infraJson.forEach(i => infraMap[i.infra_id] = i.name);
+      roomJson.forEach(r => roomMap[r.room_id] = r.name);
+      campusJson.forEach(c => campusMap[c.campus_id] = c.campus_name);
+
+      console.log("📂 Offline → Map, nodes, edges loaded from JSON");
     }
 
-    const mapData = mapDocSnap.data();
-    const activeCampus = mapData.current_active_campus;
-    const activeVersion = String(mapData.current_version || "");
-
-    console.log(`📌 Active → Map: ${safeMapId}, Campus: ${activeCampus}, Version: ${activeVersion}`);
-
-    // 🔹 Fetch nodes & edges for the active version
-    const versionDocRef = doc(db, "MapVersions", safeMapId, "versions", activeVersion);
-    const versionDocSnap = await getDoc(versionDocRef);
-
-    if (!versionDocSnap.exists()) {
-      console.error("❌ Version not found:", activeVersion);
-      return;
-    }
-
-    const versionData = versionDocSnap.data();
-    let nodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
-    let edges = Array.isArray(versionData.edges) ? versionData.edges : [];
-
-    // 🔹 Filter nodes for the active campus
+    // Filter nodes for the selected campus
     nodes = nodes.filter(n => n.campus_id === activeCampus && n.is_deleted !== true);
 
-    console.log("✅ Nodes to render:", nodes);
+    // Attach readable names
+    nodes.forEach(d => {
+      d.infraName = d.related_infra_id ? (infraMap[d.related_infra_id] || d.related_infra_id) : "-";
+      d.roomName = d.related_room_id ? (roomMap[d.related_room_id] || d.related_room_id) : "-";
+      d.campusName = d.campus_id ? (campusMap[d.campus_id] || d.campus_id) : "-";
+    });
 
     // ---- Reset map containers ----
     const mapContainer = document.getElementById("map-overview");
