@@ -47,6 +47,7 @@ public class Infrastructure
     public int category_id;
     public string image_url;
     public string email;
+    public bool is_deleted;
     public string phone;
 }
 
@@ -186,7 +187,7 @@ public class SavedDestinationsData
 [System.Serializable]
 public class SaveData
 {
-    public bool onboardingComplete;
+    public bool onboardingComplete = false;
 }
 
 // Helper class for JSON array parsing (Unity's JsonUtility doesn't handle arrays directly)

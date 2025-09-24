@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <projectSettings>
-  <projectSetting name="com.google.external-dependency-managerAnalyticsCookie" value="04d68add167a4ebb922c10106469c0a7" />
+  <projectSetting name="com.google.external-dependency-managerAnalyticsCookie" value="78b87a73c3b44a468cfc0fd6f6c3debe" />
   <projectSetting name="com.google.external-dependency-managerAnalyticsEnabled" value="True" />
-  <projectSetting name="com.google.firebaseAnalyticsCookie" value="b97efdebcf6c4dc7bd70b0b13c568c2d" />
+  <projectSetting name="com.google.firebaseAnalyticsCookie" value="37bc9a2d7bdc43a39ef05d88e2cde677" />
   <projectSetting name="com.google.firebaseAnalyticsEnabled" value="True" />
   <projectSetting name="GooglePlayServices.PromptBeforeAutoResolution" value="False" />
   <projectSetting name="GooglePlayServices.UseJetifier" value="True" />

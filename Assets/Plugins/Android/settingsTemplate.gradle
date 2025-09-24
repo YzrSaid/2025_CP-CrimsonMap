@@ -10,17 +10,6 @@ pluginManagement {
 include ':launcher', ':unityLibrary'
 **INCLUDES**
 
-buildscript {
-  repositories {
-    mavenLocal()
-    maven { url 'https://maven.google.com'  }
-    mavenCentral()
-  }
-  dependencies {
-    classpath 'com.android.tools:r8:8.3.37'
-  }
-}
-
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
@@ -30,7 +19,7 @@ dependencyResolutionManagement {
 // Android Resolver Repos Start
         def unityProjectPath = $/file:///**DIR_UNITYPROJECT**/$.replace("\\", "/")
         maven {
-            url (unityProjectPath + "/Assets/GeneratedLocalRepo/Firebase/m2repository") // Assets/Firebase/Editor/AnalyticsDependencies.xml:18, Assets/Firebase/Editor/AppDependencies.xml:22, Assets/Firebase/Editor/FirestoreDependencies.xml:20
+            url (unityProjectPath + "/Assets/GeneratedLocalRepo/Firebase/m2repository") // Assets/Firebase/Editor/AppDependencies.xml:22, Assets/Firebase/Editor/FirestoreDependencies.xml:20
         }
         mavenLocal()
 // Android Resolver Repos End

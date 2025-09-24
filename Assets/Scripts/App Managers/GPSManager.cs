@@ -14,6 +14,12 @@ public class GPSManager : MonoBehaviour
     private float mockLatitude = 6.91261f;   
     private float mockLongitude = 122.06359f; 
     private float mockHeading = 0f;
+    
+    [Header("QR Override Settings")]
+    public bool useQROverride = false;
+    private Vector2 qrOverrideLocation;
+    private float qrOverrideHeading = 0f;
+    
     [Header("GPS Smoothing")]
     private List<Vector2> recentCoordinates = new List<Vector2>();
     private List<float> recentHeadings = new List<float>();
@@ -43,7 +49,6 @@ public class GPSManager : MonoBehaviour
         if (useMockLocationInEditor)
         {
             Debug.Log("Using mock GPS in Editor");
-            // Start compass for heading even in editor (won't work but prevents errors)
             Input.compass.enabled = true;
             yield break;
         }
@@ -55,10 +60,7 @@ public class GPSManager : MonoBehaviour
             yield break;
         }
 
-        // Start location service
         Input.location.Start();
-
-        // Start compass for heading
         Input.compass.enabled = true;
 
         int maxWait = 20;
@@ -81,6 +83,12 @@ public class GPSManager : MonoBehaviour
 
     public Vector2 GetCoordinates()
     {
+        // QR override takes priority
+        if (useQROverride)
+        {
+            return qrOverrideLocation;
+        }
+        
 #if UNITY_EDITOR
         if (useMockLocationInEditor)
         {
@@ -93,10 +101,15 @@ public class GPSManager : MonoBehaviour
 
     public float GetHeading()
     {
+        // QR override takes priority
+        if (useQROverride)
+        {
+            return qrOverrideHeading;
+        }
+        
 #if UNITY_EDITOR
         if (useMockLocationInEditor)
         {
-            // NEW INPUT SYSTEM: Use Keyboard.current instead of Input.GetKey
             if (Keyboard.current != null)
             {
                 if (Keyboard.current.qKey.isPressed)
@@ -112,8 +125,33 @@ public class GPSManager : MonoBehaviour
         }
 #endif
 
-        // Return compass heading (0 = North, clockwise)
         return Input.compass.magneticHeading;
+    }
+    
+    // QR Override Methods
+    public void SetQRLocationOverride(Vector2 location, float heading = 0f)
+    {
+        qrOverrideLocation = location;
+        qrOverrideHeading = heading;
+        useQROverride = true;
+        
+        Debug.Log($"QR Location override set: {location.x}, {location.y}, Heading: {heading}");
+    }
+    
+    public void SetQRLocationOverride(float latitude, float longitude, float heading = 0f)
+    {
+        SetQRLocationOverride(new Vector2(latitude, longitude), heading);
+    }
+    
+    public void ClearQRLocationOverride()
+    {
+        useQROverride = false;
+        Debug.Log("QR Location override cleared");
+    }
+    
+    public bool IsUsingQROverride()
+    {
+        return useQROverride;
     }
 
     public Vector2 GetSmoothedCoordinates()
@@ -124,7 +162,6 @@ public class GPSManager : MonoBehaviour
         if (recentCoordinates.Count > maxHistorySize)
             recentCoordinates.RemoveAt(0);
         
-        // Return average of recent coordinates
         Vector2 sum = Vector2.zero;
         foreach (var coord in recentCoordinates)
             sum += coord;
@@ -140,7 +177,6 @@ public class GPSManager : MonoBehaviour
         if (recentHeadings.Count > maxHistorySize)
             recentHeadings.RemoveAt(0);
         
-        // Handle circular averaging for angles
         float avgHeading = 0f;
         if (recentHeadings.Count > 0)
         {
@@ -159,12 +195,20 @@ public class GPSManager : MonoBehaviour
 
     void Update()
     {
-        // Debug info in editor - NEW INPUT SYSTEM
 #if UNITY_EDITOR
         if (useMockLocationInEditor && Keyboard.current != null && Keyboard.current.gKey.wasPressedThisFrame)
         {
             Debug.Log($"Mock GPS: {mockLatitude}, {mockLongitude}, Heading: {mockHeading:F1}°");
             Debug.Log("Use Q/E keys to rotate the mock heading");
+        }
+        
+        // QR override toggle for testing
+        if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
+        {
+            if (useQROverride)
+                ClearQRLocationOverride();
+            else
+                SetQRLocationOverride(mockLatitude + 0.001f, mockLongitude + 0.001f, mockHeading + 45f);
         }
 #endif
     }

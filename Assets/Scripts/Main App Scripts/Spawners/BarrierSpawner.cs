@@ -879,7 +879,7 @@ public class BarrierEdge : MonoBehaviour
 
             isInitialized = true;
 
-            Debug.Log($"BarrierEdge {edge.edge_id} initialized at zoom {referenceZoomLevel:F1} with reference distance {referenceDistance:F3}");
+            // Debug.Log($"BarrierEdge {edge.edge_id} initialized at zoom {referenceZoomLevel:F1} with reference distance {referenceDistance:F3}");
         }
 
         if (material != null)
@@ -959,7 +959,7 @@ public class BarrierEdge : MonoBehaviour
         transform.localScale = new Vector3(baseWidth, baseWidth, visualDistance);
 
         // Debug info
-        Debug.Log($"BarrierEdge {edgeData.edge_id}: current={currentDistance:F3}, reference={referenceDistance:F3}, zoom={map.Zoom:F1}");
+        // Debug.Log($"BarrierEdge {edgeData.edge_id}: current={currentDistance:F3}, reference={referenceDistance:F3}, zoom={map.Zoom:F1}");
     }
 
     public void ForceUpdate()

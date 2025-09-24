@@ -50,7 +50,6 @@ public class GlobalManager : MonoBehaviour
             onboardingSavePath = Path.Combine(Application.persistentDataPath, "saveData.json");
             Debug.Log($"Onboarding save path: {onboardingSavePath}");
 
-            //check onboarding status and navigate - NO DATA SYNC HERE
             CheckOnboardingAndNavigate();
         }
         else

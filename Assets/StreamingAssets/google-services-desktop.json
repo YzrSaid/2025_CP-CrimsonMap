@@ -23,6 +23,25 @@
           "other_platform_oauth_client": []
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:396668100672:android:e3de385dda5ab831fabfa5",
+        "android_client_info": {
+          "package_name": "com.WMSUOfficial.CrimsonMap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-hUlNf7dQp8R_BbWPZrpOCSlg8N8FWVQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
     }
   ],
   "configuration_version": "1"

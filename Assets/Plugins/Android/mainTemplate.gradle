@@ -6,13 +6,13 @@ dependencies {
 // Android Resolver Dependencies Start
     implementation 'com.google.android.gms:play-services-base:18.7.2' // Assets/Firebase/Editor/AppDependencies.xml:17
     implementation 'com.google.firebase:firebase-analytics:23.0.0' // Assets/Firebase/Editor/FirestoreDependencies.xml:15
-    implementation 'com.google.firebase:firebase-analytics-unity:13.1.0' // Assets/Firebase/Editor/AnalyticsDependencies.xml:18
-    implementation 'com.google.firebase:firebase-app-unity:13.1.0' // Assets/Firebase/Editor/AppDependencies.xml:22
+    implementation 'com.google.firebase:firebase-app-unity:13.2.0' // Assets/Firebase/Editor/AppDependencies.xml:22
     implementation 'com.google.firebase:firebase-common:22.0.0' // Assets/Firebase/Editor/AppDependencies.xml:13
     implementation 'com.google.firebase:firebase-firestore:26.0.0' // Assets/Firebase/Editor/FirestoreDependencies.xml:13
-    implementation 'com.google.firebase:firebase-firestore-unity:13.1.0' // Assets/Firebase/Editor/FirestoreDependencies.xml:20
+    implementation 'com.google.firebase:firebase-firestore-unity:13.2.0' // Assets/Firebase/Editor/FirestoreDependencies.xml:20
 // Android Resolver Dependencies End
 **DEPS**}
+
 
 // Android Resolver Exclusions Start
 android {
@@ -22,6 +22,9 @@ android {
       exclude ('/lib/mips64/*' + '*')
       exclude ('/lib/x86/*' + '*')
       exclude ('/lib/x86_64/*' + '*')
+ // 👇 Add these lines to resolve ARPresto duplicates
+      pickFirst "lib/armeabi-v7a/libarpresto_api.so"
+      pickFirst "lib/arm64-v8a/libarpresto_api.so"
   }
 }
 // Android Resolver Exclusions End
