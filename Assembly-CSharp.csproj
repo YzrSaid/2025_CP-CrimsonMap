@@ -146,6 +146,7 @@
     <Compile Include="Assets/Mapbox/Unity/Location/UnityLocationWrappers/MapboxLocationServiceUnityWrapper.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Factories/TerrainStrategies/ElevatedTerrainStrategy.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/TextureModifier.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/SceneTransitionWithLoading.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/FeatureBehaviourModifier.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/IImageryLayer.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/InfrastructurePopulator.cs" />
@@ -214,6 +215,7 @@
     <Compile Include="Assets/Mapbox/Unity/Telemetry/TelemetryFactory.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/NoiseOffsetModifier.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/MakiHelper.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/SceneTransitionWithoutLoading.cs" />
     <Compile Include="Assets/Scripts/App Managers/ARInfrastructureManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/MeshModifier.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Tokens/MapboxTokenApi.cs" />
@@ -899,6 +901,10 @@
       <HintPath>Assets/Mapbox/Core/Plugins/Mapbox/vector-tile-cs/net46/Mapbox.VectorTile.VectorTileReader.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="DOTween">
+      <HintPath>Assets/Plugins/Demigiant/DOTween/DOTween.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Mapbox.VectorTile.ExtensionMethods">
       <HintPath>Assets/Mapbox/Core/Plugins/Mapbox/vector-tile-cs/net46/Mapbox.VectorTile.ExtensionMethods.dll</HintPath>
       <Private>False</Private>
@@ -917,10 +923,6 @@
     </Reference>
     <Reference Include="Google.MiniJson">
       <HintPath>Assets/Firebase/Plugins/Google.MiniJson.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="DOTween">
-      <HintPath>Assets/Plugins/Demigiant/DOTween/DOTween.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Android.Types">
@@ -1455,12 +1457,16 @@
       <HintPath>Library/ScriptAssemblies/Unity.2D.Sprite.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.XR.ARCore">
-      <HintPath>Library/ScriptAssemblies/Unity.XR.ARCore.dll</HintPath>
+    <Reference Include="Unity.VectorGraphics.Editor">
+      <HintPath>Library/ScriptAssemblies/Unity.VectorGraphics.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.RenderPipelines.Universal.Config.Runtime">
       <HintPath>Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Config.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.XR.ARCore">
+      <HintPath>Library/ScriptAssemblies/Unity.XR.ARCore.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.RenderPipelines.Core.Editor">
@@ -1481,10 +1487,6 @@
     </Reference>
     <Reference Include="Unity.XR.CoreUtils">
       <HintPath>Library/ScriptAssemblies/Unity.XR.CoreUtils.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.VectorGraphics.Editor">
-      <HintPath>Library/ScriptAssemblies/Unity.VectorGraphics.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.XR.ARFoundation.Editor">
