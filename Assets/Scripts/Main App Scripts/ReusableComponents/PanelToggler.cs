@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using DG.Tweening;
 
 [RequireComponent(typeof(Button))]
 public class PanelToggler : MonoBehaviour
@@ -9,11 +10,21 @@ public class PanelToggler : MonoBehaviour
     public List<GameObject> panelsToToggle = new List<GameObject>();
 
     private Button button;
+    private Dictionary<GameObject, Vector3> originalScales = new Dictionary<GameObject, Vector3>();
 
     private void Awake()
     {
         button = GetComponent<Button>();
         button.onClick.AddListener(TogglePanels);
+
+        // Save original scales
+        foreach (var panel in panelsToToggle)
+        {
+            if (panel != null && !originalScales.ContainsKey(panel))
+            {
+                originalScales.Add(panel, panel.transform.localScale);
+            }
+        }
     }
 
     private void OnDestroy()
@@ -30,7 +41,18 @@ public class PanelToggler : MonoBehaviour
         {
             if (panel != null)
             {
-                panel.SetActive(!panel.activeSelf);
+                if (panel.activeSelf)
+                {
+                    // Animate hide
+                    panel.transform.DOScale(Vector3.zero, 0.18f).SetEase(Ease.InBack)
+                        .OnComplete(() => panel.SetActive(false));
+                }
+                else
+                {
+                    panel.SetActive(true);
+                    panel.transform.localScale = Vector3.zero;
+                    panel.transform.DOScale(originalScales[panel], 0.18f).SetEase(Ease.OutBack);
+                }
             }
         }
     }
