@@ -16,9 +16,81 @@ public class InfrastructurePopulator : MonoBehaviour
     [Header("Data")]
     public InfrastructureList infrastructureList;
 
+    [Header("Loading Check")]
+    public float maxWaitTime = 30f; // Max time to wait for data initialization
+
     void Start()
     {
-        StartCoroutine(LoadInfrastructuresCoroutine());
+        StartCoroutine(WaitForDataInitializationThenLoad());
+    }
+
+    // NEW: Wait for MainAppLoader to complete before loading data
+    private IEnumerator WaitForDataInitializationThenLoad()
+    {
+        Debug.Log("InfrastructurePopulator: Waiting for data initialization to complete...");
+        
+        float waitTime = 0f;
+        
+        // Wait for GlobalManager to exist and data initialization to complete
+        while (waitTime < maxWaitTime)
+        {
+            // Check if GlobalManager exists and data initialization is complete
+            if (GlobalManager.Instance != null && IsDataInitializationComplete())
+            {
+                Debug.Log("InfrastructurePopulator: Data initialization complete! Starting to load...");
+                yield return StartCoroutine(LoadInfrastructuresCoroutine());
+                yield break;
+            }
+            
+            waitTime += Time.deltaTime;
+            yield return new WaitForSeconds(0.1f); // Check every 100ms
+        }
+        
+        // Timeout - still try to load but log warning
+        Debug.LogWarning("InfrastructurePopulator: Timed out waiting for data initialization. Attempting to load anyway...");
+        yield return StartCoroutine(LoadInfrastructuresCoroutine());
+    }
+
+    // Check if data initialization is complete
+    private bool IsDataInitializationComplete()
+    {
+        // Get the correct file path based on platform
+        string filePath = GetJsonFilePath("infrastructure.json");
+        
+        if (!File.Exists(filePath))
+        {
+            return false;
+        }
+        
+        try
+        {
+            string content = File.ReadAllText(filePath);
+            if (string.IsNullOrEmpty(content) || content.Length < 10) // Basic validity check
+            {
+                return false;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+        
+        return true; // File exists and has content
+    }
+
+    // Helper method to get correct file path based on platform
+    private string GetJsonFilePath(string fileName)
+    {
+#if UNITY_EDITOR
+        // In Unity Editor, check StreamingAssets first, then persistent data
+        string streamingPath = Path.Combine(Application.streamingAssetsPath, fileName);
+        if (File.Exists(streamingPath))
+        {
+            return streamingPath;
+        }
+#endif
+        // On device/runtime, use persistent data path
+        return Path.Combine(Application.persistentDataPath, fileName);
     }
 
     private IEnumerator LoadInfrastructuresCoroutine()
@@ -49,7 +121,7 @@ public class InfrastructurePopulator : MonoBehaviour
             PopulateDropdown(dropdownFrom);
             PopulateDropdown(dropdownTo);
 
-            Debug.Log($"Successfully loaded {infrastructureList.infrastructures.Length} infrastructures");
+            Debug.Log($"✅ InfrastructurePopulator: Successfully loaded {infrastructureList.infrastructures.Length} infrastructures");
         }
         catch (Exception e)
         {

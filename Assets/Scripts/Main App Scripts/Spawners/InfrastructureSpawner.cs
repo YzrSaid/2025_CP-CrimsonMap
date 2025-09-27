@@ -822,7 +822,7 @@ public class InfrastructureNode : MonoBehaviour
     private void SetupCircleBackground()
     {
         // Find the base circle (cylinder) and apply background color/material
-        Transform baseCircle = transform.Find("InfrastructurePrefab_3D");
+        Transform baseCircle = transform.Find("InfraPrefabFinal");
         if (baseCircle == null)
         {
             // Try to find cylinder by component if naming is different
@@ -842,7 +842,7 @@ public class InfrastructureNode : MonoBehaviour
             if (circleRenderer != null)
             {
                 // Create or modify material for the circle background
-                Material circleMaterial = new Material(Shader.Find("Default-Material"));
+                Material circleMaterial = new Material(Shader.Find("Lit"));
 
                 // Set background color based on category
                 if (infrastructureData.Category != null)

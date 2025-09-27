@@ -178,6 +178,7 @@
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Geocoding/Response/Feature.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/IReplacementCriteria.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Utils/JsonConverters/JsonConverters.cs" />
+    <Compile Include="Assets/Scripts/App Managers/AppReloadManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/Map/Interfaces/IMapPlacementStrategy.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/Response.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/RotateWithLocationProvider.cs" />
@@ -360,6 +361,7 @@
     <Compile Include="Assets/Scripts/App Managers/OnboardingManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/Map/AbstractMapVisualizer.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/CanonicalTileId.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/ScrollToReload.cs" />
     <Compile Include="Assets/Mapbox/Unity/LayerProperties/VectorFilterOptions.cs" />
     <Compile Include="Assets/Mapbox/Unity/Map/Strategies/MapPlacementAtLocationCenterStrategy.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/TerrainSideWallOptions.cs" />

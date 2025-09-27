@@ -16,10 +16,82 @@ public class CategoryDropdown : MonoBehaviour
     public Button categoryItemPrefab;
     private List<Button> spawnedItems = new List<Button>();
 
+    [Header("Loading Check")]
+    public float maxWaitTime = 30f; // Max time to wait for data initialization
+
     void Start()
     {
         panel.SetActive(false);
-        StartCoroutine(PopulatePanel());
+        StartCoroutine(WaitForDataInitializationThenPopulate());
+    }
+
+    // NEW: Wait for MainAppLoader to complete before loading data
+    private IEnumerator WaitForDataInitializationThenPopulate()
+    {
+        Debug.Log("CategoryDropdown: Waiting for data initialization to complete...");
+        
+        float waitTime = 0f;
+        
+        // Wait for GlobalManager to exist and data initialization to complete
+        while (waitTime < maxWaitTime)
+        {
+            // Check if GlobalManager exists and data initialization is complete
+            if (GlobalManager.Instance != null && IsDataInitializationComplete())
+            {
+                Debug.Log("CategoryDropdown: Data initialization complete! Starting to populate...");
+                yield return StartCoroutine(PopulatePanel());
+                yield break;
+            }
+            
+            waitTime += Time.deltaTime;
+            yield return new WaitForSeconds(0.1f); // Check every 100ms
+        }
+        
+        // Timeout - still try to load but log warning
+        Debug.LogWarning("CategoryDropdown: Timed out waiting for data initialization. Attempting to load anyway...");
+        yield return StartCoroutine(PopulatePanel());
+    }
+
+    // Check if data initialization is complete
+    private bool IsDataInitializationComplete()
+    {
+        // Get the correct file path based on platform
+        string filePath = GetJsonFilePath("categories.json");
+        
+        if (!File.Exists(filePath))
+        {
+            return false;
+        }
+        
+        try
+        {
+            string content = File.ReadAllText(filePath);
+            if (string.IsNullOrEmpty(content) || content.Length < 10) // Basic validity check
+            {
+                return false;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+        
+        return true; // File exists and has content
+    }
+
+    // Helper method to get correct file path based on platform
+    private string GetJsonFilePath(string fileName)
+    {
+#if UNITY_EDITOR
+        // In Unity Editor, check StreamingAssets first, then persistent data
+        string streamingPath = Path.Combine(Application.streamingAssetsPath, fileName);
+        if (File.Exists(streamingPath))
+        {
+            return streamingPath;
+        }
+#endif
+        // On device/runtime, use persistent data path
+        return Path.Combine(Application.persistentDataPath, fileName);
     }
 
     IEnumerator PopulatePanel()
@@ -116,8 +188,6 @@ public class CategoryDropdown : MonoBehaviour
                 }
                 else
                 {
-                    // Debug.LogWarning($"⚠️ CategoryDropdown: Icon not found in Resources/Images/icons/: {fileName}");
-                    
                     // Try alternative paths
                     string[] tryPaths = {
                         fileName, // Just the filename
@@ -144,5 +214,7 @@ public class CategoryDropdown : MonoBehaviour
                 Debug.LogWarning($"⚠️ No Image component named 'Image_Icon' found in category item prefab for {category.name}");
             }
         }
+        
+        Debug.Log($"✅ CategoryDropdown: Successfully populated {categoryList.categories.Count} categories!");
     }
 }
