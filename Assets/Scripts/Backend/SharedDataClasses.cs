@@ -7,10 +7,9 @@ using Firebase.Firestore;
 [System.Serializable]
 public class Category
 {
-    public int category_id;
+    public string category_id;
     public string name;
     public string icon;
-    public List<int> building_id;
 }
 
 [System.Serializable]
@@ -44,7 +43,7 @@ public class Infrastructure
 {
     public string infra_id;
     public string name;
-    public int category_id;
+    public string category_id;
     public string image_url;
     public string email;
     public bool is_deleted;

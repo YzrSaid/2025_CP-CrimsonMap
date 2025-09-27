@@ -175,11 +175,11 @@
         "indoor": null,
         "type": "infrastructure",
         "name": "Gate Camp B for employees ",
-        "latitude": 6.913325,
+        "latitude": 6.91339,
         "created_at": "2025-09-03T15:29:25.689Z",
         "x_coordinates": -22.4084526674753,
         "related_infra_id": "INFRA-23",
-        "longitude": 122.063648,
+        "longitude": 122.06349,
         "campus_id": "CAMP-02"
     },
 {

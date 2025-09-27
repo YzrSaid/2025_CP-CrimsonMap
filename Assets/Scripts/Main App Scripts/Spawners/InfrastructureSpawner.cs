@@ -83,7 +83,7 @@ public class InfrastructureSpawner : MonoBehaviour
     public void SetTargetCampusIds(List<string> campusIds)
     {
         DebugLog($"🗺️ Setting campus IDs: {string.Join(", ", campusIds)}");
-        
+
         currentCampusIds.Clear();
         if (campusIds != null)
         {
@@ -97,7 +97,7 @@ public class InfrastructureSpawner : MonoBehaviour
     public void SetCurrentMapData(string mapId, List<string> campusIds)
     {
         DebugLog($"🗺️ Setting map data - Map ID: {mapId}, Campuses: {string.Join(", ", campusIds)}");
-        
+
         currentMapId = mapId;
         currentCampusIds.Clear();
         if (campusIds != null)
@@ -200,7 +200,7 @@ public class InfrastructureSpawner : MonoBehaviour
             Debug.LogWarning("⚠️ No current map ID set, using default nodes.json");
             return "nodes.json";
         }
-        
+
         string fileName = $"nodes_{currentMapId}.json";
         DebugLog($"📁 Using nodes file: {fileName}");
         return fileName;
@@ -233,15 +233,18 @@ public class InfrastructureSpawner : MonoBehaviour
         ClearSpawnedInfrastructure();
 
         // Load all required JSON files (yielding outside try-catch)
-        yield return StartCoroutine(LoadNodesFromJSONAsync((loadedNodes) => {
+        yield return StartCoroutine(LoadNodesFromJSONAsync((loadedNodes) =>
+        {
             nodes = loadedNodes;
         }));
 
-        yield return StartCoroutine(LoadInfrastructureFromJSONAsync((loadedInfra) => {
+        yield return StartCoroutine(LoadInfrastructureFromJSONAsync((loadedInfra) =>
+        {
             infrastructures = loadedInfra;
         }));
 
-        yield return StartCoroutine(LoadCategoriesFromJSONAsync((loadedCategories) => {
+        yield return StartCoroutine(LoadCategoriesFromJSONAsync((loadedCategories) =>
+        {
             categories = loadedCategories;
         }));
 
@@ -304,7 +307,8 @@ public class InfrastructureSpawner : MonoBehaviour
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             GetNodesFileName(),
             // onSuccess
-            (jsonContent) => {
+            (jsonContent) =>
+            {
                 try
                 {
                     DebugLog($"📄 Read {jsonContent.Length} characters from nodes file");
@@ -319,7 +323,8 @@ public class InfrastructureSpawner : MonoBehaviour
                 }
             },
             // onError
-            (error) => {
+            (error) =>
+            {
                 Debug.LogError($"❌ Error loading nodes file: {error}");
                 loadCompleted = true;
             }
@@ -339,7 +344,8 @@ public class InfrastructureSpawner : MonoBehaviour
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             infrastructureFileName,
             // onSuccess
-            (jsonContent) => {
+            (jsonContent) =>
+            {
                 try
                 {
                     DebugLog($"📄 Read {jsonContent.Length} characters from infrastructure file");
@@ -354,7 +360,8 @@ public class InfrastructureSpawner : MonoBehaviour
                 }
             },
             // onError
-            (error) => {
+            (error) =>
+            {
                 Debug.LogError($"❌ Error loading infrastructure file: {error}");
                 loadCompleted = true;
             }
@@ -374,7 +381,8 @@ public class InfrastructureSpawner : MonoBehaviour
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             categoriesFileName,
             // onSuccess
-            (jsonContent) => {
+            (jsonContent) =>
+            {
                 try
                 {
                     DebugLog($"📄 Read {jsonContent.Length} characters from categories file");
@@ -389,7 +397,8 @@ public class InfrastructureSpawner : MonoBehaviour
                 }
             },
             // onError
-            (error) => {
+            (error) =>
+            {
                 Debug.LogWarning($"⚠️ Categories file not found (optional): {error}");
                 loadCompleted = true;
             }
@@ -403,14 +412,97 @@ public class InfrastructureSpawner : MonoBehaviour
 
     #region Data Processing
 
+    // DEBUGGING VERSION - Replace your BuildInfrastructureData method with this:
+
+    // DEBUGGING VERSION - Replace your BuildInfrastructureData method with this:
+
     private List<InfrastructureData> BuildInfrastructureData(Node[] nodes, Infrastructure[] infrastructures,
                                                             Category[] categories, List<string> campusIds)
     {
         var infrastructureData = new List<InfrastructureData>();
 
-        // Create dictionaries for quick lookup
-        var infraDict = infrastructures.ToDictionary(i => i.infra_id, i => i);
-        var categoryDict = categories?.ToDictionary(c => c.category_id.ToString(), c => c) ?? new Dictionary<string, Category>();
+        // DEBUG: Check for null/empty infrastructure IDs
+        DebugLog("=== INFRASTRUCTURE ID DEBUG ===");
+        for (int i = 0; i < infrastructures.Length; i++)
+        {
+            var infra = infrastructures[i];
+            if (string.IsNullOrEmpty(infra.infra_id))
+            {
+                Debug.LogError($"❌ Infrastructure at index {i} has null/empty infra_id!");
+            }
+            else
+            {
+                DebugLog($"Infrastructure {i}: ID = '{infra.infra_id}', Name = '{infra.name}'");
+            }
+        }
+
+        // DEBUG: Check for null/empty category IDs
+        DebugLog("=== CATEGORY ID DEBUG ===");
+        if (categories != null)
+        {
+            for (int i = 0; i < categories.Length; i++)
+            {
+                var cat = categories[i];
+                DebugLog($"Category {i}: ID = '{cat.category_id}', Name = '{cat.name}'");
+            }
+        }
+
+        // Create dictionaries for quick lookup - SAFE VERSION that handles duplicates
+        var infraDict = new Dictionary<string, Infrastructure>();
+        DebugLog("=== BUILDING INFRASTRUCTURE DICTIONARY ===");
+
+        for (int i = 0; i < infrastructures.Length; i++)
+        {
+            var infra = infrastructures[i];
+
+            if (string.IsNullOrEmpty(infra.infra_id))
+            {
+                Debug.LogError($"❌ Skipping infrastructure at index {i} - null/empty infra_id");
+                continue;
+            }
+
+            if (infraDict.ContainsKey(infra.infra_id))
+            {
+                Debug.LogError($"❌ DUPLICATE INFRASTRUCTURE ID FOUND: '{infra.infra_id}' at index {i}");
+                Debug.LogError($"   First occurrence: {infraDict[infra.infra_id].name}");
+                Debug.LogError($"   Duplicate: {infra.name}");
+            }
+            else
+            {
+                infraDict[infra.infra_id] = infra;
+                DebugLog($"✅ Added infrastructure: '{infra.infra_id}' -> '{infra.name}'");
+            }
+        }
+
+        var categoryDict = new Dictionary<string, Category>();
+        DebugLog("=== BUILDING CATEGORY DICTIONARY ===");
+
+        if (categories != null)
+        {
+            for (int i = 0; i < categories.Length; i++)
+            {
+                var category = categories[i];
+                string key = category.category_id; // Don't use .ToString() since it's already a string
+
+                if (string.IsNullOrEmpty(key))
+                {
+                    Debug.LogError($"❌ Skipping category at index {i} - null/empty category_id");
+                    continue;
+                }
+
+                if (categoryDict.ContainsKey(key))
+                {
+                    Debug.LogError($"❌ DUPLICATE CATEGORY ID FOUND: '{key}' at index {i}");
+                    Debug.LogError($"   First occurrence: {categoryDict[key].name}");
+                    Debug.LogError($"   Duplicate: {category.name}");
+                }
+                else
+                {
+                    categoryDict[key] = category;
+                    DebugLog($"✅ Added category: '{key}' -> '{category.name}'");
+                }
+            }
+        }
 
         DebugLog($"🔍 Created infrastructure dictionary with {infraDict.Count} entries");
         DebugLog($"🔍 Created category dictionary with {categoryDict.Count} entries");
@@ -436,7 +528,8 @@ public class InfrastructureSpawner : MonoBehaviour
         {
             if (infraDict.TryGetValue(node.related_infra_id, out Infrastructure infrastructure))
             {
-                categoryDict.TryGetValue(infrastructure.category_id.ToString(), out Category category);
+                // Fix: Don't use .ToString() on category_id since it's already a string
+                categoryDict.TryGetValue(infrastructure.category_id, out Category category);
 
                 var data = new InfrastructureData
                 {
@@ -880,11 +973,22 @@ public class InfrastructureNode : MonoBehaviour
         return null;
     }
 
-    private Color GetColorForCategory(long categoryId)
+    // Replace your GetColorForCategory method with this version:
+
+    private Color GetColorForCategory(string categoryId)
     {
-        // Generate a consistent color based on category ID
+        // Handle null or empty category ID
+        if (string.IsNullOrEmpty(categoryId))
+        {
+            return Color.gray; // Default color for unknown categories
+        }
+
+        // Generate a consistent color based on category ID string hash
         UnityEngine.Random.State oldState = UnityEngine.Random.state;
-        UnityEngine.Random.InitState((int)categoryId);
+
+        // Use the hash code of the string as seed for consistent colors
+        int seed = categoryId.GetHashCode();
+        UnityEngine.Random.InitState(seed);
 
         Color color = new Color(
             UnityEngine.Random.Range(0.4f, 0.9f), // Avoid too dark or too bright
@@ -895,6 +999,45 @@ public class InfrastructureNode : MonoBehaviour
 
         UnityEngine.Random.state = oldState;
         return color;
+    }
+
+    // Alternative version - using predefined colors for specific category IDs:
+    private Color GetColorForCategory_Alternative(string categoryId)
+    {
+        // You can also use the actual colors from your categories JSON
+        switch (categoryId)
+        {
+            case "CAT-01": return HexToColor("#ef476f"); // Academics - red
+            case "CAT-02": return HexToColor("#c0bfbc"); // Barriers & Gates - gray
+            case "CAT-03": return HexToColor("#8d99ae"); // Canteen - blue-gray
+            case "CAT-04": return HexToColor("#2a9d8f"); // Lobbies - teal
+            case "CAT-05": return HexToColor("#865e3c"); // Parks - brown
+            case "CAT-06": return HexToColor("#e63946"); // Administrative - red
+            case "CAT-07": return HexToColor("#f1a208"); // Health - yellow
+            case "CAT-08": return HexToColor("#8d99ae"); // Campus Facilities - blue-gray
+            default:
+                // Fallback to hash-based color for unknown categories
+                UnityEngine.Random.State oldState = UnityEngine.Random.state;
+                UnityEngine.Random.InitState(categoryId.GetHashCode());
+                Color color = new Color(
+                    UnityEngine.Random.Range(0.4f, 0.9f),
+                    UnityEngine.Random.Range(0.4f, 0.9f),
+                    UnityEngine.Random.Range(0.4f, 0.9f),
+                    1f
+                );
+                UnityEngine.Random.state = oldState;
+                return color;
+        }
+    }
+
+    // Helper method to convert hex colors to Unity Color
+    private Color HexToColor(string hex)
+    {
+        if (ColorUtility.TryParseHtmlString(hex, out Color color))
+        {
+            return color;
+        }
+        return Color.gray; // Fallback if hex parsing fails
     }
 
     void Update()
