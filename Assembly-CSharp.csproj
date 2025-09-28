@@ -313,6 +313,7 @@
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Utils/UnixTimestampUtils.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/MeshModifiers/LoftModifier.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/TerrainLayer.cs" />
+    <Compile Include="Assets/Scripts/App Managers/ARManagerCleanup.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Utils/CircularBuffer.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/FeatureUiMarker.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/DeviceLocationProviderAndroidNative.cs" />
@@ -408,6 +409,7 @@
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/MeshGenerationBase.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/CameraBillboard.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/LayerSourceOptions.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/SceneUtility.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/ISubLayerStyle.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/MeshModifiers/SnapTerrainRaycastModifier.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/UpdateMapWithLocationProvider.cs" />
@@ -421,6 +423,7 @@
     <Compile Include="Assets/Scripts/App Managers/JSONFileManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/Utilities/MapVisualizerPerformance.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/TileResource.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/SceneUtilitySetup.cs" />
     <Compile Include="Assets/Mapbox/Unity/Map/TileProviders/QuadTreeMapVisualizer.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/TextureMonoBehaviourModifier.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/MapboxStylesColorModifier.cs" />

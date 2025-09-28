@@ -151,6 +151,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8d0e104bbe7a048d811bc0805f0dfc2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isInARMode: 0
+  mainAppLoaderPrefab: {fileID: 0}
   onboardingComplete: 0
   isDataInitialized: 0
   availableMaps: []

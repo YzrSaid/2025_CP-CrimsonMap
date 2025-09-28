@@ -7,10 +7,15 @@ using UnityEngine;
 using UnityEngine.Android;
 using System.Linq;
 using Newtonsoft.Json;
+using UnityEngine.SceneManagement;
 
 public class GlobalManager : MonoBehaviour
 {
     public static GlobalManager Instance { get; private set; }
+    [Header("AR Scene Compatibility")]
+    public bool isInARMode = false;
+    private bool wasInARMode = false;
+
 
     // Global Variables
     public bool onboardingComplete = false;
@@ -59,6 +64,115 @@ public class GlobalManager : MonoBehaviour
         }
     }
 
+    void OnEnable()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    void OnDisable()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+
+    private bool IsARScene(string sceneName)
+    {
+        // Update this array with your actual AR scene name(s)
+        string[] arScenes = { "ARScene" };
+        return System.Array.Exists(arScenes, scene =>
+            sceneName.Equals(scene, System.StringComparison.OrdinalIgnoreCase));
+    }
+
+    // Update your existing InitializeDataSystems method to check AR mode
+    public void InitializeDataSystems()
+    {
+        if (isInARMode)
+        {
+            Debug.Log("In AR mode - skipping heavy data system initialization");
+            OnDataInitializationComplete?.Invoke();
+            return;
+        }
+
+        if (isDataInitialized)
+        {
+            Debug.Log("Data systems already initialized");
+            OnDataInitializationComplete?.Invoke();
+            return;
+        }
+
+        Debug.Log("Starting data systems initialization...");
+        StartCoroutine(InitializeManagersCoroutine());
+    }
+
+    private IEnumerator RecreateDestroyedManagers()
+    {
+        Debug.Log("Starting manager recreation...");
+
+        // Small delay to ensure clean transition
+        yield return new WaitForSeconds(0.1f);
+
+        // Recreate JSONFileManager if destroyed
+        if (JSONFileManager.Instance == null)
+        {
+            Debug.Log("Recreating JSONFileManager...");
+            GameObject jsonManager;
+
+            if (jsonFileManagerPrefab != null)
+            {
+                jsonManager = Instantiate(jsonFileManagerPrefab);
+                if (jsonManager.GetComponent<JSONFileManager>() == null)
+                {
+                    jsonManager.AddComponent<JSONFileManager>();
+                }
+            }
+            else
+            {
+                jsonManager = new GameObject("JSONFileManager");
+                jsonManager.AddComponent<JSONFileManager>();
+            }
+
+            DontDestroyOnLoad(jsonManager);
+            Debug.Log("JSONFileManager recreated");
+        }
+
+        // Recreate FirestoreManager if destroyed
+        if (FirestoreManager.Instance == null)
+        {
+            Debug.Log("Recreating FirestoreManager...");
+            GameObject firestoreManager;
+
+            if (firestoreManagerPrefab != null)
+            {
+                firestoreManager = Instantiate(firestoreManagerPrefab);
+                if (firestoreManager.GetComponent<FirestoreManager>() == null)
+                {
+                    firestoreManager.AddComponent<FirestoreManager>();
+                }
+            }
+            else
+            {
+                firestoreManager = new GameObject("FirestoreManager");
+                firestoreManager.AddComponent<FirestoreManager>();
+            }
+
+            DontDestroyOnLoad(firestoreManager);
+            Debug.Log("FirestoreManager recreated");
+        }
+
+        // MainAppLoader will be recreated automatically when MainApp scene loads
+        // since it's part of the scene's UI hierarchy
+
+        // Wait for managers to initialize
+        yield return new WaitUntil(() => JSONFileManager.Instance != null && FirestoreManager.Instance != null);
+
+        // Reinitialize data systems
+        Debug.Log("Reinitializing data systems after AR...");
+        InitializeDataSystems();
+
+        Debug.Log("Manager recreation complete!");
+    }
+
+
     private void CheckOnboardingAndNavigate()
     {
         // Load onboarding status immediately - NO heavy operations
@@ -79,18 +193,6 @@ public class GlobalManager : MonoBehaviour
         }
     }
 
-    public void InitializeDataSystems()
-    {
-        if (isDataInitialized)
-        {
-            Debug.Log("Data systems already initialized");
-            OnDataInitializationComplete?.Invoke();
-            return;
-        }
-
-        Debug.Log("Starting data systems initialization in MainApp...");
-        StartCoroutine(InitializeManagersCoroutine());
-    }
 
     private IEnumerator InitializeManagersCoroutine()
     {
@@ -628,5 +730,334 @@ public class GlobalManager : MonoBehaviour
         }
 
         return systemStatus;
+    }
+
+    private IEnumerator CleanupXRSubsystems()
+    {
+        Debug.Log("Cleaning up XR subsystems...");
+
+        List<UnityEngine.XR.ARSubsystems.XRSessionSubsystem> sessionSubsystems = null;
+        List<UnityEngine.XR.ARSubsystems.XRPlaneSubsystem> planeSubsystems = null;
+        List<UnityEngine.XR.ARSubsystems.XRRaycastSubsystem> raycastSubsystems = null;
+
+        try
+        {
+            // Get subsystem lists directly
+            sessionSubsystems = new List<UnityEngine.XR.ARSubsystems.XRSessionSubsystem>();
+            planeSubsystems = new List<UnityEngine.XR.ARSubsystems.XRPlaneSubsystem>();
+            raycastSubsystems = new List<UnityEngine.XR.ARSubsystems.XRRaycastSubsystem>();
+
+            SubsystemManager.GetInstances(sessionSubsystems);
+            SubsystemManager.GetInstances(planeSubsystems);
+            SubsystemManager.GetInstances(raycastSubsystems);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"Error during XR subsystem cleanup: {ex.Message}");
+        }
+
+        // Stop session subsystem first
+        if (sessionSubsystems != null)
+        {
+            foreach (var subsystem in sessionSubsystems)
+            {
+                if (subsystem.running)
+                {
+                    Debug.Log("Stopping XR Session Subsystem from GlobalManager...");
+                    subsystem.Stop();
+                }
+            }
+        }
+
+        yield return new WaitForSeconds(0.1f);
+
+        // Stop other subsystems
+        if (planeSubsystems != null)
+        {
+            foreach (var subsystem in planeSubsystems)
+            {
+                if (subsystem.running)
+                {
+                    Debug.Log("Stopping XR Plane Subsystem...");
+                    subsystem.Stop();
+                }
+            }
+        }
+
+        if (raycastSubsystems != null)
+        {
+            foreach (var subsystem in raycastSubsystems)
+            {
+                if (subsystem.running)
+                {
+                    Debug.Log("Stopping XR Raycast Subsystem...");
+                    subsystem.Stop();
+                }
+            }
+        }
+
+        yield return new WaitForSeconds(0.1f);
+        Debug.Log("XR subsystem cleanup complete");
+    }
+
+    public IEnumerator SafeARCleanupAndExit(string sceneName)
+    {
+        Debug.Log("GlobalManager: Starting safe AR cleanup...");
+
+        // First, properly cleanup XR/AR subsystems
+        yield return StartCoroutine(CleanupXRSubsystems());
+
+        // Small delay to ensure XR cleanup is complete
+        yield return new WaitForSeconds(0.2f);
+
+        // Only destroy the ARInfrastructureManager, leave XR/AR Foundation components alone
+        ARInfrastructureManager arManager = FindObjectOfType<ARInfrastructureManager>();
+        if (arManager != null)
+        {
+            Debug.Log("GlobalManager: Destroying ARInfrastructureManager...");
+            Destroy(arManager.gameObject);
+        }
+
+        yield return new WaitForSeconds(0.1f);
+
+        Debug.Log("GlobalManager: Starting manager recreation...");
+        if (isInARMode)
+        {
+            yield return StartCoroutine(ManuallyRecreateManagers(sceneName));
+        }
+        else
+        {
+            SceneManager.LoadScene(sceneName);
+        }
+
+        Debug.Log("GlobalManager: AR cleanup complete");
+    }
+
+
+
+    public IEnumerator ManuallyRecreateManagers(string targetScene)
+    {
+        Debug.Log("MANUAL: Starting manager recreation before scene change...");
+
+        // Set AR mode to false
+        isInARMode = false;
+
+        // Force cleanup of AR scene components before leaving
+        Debug.Log("MANUAL: Cleaning up AR scene...");
+
+        // Stop all AR-related coroutines (but preserve GlobalManager)
+        MonoBehaviour[] arComponents = FindObjectsOfType<MonoBehaviour>();
+        foreach (MonoBehaviour component in arComponents)
+        {
+            if (component != null && component != this) // Don't stop GlobalManager
+            {
+                // Only stop AR-related components to avoid breaking other systems
+                if (component.name.Contains("AR") ||
+                    component.GetType().Namespace?.Contains("UnityEngine.XR") == true ||
+                    component.GetType().Name.Contains("AR"))
+                {
+                    component.StopAllCoroutines();
+                }
+            }
+        }
+
+        yield return new WaitForEndOfFrame();
+
+        // Recreate managers that were destroyed when entering AR
+        bool managersRecreated = false;
+        yield return StartCoroutine(RecreateDestroyedManagersCoroutine((success) => managersRecreated = success));
+
+        if (!managersRecreated)
+        {
+            Debug.LogError("Failed to recreate managers, proceeding with scene load anyway");
+        }
+
+        Debug.Log("MANUAL: Managers recreated and ready, now loading MainApp scene...");
+
+        // Load scene - MainAppLoader will automatically exist as part of the scene
+        SceneManager.LoadScene(targetScene, LoadSceneMode.Single);
+    }
+    private IEnumerator RecreateDestroyedManagersCoroutine(Action<bool> onComplete)
+    {
+        bool success = true;
+        bool shouldRecreateJSON = false;
+        bool shouldRecreateFirestore = false;
+
+        // Check what needs to be recreated and do the work outside of try-catch
+        try
+        {
+            shouldRecreateJSON = ARManagerCleanup.ShouldRecreateJSONManager() && JSONFileManager.Instance == null;
+            shouldRecreateFirestore = ARManagerCleanup.ShouldRecreateFirestoreManager() && FirestoreManager.Instance == null;
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"Error checking manager states: {ex.Message}");
+            success = false;
+        }
+
+        // Create managers outside try-catch to avoid yield issues
+        if (shouldRecreateJSON)
+        {
+            try
+            {
+                Debug.Log("MANUAL: Recreating JSONFileManager...");
+                GameObject jsonManager = new GameObject("JSONFileManager");
+                jsonManager.AddComponent<JSONFileManager>();
+                DontDestroyOnLoad(jsonManager);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"Error recreating JSONFileManager: {ex.Message}");
+                success = false;
+            }
+        }
+        else
+        {
+            Debug.Log("MANUAL: JSONFileManager already exists or wasn't needed");
+        }
+
+        if (shouldRecreateFirestore)
+        {
+            try
+            {
+                Debug.Log("MANUAL: Recreating FirestoreManager...");
+                GameObject firestoreManager = new GameObject("FirestoreManager");
+                firestoreManager.AddComponent<FirestoreManager>();
+                DontDestroyOnLoad(firestoreManager);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"Error recreating FirestoreManager: {ex.Message}");
+                success = false;
+            }
+        }
+        else
+        {
+            Debug.Log("MANUAL: FirestoreManager already exists or wasn't needed");
+        }
+
+        // Wait for managers to initialize (outside try-catch)
+        if (shouldRecreateJSON)
+        {
+            yield return new WaitUntil(() => JSONFileManager.Instance != null);
+            Debug.Log("MANUAL: JSONFileManager recreated");
+        }
+
+        if (shouldRecreateFirestore)
+        {
+            yield return new WaitUntil(() => FirestoreManager.Instance != null);
+            Debug.Log("MANUAL: FirestoreManager recreated");
+        }
+
+        // Wait a bit more to ensure managers are fully initialized
+        yield return new WaitForSeconds(0.2f);
+
+        // Reset the manager states since we've successfully recreated them
+        ARManagerCleanup.ResetManagerStates();
+
+        Debug.Log("MANUAL: All managers successfully recreated");
+
+        onComplete?.Invoke(success);
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        Debug.Log($"GlobalManager: Scene loaded - {scene.name}");
+
+        // Store previous AR state
+        wasInARMode = isInARMode;
+
+        // Check if we're loading an AR scene
+        if (IsARScene(scene.name))
+        {
+            Debug.Log("AR Scene detected - entering AR mode");
+            isInARMode = true;
+        }
+        else
+        {
+            Debug.Log("Non-AR Scene - exiting AR mode");
+            isInARMode = false;
+
+            // If we were in AR mode and now we're not, make sure managers are ready
+            if (wasInARMode)
+            {
+                Debug.Log("Returned from AR - ensuring managers are ready");
+                StartCoroutine(EnsureManagersAfterAR());
+            }
+        }
+    }
+
+    private IEnumerator EnsureManagersAfterAR()
+    {
+        Debug.Log("Ensuring managers are ready after AR return...");
+
+        // Small delay to let scene fully load
+        yield return new WaitForSeconds(0.1f);
+
+        // Check if managers exist, recreate if needed (fallback)
+        bool needsManagerCheck = false;
+        bool shouldRecreateJSON = false;
+        bool shouldRecreateFirestore = false;
+
+        // Check what needs to be recreated
+        try
+        {
+            shouldRecreateJSON = ARManagerCleanup.ShouldRecreateJSONManager() && JSONFileManager.Instance == null;
+            shouldRecreateFirestore = ARManagerCleanup.ShouldRecreateFirestoreManager() && FirestoreManager.Instance == null;
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"Error checking manager states in EnsureManagersAfterAR: {ex.Message}");
+        }
+
+        // Create managers outside of try-catch
+        if (shouldRecreateJSON)
+        {
+            needsManagerCheck = true;
+            try
+            {
+                Debug.Log("JSONFileManager missing, recreating...");
+                GameObject jsonManager = new GameObject("JSONFileManager");
+                jsonManager.AddComponent<JSONFileManager>();
+                DontDestroyOnLoad(jsonManager);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"Error recreating JSONFileManager in EnsureManagersAfterAR: {ex.Message}");
+            }
+        }
+
+        if (shouldRecreateFirestore)
+        {
+            needsManagerCheck = true;
+            try
+            {
+                Debug.Log("FirestoreManager missing, recreating...");
+                GameObject firestoreManager = new GameObject("FirestoreManager");
+                firestoreManager.AddComponent<FirestoreManager>();
+                DontDestroyOnLoad(firestoreManager);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"Error recreating FirestoreManager in EnsureManagersAfterAR: {ex.Message}");
+            }
+        }
+
+        if (needsManagerCheck)
+        {
+            // Wait for managers to initialize
+            yield return new WaitUntil(() =>
+                (!shouldRecreateJSON || JSONFileManager.Instance != null) &&
+                (!shouldRecreateFirestore || FirestoreManager.Instance != null));
+
+            // Reinitialize data systems
+            Debug.Log("Reinitializing data systems after AR...");
+            InitializeDataSystems();
+
+            // Reset manager states
+            ARManagerCleanup.ResetManagerStates();
+        }
+
+        Debug.Log("Manager check complete after AR!");
     }
 }

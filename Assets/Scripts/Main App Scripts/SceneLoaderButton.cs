@@ -21,7 +21,12 @@ public class ButtonSceneLoader : MonoBehaviour
 
     private void LoadScene()
     {
-        Debug.Log($"Loading scene: {sceneName}");
-        SceneManager.LoadScene(sceneName);
+        // Stop any existing AR session
+        if (FindObjectOfType<UnityEngine.XR.ARFoundation.ARSession>() != null)
+        {
+            FindObjectOfType<UnityEngine.XR.ARFoundation.ARSession>().Reset();
+        }
+
+        SceneManager.LoadScene("ARScene");
     }
 }

@@ -4,11 +4,15 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Linq;
-using System.IO;
-using UnityEngine.Networking;
+using UnityEngine.XR.ARSubsystems;
 
 public class ARInfrastructureManager : MonoBehaviour
 {
+    [Header("AR Exit Settings")]
+    [SerializeField] private Button backToMainButton;
+    [SerializeField] private string mainSceneName = "MainAppScene";
+    private bool isExitingAR = false;
+
     [Header("AR Settings")]
     public GameObject buildingMarkerPrefab; // Your infrastructure prefab
     public Camera arCamera;
@@ -20,6 +24,7 @@ public class ARInfrastructureManager : MonoBehaviour
     [Header("UI References")]
     public TextMeshProUGUI gpsStrengthText;
     public TextMeshProUGUI debugText; // For debugging info
+    public TextMeshProUGUI loadingText; // Add this for loading feedback
 
     [Header("Demo Settings - Set Static Map ID")]
     [SerializeField] private string demoMapId = "MAP-01"; // Set this to your test map ID
@@ -32,139 +37,336 @@ public class ARInfrastructureManager : MonoBehaviour
     [Header("GPS")]
     private Vector2 userLocation;
 
+    [Header("Loading States")]
+    private bool isDataLoaded = false;
+    private bool isInitializing = true;
+
     void Start()
     {
         if (arCamera == null)
             arCamera = Camera.main;
 
+        UpdateLoadingUI("Initializing AR Scene...");
+
+        // Setup the back button first
+        SetupBackButton();
+
         StartCoroutine(InitializeARScene());
+    }
+
+    private void SetupBackButton()
+    {
+        // Try to find back button if not assigned
+        if (backToMainButton == null)
+        {
+            GameObject backBtn = GameObject.Find("BackButton") ??
+                                GameObject.Find("Back Button") ??
+                                GameObject.Find("ExitARButton") ??
+                                GameObject.Find("ARBackButton");
+            if (backBtn != null)
+                backToMainButton = backBtn.GetComponent<Button>();
+        }
+
+        if (backToMainButton != null)
+        {
+            backToMainButton.onClick.RemoveAllListeners();
+            backToMainButton.onClick.AddListener(ExitARScene);
+            Debug.Log("AR exit button connected successfully");
+        }
+        else
+        {
+            Debug.LogWarning("AR exit button not found - make sure you have a button named 'BackButton', 'ExitARButton', or assign it in inspector");
+        }
+    }
+
+    // Public method that can be called from UI buttons or other scripts
+    public void ExitARScene()
+    {
+        if (isExitingAR) return;
+
+        Debug.Log("Exiting AR scene...");
+        isExitingAR = true;
+
+        // Clear markers
+        ClearMarkers();
+        CancelInvoke();
+
+        // Simple scene transition - SceneUtility handles XR cleanup automatically
+        if (GlobalManager.Instance != null)
+        {
+            GlobalManager.Instance.StartCoroutine(GlobalManager.Instance.SafeARCleanupAndExit(mainSceneName));
+        }
+        else
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene(mainSceneName);
+        }
+    }
+    // Alternative method that matches your existing GoToTargetSceneSimple pattern
+    public void GoToTargetSceneSimple(string sceneName)
+    {
+        if (isExitingAR) return;
+
+        Debug.Log($"AR Back Button clicked - returning to {sceneName}");
+        mainSceneName = sceneName; // Update the target scene
+        StartCoroutine(SafeExitAR());
+    }
+
+    private IEnumerator SafeExitAR()
+    {
+        isExitingAR = true;
+        UpdateLoadingUI("Exiting AR...");
+
+        // Stop our marker updates and coroutines
+        CancelInvoke();
+        StopAllCoroutines();
+
+        // This coroutine continues after StopAllCoroutines, so restart it
+        StartCoroutine(FinishARExitAfterStop());
+        yield break;
+    }
+
+    private IEnumerator FinishARExitAfterStop()
+    {
+        // Clear markers to free up resources
+        ClearMarkers();
+
+        yield return new WaitForEndOfFrame();
+
+        // Disable AR session properly
+        var arSession = FindObjectOfType<UnityEngine.XR.ARFoundation.ARSession>();
+        if (arSession != null)
+        {
+            arSession.enabled = false;
+            Debug.Log("AR Session disabled");
+        }
+
+        yield return new WaitForEndOfFrame();
+
+        // Stop XR subsystems to prevent camera reference errors
+        yield return StartCoroutine(StopXRSubsystems());
+
+        // Let GlobalManager handle the rest of the cleanup
+        if (GlobalManager.Instance != null)
+        {
+            yield return StartCoroutine(GlobalManager.Instance.SafeARCleanupAndExit(mainSceneName));
+        }
+        else
+        {
+            // Fallback if GlobalManager is not available
+            Debug.LogWarning("GlobalManager not found, using direct scene transition");
+            UnityEngine.SceneManagement.SceneManager.LoadScene(mainSceneName);
+        }
+    }
+
+    private IEnumerator StopXRSubsystems()
+    {
+        Debug.Log("Stopping XR subsystems to prevent camera reference errors...");
+
+        bool errorOccurred = false;
+        try
+        {
+            // Get all subsystem instances
+            var sessionSubsystems = new List<XRSessionSubsystem>();
+            var planeSubsystems = new List<XRPlaneSubsystem>();
+            var raycastSubsystems = new List<XRRaycastSubsystem>();
+
+            SubsystemManager.GetInstances(sessionSubsystems);
+            SubsystemManager.GetInstances(planeSubsystems);
+            SubsystemManager.GetInstances(raycastSubsystems);
+
+            // Stop session subsystem first (most important)
+            foreach (var subsystem in sessionSubsystems)
+            {
+                if (subsystem.running)
+                {
+                    Debug.Log("Stopping XR Session Subsystem...");
+                    subsystem.Stop();
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"Error stopping XR session subsystems: {ex.Message}");
+            errorOccurred = true;
+        }
+
+        yield return new WaitForSeconds(0.1f);
+
+        try
+        {
+            // Stop other subsystems
+            var planeSubsystems = new List<XRPlaneSubsystem>();
+            var raycastSubsystems = new List<XRRaycastSubsystem>();
+            SubsystemManager.GetInstances(planeSubsystems);
+            SubsystemManager.GetInstances(raycastSubsystems);
+
+            foreach (var subsystem in planeSubsystems)
+            {
+                if (subsystem.running)
+                {
+                    Debug.Log("Stopping XR Plane Subsystem...");
+                    subsystem.Stop();
+                }
+            }
+
+            foreach (var subsystem in raycastSubsystems)
+            {
+                if (subsystem.running)
+                {
+                    Debug.Log("Stopping XR Raycast Subsystem...");
+                    subsystem.Stop();
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"Error stopping XR plane/raycast subsystems: {ex.Message}");
+            errorOccurred = true;
+        }
+
+        yield return new WaitForSeconds(0.1f);
+        Debug.Log("XR subsystems stopped successfully");
     }
 
     IEnumerator InitializeARScene()
     {
-        while (GPSManager.Instance == null)
-            yield return new WaitForSeconds(0.1f);
+        UpdateLoadingUI("Waiting for GPS Manager...");
 
+        // Wait for GPS Manager
+        while (GPSManager.Instance == null)
+        {
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        UpdateLoadingUI("GPS Manager found, starting location services...");
         yield return new WaitForSeconds(1f); // Give GPS time to start
+
+        UpdateLoadingUI("Loading map data...");
 
         // Load data based on demo map
         yield return StartCoroutine(LoadCurrentMapData());
 
-        // Start updating markers
-        InvokeRepeating(nameof(UpdateMarkers), 2f, 2f); // Update every 2 seconds
+        if (isDataLoaded)
+        {
+            UpdateLoadingUI("Data loaded, starting AR tracking...");
+            // Start updating markers
+            InvokeRepeating(nameof(UpdateMarkers), 2f, 2f); // Update every 2 seconds
+            isInitializing = false;
+            HideLoadingUI();
+        }
+        else
+        {
+            UpdateLoadingUI("Failed to load data. Check console for errors.");
+        }
     }
 
     IEnumerator LoadCurrentMapData()
     {
         string currentMapId = demoMapId;
+        bool nodesLoaded = false;
+        bool infraLoaded = false;
+
+        UpdateLoadingUI($"Loading nodes for map {currentMapId}...");
 
         // Load nodes for current map
-        yield return StartCoroutine(LoadNodesData(currentMapId));
+        yield return StartCoroutine(LoadNodesData(currentMapId, (success) =>
+        {
+            nodesLoaded = success;
+        }));
+
+        UpdateLoadingUI("Loading infrastructure data...");
 
         // Load infrastructure data
-        yield return StartCoroutine(LoadInfrastructureData());
-
-        Debug.Log($"Loaded {currentNodes.Count} nodes and {currentInfrastructures.Count} infrastructures for map: {currentMapId}");
-
-        if (debugText != null)
-            debugText.text = $"Loaded: {currentNodes.Count} nodes, {currentInfrastructures.Count} infra";
-    }
-
-    IEnumerator LoadNodesData(string mapId)
-    {
-        string filePath = Path.Combine(Application.streamingAssetsPath, $"nodes_{mapId}.json");
-        string jsonData = "";
-
-        if (filePath.Contains("://"))
+        yield return StartCoroutine(LoadInfrastructureData((success) =>
         {
-            UnityWebRequest request = UnityWebRequest.Get(filePath);
-            yield return request.SendWebRequest();
-            if (request.result == UnityWebRequest.Result.Success)
-                jsonData = request.downloadHandler.text;
-            else
-                Debug.LogError("Failed to load: " + filePath);
+            infraLoaded = success;
+        }));
+
+        isDataLoaded = nodesLoaded && infraLoaded;
+
+        if (isDataLoaded)
+        {
+            Debug.Log($"✅ Successfully loaded {currentNodes.Count} nodes and {currentInfrastructures.Count} infrastructures for map: {currentMapId}");
+
+            if (debugText != null)
+                debugText.text = $"Loaded: {currentNodes.Count} nodes, {currentInfrastructures.Count} infra";
         }
         else
         {
-            jsonData = File.ReadAllText(filePath);
-        }
-
-        if (!string.IsNullOrEmpty(jsonData))
-        {
-            try
-            {
-                Node[] nodes = JsonHelper.FromJson<Node>(jsonData);
-                currentNodes = nodes.Where(n => n.type == "infrastructure" && n.is_active).ToList();
-                Debug.Log($"Found {currentNodes.Count} active infrastructure nodes");
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"Error parsing nodes JSON: {e.Message}");
-            }
+            Debug.LogError($"❌ Failed to load data - Nodes: {nodesLoaded}, Infrastructure: {infraLoaded}");
         }
     }
 
-    IEnumerator LoadInfrastructureData()
+    IEnumerator LoadNodesData(string mapId, System.Action<bool> onComplete)
     {
-        string filePath = Path.Combine(Application.streamingAssetsPath, "infrastructure.json");
-        string jsonData = "";
+        string fileName = $"nodes_{mapId}.json";
+        bool loadSuccess = false;
 
-        if (filePath.Contains("://"))
-        {
-            UnityWebRequest request = UnityWebRequest.Get(filePath);
-            yield return request.SendWebRequest();
-            if (request.result == UnityWebRequest.Result.Success)
-                jsonData = request.downloadHandler.text;
-            else
-                Debug.LogError("Failed to load: " + filePath);
-        }
-        else
-        {
-            jsonData = File.ReadAllText(filePath);
-        }
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
+            fileName,
+            (jsonData) =>
+            {
+                try
+                {
+                    Node[] nodes = JsonHelper.FromJson<Node>(jsonData);
+                    currentNodes = nodes.Where(n => n.type == "infrastructure" && n.is_active).ToList();
+                    Debug.Log($"✅ Found {currentNodes.Count} active infrastructure nodes");
+                    loadSuccess = true;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"❌ Error parsing nodes JSON: {e.Message}");
+                    loadSuccess = false;
+                }
+            },
+            (error) =>
+            {
+                Debug.LogError($"❌ Failed to load nodes file: {error}");
+                loadSuccess = false;
+            }
+        ));
 
-        if (!string.IsNullOrEmpty(jsonData))
-        {
-            try
-            {
-                Infrastructure[] infrastructures = JsonHelper.FromJson<Infrastructure>(jsonData);
-                currentInfrastructures = infrastructures.Where(i => !i.is_deleted).ToList();
-                Debug.Log($"Found {currentInfrastructures.Count} active infrastructures");
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"Error parsing infrastructure JSON: {e.Message}");
-            }
-        }
+        onComplete?.Invoke(loadSuccess);
     }
-    IEnumerator LoadJsonFile(string path, System.Action<string> onLoaded)
+
+    IEnumerator LoadInfrastructureData(System.Action<bool> onComplete)
     {
-        string jsonText = null;
+        string fileName = "infrastructure.json";
+        bool loadSuccess = false;
 
-        if (path.Contains("://") || path.Contains("jar:")) // Android / WebGL
-        {
-            UnityWebRequest request = UnityWebRequest.Get(path);
-            yield return request.SendWebRequest();
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
+            fileName,
+            (jsonData) =>
+            {
+                try
+                {
+                    Infrastructure[] infrastructures = JsonHelper.FromJson<Infrastructure>(jsonData);
+                    currentInfrastructures = infrastructures.Where(i => !i.is_deleted).ToList();
+                    Debug.Log($"✅ Found {currentInfrastructures.Count} active infrastructures");
+                    loadSuccess = true;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"❌ Error parsing infrastructure JSON: {e.Message}");
+                    loadSuccess = false;
+                }
+            },
+            (error) =>
+            {
+                Debug.LogError($"❌ Failed to load infrastructure file: {error}");
+                loadSuccess = false;
+            }
+        ));
 
-            if (request.result == UnityWebRequest.Result.Success)
-                jsonText = request.downloadHandler.text;
-            else
-                Debug.LogError($"Failed to load JSON from {path}: {request.error}");
-        }
-        else // Desktop
-        {
-            if (File.Exists(path))
-                jsonText = File.ReadAllText(path);
-            else
-                Debug.LogError($"File not found at {path}");
-        }
-
-        if (!string.IsNullOrEmpty(jsonText))
-            onLoaded?.Invoke(jsonText);
+        onComplete?.Invoke(loadSuccess);
     }
 
     void UpdateMarkers()
     {
+        // Don't update markers if we're exiting AR, still initializing, or data isn't loaded
+        if (isExitingAR || isInitializing || !isDataLoaded)
+            return;
+
         userLocation = GPSManager.Instance.GetSmoothedCoordinates();
         UpdateGPSStrengthUI();
 
@@ -195,8 +397,27 @@ public class ARInfrastructureManager : MonoBehaviour
     {
         if (debugText != null)
         {
-            debugText.text = $"User: {userLocation.x:F5}, {userLocation.y:F5}\n" +
+            string dataStatus = isDataLoaded ? "✅" : "❌";
+            debugText.text = $"{dataStatus} User: {userLocation.x:F5}, {userLocation.y:F5}\n" +
                            $"Nodes: {currentNodes.Count} | Active Markers: {activeMarkers.Count}";
+        }
+    }
+
+    void UpdateLoadingUI(string message)
+    {
+        if (loadingText != null)
+        {
+            loadingText.text = message;
+            loadingText.gameObject.SetActive(true);
+        }
+        Debug.Log($"[AR Loading] {message}");
+    }
+
+    void HideLoadingUI()
+    {
+        if (loadingText != null)
+        {
+            loadingText.gameObject.SetActive(false);
         }
     }
 
@@ -212,6 +433,12 @@ public class ARInfrastructureManager : MonoBehaviour
 
     void CreateVisibleMarkers()
     {
+        if (!isDataLoaded || currentNodes == null || currentNodes.Count == 0)
+        {
+            Debug.LogWarning("Cannot create markers - data not loaded or no nodes available");
+            return;
+        }
+
         foreach (Node node in currentNodes)
         {
             if (ShouldShowMarker(node))
@@ -220,7 +447,7 @@ public class ARInfrastructureManager : MonoBehaviour
             }
         }
 
-        Debug.Log($"Created {activeMarkers.Count} markers");
+        Debug.Log($"Created {activeMarkers.Count} markers from {currentNodes.Count} nodes");
     }
 
     bool ShouldShowMarker(Node node)
@@ -238,7 +465,7 @@ public class ARInfrastructureManager : MonoBehaviour
     {
         if (buildingMarkerPrefab == null)
         {
-            Debug.LogError("Building marker prefab is not assigned!");
+            Debug.LogError("❌ Building marker prefab is not assigned!");
             return;
         }
 
@@ -246,7 +473,7 @@ public class ARInfrastructureManager : MonoBehaviour
 
         if (infra == null)
         {
-            Debug.LogWarning($"No infrastructure found for node {node.node_id} with infra_id {node.related_infra_id}");
+            Debug.LogWarning($"⚠️ No infrastructure found for node {node.node_id} with infra_id {node.related_infra_id}");
             return;
         }
 
@@ -260,7 +487,7 @@ public class ARInfrastructureManager : MonoBehaviour
         UpdateMarkerText(marker, infra, node);
         activeMarkers.Add(marker);
 
-        Debug.Log($"Created marker for {infra.name} at {worldPosition}");
+        Debug.Log($"✅ Created marker for {infra.name} at {worldPosition}");
     }
 
     void UpdateMarkerText(GameObject marker, Infrastructure infra, Node node)
@@ -281,7 +508,7 @@ public class ARInfrastructureManager : MonoBehaviour
 
     IEnumerator UpdateTextRotation(Transform textTransform)
     {
-        while (textTransform != null)
+        while (textTransform != null && !isExitingAR)
         {
             if (arCamera != null)
             {
@@ -323,8 +550,10 @@ public class ARInfrastructureManager : MonoBehaviour
 
     void OnDestroy()
     {
+        isExitingAR = true;
         CancelInvoke();
         ClearMarkers();
         StopAllCoroutines();
+        Debug.Log("ARInfrastructureManager destroyed");
     }
 }

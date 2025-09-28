@@ -1266,7 +1266,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 246, y: 146.66998}
+  m_AnchoredPosition: {x: 242.5, y: 159.14}
   m_SizeDelta: {x: 35, y: 35}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &376647205
@@ -5893,6 +5893,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 57a28be8e8e8addf78a95b68440a7bdb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  backToMainButton: {fileID: 0}
+  mainSceneName: MainAppScene
   buildingMarkerPrefab: {fileID: 2395739616877220581, guid: 9651b0f074c56f421b790ae228f60189, type: 3}
   arCamera: {fileID: 331264287}
   maxVisibleDistance: 500
@@ -5901,6 +5903,7 @@ MonoBehaviour:
   markerHeightOffset: 0
   gpsStrengthText: {fileID: 1101261013}
   debugText: {fileID: 1474220225}
+  loadingText: {fileID: 0}
   demoMapId: MAP-01
 --- !u!114 &1709089044
 MonoBehaviour:
