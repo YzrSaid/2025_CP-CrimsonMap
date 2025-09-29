@@ -90,24 +90,6 @@
         "campus_id": "CAMP-02"
     },
 {
-        "y_coordinates": -14.1217556838577,
-        "x_coordinates": -88.8611054058841,
-        "updated_at": "2025-09-15T08:36:53.207Z",
-        "longitude": 122.062888,
-        "campus_id": "CAMP-02",
-        "related_infra_id": "INFRA-10",
-        "created_at": "2025-09-11T07:37:21.199Z",
-        "latitude": 6.913214,
-        "name": "12345",
-        "type": "infrastructure",
-        "deletedAt": "2025-09-16T03:00:17.972Z",
-        "is_active": true,
-        "indoor": null,
-        "related_room_id": "",
-        "is_deleted": true,
-        "node_id": "ND-031"
-    },
-{
         "y_coordinates": -53.4847597160029,
         "node_id": "ND-008",
         "is_active": true,
@@ -210,21 +192,6 @@
         "x_coordinates": -60.271010623135,
         "related_infra_id": "INFRA-12",
         "longitude": 122.063147,
-        "campus_id": "CAMP-02"
-    },
-{
-        "y_coordinates": -50.1489119166937,
-        "node_id": "ND-009",
-        "is_active": true,
-        "related_room_id": "",
-        "indoor": null,
-        "type": "infrastructure",
-        "name": "Fernery",
-        "latitude": 6.91289,
-        "created_at": "2025-09-03T15:19:12.713Z",
-        "x_coordinates": -109.613761077693,
-        "related_infra_id": "INFRA-06",
-        "longitude": 122.0627,
         "campus_id": "CAMP-02"
     },
 {
@@ -466,6 +433,25 @@
         "created_at": "2025-09-16T07:54:23.161Z",
         "related_infra_id": "",
         "longitude": 122.063275,
+        "campus_id": "CAMP-02"
+    },
+{
+        "y_coordinate": NaN,
+        "x_coordinate": NaN,
+        "node_id": "ND-033",
+        "is_active": true,
+        "related_room_id": "",
+        "indoor": {
+            "y": 27.75,
+            "x": -14,
+            "floor": "1"
+        },
+        "type": "indoor",
+        "name": "Department of Computer Science",
+        "latitude": NaN,
+        "created_at": "2025-09-29T10:08:44.018Z",
+        "related_infra_id": "",
+        "longitude": NaN,
         "campus_id": "CAMP-02"
     }
 ]

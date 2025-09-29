@@ -81,7 +81,7 @@ public class PathRenderer : MonoBehaviour
     public void SetCurrentMapData(string mapId, List<string> campusIds)
     {
         DebugLog($"🗺️ Setting map data - Map ID: {mapId}, Campuses: {string.Join(", ", campusIds)}");
-        
+
         currentMapId = mapId;
         currentCampusIds.Clear();
         if (campusIds != null)
@@ -184,7 +184,7 @@ public class PathRenderer : MonoBehaviour
             Debug.LogWarning("⚠️ No current map ID set, using default nodes.json");
             return "nodes.json";
         }
-        
+
         string fileName = $"nodes_{currentMapId}.json";
         DebugLog($"📁 Using nodes file: {fileName}");
         return fileName;
@@ -200,7 +200,7 @@ public class PathRenderer : MonoBehaviour
             Debug.LogWarning("⚠️ No current map ID set, using default edges.json");
             return "edges.json";
         }
-        
+
         string fileName = $"edges_{currentMapId}.json";
         DebugLog($"📁 Using edges file: {fileName}");
         return fileName;
@@ -266,7 +266,8 @@ public class PathRenderer : MonoBehaviour
         }
 
         // Load and filter edges from map-specific file
-        yield return StartCoroutine(LoadEdgesFromJSONAsync((edges) => {
+        yield return StartCoroutine(LoadEdgesFromJSONAsync((edges) =>
+        {
             if (edges == null || edges.Length == 0)
             {
                 Debug.LogError($"❌ Failed to load edges from {GetEdgesFileName()}");
@@ -309,7 +310,8 @@ public class PathRenderer : MonoBehaviour
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             GetNodesFileName(),
             // onSuccess
-            (jsonContent) => {
+            (jsonContent) =>
+            {
                 try
                 {
                     DebugLog($"📄 Read {jsonContent.Length} characters from nodes file");
@@ -323,7 +325,7 @@ public class PathRenderer : MonoBehaviour
                     var pathwayNodes = nodes.Where(n =>
                         n != null &&
                         n.is_active &&
-                        (n.type == "pathway" || n.type == "infrastructure") &&
+                        (n.type == "pathway" || n.type == "infrastructure" || n.type == "intermediate") &&  // ← ADDED "intermediate"
                         (campusIds == null || campusIds.Count == 0 || campusIds.Contains(n.campus_id)) &&
                         IsValidCoordinate(n.latitude, n.longitude)
                     ).ToList();
@@ -347,7 +349,8 @@ public class PathRenderer : MonoBehaviour
                 }
             },
             // onError
-            (error) => {
+            (error) =>
+            {
                 Debug.LogError($"❌ Error loading nodes: {error}");
                 loadCompleted = true;
             }
@@ -367,7 +370,8 @@ public class PathRenderer : MonoBehaviour
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             GetEdgesFileName(),
             // onSuccess
-            (jsonContent) => {
+            (jsonContent) =>
+            {
                 try
                 {
                     DebugLog($"📄 Read {jsonContent.Length} characters from edges file");
@@ -384,7 +388,8 @@ public class PathRenderer : MonoBehaviour
                 }
             },
             // onError
-            (error) => {
+            (error) =>
+            {
                 Debug.LogError($"❌ Error loading edges: {error}");
                 loadCompleted = true;
             }
@@ -640,14 +645,14 @@ public class PathEdge : MonoBehaviour
         if (map != null)
         {
             referenceZoomLevel = map.Zoom;
-            
+
             // Calculate reference positions and distance at current zoom
             referenceFromPos = map.GeoToWorldPosition(new Vector2d(fromNode.latitude, fromNode.longitude), false);
             referenceToPos = map.GeoToWorldPosition(new Vector2d(toNode.latitude, toNode.longitude), false);
             referenceDistance = Vector3.Distance(referenceFromPos, referenceToPos);
-            
+
             isInitialized = true;
-            
+
             Debug.Log($"Path {edge.edge_id} initialized at zoom {referenceZoomLevel:F1} with reference distance {referenceDistance:F3}");
         }
 
@@ -721,7 +726,7 @@ public class PathEdge : MonoBehaviour
         // KEY FIX: Use the reference distance instead of current distance
         // This keeps the visual length consistent regardless of zoom
         float visualDistance = referenceDistance;
-        
+
         // Apply the scale using the reference distance
         transform.localScale = new Vector3(baseWidth, baseWidth, visualDistance);
 
@@ -753,7 +758,7 @@ public class PathEdge : MonoBehaviour
             Gizmos.DrawWireSphere(transform.TransformPoint(toPos), 0.2f);
             Gizmos.color = Color.green;
             Gizmos.DrawLine(transform.TransformPoint(fromPos), transform.TransformPoint(toPos));
-            
+
             // Show the center point
             Gizmos.color = Color.red;
             Gizmos.DrawWireCube(transform.position, Vector3.one * 0.1f);
