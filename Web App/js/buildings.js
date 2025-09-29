@@ -215,8 +215,8 @@ document.querySelector("#addInfraModal form")?.addEventListener("submit", async 
     const categoryId = categorySelect.value;
     const categoryName = categorySelect.selectedOptions[0]?.dataset.name || categoryId; // ✅ category name
 
-    const phone = document.querySelector('#addInfraModal input[type="text"][placeholder="e.g. 09123456789"]').value.trim();
-    const email = document.querySelector('#addInfraModal input[type="email"]').value.trim();
+        const phone = "09123456789";
+    const email = "sample@gmail.com";
 
     let imageUrl = "";
     const imageFile = document.getElementById('uploadImage').files[0];
@@ -228,6 +228,8 @@ document.querySelector("#addInfraModal form")?.addEventListener("submit", async 
         alert("Please fill in all required fields.");
         return;
     }
+
+    
 
     try {
         // Save infrastructure

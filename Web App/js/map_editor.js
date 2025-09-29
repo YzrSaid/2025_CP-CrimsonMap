@@ -113,18 +113,34 @@ async function populateInfraDropdown(selectId = "relatedInfra") {
     const select = document.getElementById(selectId);
     if (!select) return;
     select.innerHTML = `<option value="">Select infrastructure</option>`;
+
     const q = query(collection(db, "Infrastructure"));
     const snapshot = await getDocs(q);
+
+    // Collect all infrastructures into an array
+    const infraList = [];
     snapshot.forEach(doc => {
         const data = doc.data();
         if (data.infra_id && data.name) {
-            const option = document.createElement("option");
-            option.value = data.infra_id;
-            option.textContent = data.name;
-            select.appendChild(option);
+            infraList.push({
+                id: data.infra_id,
+                name: data.name
+            });
         }
     });
+
+    // Sort A-Z by name
+    infraList.sort((a, b) => a.name.localeCompare(b.name));
+
+    // Append sorted options
+    infraList.forEach(infra => {
+        const option = document.createElement("option");
+        option.value = infra.id;
+        option.textContent = infra.name;
+        select.appendChild(option);
+    });
 }
+
 
 // ----------- Populate Related Room Dropdown -----------
 async function populateRoomDropdown(selectId = "relatedRoom") {
@@ -2097,9 +2113,57 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
+// ✅ Helper: compute geographic center of nodes
+function getGeographicCenter(nodes, campusId) {
+  // Special case for CAMP-02 → always use fixed center
+  if (campusId === "CAMP-02") {
+    return [6.9130, 122.0630];
+  }
+
+  if (!nodes.length) return [6.9130, 122.0630]; // fallback default
+
+  let x = 0, y = 0, z = 0;
+
+  nodes.forEach(n => {
+    if (!n.latitude || !n.longitude) return;
+    const latRad = parseFloat(n.latitude) * Math.PI / 180;
+    const lonRad = parseFloat(n.longitude) * Math.PI / 180;
+
+    x += Math.cos(latRad) * Math.cos(lonRad);
+    y += Math.cos(latRad) * Math.sin(lonRad);
+    z += Math.sin(latRad);
+  });
+
+  const total = nodes.length;
+  x /= total;
+  y /= total;
+  z /= total;
+
+  const lon = Math.atan2(y, x);
+  const hyp = Math.sqrt(x * x + y * y);
+  const lat = Math.atan2(z, hyp);
+
+  return [lat * 180 / Math.PI, lon * 180 / Math.PI];
+}
 
 
+// ✅ Helper: compute bounds of all nodes in a campus
+function getCampusBounds(nodes, campusId) {
+  // Special case for CAMP-02 → fixed center
+  if (campusId === "CAMP-02") {
+    return null; // we'll skip bounds fit for CAMP-02
+  }
 
+  const latLngs = nodes
+    .filter(n => n.latitude && n.longitude)
+    .map(n => [parseFloat(n.latitude), parseFloat(n.longitude)]);
+
+  return latLngs.length ? L.latLngBounds(latLngs) : null;
+}
+
+
+let mapFull = null;
+let mapOverview = null;
 
 async function loadMap(mapId, campusId = null, versionId = null) {
   try {
@@ -2109,33 +2173,23 @@ async function loadMap(mapId, campusId = null, versionId = null) {
     let infraMap = {}, roomMap = {}, campusMap = {};
 
     if (navigator.onLine) {
-      // Online: Firestore
+      // --- Firestore ---
       const mapDocRef = doc(db, "MapVersions", safeMapId);
       const mapDocSnap = await getDoc(mapDocRef);
-
-      if (!mapDocSnap.exists()) {
-        console.error("❌ Map not found:", safeMapId);
-        return;
-      }
+      if (!mapDocSnap.exists()) return console.error("❌ Map not found:", safeMapId);
 
       mapData = mapDocSnap.data();
       activeCampus = campusId || mapData.current_active_campus;
       activeVersion = String(versionId || mapData.current_version || "");
 
-      // Fetch nodes & edges for the selected version
       const versionDocRef = doc(db, "MapVersions", safeMapId, "versions", activeVersion);
       const versionDocSnap = await getDoc(versionDocRef);
-
-      if (!versionDocSnap.exists()) {
-        console.error("❌ Version not found:", activeVersion);
-        return;
-      }
+      if (!versionDocSnap.exists()) return console.error("❌ Version not found:", activeVersion);
 
       const versionData = versionDocSnap.data();
       nodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
       edges = Array.isArray(versionData.edges) ? versionData.edges : [];
 
-      // Fetch Infra, Room, Campus names
       const [infraSnap, roomSnap, campusSnap] = await Promise.all([
         getDocs(collection(db, "Infrastructure")),
         getDocs(collection(db, "Rooms")),
@@ -2146,29 +2200,18 @@ async function loadMap(mapId, campusId = null, versionId = null) {
       campusSnap.forEach(doc => campusMap[doc.data().campus_id] = doc.data().campus_name);
 
     } else {
-      // Offline: JSON
+      // --- Offline JSON ---
       const mapRes = await fetch("../assets/firestore/MapVersions.json");
       const mapsJson = await mapRes.json();
-
       mapData = mapsJson.find(m => m.map_id === safeMapId) || mapsJson[0];
-      if (!mapData) {
-        console.error("No maps found in JSON");
-        return;
-      }
+      if (!mapData) return console.error("No maps found in JSON");
+
       activeCampus = campusId || mapData.current_active_campus;
       activeVersion = String(versionId || mapData.current_version || (mapData.versions?.[0]?.id || ""));
-
       const versionData = mapData.versions.find(v => v.id === activeVersion);
-      if (!versionData) {
-        console.error("Version not found in JSON:", activeVersion);
-        nodes = [];
-        edges = [];
-      } else {
-        nodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
-        edges = Array.isArray(versionData.edges) ? versionData.edges : [];
-      }
+      nodes = versionData ? versionData.nodes || [] : [];
+      edges = versionData ? versionData.edges || [] : [];
 
-      // Fetch Infra, Room, Campus names from JSON
       const [infraRes, roomRes, campusRes] = await Promise.all([
         fetch("../assets/firestore/Infrastructure.json"),
         fetch("../assets/firestore/Rooms.json"),
@@ -2184,75 +2227,359 @@ async function loadMap(mapId, campusId = null, versionId = null) {
       console.log("📂 Offline → Map, nodes, edges loaded from JSON");
     }
 
-    // Filter nodes for the selected campus
-    nodes = nodes.filter(n => n.campus_id === activeCampus && n.is_deleted !== true);
+    // --- Filter nodes ---
+    nodes = nodes.filter(n => {
+      if (n.is_deleted) return false;
+      if (!n.campus_id) n.campus_id = activeCampus;
+      return n.campus_id === activeCampus;
+    });
 
-    // Attach readable names
+    const validNodeIds = new Set(nodes.map(n => n.node_id));
+    edges = edges.filter(e => !e.is_deleted && validNodeIds.has(e.from_node) && validNodeIds.has(e.to_node));
+
     nodes.forEach(d => {
       d.infraName = d.related_infra_id ? (infraMap[d.related_infra_id] || d.related_infra_id) : "-";
       d.roomName = d.related_room_id ? (roomMap[d.related_room_id] || d.related_room_id) : "-";
       d.campusName = d.campus_id ? (campusMap[d.campus_id] || d.campus_id) : "-";
     });
 
-    // ---- Reset map containers ----
-    const mapContainer = document.getElementById("map-overview");
-    if (mapContainer._leaflet_id) {
-      mapContainer._leaflet_id = null;
-      mapContainer.innerHTML = "";
-    }
-
-    // ---- Small overview map ----
-    const map = L.map("map-overview", {
-      center: [6.9130, 122.0630],
-      zoom: 18,
-      zoomControl: false,
-      dragging: false,
-      scrollWheelZoom: false,
-      doubleClickZoom: false,
-      boxZoom: false,
-      keyboard: false
-    });
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap"
-    }).addTo(map);
-
-    renderDataOnMap(map, { nodes, edges });
-
-    // ---- Fullscreen modal map ----
-    const modal = document.getElementById("mapModal");
-    const closeBtn = document.querySelector(".close-btn");
-
-    mapContainer.addEventListener("click", () => {
-      modal.style.display = "block";
-      setTimeout(() => {
-        const mapFull = L.map("map-full", {
-          center: [6.9130, 122.0630],
-          zoom: 18,
-          zoomControl: true,
-          dragging: true,
-          scrollWheelZoom: true,
-          doubleClickZoom: true,
-          boxZoom: true,
-          keyboard: true
-        });
-
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: "© OpenStreetMap"
-        }).addTo(mapFull);
-
-        renderDataOnMap(mapFull, { nodes, edges }, true);
-      }, 200);
-    });
-
-    closeBtn.addEventListener("click", () => {
-      modal.style.display = "none";
-    });
+    // --- Create/refresh overview map ---
+    createOverviewMap(nodes, edges, activeCampus);
 
   } catch (err) {
     console.error("❌ Error loading map:", err);
   }
 }
+
+// --- Create Overview Map ---
+function createOverviewMap(nodes, edges, activeCampus) {
+  if (mapOverview) {
+    mapOverview.remove();
+    document.getElementById("map-overview").innerHTML = "";
+  }
+
+  mapOverview = L.map("map-overview", {
+    zoomControl: false,
+    dragging: false,
+    scrollWheelZoom: false,
+    doubleClickZoom: false,
+    boxZoom: false,
+    keyboard: false
+  });
+
+  const bounds = getCampusBounds(nodes, activeCampus);
+  if (bounds) {
+    mapOverview.fitBounds(bounds, { padding: [20, 20], maxZoom: 20, animate: true });
+    mapOverview.setZoom(mapOverview.getZoom() + 1); // ✅ closer
+  } else {
+    mapOverview.setView(getGeographicCenter(nodes, activeCampus), 18);
+  }
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap"
+  }).addTo(mapOverview);
+
+  renderDataOnMap(mapOverview, { nodes, edges });
+
+  // --- Modal map sync ---
+  const modal = document.getElementById("mapModal");
+  const closeBtn = document.querySelector(".close-btn");
+
+  document.getElementById("map-overview").addEventListener("click", () => {
+    modal.style.display = "block";
+
+    setTimeout(() => {
+      if (mapFull) {
+        mapFull.remove();
+        document.getElementById("map-full").innerHTML = "";
+      }
+
+      const currentCenter = mapOverview.getCenter();
+      const currentZoom = mapOverview.getZoom();
+
+      mapFull = L.map("map-full", {
+        center: currentCenter,
+        zoom: currentZoom,
+        zoomControl: true,
+        dragging: true,
+        scrollWheelZoom: true,
+        doubleClickZoom: true,
+        boxZoom: true,
+        keyboard: true
+      });
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap"
+      }).addTo(mapFull);
+
+      renderDataOnMap(mapFull, { nodes, edges }, true);
+    }, 200);
+  });
+
+  closeBtn.addEventListener("click", () => {
+    modal.style.display = "none";
+    if (mapFull) {
+      mapFull.remove();
+      mapFull = null;
+    }
+  });
+}
+
+
+
+
+
+
+
+// let mapFull = null; 
+// let mapOverview = null;
+
+
+// async function loadMap(mapId, campusId = null, versionId = null) {
+//   try {
+//     const safeMapId = String(mapId);
+
+//     let mapData, activeCampus, activeVersion, nodes = [], edges = [];
+//     let infraMap = {}, roomMap = {}, campusMap = {};
+
+//     if (navigator.onLine) {
+//       // Online: Firestore
+//       const mapDocRef = doc(db, "MapVersions", safeMapId);
+//       const mapDocSnap = await getDoc(mapDocRef);
+
+//       if (!mapDocSnap.exists()) {
+//         console.error("❌ Map not found:", safeMapId);
+//         return;
+//       }
+
+//       mapData = mapDocSnap.data();
+//       activeCampus = campusId || mapData.current_active_campus;
+//       activeVersion = String(versionId || mapData.current_version || "");
+
+//       // Fetch nodes & edges for the selected version
+//       const versionDocRef = doc(db, "MapVersions", safeMapId, "versions", activeVersion);
+//       const versionDocSnap = await getDoc(versionDocRef);
+
+//       if (!versionDocSnap.exists()) {
+//         console.error("❌ Version not found:", activeVersion);
+//         return;
+//       }
+
+//       const versionData = versionDocSnap.data();
+//       nodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
+//       edges = Array.isArray(versionData.edges) ? versionData.edges : [];
+
+//       // Fetch Infra, Room, Campus names
+//       const [infraSnap, roomSnap, campusSnap] = await Promise.all([
+//         getDocs(collection(db, "Infrastructure")),
+//         getDocs(collection(db, "Rooms")),
+//         getDocs(collection(db, "Campus"))
+//       ]);
+//       infraSnap.forEach(doc => infraMap[doc.data().infra_id] = doc.data().name);
+//       roomSnap.forEach(doc => roomMap[doc.data().room_id] = doc.data().name);
+//       campusSnap.forEach(doc => campusMap[doc.data().campus_id] = doc.data().campus_name);
+
+//     } else {
+//       // Offline: JSON
+//       const mapRes = await fetch("../assets/firestore/MapVersions.json");
+//       const mapsJson = await mapRes.json();
+
+//       mapData = mapsJson.find(m => m.map_id === safeMapId) || mapsJson[0];
+//       if (!mapData) {
+//         console.error("No maps found in JSON");
+//         return;
+//       }
+//       activeCampus = campusId || mapData.current_active_campus;
+//       activeVersion = String(versionId || mapData.current_version || (mapData.versions?.[0]?.id || ""));
+
+//       const versionData = mapData.versions.find(v => v.id === activeVersion);
+//       if (!versionData) {
+//         console.error("Version not found in JSON:", activeVersion);
+//         nodes = [];
+//         edges = [];
+//       } else {
+//         nodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
+//         edges = Array.isArray(versionData.edges) ? versionData.edges : [];
+//       }
+
+//       // Fetch Infra, Room, Campus names from JSON
+//       const [infraRes, roomRes, campusRes] = await Promise.all([
+//         fetch("../assets/firestore/Infrastructure.json"),
+//         fetch("../assets/firestore/Rooms.json"),
+//         fetch("../assets/firestore/Campus.json")
+//       ]);
+//       const infraJson = await infraRes.json();
+//       const roomJson = await roomRes.json();
+//       const campusJson = await campusRes.json();
+//       infraJson.forEach(i => infraMap[i.infra_id] = i.name);
+//       roomJson.forEach(r => roomMap[r.room_id] = r.name);
+//       campusJson.forEach(c => campusMap[c.campus_id] = c.campus_name);
+
+//       console.log("📂 Offline → Map, nodes, edges loaded from JSON");
+//     }
+
+// // ✅ Filter nodes by active campus (without dropping edges)
+// nodes = nodes.filter(n => {
+//   if (n.is_deleted) return false;
+
+//   // If campus_id is missing, assume it's part of the active campus
+//   if (!n.campus_id) {
+//     console.warn("⚠️ Node missing campus_id, assigning to active campus:", n);
+//     n.campus_id = activeCampus;
+//   }
+
+//   return n.campus_id === activeCampus;
+// });
+
+// console.log("✅ Filtered nodes for campus:", activeCampus, nodes);
+
+// // Build set of valid node IDs
+// const validNodeIds = new Set(nodes.map(n => n.node_id));
+
+// // Keep edges that connect only valid nodes, not deleted
+// edges = edges.filter(e => {
+//   if (e.is_deleted) return false;
+//   return validNodeIds.has(e.from_node) && validNodeIds.has(e.to_node);
+// });
+
+
+// console.log("✅ Filtered edges for campus:", activeCampus, edges);
+
+
+//     // Attach readable names
+//     nodes.forEach(d => {
+//       d.infraName = d.related_infra_id ? (infraMap[d.related_infra_id] || d.related_infra_id) : "-";
+//       d.roomName = d.related_room_id ? (roomMap[d.related_room_id] || d.related_room_id) : "-";
+//       d.campusName = d.campus_id ? (campusMap[d.campus_id] || d.campus_id) : "-";
+//     });
+
+//     // ✅ Get center of campus nodes
+// // ✅ Get center of campus nodes
+// const center = getGeographicCenter(nodes, activeCampus);
+
+
+//     // ---- Reset map containers ----
+//     const mapContainer = document.getElementById("map-overview");
+//     if (mapContainer._leaflet_id) {
+//       mapContainer._leaflet_id = null;
+//       mapContainer.innerHTML = "";
+//     }
+
+//     const map = L.map("map-overview", {
+//         zoomControl: false,
+//         dragging: false,
+//         scrollWheelZoom: false,
+//         doubleClickZoom: false,
+//         boxZoom: false,
+//         keyboard: false
+//     });
+
+// const bounds = getCampusBounds(nodes, activeCampus);
+
+// if (bounds) {
+//   map.fitBounds(bounds, { padding: [10, 10] });
+
+//   // ✅ Make the map closer after fitBounds
+//   const currentZoom = map.getZoom();
+//   map.setZoom(currentZoom + 0.4); // increase by 1 (or +2 if you want even closer)
+// } else {
+//   // fallback to fixed center
+//   map.setView(getGeographicCenter(nodes, activeCampus), 18);
+// }
+
+
+
+//     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+//       attribution: "© OpenStreetMap"
+//     }).addTo(map);
+
+//     renderDataOnMap(map, { nodes, edges });
+
+//     // ---- Fullscreen modal map ----
+//     const modal = document.getElementById("mapModal");
+//     const closeBtn = document.querySelector(".close-btn");
+
+// // --- create overview map ---
+// function createOverviewMap(nodes, edges, activeCampus) {
+//   if (mapOverview) {
+//     mapOverview.remove();
+//     document.getElementById("map-overview").innerHTML = "";
+//   }
+
+//   mapOverview = L.map("map-overview", {
+//     zoomControl: false,
+//     dragging: false,
+//     scrollWheelZoom: false,
+//     doubleClickZoom: false,
+//     boxZoom: false,
+//     keyboard: false
+//   });
+
+//   const bounds = getCampusBounds(nodes, activeCampus);
+//   if (bounds) {
+//     mapOverview.fitBounds(bounds, { padding: [20, 20], maxZoom: 20, animate: true });
+//   } else {
+//     mapOverview.setView(getGeographicCenter(nodes, activeCampus), 18);
+//   }
+
+//   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+//     attribution: "© OpenStreetMap"
+//   }).addTo(mapOverview);
+
+//   renderDataOnMap(mapOverview, { nodes, edges });
+// }
+
+// // --- open modal map ---
+// mapContainer.addEventListener("click", () => {
+//   modal.style.display = "block";
+
+//   setTimeout(() => {
+//     if (mapFull) {
+//       mapFull.remove();
+//       document.getElementById("map-full").innerHTML = "";
+//     }
+
+//     // ✅ take current view from overview map
+//     const currentCenter = mapOverview.getCenter();
+//     const currentZoom = mapOverview.getZoom();
+
+//     mapFull = L.map("map-full", {
+//       center: currentCenter,
+//       zoom: currentZoom,
+//       zoomControl: true,
+//       dragging: true,
+//       scrollWheelZoom: true,
+//       doubleClickZoom: true,
+//       boxZoom: true,
+//       keyboard: true
+//     });
+
+//     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+//       attribution: "© OpenStreetMap"
+//     }).addTo(mapFull);
+
+//     renderDataOnMap(mapFull, { nodes, edges }, true);
+//   }, 200);
+// });
+
+// closeBtn.addEventListener("click", () => {
+//   modal.style.display = "none";
+//   if (mapFull) {
+//     mapFull.remove();
+//     mapFull = null;
+//   }
+// });
+
+
+
+//     closeBtn.addEventListener("click", () => {
+//       modal.style.display = "none";
+//     });
+
+//   } catch (err) {
+//     console.error("❌ Error loading map:", err);
+//   }
+// }
 
 
 
@@ -2416,5 +2743,22 @@ function renderDataOnMap(map, data, enableClick = false) {
       });
     }
   });
+
+
+  // --- Outdoor Nodes (like pathways, landmarks, etc.) ---
+nodes.filter(d => d.type === "outdoor").forEach(outdoor => {
+  const marker = L.circleMarker([outdoor.latitude, outdoor.longitude], {
+    radius: 6,
+    color: "red",
+    fillColor: "pink",
+    fillOpacity: 0.8
+  }).addTo(map);
+
+  if (enableClick) {
+    marker.on("click", () => showDetails(outdoor));
+  }
+
+  
+});
   // ======================================================
 }
