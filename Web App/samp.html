@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cartesian Map (Auto-Scaled)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f9f9f9;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin-top: 20px;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+  <h2>Cartesian Map (Feet, Auto-Scaled)</h2>
+  <canvas id="cartesianMap" width="900" height="600"></canvas>
+
+  <script>
+    function drawCartesianMap(nodes) {
+      const canvas = document.getElementById("cartesianMap");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // --- Find bounds ---
+      const xs = nodes.map(n => n.x_coordinate);
+      const ys = nodes.map(n => n.y_coordinate);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+
+      // Padding around points
+      const padding = 50;
+
+      // Scale to fit all points
+      const scaleX = (canvas.width - 2 * padding) / (maxX - minX);
+      const scaleY = (canvas.height - 2 * padding) / (maxY - minY);
+      const scale = Math.min(scaleX, scaleY); // uniform scale
+
+      // --- Draw axes (centered at 0,0 if inside bounds) ---
+      const zeroX = padding + (0 - minX) * scale;
+      const zeroY = canvas.height - padding - (0 - minY) * scale;
+
+      ctx.strokeStyle = "#ddd";
+      ctx.beginPath();
+      ctx.moveTo(0, zeroY);
+      ctx.lineTo(canvas.width, zeroY);
+      ctx.moveTo(zeroX, 0);
+      ctx.lineTo(zeroX, canvas.height);
+      ctx.stroke();
+
+      // --- Draw nodes ---
+      nodes.forEach(node => {
+        const x = padding + (node.x_coordinate - minX) * scale;
+        const y = canvas.height - padding - (node.y_coordinate - minY) * scale;
+
+        ctx.fillStyle = "blue";
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.fillStyle = "black";
+        ctx.font = "12px Arial";
+        ctx.fillText(node.name, x + 8, y - 8);
+      });
+    }
+
+    // --- Your Data (in feet) ---
+    const nodes = [
+      { name: "Office 1",    x_coordinate: -14,    y_coordinate: 27.75 },
+      { name: "Office 2",    x_coordinate: 0,      y_coordinate: 45 },
+      { name: "Office 3",    x_coordinate: -1.5,   y_coordinate: 48 },
+      { name: "Stairs",      x_coordinate: 18,     y_coordinate: 28.5 },
+      { name: "Laboratory 1",x_coordinate: 19,     y_coordinate: 16 },
+      { name: "Laboratory 2",x_coordinate: 39.25,  y_coordinate: 0 },
+      { name: "Fire Exit",   x_coordinate:  59,   y_coordinate: -16, }
+    ];
+
+    drawCartesianMap(nodes);
+  </script>
+</body>
+</html>
