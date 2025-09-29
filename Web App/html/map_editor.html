@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Main</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="/styles/map_editor.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<link rel="stylesheet" href="/vendor/leaflet/leaflet.css" />
+
+
+</head>
+<body>
+<div class="container">
+    <!-- Sidebar -->
+    <div class="left">
+        <div class="logo">
+            <img src="/assets/imgs/CrimsonMap Logo 1.png" alt="CrimsonMap Logo">
+        </div>
+        <div class="time">11:11:05 PM | 12-12-25</div>
+        <div class="welcome">WELCOME, <span>ADMIN!</span></div> 
+
+        <div class="sidebar"> 
+            <ul> 
+                <li>
+                    <a href="/html/dashboard_main.html">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="/html/buildings.html">
+                        <i class="fas fa-building"></i> Manage Buildings
+                    </a>
+                </li> 
+                <li class="active">
+                    <a href="/html/map_editor.html">
+                        <i class="fas fa-map"></i> Map Editor
+                    </a>
+                </li> 
+                <li>
+                    <a href="/html/recent_activity.html">
+                        <i class="fas fa-history"></i> Recent Activity
+                    </a>
+                </li> 
+                <li>
+                    <a href="/html/reports.html">
+                        <i class="fas fa-chart-bar"></i> Reports
+                    </a>
+                </li> 
+                <li>
+                    <a href="/html/account.html">
+                        <i class="fas fa-user-cog"></i> Account
+                    </a>
+                </li> 
+            </ul> 
+        </div>
+        
+
+    </div>
+
+
+    <!-- Main Content -->
+    <div class="right">
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="menu-icon">&#9776;</div>
+                <div class="topbar-title">CrimsonMap | WMSU</div>
+            </div>
+        </div>
+
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+            <h2>Map Editor</h2>
+            <span>Main / Map Editor</span>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <div class="topmap">
+                <div class="top-title_sort">
+                    <div class="title">
+                        <h2>Map Overview</h2>
+                    </div>
+
+                    <div class="side-dropd" style="display: flex; gap: 10px; align-items: center;">
+                        <div class="sorting">
+                            <select id="mapSelect" style="padding: 5px 10px; border-radius: 5px;">
+                                <option value="">Select Map</option>
+                            </select>
+                        </div>
+                        <div class="campusdropd">
+                            <select id="campusSelect" style="padding: 5px 10px; border-radius: 5px;">
+                                <option value="">Select Campus</option>
+                            </select>
+                        </div>
+                        <div class="versions">
+                            <select id="versionSelect" style="padding: 5px 10px; border-radius: 5px;">
+                                <option value="">Select Version</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    
+                </div>
+
+                <div class="bottom-map">
+                    <div id="map-overview" class="map-overview"></div>
+                </div>
+
+                <div id="mapModal" class="map-modal">
+                    <div class="map-modal-content">
+                        <span class="close-btn">&times;</span>
+
+                        <!-- Left sidebar -->
+                        <div class="map-sidebar">
+                            <h3>Details</h3>
+                            <p>Select a building or barrier to see details here.</p>
+                        </div>
+
+                        <!-- Map area -->
+                        <div class="map-area">
+                            <div id="map-full"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="bottomen">
+                <div class="top-tabs">
+                    <button class="tab active">Nodes</button>
+                    <button class="tab">Edges</button>
+                </div>
+
+                <div class="mid-sea_sort_add">
+                    <div class="midleft">
+                        <div class="search">
+                            <input type="text" placeholder="Search...">
+                            <i class="fas fa-search"></i>
+                        </div>
+
+                        <div class="sorter">
+                            <select>
+                                <option>Sort</option>
+                            </select>
+                        </div>
+                        
+                    </div>
+
+                    <div class="midright">
+                        <div class="addnode">
+                            <button class="add-btn">Add Node</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bottom-tbl">
+                    <div class="nodetbl scroll-x">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name/Label</th>
+                                    <th>Type</th>
+                                    <th>Coordinates (lat, lng)</th>
+                                    <th>Related Infrastructure</th>
+                                    <th>Related Room</th>
+                                    <th>Indoor/Outdoor</th>
+                                    <th>Campus</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- JS will populate rows here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="edgetbl scroll-x" style="display: none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>From & To Node</th>
+                                    <th>Distance (m)</th>
+                                    <th>Path Type</th>
+                                    <th>Elevation</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- JS will populate rows here -->
+                            </tbody>
+                        </table>    
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Add Node Modal Overlay -->
+<div id="addNodeModal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+        <h2>Add Node</h2>
+        <form id="nodeForm">
+            <!-- Node Name/Label + Node ID -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Node Name/Label</label>
+                    <input id="nodeName" type="text" placeholder="eg. College of Nursing" required>
+                </div>
+                <div class="form-group">
+                    <label>Node ID</label>
+                    <input id="nodeId" type="text" disabled>
+                </div>
+            </div>
+
+            <!-- Type Dropdown/Input -->
+            <div class="form-group">
+                <label>Type</label>
+                <select id="nodeType">
+                    <option value="">Select type</option>
+                    <option value="infrastructure">Infrastructure</option>
+                    <option value="indoorInfra">Indoor Infrastructure</option>
+                    <option value="barrier">Barrier</option>
+                    <option value="intermediate">Intermediate</option>
+                </select>
+            </div>
+
+            <!-- Related Infrastructure -->
+            <div class="form-group">
+                <label>Related Infrastructure</label>
+                <select id="relatedInfra">
+                    <option value="">Select infrastructure</option>
+                </select>
+            </div>
+
+            <!-- Related Indoor Infra -->
+            <div class="form-group">
+                <label>Related Indoor Infra</label>
+                <select id="relatedIndoorInfra">
+                    <option value="">Select Indoor Infra</option>
+                </select>
+            </div>
+
+            <!-- Coordinates -->
+            <div class="form-group">
+                <label>Coordinates</label>
+                <div class="form-row">
+                    <div class="form-group">
+                        <input id="latitude" type="text" placeholder="Latitude">
+                    </div>
+                    <div class="form-group">
+                        <input id="longitude" type="text" placeholder="Longitude">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Indoor Details (hidden by default, shown if Indoor checked) -->
+            <div id="indoorDetails" style="display:none;">
+                <div class="form-group">
+                    <label>Floor</label>
+                    <input id="floor" type="text" placeholder="e.g. 2">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>X Coordinate</label>
+                        <input id="xCoord" type="text" placeholder="X">
+                    </div>
+                    <div class="form-group">
+                        <label>Y Coordinate</label>
+                        <input id="yCoord" type="text" placeholder="Y">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campus Dropdown -->
+            <div class="form-group">
+                <label>Campus</label>
+                <select id="campusDropdown">
+                    <option value="">Select campus</option>
+                </select>
+            </div>
+
+            <!-- Actions -->
+            <div class="modal-actions">
+                <button type="submit" class="save-btn">Save</button>
+                <button type="button" class="cancel-btn" onclick="closeNodeModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+
+
+
+<!-- Add Edge Modal Overlay -->
+<div id="addEdgeModal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+        <h2>Add Edge</h2>
+
+        <form>
+            <!-- Edge ID -->
+            <div class="form-group"> 
+                <label>Edge ID</label> 
+                <input type="text" value="EDG-003" disabled> 
+            </div>
+
+            <!-- Start & End Node -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Start Node</label>
+                    <select id="startNode">
+                        <option value="">Select start node</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>End Node</label>
+                    <select id="endNode">
+                        <option value="">Select end node</option>
+                    </select>
+                </div>
+            </div>
+
+
+            <!-- Additional Information -->
+            <h3>Additional Information:</h3>
+            <div class="form-group checkbox-row">
+                <label>Bidirectional Path</label>
+                <input type="checkbox">
+            </div>
+
+            <!-- Path Type & Elevation -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Path Type</label>
+                    <select id="pathType">
+                        <option value="">Select path type</option>
+                        <option value="via_gate">Via Gate</option>
+                        <option value="via_overpass">Via Overpass</option>
+                        <option value="walkway">Walkway</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Elevation</label>
+                    <select id="elevation">
+                        <option value="">Select elevation</option>
+                        <option value="flat">Flat</option>
+                        <option value="slope_up">Slope (Up)</option>
+                        <option value="slope_down">Slope (Down)</option>
+                        <option value="stairs">Stairs</option>
+                        <option value="steep_up">Steep (Up)</option>
+                        <option value="steep_down">Steep (Down)</option>
+                        <option value="mixed">Mixed</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Actions --> 
+            <div class="modal-actions"> 
+                <button type="submit" class="save-btn">Save</button> 
+                <button type="button" class="cancel-btn">Cancel</button> 
+            </div> 
+        </form> 
+    </div> 
+</div>
+
+
+
+
+
+
+
+
+
+
+<!-- Edit Node Modal Overlay -->
+<div id="editNodeModal" class="modal-overlay" style="display:none;">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editNodeTitle">
+    <h2 id="editNodeTitle">Edit Node</h2>
+
+    <form id="editNodeForm" novalidate>
+        <!-- Node Name/Label + Node ID -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="editNodeName">Node Name/Label</label>
+                <input id="editNodeName" name="nodeName" type="text" required>
+            </div>
+            <div class="form-group">
+                <label for="editNodeId">Node ID</label>
+                <input id="editNodeId" name="nodeId_display" type="text">
+                <input id="editNodeIdHidden" name="nodeId" type="hidden">
+            </div>
+        </div>
+
+        <!-- Type Dropdown/Input -->
+        <div class="form-group">
+            <label>Type</label>
+            <select id="editNodeType">
+                <option value="">Select type</option>
+                <option value="room">Room</option>
+                <option value="barrier">Barrier</option>
+                <option value="infrastructure">Infrastructure</option>
+                <option value="intermediate">Intermediate</option>
+            </select>
+        </div>
+
+        <!-- Related Infrastructure -->
+        <div class="form-group">
+            <label>Related Infrastructure</label>
+            <select id="editRelatedInfra">
+                <option value="">Select infrastructure</option>
+            </select>
+        </div>
+
+        <!-- Related Room -->
+        <div class="form-group">
+            <label>Related Room</label>
+            <select id="editRelatedRoom">
+                <option value="">Select room</option>
+            </select>
+        </div>
+
+        <!-- Coordinates -->
+        <div class="form-group">
+            <label>Coordinates</label>
+            <div class="form-row">
+                <div class="form-group">
+                    <input id="editLatitude" name="latitude" type="text" placeholder="Latitude">
+                </div>
+                <div class="form-group">
+                    <input id="editLongitude" name="longitude" type="text" placeholder="Longitude">
+                </div>
+            </div>
+        </div>
+
+        <!-- Indoor/Outdoor -->
+        <div class="form-group checkbox-row">
+            <label>Indoor</label>
+            <input type="checkbox" id="editIndoorCheckbox">
+            <label style="margin-left:20px;">Outdoor</label>
+            <input type="checkbox" id="editOutdoorCheckbox">
+        </div>
+
+        <!-- Indoor Details (hidden by default, shown if Indoor checked) -->
+        <div id="editIndoorDetails" style="display:none;">
+            <div class="form-group">
+                <label>Floor</label>
+                <input id="editFloor" type="text" placeholder="e.g. 2">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>X Coordinate</label>
+                    <input id="editXCoord" type="text" placeholder="X">
+                </div>
+                <div class="form-group">
+                    <label>Y Coordinate</label>
+                    <input id="editYCoord" type="text" placeholder="Y">
+                </div>
+            </div>
+        </div>
+
+        <!-- Campus Dropdown -->
+        <div class="form-group">
+            <label>Campus</label>
+            <select id="editCampusDropdown">
+                <option value="">Select campus</option>
+            </select>
+        </div>
+
+        <!-- Actions -->
+        <div class="modal-actions">
+            <button type="submit" class="save-btn">Update</button>
+            <button type="button" class="cancel-btn" id="cancelEditNodeBtn">Cancel</button>
+        </div>
+    </form>
+  </div>
+</div>
+
+
+
+<!-- Edit Edge Modal Overlay -->
+<div id="editEdgeModal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+        <h2>Edit Edge</h2>
+
+        <form>
+            <!-- Edge ID -->
+            <div class="form-group"> 
+                <label>Edge ID</label> 
+                <input type="text" id="editEdgeId" disabled> 
+            </div>
+
+            <!-- Start & End Node -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Start Node</label>
+                    <select id="editStartNode">
+                        <option value="">Select start node</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>End Node</label>
+                    <select id="editEndNode">
+                        <option value="">Select end node</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Additional Information -->
+            <h3>Additional Information:</h3>
+            <div class="form-group checkbox-row">
+                <label>Bidirectional Path</label>
+                <input type="checkbox" id="editBidirectional">
+            </div>
+
+            <!-- Path Type & Elevation -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Path Type</label>
+                    <select id="editPathType">
+                        <option value="">Select path type</option>
+                        <option value="via_gate">Via Gate</option>
+                        <option value="via_overpass">Via Overpass</option>
+                        <option value="walkway">Walkway</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Elevation</label>
+                    <select id="editElevation">
+                        <option value="">Select elevation</option>
+                        <option value="flat">Flat</option>
+                        <option value="slope_up">Slope (Up)</option>
+                        <option value="slope_down">Slope (Down)</option>
+                        <option value="stairs">Stairs</option>
+                        <option value="steep_up">Steep (Up)</option>
+                        <option value="steep_down">Steep (Down)</option>
+                        <option value="mixed">Mixed</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Actions -->  
+            <div class="modal-actions">  
+                <button type="submit" class="save-btn">Save</button>  
+                <button type="button" class="cancel-btn" id="cancelEditEdgeBtn">Cancel</button>  
+            </div>  
+        </form>  
+    </div>  
+</div>
+
+
+
+
+
+<!-- Delete Edge Modal Overlay -->
+<div id="deleteEdgeModal" class="modal-overlay" style="display:none;">
+  <div class="modal" style="max-width:400px;">
+    <h2 style="color:#b41c1c;">Confirm Deletion</h2>
+    <p id="deleteEdgePrompt" style="margin: 20px 0; text-align:center;"></p>
+    <div class="modal-actions">
+      <button id="confirmDeleteEdgeBtn" class="save-btn" style="background:#b41c1c;">Delete</button>
+      <button id="cancelDeleteEdgeBtn" class="cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Delete Node Modal Overlay -->
+<div id="deleteNodeModal" class="modal-overlay" style="display:none;">
+  <div class="modal" style="max-width:400px;">
+    <h2 style="color:#b41c1c;">Confirm Deletion</h2>
+    <p id="deleteNodePrompt" style="margin: 20px 0; text-align:center;"></p>
+    <div class="modal-actions">
+      <button id="confirmDeleteNodeBtn" class="save-btn" style="background:#b41c1c;">Delete</button>
+      <button id="cancelDeleteNodeBtn" class="cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+<!-- Node Save Confirmation Modal -->
+<div id="nodeSaveModal" class="modal-overlay" style="display:none;">
+  <div class="modal" style="max-width:400px; position:relative;">
+    <button id="closeNodeSaveModal" style="position:absolute; top:10px; right:10px; font-size:18px;">&times;</button>
+    <h2>Save Node</h2>
+    <p>Do you want to overwrite the current map version or create a new version?</p>
+    <div class="modal-actions" style="margin-top:20px; display:flex; justify-content:space-between;">
+      <button id="overwriteNodeBtn" class="save-btn" style="background:#b41c1c;">Overwrite</button>
+      <button id="newVersionNodeBtn" class="save-btn" style="background:#1c7db4;">New Version</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- Edge Version Choice Modal (inline styles) -->
+<div id="edgeSaveModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; overflow:auto; background-color: rgba(0,0,0,0.5);">
+    <div style="background-color:#fff; margin:15% auto; padding:20px; border-radius:8px; width:300px; text-align:center; position:relative;">
+        <span id="closeEdgeSaveModal" style="position:absolute; top:10px; right:15px; font-size:20px; cursor:pointer;">&times;</span>
+        <h3>Save Edge</h3>
+        <p>Do you want to overwrite the current map version or create a new version?</p>
+        <button id="overwriteEdgeBtn" style="margin:10px; padding:10px 15px;">Overwrite Current Version</button>
+        <button id="newVersionEdgeBtn" style="margin:10px; padding:10px 15px;">Create New Version</button>
+    </div>
+</div>
+
+
+
+
+
+
+<!-- ================== SCRIPT ================== --> 
+<script type="module" src="/js/map_editor.js"> 
+
+</script>
+
+
+<!-- Leaflet CSS + JS -->
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="/vendor/leaflet/leaflet.js"></script>
+
+
+
+
+</body>
+</html>

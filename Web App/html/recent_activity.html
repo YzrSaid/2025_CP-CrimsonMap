@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Main</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="/styles/recent_activity.css">
+</head>
+<body>
+<div class="container">
+    <!-- Sidebar -->
+    <div class="left">
+        <div class="logo">
+            <img src="/assets/imgs/CrimsonMap Logo 1.png" alt="CrimsonMap Logo">
+        </div>
+        <div class="time">11:11:05 PM | 12-12-25</div>
+        <div class="welcome">WELCOME, <span>ADMIN!</span></div> 
+
+        <div class="sidebar"> 
+            <ul> 
+                <li>
+                    <a href="/html/dashboard_main.html">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="/html/buildings.html">
+                        <i class="fas fa-building"></i> Manage Buildings
+                    </a>
+                </li> 
+                <li>
+                    <a href="/html/map_editor.html">
+                        <i class="fas fa-map"></i> Map Editor
+                    </a>
+                </li> 
+                <li class="active">
+                    <a href="/html/recent_activity.html">
+                        <i class="fas fa-history"></i> Recent Activity
+                    </a>
+                </li> 
+                <li>
+                    <a href="/html/reports.html">
+                        <i class="fas fa-chart-bar"></i> Reports
+                    </a>
+                </li> 
+                <li>
+                    <a href="/html/account.html">
+                        <i class="fas fa-user-cog"></i> Account
+                    </a>
+                </li> 
+            </ul> 
+        </div>
+
+    </div>
+
+
+    <!-- Main Content -->
+    <div class="right">
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="menu-icon">&#9776;</div>
+                <div class="topbar-title">CrimsonMap | WMSU</div>
+            </div>
+        </div>
+
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+            <h2>Recent Activity</h2>
+            <span>Main / Recent Activity</span>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <table class="activity-table">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Timestamp</th>
+                        <th>Activity</th>
+                        <th>Item Affected</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+
+<script type="module" src="../js/recent_activity.js"></script>
+
+</body>
+</html>

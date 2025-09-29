@@ -1,0 +1,222 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+body {
+    display: flex;
+    background-color: #ffffff;
+    height: 100vh;
+}
+.container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+/* Sidebar */
+.left {
+    width: 300px;
+    background-color: #f6f6f6;
+    border-right: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    /* Make it stick */
+    position: sticky;
+    top: 0;
+    height: 100vh; /* fill screen height */
+    overflow-y: auto; /* allow sidebar scroll if content too long */
+}
+
+
+.logo {
+    padding: 20px 0;
+}
+
+.logo img {
+    width: 140px;
+}
+
+.time {
+    font-size: 13px;
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.welcome {
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.welcome span {
+    color: #000;
+}
+
+.sidebar {
+    width: 100%;
+    height: 100vh; /* Make it full height */
+    position: sticky; /* Stick when scrolling */
+    top: 0; /* Keep it fixed to top */
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar ul .fas {
+    font-size: 22px;
+}
+
+.sidebar li {
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    align-items: center;
+    gap: 8px; /* space between icon and text */
+    color: #333;
+    border-left: 4px solid transparent;
+    transition: all 0.3s ease;
+    display: flex;
+}
+
+.sidebar li a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: inherit;
+    width: 100%;
+}
+
+.sidebar li i {
+    font-size: 16px;
+    min-width: 20px;
+    text-align: center;
+    padding: 10px;
+}
+
+.sidebar li.active {
+    background-color: #b30000;
+    color: #fff;
+    border-left: 4px solid #800000; /* darker red for accent */
+}
+
+.sidebar li.active i {
+    color: #fff;
+}
+
+.sidebar li:hover {
+    background-color: #e8e8e8;
+    color: black;
+}
+
+.sidebar li:hover i {
+    color: #b30000;
+}
+
+
+
+/* Right content */
+.right {
+    flex: 1 1 0%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-x: auto;
+}
+
+/* Top Bar */
+.topbar {
+    background-color: #fff;
+    padding: 15px 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.menu-icon {
+    font-size: 22px;
+    cursor: pointer;
+}
+.topbar-title {
+    font-size: 18px;
+    font-weight: 700;
+}
+.add-btn {
+    background-color: #f1b62e;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 4px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 150px;
+    margin-left: auto;
+
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    padding: 10px 25px;
+    font-size: 13px;
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+
+/* Main Content Layout */
+.main-content {
+    display: flex;
+    justify-content: center;
+    margin: 20px; 
+    background: #f6f6f6;        
+}
+
+.activity-table {
+    width: 100%;
+    margin: 20px;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    text-align: left;
+}
+
+
+.activity-table th, 
+.activity-table td {
+    border: 1px solid #ddd;
+    padding: 12px 15px;
+    vertical-align: middle;
+}
+
+.activity-table th {
+    background-color: #b80000; /* Crimson red */
+    color: white;
+    font-weight: bold;
+    text-align: center;
+}
+
+.activity-table td {
+    background-color: #fff;
+}
+
+.activity-table tr:nth-child(even) td {
+    background-color: #f9f9f9; /* subtle zebra effect */
+}
+
+.activity-table tr:hover td {
+    background-color: #f1f1f1;
+}
