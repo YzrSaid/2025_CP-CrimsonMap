@@ -422,7 +422,6 @@
     <Compile Include="Assets/Mapbox/Examples/1_DataExplorer/HighlightBuildings.cs" />
     <Compile Include="Assets/Scripts/App Managers/JSONFileManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/Utilities/MapVisualizerPerformance.cs" />
-    <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/TileResource.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/SceneUtilitySetup.cs" />
     <Compile Include="Assets/Mapbox/Unity/Map/TileProviders/QuadTreeMapVisualizer.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/TextureMonoBehaviourModifier.cs" />

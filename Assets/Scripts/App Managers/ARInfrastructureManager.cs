@@ -14,20 +14,20 @@ public class ARInfrastructureManager : MonoBehaviour
     private bool isExitingAR = false;
 
     [Header("AR Settings")]
-    public GameObject buildingMarkerPrefab; // Your infrastructure prefab
+    public GameObject buildingMarkerPrefab;
     public Camera arCamera;
-    public float maxVisibleDistance = 500f; // meters
+    public float maxVisibleDistance = 500f;
     public float markerScale = 1f;
-    public float minMarkerDistance = 2f; // Minimum distance to show marker in AR
-    public float markerHeightOffset = 0f; // Height above ground
+    public float minMarkerDistance = 2f;
+    public float markerHeightOffset = 0f;
 
     [Header("UI References")]
     public TextMeshProUGUI gpsStrengthText;
-    public TextMeshProUGUI debugText; // For debugging info
-    public TextMeshProUGUI loadingText; // Add this for loading feedback
+    public TextMeshProUGUI debugText;
+    public TextMeshProUGUI loadingText;
 
     [Header("Demo Settings - Set Static Map ID")]
-    [SerializeField] private string demoMapId = "MAP-01"; // Set this to your test map ID
+    [SerializeField] private string demoMapId = "MAP-01";
 
     [Header("Data")]
     private List<Node> currentNodes = new List<Node>();
@@ -48,7 +48,6 @@ public class ARInfrastructureManager : MonoBehaviour
 
         UpdateLoadingUI("Initializing AR Scene...");
 
-        // Setup the back button first
         SetupBackButton();
 
         StartCoroutine(InitializeARScene());
@@ -56,7 +55,6 @@ public class ARInfrastructureManager : MonoBehaviour
 
     private void SetupBackButton()
     {
-        // Try to find back button if not assigned
         if (backToMainButton == null)
         {
             GameObject backBtn = GameObject.Find("BackButton") ??
@@ -79,7 +77,6 @@ public class ARInfrastructureManager : MonoBehaviour
         }
     }
 
-    // Public method that can be called from UI buttons or other scripts
     public void ExitARScene()
     {
         if (isExitingAR) return;
@@ -87,11 +84,9 @@ public class ARInfrastructureManager : MonoBehaviour
         Debug.Log("Exiting AR scene...");
         isExitingAR = true;
 
-        // Clear markers
         ClearMarkers();
         CancelInvoke();
 
-        // Simple scene transition - SceneUtility handles XR cleanup automatically
         if (GlobalManager.Instance != null)
         {
             GlobalManager.Instance.StartCoroutine(GlobalManager.Instance.SafeARCleanupAndExit(mainSceneName));
@@ -101,13 +96,12 @@ public class ARInfrastructureManager : MonoBehaviour
             UnityEngine.SceneManagement.SceneManager.LoadScene(mainSceneName);
         }
     }
-    // Alternative method that matches your existing GoToTargetSceneSimple pattern
     public void GoToTargetSceneSimple(string sceneName)
     {
         if (isExitingAR) return;
 
         Debug.Log($"AR Back Button clicked - returning to {sceneName}");
-        mainSceneName = sceneName; // Update the target scene
+        mainSceneName = sceneName;
         StartCoroutine(SafeExitAR());
     }
 
@@ -116,23 +110,19 @@ public class ARInfrastructureManager : MonoBehaviour
         isExitingAR = true;
         UpdateLoadingUI("Exiting AR...");
 
-        // Stop our marker updates and coroutines
         CancelInvoke();
         StopAllCoroutines();
 
-        // This coroutine continues after StopAllCoroutines, so restart it
         StartCoroutine(FinishARExitAfterStop());
         yield break;
     }
 
     private IEnumerator FinishARExitAfterStop()
     {
-        // Clear markers to free up resources
         ClearMarkers();
 
         yield return new WaitForEndOfFrame();
 
-        // Disable AR session properly
         var arSession = FindObjectOfType<UnityEngine.XR.ARFoundation.ARSession>();
         if (arSession != null)
         {
@@ -142,17 +132,14 @@ public class ARInfrastructureManager : MonoBehaviour
 
         yield return new WaitForEndOfFrame();
 
-        // Stop XR subsystems to prevent camera reference errors
         yield return StartCoroutine(StopXRSubsystems());
 
-        // Let GlobalManager handle the rest of the cleanup
         if (GlobalManager.Instance != null)
         {
             yield return StartCoroutine(GlobalManager.Instance.SafeARCleanupAndExit(mainSceneName));
         }
         else
         {
-            // Fallback if GlobalManager is not available
             Debug.LogWarning("GlobalManager not found, using direct scene transition");
             UnityEngine.SceneManagement.SceneManager.LoadScene(mainSceneName);
         }
@@ -162,10 +149,8 @@ public class ARInfrastructureManager : MonoBehaviour
     {
         Debug.Log("Stopping XR subsystems to prevent camera reference errors...");
 
-        bool errorOccurred = false;
         try
         {
-            // Get all subsystem instances
             var sessionSubsystems = new List<XRSessionSubsystem>();
             var planeSubsystems = new List<XRPlaneSubsystem>();
             var raycastSubsystems = new List<XRRaycastSubsystem>();
@@ -174,7 +159,6 @@ public class ARInfrastructureManager : MonoBehaviour
             SubsystemManager.GetInstances(planeSubsystems);
             SubsystemManager.GetInstances(raycastSubsystems);
 
-            // Stop session subsystem first (most important)
             foreach (var subsystem in sessionSubsystems)
             {
                 if (subsystem.running)
@@ -187,14 +171,12 @@ public class ARInfrastructureManager : MonoBehaviour
         catch (System.Exception ex)
         {
             Debug.LogWarning($"Error stopping XR session subsystems: {ex.Message}");
-            errorOccurred = true;
         }
 
         yield return new WaitForSeconds(0.1f);
 
         try
         {
-            // Stop other subsystems
             var planeSubsystems = new List<XRPlaneSubsystem>();
             var raycastSubsystems = new List<XRRaycastSubsystem>();
             SubsystemManager.GetInstances(planeSubsystems);
@@ -221,7 +203,6 @@ public class ARInfrastructureManager : MonoBehaviour
         catch (System.Exception ex)
         {
             Debug.LogWarning($"Error stopping XR plane/raycast subsystems: {ex.Message}");
-            errorOccurred = true;
         }
 
         yield return new WaitForSeconds(0.1f);
@@ -232,25 +213,22 @@ public class ARInfrastructureManager : MonoBehaviour
     {
         UpdateLoadingUI("Waiting for GPS Manager...");
 
-        // Wait for GPS Manager
         while (GPSManager.Instance == null)
         {
             yield return new WaitForSeconds(0.1f);
         }
 
         UpdateLoadingUI("GPS Manager found, starting location services...");
-        yield return new WaitForSeconds(1f); // Give GPS time to start
+        yield return new WaitForSeconds(1f);
 
         UpdateLoadingUI("Loading map data...");
 
-        // Load data based on demo map
         yield return StartCoroutine(LoadCurrentMapData());
 
         if (isDataLoaded)
         {
             UpdateLoadingUI("Data loaded, starting AR tracking...");
-            // Start updating markers
-            InvokeRepeating(nameof(UpdateMarkers), 2f, 2f); // Update every 2 seconds
+            InvokeRepeating(nameof(UpdateMarkers), 2f, 2f);
             isInitializing = false;
             HideLoadingUI();
         }
@@ -268,7 +246,6 @@ public class ARInfrastructureManager : MonoBehaviour
 
         UpdateLoadingUI($"Loading nodes for map {currentMapId}...");
 
-        // Load nodes for current map
         yield return StartCoroutine(LoadNodesData(currentMapId, (success) =>
         {
             nodesLoaded = success;
@@ -276,7 +253,6 @@ public class ARInfrastructureManager : MonoBehaviour
 
         UpdateLoadingUI("Loading infrastructure data...");
 
-        // Load infrastructure data
         yield return StartCoroutine(LoadInfrastructureData((success) =>
         {
             infraLoaded = success;
@@ -363,7 +339,6 @@ public class ARInfrastructureManager : MonoBehaviour
 
     void UpdateMarkers()
     {
-        // Don't update markers if we're exiting AR, still initializing, or data isn't loaded
         if (isExitingAR || isInitializing || !isDataLoaded)
             return;
 
@@ -545,7 +520,7 @@ public class ARInfrastructureManager : MonoBehaviour
 
         float c = 2 * Mathf.Atan2(Mathf.Sqrt(a), Mathf.Sqrt(1 - a));
 
-        return 6371000 * c; // Earth radius in meters
+        return 6371000 * c;
     }
 
     void OnDestroy()
