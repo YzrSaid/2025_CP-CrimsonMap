@@ -35,6 +35,17 @@
   },
   {
     "phone": "09123456789",
+    "name": "Gym",
+    "is_deleted": false,
+    "infra_id": "INFRA-57",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-09",
+    "id": "3VBdhLO2wjEFLy9K95bA"
+  },
+  {
+    "phone": "09123456789",
     "name": "CCJE",
     "is_deleted": false,
     "infra_id": "INFRA-10",
@@ -78,6 +89,17 @@
     "id": "59E4nRDnN5B1R2wezxbG"
   },
   {
+    "phone": "091234567890",
+    "name": "Hostel",
+    "is_deleted": false,
+    "infra_id": "INFRA-35",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-06",
+    "id": "7ASe90zQk53S4alInOIQ"
+  },
+  {
     "phone": "09123456789",
     "name": "CSM Graduate Studies",
     "is_deleted": false,
@@ -112,6 +134,28 @@
   },
   {
     "phone": "09123456789",
+    "name": "Friendship Garden",
+    "is_deleted": false,
+    "infra_id": "INFRA-59",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-05",
+    "id": "BTaPL7SBPRyINpI2a5tf"
+  },
+  {
+    "phone": "09123456789",
+    "name": "Research Building",
+    "is_deleted": false,
+    "infra_id": "INFRA-55",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "BcWFSWAa3QwpUuwAIoaQ"
+  },
+  {
+    "phone": "09123456789",
     "name": "College of Asian Islamic Studies",
     "is_deleted": true,
     "infra_id": "INFRA-22",
@@ -121,6 +165,17 @@
     "createdAt": {},
     "category_id": "CAT-01",
     "id": "BmMnw4Lq6WvVPUDZr6CT"
+  },
+  {
+    "phone": "09123456789",
+    "name": "CLA",
+    "is_deleted": false,
+    "infra_id": "INFRA-51",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "DnFpKmtgNRp7ks8vnGJA"
   },
   {
     "phone": "09123456789",
@@ -157,6 +212,17 @@
   },
   {
     "phone": "09123456789",
+    "name": "GATE 1",
+    "is_deleted": false,
+    "infra_id": "INFRA-58",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-02",
+    "id": "HQTXhufHZhyc6TrbOQfe"
+  },
+  {
+    "phone": "09123456789",
     "name": "Canteen(Near CSM)",
     "is_deleted": false,
     "infra_id": "INFRA-02",
@@ -165,6 +231,28 @@
     "createdAt": {},
     "category_id": "CAT-03",
     "id": "IqMcIzvp31hQAVSugzLp"
+  },
+  {
+    "phone": "09123456789",
+    "name": "College of Engineering",
+    "is_deleted": false,
+    "infra_id": "INFRA-46",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "JABEK4vcb1WwEIZ3u1nH"
+  },
+  {
+    "phone": "09123456789",
+    "name": "University Library",
+    "is_deleted": false,
+    "infra_id": "INFRA-60",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "K6zK87g3kkUhJT2Qafso"
   },
   {
     "phone": "09123456789",
@@ -179,6 +267,39 @@
   },
   {
     "phone": "09123456789",
+    "name": "Peace Education",
+    "is_deleted": false,
+    "infra_id": "INFRA-56",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "OYaw0E29GA12U8HhyFMI"
+  },
+  {
+    "phone": "09123456789",
+    "name": "College of Nutri Dietetics",
+    "is_deleted": false,
+    "infra_id": "INFRA-36",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "PwdcveK1QAbW9syiJzBA"
+  },
+  {
+    "phone": "09123456789",
+    "name": "Admission Office",
+    "is_deleted": false,
+    "infra_id": "INFRA-40",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-06",
+    "id": "QpKg7mifYboZ6pQRkgSE"
+  },
+  {
+    "phone": "09123456789",
     "name": "College of Social Work and Community Development",
     "is_deleted": false,
     "infra_id": "INFRA-13",
@@ -187,6 +308,39 @@
     "createdAt": {},
     "category_id": "CAT-01",
     "id": "R0uEMUwQWd2tg4vPfE6L"
+  },
+  {
+    "phone": "09123456789",
+    "name": "Covered Court",
+    "is_deleted": false,
+    "infra_id": "INFRA-37",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-09",
+    "id": "SBn38fkoFbhUNANUVdup"
+  },
+  {
+    "phone": "091234567890",
+    "name": "University Press",
+    "is_deleted": false,
+    "infra_id": "INFRA-32",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-06",
+    "id": "TIoOdwMw3o6J2ih987ry"
+  },
+  {
+    "phone": "09123456789",
+    "name": "SPED",
+    "is_deleted": false,
+    "infra_id": "INFRA-41",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "TPHj9NVxhHj2DG7HFiCl"
   },
   {
     "phone": "09123456789",
@@ -212,6 +366,17 @@
   },
   {
     "phone": "09123456789",
+    "name": "College of Architecture",
+    "is_deleted": false,
+    "infra_id": "INFRA-47",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "Vxtz9iKGDGPzd89RNrB1"
+  },
+  {
+    "phone": "09123456789",
     "name": "Barrier Campus B (North-East)",
     "is_deleted": false,
     "infra_id": "INFRA-27",
@@ -220,6 +385,50 @@
     "createdAt": {},
     "category_id": "CAT-02",
     "id": "WrqHCUgojq7jP9KLuGha"
+  },
+  {
+    "phone": "09123456789",
+    "name": "RESEARCH AND INNOVATION CENTER FOR METALS AND ENGINEERING",
+    "is_deleted": false,
+    "infra_id": "INFRA-45",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "XAsHs4Cwlick8pHpxfO6"
+  },
+  {
+    "phone": "09123456789",
+    "name": "Law- Canteen",
+    "is_deleted": false,
+    "infra_id": "INFRA-53",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-03",
+    "id": "YFulnwcLlJmSmnMWjhpR"
+  },
+  {
+    "phone": "09123456789",
+    "name": "MA in Special Education",
+    "is_deleted": false,
+    "infra_id": "INFRA-48",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "YZKqWoLVqR5PFQMrXpvl"
+  },
+  {
+    "phone": "09123456789",
+    "name": "Scholarship Office",
+    "is_deleted": false,
+    "infra_id": "INFRA-38",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-06",
+    "id": "YokS3J0jxxjE7G8XjubF"
   },
   {
     "phone": "09123456789",
@@ -234,6 +443,83 @@
   },
   {
     "phone": "09123456789",
+    "name": "Camp A Field",
+    "is_deleted": false,
+    "infra_id": "INFRA-68",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-05",
+    "id": "cFt8Mmh7AnQBoYUqicut"
+  },
+  {
+    "phone": "01234567890",
+    "name": "Canteen Camp A",
+    "is_deleted": false,
+    "infra_id": "INFRA-31",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-03",
+    "id": "cQbIDzuchKDKNryd3SY9"
+  },
+  {
+    "phone": "09123456789",
+    "name": "College of Law",
+    "is_deleted": false,
+    "infra_id": "INFRA-54",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "dahTyt5abHglnW65TZqh"
+  },
+  {
+    "phone": "091234567890",
+    "name": "College of home economics",
+    "is_deleted": false,
+    "infra_id": "INFRA-33",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "eWdK2fPioBoE9En9J8Zu"
+  },
+  {
+    "phone": "09123456789",
+    "name": "Office of the principal",
+    "is_deleted": false,
+    "infra_id": "INFRA-44",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-06",
+    "id": "fEEWpzTaP9VWRgsS7p3g"
+  },
+  {
+    "phone": "09123456789",
+    "name": "CTE",
+    "is_deleted": false,
+    "infra_id": "INFRA-67",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "gHYfzZodN4SSJ5QF5nXG"
+  },
+  {
+    "phone": "091234567890",
+    "name": "College of Nursing",
+    "is_deleted": false,
+    "infra_id": "INFRA-34",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "gvxDKtuLQsN1gR0C4vjU"
+  },
+  {
+    "phone": "09123456789",
     "name": "College of Computing Studies",
     "is_deleted": false,
     "infra_id": "INFRA-14",
@@ -245,6 +531,39 @@
   },
   {
     "phone": "09123456789",
+    "name": "University Clinic",
+    "is_deleted": false,
+    "infra_id": "INFRA-49",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-07",
+    "id": "i8R27ZKFd2l0ybbPG2eV"
+  },
+  {
+    "phone": "09123456789",
+    "name": "Interfaith Center",
+    "is_deleted": false,
+    "infra_id": "INFRA-65",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-07",
+    "id": "iTvTdHiuX9UEyvcMUKGG"
+  },
+  {
+    "phone": "09123456789",
+    "name": "CPADS",
+    "is_deleted": false,
+    "infra_id": "INFRA-52",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "ivEcFKmrw67Sy1a1CX4p"
+  },
+  {
+    "phone": "09123456789",
     "name": "Wmsu Integrated School SHS building",
     "is_deleted": false,
     "infra_id": "INFRA-21",
@@ -253,6 +572,61 @@
     "createdAt": {},
     "category_id": "CAT-01",
     "id": "jlBYOcHblyw5aXD7PHjD"
+  },
+  {
+    "phone": "09123456789",
+    "name": "CTE Park",
+    "is_deleted": false,
+    "infra_id": "INFRA-66",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-05",
+    "id": "jmxJ0GiHYMli91ohgNiu"
+  },
+  {
+    "phone": "09123456789",
+    "name": "Registrar Building",
+    "is_deleted": false,
+    "infra_id": "INFRA-64",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-06",
+    "id": "l1b5rrg0HkX7vddT4jFP"
+  },
+  {
+    "phone": "09123456789",
+    "name": "Admin",
+    "is_deleted": false,
+    "infra_id": "INFRA-61",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-06",
+    "id": "mGBVIoClxJHAhFvyZRUF"
+  },
+  {
+    "phone": "09123456789",
+    "name": "OSA",
+    "is_deleted": false,
+    "infra_id": "INFRA-50",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-06",
+    "id": "mJLp7sJ1o1gjs8W2T4Y3"
+  },
+  {
+    "phone": "09123456789",
+    "name": "NSTP",
+    "is_deleted": false,
+    "infra_id": "INFRA-39",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-06",
+    "id": "p7HApnT9XGFv587l5ezY"
   },
   {
     "phone": "09123456789",
@@ -268,6 +642,17 @@
   },
   {
     "phone": "09123456789",
+    "name": "Barcode",
+    "is_deleted": false,
+    "infra_id": "INFRA-63",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-03",
+    "id": "qYfuHw2qeEibsDRWu6vg"
+  },
+  {
+    "phone": "09123456789",
     "name": "CSM Social Hall",
     "is_deleted": false,
     "infra_id": "INFRA-25",
@@ -276,6 +661,17 @@
     "createdAt": {},
     "category_id": "CAT-06",
     "id": "s52Q6dbGBQggXE6nKGFL"
+  },
+  {
+    "phone": "09123456789",
+    "name": "MIS Tech Office",
+    "is_deleted": false,
+    "infra_id": "INFRA-62",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-06",
+    "id": "sJf5dBiMKjS1rdykIiSt"
   },
   {
     "phone": "09123456789",
@@ -313,6 +709,17 @@
   },
   {
     "phone": "09123456789",
+    "name": "Elementary",
+    "is_deleted": false,
+    "infra_id": "INFRA-42",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "x132j1g8FmRzJ7uC5RxQ"
+  },
+  {
+    "phone": "09123456789",
     "name": "MSA",
     "is_deleted": false,
     "infra_id": "INFRA-15",
@@ -321,5 +728,16 @@
     "createdAt": {},
     "category_id": "CAT-01",
     "id": "z7iAvxyKSSA8VqaZXvTc"
+  },
+  {
+    "phone": "09123456789",
+    "name": "WMSU WATER REFILLING STATION",
+    "is_deleted": false,
+    "infra_id": "INFRA-43",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-07",
+    "id": "zA7gMDtBllQN5MRXMoA6"
   }
 ]

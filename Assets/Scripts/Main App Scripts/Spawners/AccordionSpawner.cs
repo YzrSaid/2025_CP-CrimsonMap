@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Unity.VisualScripting;
-using UnityEditor;
 using UnityEngine;
 using System.Collections;
 
@@ -13,7 +11,7 @@ public class AccordionSpawner : MonoBehaviour
     public AccordionManager manager;
 
     [Header("Loading Check")]
-    public float maxWaitTime = 30f; // Max time to wait for data initialization
+    public float maxWaitTime = 30f;
 
     private List<string> staticCategories = new List<string> { "Saved", "Recent" };
 
@@ -22,24 +20,21 @@ public class AccordionSpawner : MonoBehaviour
         // Add static items first
         foreach (string name in staticCategories)
         {
-            SpawnAccordionItem(name);
+            SpawnAccordionItem(name, null); // No category_id for static items
         }
 
         // Wait for data initialization before loading dynamic categories
         StartCoroutine(WaitForDataInitializationThenLoad());
     }
 
-    // NEW: Wait for MainAppLoader to complete before loading data
     private IEnumerator WaitForDataInitializationThenLoad()
     {
         Debug.Log("AccordionSpawner: Waiting for data initialization to complete...");
         
         float waitTime = 0f;
         
-        // Wait for GlobalManager to exist and data initialization to complete
         while (waitTime < maxWaitTime)
         {
-            // Check if GlobalManager exists and data initialization is complete
             if (GlobalManager.Instance != null && IsDataInitializationComplete())
             {
                 Debug.Log("AccordionSpawner: Data initialization complete! Starting to load...");
@@ -48,18 +43,15 @@ public class AccordionSpawner : MonoBehaviour
             }
             
             waitTime += Time.deltaTime;
-            yield return new WaitForSeconds(0.1f); // Check every 100ms
+            yield return new WaitForSeconds(0.1f);
         }
         
-        // Timeout - still try to load but log warning
         Debug.LogWarning("AccordionSpawner: Timed out waiting for data initialization. Attempting to load anyway...");
         yield return StartCoroutine(LoadDynamicCategoriesFromFirebase());
     }
 
-    // Check if data initialization is complete
     private bool IsDataInitializationComplete()
     {
-        // Get the correct file path based on platform
         string filePath = GetJsonFilePath("categories.json");
         
         if (!File.Exists(filePath))
@@ -71,13 +63,12 @@ public class AccordionSpawner : MonoBehaviour
         try
         {
             string content = File.ReadAllText(filePath);
-            if (string.IsNullOrEmpty(content) || content.Length < 10) // Basic validity check
+            if (string.IsNullOrEmpty(content) || content.Length < 10)
             {
                 Debug.Log($"AccordionSpawner: File exists but content is empty or too short: {content?.Length ?? 0} characters");
                 return false;
             }
             
-            // Try to parse the JSON to make sure it's valid
             string wrappedJson = "{\"categories\":" + content + "}";
             CategoryList testList = JsonUtility.FromJson<CategoryList>(wrappedJson);
             
@@ -97,24 +88,20 @@ public class AccordionSpawner : MonoBehaviour
         }
     }
 
-    // Helper method to get correct file path based on platform
     private string GetJsonFilePath(string fileName)
     {
 #if UNITY_EDITOR
-        // In Unity Editor, check StreamingAssets first, then persistent data
         string streamingPath = Path.Combine(Application.streamingAssetsPath, fileName);
         if (File.Exists(streamingPath))
         {
             return streamingPath;
         }
 #endif
-        // On device/runtime, use persistent data path
         return Path.Combine(Application.persistentDataPath, fileName);
     }
 
     IEnumerator LoadDynamicCategoriesFromFirebase()
     {
-        // Use the CrossPlatformFileLoader to load categories.json
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             "categories.json", 
             OnCategoriesLoadSuccess, 
@@ -126,14 +113,12 @@ public class AccordionSpawner : MonoBehaviour
     {
         try
         {
-            // Create a wrapper for this json utility, we will manually create wrapper for this
             string wrappedJson = "{\"categories\":" + jsonData + "}";
             CategoryList categoryList = JsonUtility.FromJson<CategoryList>(wrappedJson);
 
-            // We will now iterate the categories and show it for each accordion item
             foreach (Category cat in categoryList.categories)
             {
-                SpawnAccordionItem(cat.name);
+                SpawnAccordionItem(cat.name, cat.category_id);
             }
 
             Debug.Log($"✅ AccordionSpawner: Successfully loaded {categoryList.categories.Count} categories from file");
@@ -147,27 +132,97 @@ public class AccordionSpawner : MonoBehaviour
     void OnCategoriesLoadError(string errorMessage)
     {
         Debug.LogError($"Failed to load categories: {errorMessage}");
-        
-        // Optional: Add fallback categories or show error UI
         Debug.LogWarning("Continuing with static categories only");
     }
 
-    void SpawnAccordionItem(string categoryName)
+    [Header("Prefab References")]
+    public GameObject infrastructurePrefab; // Assign ExploreInfrastructurePrefab here
+
+    void SpawnAccordionItem(string categoryName, string categoryId)
     {
         GameObject newItem = Instantiate(accordionItemPrefab, accordionContainer);
         AccordionItem item = newItem.GetComponent<AccordionItem>();
+        
+        if (item == null)
+        {
+            Debug.LogError("AccordionSpawner: AccordionItem component not found on prefab!");
+            Destroy(newItem);
+            return;
+        }
+
+        // Force correct RectTransform positioning
+        RectTransform itemRect = newItem.GetComponent<RectTransform>();
+        if (itemRect != null)
+        {
+            itemRect.anchorMin = new Vector2(0, 1);
+            itemRect.anchorMax = new Vector2(1, 1);
+            itemRect.pivot = new Vector2(0.5f, 1);
+            itemRect.offsetMin = new Vector2(0, itemRect.offsetMin.y); // Left = 0
+            itemRect.offsetMax = new Vector2(0, itemRect.offsetMax.y); // Right = 0
+            itemRect.localScale = Vector3.one;
+            itemRect.localPosition = new Vector3(0, itemRect.localPosition.y, 0);
+        }
+
         item.manager = manager;
 
-        item.headerButton.GetComponentInChildren<TMPro.TextMeshProUGUI>().text = categoryName;
+        // CRITICAL: Assign the infrastructure prefab reference
+        if (infrastructurePrefab != null)
+        {
+            item.infrastructurePrefab = infrastructurePrefab;
+            Debug.Log($"✅ Assigned infrastructure prefab to {categoryName}");
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ Infrastructure prefab not assigned in AccordionSpawner!");
+        }
 
+        // Ensure infrastructure container is found
+        if (item.infrastructureContainer == null)
+        {
+            // Try to find it in the spawned item
+            Transform contentPanel = item.contentPanel;
+            if (contentPanel != null)
+            {
+                Transform container = contentPanel.Find("InfrastructureContainer");
+                if (container == null && contentPanel.childCount > 0)
+                {
+                    container = contentPanel.GetChild(0);
+                }
+                
+                if (container != null)
+                {
+                    item.infrastructureContainer = container;
+                    Debug.Log($"✅ Found and assigned infrastructure container for {categoryName}");
+                }
+                else
+                {
+                    Debug.LogError($"❌ Could not find infrastructure container in {categoryName}!");
+                }
+            }
+        }
+
+        // Set category ID for dynamic categories
+        if (!string.IsNullOrEmpty(categoryId))
+        {
+            item.SetCategoryId(categoryId);
+        }
+
+        // Set header text
+        if (item.headerButton != null)
+        {
+            TMPro.TextMeshProUGUI headerText = item.headerButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+            if (headerText != null)
+            {
+                headerText.text = categoryName;
+            }
+        }
+
+        // Set up button listener
         item.headerButton.onClick.RemoveAllListeners();
         item.headerButton.onClick.AddListener(() => manager.ToggleItem(item));
 
         manager.accordionItems.Add(item);
 
-        if (categoryName == "Saved" || categoryName == "Recent")
-        {
-            // Handle static categories if needed
-        }
+        Debug.Log($"✅ Spawned accordion item: {categoryName} (Category ID: {categoryId ?? "None"})");
     }
 }

@@ -8,34 +8,36 @@ using UnityEngine.InputSystem;
 
 public class MapManager : MonoBehaviour
 {
+
     [Header("UI References")]
     public TextMeshProUGUI dropdownButtonText;
-    
+
     [Header("Spawner References")]
     public BarrierSpawner barrierSpawner;
+    public PathfindingController pathfindingController;
     public InfrastructureSpawner infrastructureSpawner;
     public PathRenderer pathRenderer;
-    
+
     [Header("Current Map Info")]
     public MapInfo currentMap;
     public List<string> currentCampusIds = new List<string>();
-    
+
     [Header("Debug")]
     public bool enableDebugLogs = true;
-    
+
     // Data containers
     private List<MapInfo> availableMaps = new List<MapInfo>();
     private Dictionary<string, CampusData> allCampuses = new Dictionary<string, CampusData>();
     private bool isInitialized = false;
-    
+
     // Events for spawners to listen to
     public System.Action<MapInfo> OnMapChanged;
     public System.Action OnMapLoadingComplete;
     public System.Action OnMapLoadingStarted;
-    
+
     // Singleton pattern for easy access from MapDropdown
     public static MapManager Instance { get; private set; }
-    
+
     void Awake()
     {
         // Singleton pattern
@@ -50,47 +52,47 @@ public class MapManager : MonoBehaviour
             return;
         }
     }
-    
+
     void Start()
     {
         DebugLog("🗺️ MapManager starting...");
         StartCoroutine(InitializeMapManager());
     }
-    
+
     IEnumerator InitializeMapManager()
     {
         DebugLog("⏳ Waiting for FirestoreManager to be ready...");
-        
+
         // Wait for FirestoreManager to be ready
         while (FirestoreManager.Instance == null || !FirestoreManager.Instance.IsReady)
         {
             yield return new WaitForSeconds(0.1f);
         }
-        
+
         DebugLog("✅ FirestoreManager ready, loading map data...");
-        
+
         // Wait for maps to be loaded
         while (FirestoreManager.Instance.AvailableMaps.Count == 0)
         {
             yield return new WaitForSeconds(0.1f);
         }
-        
+
         // Get available maps from FirestoreManager
         availableMaps = FirestoreManager.Instance.AvailableMaps;
         DebugLog($"📍 Loaded {availableMaps.Count} maps from Firestore:");
-        
+
         // Debug: Show available maps
         foreach (var map in availableMaps)
         {
             DebugLog($"  - {map.map_id}: {map.map_name} (Campuses: {string.Join(", ", map.campus_included)})");
         }
-        
+
         // Load campus data (if you still have local campus.json)
         yield return StartCoroutine(LoadCampusData());
 
         isInitialized = true;
         DebugLog("🚀 MapManager initialization complete");
-        
+
         // Load first map by default if available
         if (availableMaps.Count > 0)
         {
@@ -102,15 +104,16 @@ public class MapManager : MonoBehaviour
             Debug.LogWarning("⚠️ No maps available to load");
         }
     }
-    
+
     IEnumerator LoadCampusData()
     {
         // Load campus data if available (optional)
         bool loadCompleted = false;
-        
+
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile("campus.json",
             // onSuccess
-            (jsonContent) => {
+            (jsonContent) =>
+            {
                 try
                 {
                     CampusList campusList = JsonUtility.FromJson<CampusList>("{\"campuses\":" + jsonContent + "}");
@@ -128,16 +131,17 @@ public class MapManager : MonoBehaviour
                 }
             },
             // onError
-            (error) => {
+            (error) =>
+            {
                 DebugLog($"ℹ️ No campus.json file found (optional): {error}");
                 // Continue without campus data if file doesn't exist
                 loadCompleted = true;
             }
         ));
-        
+
         yield return new WaitUntil(() => loadCompleted);
     }
-    
+
     public void LoadMap(MapInfo mapInfo)
     {
         if (!isInitialized)
@@ -145,56 +149,56 @@ public class MapManager : MonoBehaviour
             Debug.LogWarning("⚠️ MapManager not initialized yet, cannot load map");
             return;
         }
-        
+
         if (mapInfo == null)
         {
             Debug.LogError("❌ Cannot load null map");
             return;
         }
-        
+
         DebugLog($"🗺️ Loading map: {mapInfo.map_name} (ID: {mapInfo.map_id})");
-        
+
         currentMap = mapInfo;
         currentCampusIds.Clear();
         currentCampusIds.AddRange(mapInfo.campus_included);
-        
+
         DebugLog($"🏫 Map includes campuses: {string.Join(", ", currentCampusIds)}");
-        
+
         // Update dropdown button text to show current map
         UpdateDropdownButtonText(mapInfo.map_name);
-        
+
         // Start loading process
         StartCoroutine(LoadMapCoroutine());
     }
-    
+
     IEnumerator LoadMapCoroutine()
     {
         DebugLog("🔄 Starting map loading process...");
-        
+
         // Fire event before loading starts
         OnMapLoadingStarted?.Invoke();
         OnMapChanged?.Invoke(currentMap);
-        
+
         // Clear existing spawned objects first
         yield return StartCoroutine(ClearAllSpawnedObjects());
-        
+
         // Update spawners with the new map data
         UpdateSpawnersForCurrentMap();
-        
+
         // Load paths for the current map
         if (pathRenderer != null)
         {
             DebugLog("🛤️ Loading pathways for current map...");
             yield return StartCoroutine(pathRenderer.LoadAndRenderPathsForMap(currentMap.map_id, currentCampusIds));
         }
-        
+
         // Load barriers for the current map
         if (barrierSpawner != null)
         {
             DebugLog("🚧 Loading barriers for current map...");
             yield return StartCoroutine(barrierSpawner.LoadAndSpawnForMap(currentMap.map_id, currentCampusIds));
         }
-        
+
         // Load infrastructure for the current map campuses
         if (infrastructureSpawner != null)
         {
@@ -202,12 +206,23 @@ public class MapManager : MonoBehaviour
             yield return StartCoroutine(infrastructureSpawner.LoadAndSpawnForCampuses(currentCampusIds));
         }
 
+        if (pathfindingController != null)
+        {
+            DebugLog("🧭 Initializing pathfinding for current map...");
+            yield return StartCoroutine(pathfindingController.InitializeForMap(currentMap.map_id, currentCampusIds));
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ PathfindingController reference not set in MapManager!");
+        }
+
+
         // Fire completion event
         OnMapLoadingComplete?.Invoke();
-        
+
         DebugLog($"✅ Map '{currentMap.map_name}' loaded successfully with {currentCampusIds.Count} campuses");
     }
-    
+
     void UpdateSpawnersForCurrentMap()
     {
         // Update PathRenderer with current campus IDs and map ID
@@ -216,14 +231,14 @@ public class MapManager : MonoBehaviour
             DebugLog($"🛤️ Updating PathRenderer for map: {currentMap.map_id}, campuses: {string.Join(", ", currentCampusIds)}");
             pathRenderer.SetCurrentMapData(currentMap.map_id, currentCampusIds);
         }
-        
+
         // Update BarrierSpawner with current map ID and campus IDs
         if (barrierSpawner != null)
         {
             DebugLog($"🚧 Updating BarrierSpawner for map: {currentMap.map_id}, campuses: {string.Join(", ", currentCampusIds)}");
             barrierSpawner.SetCurrentMapData(currentMap.map_id, currentCampusIds);
         }
-        
+
         // Update InfrastructureSpawner with current campus IDs
         if (infrastructureSpawner != null)
         {
@@ -231,7 +246,7 @@ public class MapManager : MonoBehaviour
             infrastructureSpawner.SetTargetCampusIds(currentCampusIds);
         }
     }
-    
+
     void UpdateDropdownButtonText(string mapName)
     {
         if (dropdownButtonText != null)
@@ -244,32 +259,32 @@ public class MapManager : MonoBehaviour
             DebugLog("⚠️ Dropdown button text component not assigned");
         }
     }
-    
+
     IEnumerator ClearAllSpawnedObjects()
     {
         DebugLog("🧹 Clearing all spawned objects...");
-        
+
         // Clear path renderer objects
         if (pathRenderer != null)
         {
             pathRenderer.ClearSpawnedPaths();
             yield return null; // Wait a frame
         }
-        
+
         // Clear barrier spawner objects
         if (barrierSpawner != null)
         {
             barrierSpawner.ClearSpawnedNodes();
             yield return null; // Wait a frame
         }
-        
+
         // Clear infrastructure spawner objects
         if (infrastructureSpawner != null)
         {
             infrastructureSpawner.ClearSpawnedInfrastructure();
             yield return null; // Wait a frame
         }
-        
+
         DebugLog("✅ All spawned objects cleared");
         yield break;
     }
@@ -277,26 +292,26 @@ public class MapManager : MonoBehaviour
     {
         return availableMaps;
     }
-    
+
     public MapInfo GetCurrentMap()
     {
         return currentMap;
     }
-    
+
     public List<string> GetCurrentCampusIds()
     {
         return new List<string>(currentCampusIds);
     }
-    
+
     public string GetCampusName(string campusId)
     {
         return allCampuses.ContainsKey(campusId) ? allCampuses[campusId].campus_name : campusId;
     }
-    
+
     public string GetCurrentMapInfo()
     {
         if (currentMap == null) return "No map loaded";
-        
+
         string campusNames = string.Join(", ", currentCampusIds.Select(id => GetCampusName(id)));
         return $"Map: {currentMap.map_name} | Campuses: {campusNames} | Campus IDs: {string.Join(", ", currentCampusIds)}";
     }
@@ -340,7 +355,7 @@ public class MapManager : MonoBehaviour
     {
         return $"edges_{mapId}.json";
     }
-    
+
     private void DebugLog(string message)
     {
         if (enableDebugLogs)
@@ -362,14 +377,14 @@ public class MapManager : MonoBehaviour
                 Debug.Log($"Current campus IDs: {string.Join(", ", currentCampusIds)}");
                 Debug.Log($"Current map info: {GetCurrentMapInfo()}");
             }
-            
+
             if (Keyboard.current.rKey.wasPressedThisFrame)
             {
                 RefreshCurrentMap();
             }
         }
     }
-    
+
     void OnDestroy()
     {
         if (Instance == this)

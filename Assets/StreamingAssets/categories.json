@@ -21,6 +21,15 @@
     "id": "GEklwq8BSgJ7UK9koul5"
   },
   {
+    "name": "Courts & Gyms",
+    "is_deleted": false,
+    "createdAt": {},
+    "color": "#813d9c",
+    "category_id": "CAT-09",
+    "buildings": 0,
+    "id": "LHJFyr5xMnNC9Lhfvbyb"
+  },
+  {
     "is_deleted": false,
     "name": "Canteen / Cafeterias",
     "icon": null,

@@ -88,6 +88,8 @@ public class Node
 
     public IndoorInfo indoor;
     public string campus_id;
+    public float x_coordinate;
+    public float y_coordinate;
 
     // Helpers
     public bool HasRelatedInfraId => !string.IsNullOrEmpty(related_infra_id);

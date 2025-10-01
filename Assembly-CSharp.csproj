@@ -182,6 +182,7 @@
     <Compile Include="Assets/Mapbox/Unity/Map/Interfaces/IMapPlacementStrategy.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/Response.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/RotateWithLocationProvider.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/PathfindingController.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/ISubLayerCustomStyleAtlas.cs" />
     <Compile Include="Assets/Mapbox/Unity/Utilities/DebugTools/ScenesList.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Geocoding/Response/GeocodeResponse.cs" />
@@ -283,6 +284,7 @@
     <Compile Include="Assets/Mapbox/Unity/LayerProperties/PresetSubLayerPropertiesFetcher.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/TransformLocationProvider.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Utils/Vector2d/Mathd.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/AStarAlgorithm.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/LayerPerformanceOptions.cs" />
     <Compile Include="Assets/Mapbox/Core/probe-extractor-cs/Probe.cs" />
     <Compile Include="Assets/Mapbox/Examples/4_ReplaceFeatures/Scripts/BlinkLight.cs" />
@@ -308,6 +310,7 @@
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Data/KdTree/MinHeap.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Components/TextureSelector.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Data/KdTree/DistanceFunctions.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/ExploreInfrastructureItem.cs" />
     <Compile Include="Assets/Mapbox/Unity/Utilities/VectorExtensions.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/LayerModifier.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Utils/UnixTimestampUtils.cs" />
@@ -356,6 +359,7 @@
     <Compile Include="Assets/Mapbox/Unity/DataContainers/MapExtentOptions.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Utils/GeoCoordinateBounds.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/PrefabModifier.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/Spawners/AccordionSpawner.cs" />
     <Compile Include="Assets/Scripts/App Managers/FirestoreManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/LayerProperties/CoreVectorLayerProperties.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/ModifierBase.cs" />
@@ -416,13 +420,13 @@
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/AbstractLayer.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/TileStatsFetcher.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/ExtentOptions.cs" />
-    <Compile Include="Assets/Scripts/Main App Scripts/AccordionSpawner.cs" />
     <Compile Include="Assets/Mapbox/Unity/Map/Interfaces/IMapScalingStrategy.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Factories/AbstractTileFactory.cs" />
     <Compile Include="Assets/Mapbox/Examples/1_DataExplorer/HighlightBuildings.cs" />
     <Compile Include="Assets/Scripts/App Managers/JSONFileManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/Utilities/MapVisualizerPerformance.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/SceneUtilitySetup.cs" />
+    <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/TileResource.cs" />
     <Compile Include="Assets/Mapbox/Unity/Map/TileProviders/QuadTreeMapVisualizer.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/TextureMonoBehaviourModifier.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/MapboxStylesColorModifier.cs" />

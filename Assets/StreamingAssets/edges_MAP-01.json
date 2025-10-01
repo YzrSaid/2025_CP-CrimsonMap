@@ -240,5 +240,82 @@
         "edge_id": "EDG-022",
         "distance": 13.75,
         "created_at": "2025-09-21T08:19:38.546Z"
+    },
+{
+        "to_node": "ND-072",
+        "path_type": null,
+        "is_deleted": false,
+        "is_active": true,
+        "from_node": "ND-071",
+        "elevations": null,
+        "edge_id": "EDG-023",
+        "distance": 137.44,
+        "created_at": "2025-09-30T03:10:56.254Z"
+    },
+{
+        "to_node": "ND-073",
+        "path_type": null,
+        "is_deleted": false,
+        "is_active": true,
+        "from_node": "ND-072",
+        "elevations": null,
+        "edge_id": "EDG-024",
+        "distance": 25.79,
+        "created_at": "2025-09-30T03:12:24.703Z"
+    },
+{
+        "to_node": "ND-074",
+        "path_type": null,
+        "is_deleted": false,
+        "is_active": true,
+        "from_node": "ND-073",
+        "elevations": null,
+        "edge_id": "EDG-025",
+        "distance": 9.39,
+        "created_at": "2025-09-30T03:22:05.635Z"
+    },
+{
+        "to_node": "ND-075",
+        "path_type": null,
+        "is_deleted": false,
+        "is_active": true,
+        "from_node": "ND-074",
+        "elevations": null,
+        "edge_id": "EDG-025",
+        "distance": 283.65,
+        "created_at": "2025-09-30T03:22:29.746Z"
+    },
+{
+        "to_node": "ND-076",
+        "path_type": null,
+        "is_deleted": false,
+        "is_active": true,
+        "from_node": "ND-075",
+        "elevations": null,
+        "edge_id": "EDG-025",
+        "distance": 43.56,
+        "created_at": "2025-09-30T03:22:40.823Z"
+    },
+{
+        "to_node": "ND-077",
+        "path_type": null,
+        "is_deleted": false,
+        "is_active": true,
+        "from_node": "ND-076",
+        "elevations": null,
+        "edge_id": "EDG-025",
+        "distance": 153.69,
+        "created_at": "2025-09-30T03:22:51.588Z"
+    },
+{
+        "to_node": "ND-071",
+        "path_type": null,
+        "is_deleted": false,
+        "is_active": true,
+        "from_node": "ND-077",
+        "elevations": null,
+        "edge_id": "EDG-025",
+        "distance": 327.33,
+        "created_at": "2025-09-30T03:23:01.340Z"
     }
 ]
