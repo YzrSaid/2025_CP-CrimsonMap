@@ -1,8 +1,9 @@
 // ======================= FIREBASE SETUP ===========================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
-    getFirestore, collection, addDoc, getDocs, query, orderBy, where, updateDoc, doc, getDoc, arrayUnion, writeBatch, deleteField, setDoc
+    getFirestore, collection, addDoc, getDocs, query, orderBy, where, updateDoc, doc, getDoc, arrayUnion, writeBatch, deleteDoc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
 import { firebaseConfig } from "../firebaseConfig.js";
 
 const app = initializeApp(firebaseConfig);
@@ -555,21 +556,30 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 
-let pendingNodeData = null; // store node temporarily before user chooses
 
-// ----------- Add Node Handler -----------
+let pendingNodeData = null; 
+
 document.getElementById("nodeForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    // --- Helper functions ---
+    const parseNumberOrNull = (val) => {
+        const num = parseFloat(val);
+        return isNaN(num) ? null : num;
+    };
+
+    const stringOrNull = (val) => val && val.trim() !== "" ? val : null;
+
+    // --- Collect values ---
     const nodeId = document.getElementById("nodeId").value;
-    const nodeName = document.getElementById("nodeName").value;
-    const latitude = parseFloat(document.getElementById("latitude").value);
-    const longitude = parseFloat(document.getElementById("longitude").value);
+    const nodeName = stringOrNull(document.getElementById("nodeName").value);
+    const latitude = parseNumberOrNull(document.getElementById("latitude").value);
+    const longitude = parseNumberOrNull(document.getElementById("longitude").value);
     const typeEl = document.getElementById("nodeType");
     const typeValue = typeEl ? typeEl.value : "";
-    const relatedInfraId = document.getElementById("relatedInfra").value;
-    const relatedIndoorInfraId = document.getElementById("relatedIndoorInfra").value;
-    const campusId = document.getElementById("campusDropdown").value;
+    const relatedInfraId = stringOrNull(document.getElementById("relatedInfra").value);
+    const relatedIndoorInfraId = stringOrNull(document.getElementById("relatedIndoorInfra").value);
+    const campusId = stringOrNull(document.getElementById("campusDropdown").value);
 
     let type = null;
     let indoor = null;
@@ -577,10 +587,15 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
     if (typeValue === "indoorInfra") {
         type = "indoor";
         indoor = {
-            floor: document.getElementById("floor").value,
-            x: parseFloat(document.getElementById("xCoord").value) || 0,
-            y: parseFloat(document.getElementById("yCoord").value) || 0
+            floor: stringOrNull(document.getElementById("floor").value),
+            x: parseNumberOrNull(document.getElementById("xCoord").value),
+            y: parseNumberOrNull(document.getElementById("yCoord").value)
         };
+
+        // if all values are null, collapse to null
+        if (!indoor.floor && indoor.x === null && indoor.y === null) {
+            indoor = null;
+        }
     } else if (typeValue === "infrastructure") {
         type = "outdoor";
         indoor = null;
@@ -589,25 +604,31 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
         indoor = null;
     }
 
-    // Cartesian conversion
-    const origin = { lat: 6.913341, lng: 122.063693 };
-    function latLngToXY(lat, lng, origin) {
-        const R = 6371000;
-        const dLat = (lat - origin.lat) * Math.PI / 180;
-        const dLng = (lng - origin.lng) * Math.PI / 180;
-        const x = dLng * Math.cos(origin.lat * Math.PI / 180) * R;
-        const y = dLat * R;
-        return { x, y };
+    // Cartesian conversion only if lat/lng are valid
+    let xCoord = null, yCoord = null;
+    if (latitude !== null && longitude !== null) {
+        const origin = { lat: 6.913341, lng: 122.063693 };
+        function latLngToXY(lat, lng, origin) {
+            const R = 6371000;
+            const dLat = (lat - origin.lat) * Math.PI / 180;
+            const dLng = (lng - origin.lng) * Math.PI / 180;
+            const x = dLng * Math.cos(origin.lat * Math.PI / 180) * R;
+            const y = dLat * R;
+            return { x, y };
+        }
+        const { x, y } = latLngToXY(latitude, longitude, origin);
+        xCoord = x;
+        yCoord = y;
     }
-    const { x, y } = latLngToXY(latitude, longitude, origin);
 
+    // --- Build clean data object ---
     pendingNodeData = {
         node_id: nodeId,
         name: nodeName,
         latitude,
         longitude,
-        x_coordinate: x,
-        y_coordinate: y,
+        x_coordinate: xCoord,
+        y_coordinate: yCoord,
         type,
         related_infra_id: relatedInfraId,
         related_room_id: relatedIndoorInfraId, // Use indoor infra as related_room_id
@@ -1160,7 +1181,8 @@ async function saveEdge(option) {
             where("current_active_map", "==", pendingEdgeData.map_id || null)
         );
 
-        let mapDoc, mapDocId, mapData;
+        let mapDoc, mapDocId, mapData, mapId;
+
 
         // If you already store active map globally, you can simplify:
         const mapsSnapshot = await getDocs(collection(db, "MapVersions"));
@@ -1171,8 +1193,15 @@ async function saveEdge(option) {
             return;
         }
 
+        // Doc ID (for Firestore paths)
         mapDocId = mapDoc.id;
+
+        // Doc data
         mapData = mapDoc.data();
+
+        // ✅ mapId comes from the field, not the doc ID
+        mapId = mapData.map_id;
+
         const currentVersion = mapData.current_version || "v1.0.0";
 
         // ✅ Step 2: Fetch current version document
@@ -2162,6 +2191,18 @@ function getCampusBounds(nodes, campusId) {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 let mapFull = null;
 let mapOverview = null;
 
@@ -2259,10 +2300,10 @@ function createOverviewMap(nodes, edges, activeCampus) {
   }
 
   mapOverview = L.map("map-overview", {
-    zoomControl: false,
-    dragging: false,
+    zoomControl: true,
+    dragging: true,
     scrollWheelZoom: false,
-    doubleClickZoom: false,
+    doubleClickZoom: true,
     boxZoom: false,
     keyboard: false
   });
@@ -2584,51 +2625,12 @@ function createOverviewMap(nodes, edges, activeCampus) {
 
 
 
-// ---- Sidebar details ----
-function showDetails(node) {
-  const sidebar = document.querySelector(".map-sidebar");
 
-  // Format created_at nicely
-  let createdAtFormatted = "-";
-  if (node.created_at) {
-    if (typeof node.created_at.toDate === "function") {
-      const d = node.created_at.toDate();
-      createdAtFormatted = d.toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-    } else {
-      createdAtFormatted = node.created_at;
-    }
-  }
 
-  sidebar.innerHTML = `
-    <div class="header-row"><h2>📌 Node Details</h2> <button class="edit-btn">Edit</button></div>
-    <div class="details-item"><span>Node ID:</span> ${node.node_id || "-"}</div>
-    <div class="details-item"><span>Name:</span> ${node.name || "-"}</div>
-    <div class="details-item"><span>Type:</span> ${node.type || "-"}</div>
-    <div class="details-item"><span>Latitude:</span> ${node.latitude || "-"}</div>
-    <div class="details-item"><span>Longitude:</span> ${node.longitude || "-"}</div>
-    <div class="details-item"><span>Infrastructure:</span> ${node.infraName || "-"}</div>
-    <div class="details-item"><span>Room:</span> ${node.roomName || "-"}</div>
-    ${
-      node.indoor
-        ? `
-      <h3>🏢 Indoor Info</h3>
-      <div class="details-subitem"><span>Floor:</span> ${node.indoor.floor}</div>
-      <div class="details-subitem"><span>X:</span> ${node.indoor.x}</div>
-      <div class="details-subitem"><span>Y:</span> ${node.indoor.y}</div>
-    `
-        : ""
-    }
-    <div class="details-item"><span>Active:</span> ${node.is_active ? "✅ Yes" : "❌ No"}</div>
-    <div class="details-item"><span>Campus:</span> ${node.campusName || "-"}</div>
-    <div class="details-item"><span>Created At:</span> ${createdAtFormatted}</div>
-  `;
-}
+
+
+
+
 
 
 function renderDataOnMap(map, data, enableClick = false) {
@@ -2683,7 +2685,7 @@ function renderDataOnMap(map, data, enableClick = false) {
   // --- Infrastructure (Buildings) ---
   nodes.filter(d => d.type === "infrastructure").forEach(building => {
     const marker = L.circleMarker([building.latitude, building.longitude], {
-      radius: 8,
+      radius: 6,
       color: "blue",
       fillColor: "lightblue",
       fillOpacity: 0.7
@@ -2761,4 +2763,209 @@ nodes.filter(d => d.type === "outdoor").forEach(outdoor => {
   
 });
   // ======================================================
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ---- Sidebar details ----
+async function showDetails(node) {
+  const sidebar = document.querySelector(".map-sidebar");
+// Format created_at nicely
+let createdAtFormatted = "-";
+if (node.created_at) {
+  if (typeof node.created_at.toDate === "function") {
+    // Firestore Timestamp
+    const d = node.created_at.toDate();
+    createdAtFormatted = d.toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  } else if (node.created_at.seconds) {
+    // Plain object {seconds, nanoseconds}
+    const d = new Date(node.created_at.seconds * 1000);
+    createdAtFormatted = d.toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  } else {
+    // Fallback → already a string or something else
+    createdAtFormatted = String(node.created_at);
+  }
+}
+
+
+  // Build base details UI
+  sidebar.innerHTML = `
+    <div class="header-row"><h2>📌 Node Details</h2> <button class="edit-btn">Edit</button></div>
+    <div class="details-item"><span>Node ID:</span> ${node.node_id || "-"}</div>
+    <div class="details-item"><span>Name:</span> ${node.name || "-"}</div>
+    <div class="details-item"><span>Type:</span> ${node.type || "-"}</div>
+    <div class="details-item"><span>Latitude:</span> ${node.latitude || "-"}</div>
+    <div class="details-item"><span>Longitude:</span> ${node.longitude || "-"}</div>
+    <div class="details-item"><span>Infrastructure:</span> ${node.infraName || "-"}</div>
+    <div class="details-item"><span>Room:</span> ${node.roomName || "-"}</div>
+    ${
+      node.indoor
+        ? `
+      <h3>🏢 Indoor Info</h3>
+      <div class="details-subitem"><span>Floor:</span> ${node.indoor.floor}</div>
+      <div class="details-subitem"><span>X:</span> ${node.indoor.x}</div>
+      <div class="details-subitem"><span>Y:</span> ${node.indoor.y}</div>
+    `
+        : ""
+    }
+    <div class="details-item"><span>Active:</span> ${node.is_active ? "✅ Yes" : "❌ No"}</div>
+    <div class="details-item"><span>Campus:</span> ${node.campusName || "-"}</div>
+    <div class="details-item"><span>Created At:</span> ${createdAtFormatted}</div>
+    <div class="qr-section" style="margin-top:15px; text-align:center;"></div>
+  `;
+
+  // Load QR info if exists
+  await renderQrSection(node);
+}
+
+// ---- Render QR Section ----
+async function renderQrSection(node) {
+  const qrSection = document.querySelector(".map-sidebar .qr-section");
+  qrSection.innerHTML = "<em>Checking QR...</em>";
+
+  const qrRef = doc(db, "NodeQRCodes", node.node_id);
+  const qrSnap = await getDoc(qrRef);
+
+  if (qrSnap.exists()) {
+    const qrData = qrSnap.data();
+
+    qrSection.innerHTML = `
+      <div class="details-item"><span>QR Code for ${node.node_id}</span></div>
+      <div class="qr-preview" style="margin:10px 0;">
+        <img src="${qrData.qr_base64}" width="200" height="200" />
+      </div>
+      <div class="qr-actions" style="display:flex; justify-content:center; gap:10px; margin-top:10px;">
+        <button class="view-qr-btn">👁 View</button>
+        <button class="download-qr-btn">⬇️ Download</button>
+        <button class="delete-qr-btn">🗑 Delete</button>
+      </div>
+    `;
+
+    // View in modal
+    qrSection.querySelector(".view-qr-btn").addEventListener("click", () => {
+      openQrModal(qrData.qr_base64, node.node_id);
+    });
+
+    // Download
+    qrSection.querySelector(".download-qr-btn").addEventListener("click", () => {
+      const a = document.createElement("a");
+      a.href = qrData.qr_base64;
+      a.download = `${node.node_id}_qr.png`;
+      a.click();
+    });
+
+    // Delete
+    qrSection.querySelector(".delete-qr-btn").addEventListener("click", async () => {
+      if (confirm("Are you sure you want to delete this QR code?")) {
+        await deleteDoc(qrRef);
+        alert("✅ QR deleted");
+        await renderQrSection(node); // refresh UI (will show generate button again)
+      }
+    });
+
+  } else {
+    // No QR exists → show generate button
+    qrSection.innerHTML = `
+      <div class="details-actions" style="text-align:center;">
+        <button class="generate-qr-btn">📷 Generate QR</button>
+      </div>
+    `;
+
+    qrSection.querySelector(".generate-qr-btn").addEventListener("click", async () => {
+      try {
+        const qrDiv = document.createElement("div");
+        new QRCode(qrDiv, {
+          text: JSON.stringify(node),
+          width: 256,
+          height: 256
+        });
+
+        const qrCanvas = qrDiv.querySelector("canvas");
+        await saveQrToFirebase(node, qrCanvas);
+        alert("✅ QR Code generated and saved to Firestore!");
+        await renderQrSection(node); // refresh UI (will show QR with actions)
+      } catch (err) {
+        console.error("Error generating QR:", err);
+        alert("❌ Failed to generate QR");
+      }
+    });
+  }
+}
+
+// ---- Modal function ----
+function openQrModal(qrBase64, nodeId) {
+  // Create modal wrapper
+  const modal = document.createElement("div");
+  modal.className = "qr-modal";
+  modal.innerHTML = `
+    <div class="qr-modal-overlay"></div>
+    <div class="qr-modal-content">
+      <span class="qr-modal-close">&times;</span>
+      <h3>QR Code for ${nodeId}</h3>
+      <img src="${qrBase64}" style="max-width:100%; height:auto;" />
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Close events
+  modal.querySelector(".qr-modal-close").addEventListener("click", () => modal.remove());
+  modal.querySelector(".qr-modal-overlay").addEventListener("click", () => modal.remove());
+}
+
+
+// ---- Save QR ----
+async function saveQrToFirebase(node, canvas) {
+  if (!node || !node.node_id) throw new Error("❌ Node is missing node_id");
+
+  const qrDataUrl = canvas.toDataURL("image/png");
+  const qrRef = doc(db, "NodeQRCodes", node.node_id);
+
+  await setDoc(qrRef, {
+    node_id: node.node_id,
+    name: node.name,
+    campus_id: node.campus_id,
+    latitude: node.latitude,
+    longitude: node.longitude,
+    type: node.type,
+    is_active: node.is_active,
+    created_at: node.created_at || new Date(),
+    qr_base64: qrDataUrl,
+    raw_data: node
+  }, { merge: true });
+
+  console.log(`✅ QR saved for ${node.node_id}`);
+}
+
+
+
+async function deleteQr(nodeId) {
+  const fileName = `qrcodes/${nodeId}.png`;
+  await deleteObject(ref(storage, fileName));
+  await deleteDoc(doc(db, "NodeQRCodes", nodeId));
 }

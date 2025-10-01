@@ -159,6 +159,9 @@ document.addEventListener("DOMContentLoaded", renderRecentActivity);
 
 
 
+
+
+
 async function populateMaps() {
     const mapSelect = document.getElementById("mapSelect");
     const campusSelect = document.getElementById("campusSelect");
