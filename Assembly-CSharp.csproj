@@ -130,6 +130,7 @@
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Factories/TerrainDataFetcher.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/ISubLayerSimpleStyle.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/SubLayerColorStyle.cs" />
+    <Compile Include="Assets/Scripts/QRScanner/QRScanFrame.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/Cache/ICache.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Factories/MapImageFactory.cs" />
     <Compile Include="Assets/Scripts/App Managers/MapManager.cs" />
@@ -263,7 +264,6 @@
     <Compile Include="Assets/Mapbox/Unity/DataContainers/CameraBoundsTileProviderOptions.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/IResource.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/LocationArrayEditorLocationProvider.cs" />
-    <Compile Include="Assets/Scripts/Main App Scripts/QRScanner.cs" />
     <Compile Include="Assets/Mapbox/Core/cheap-ruler-cs/CheapRuler.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/ChangeShadowDistance.cs" />
     <Compile Include="Assets/Mapbox/Unity/Utilities/DescriptionAttribute.cs" />
@@ -441,6 +441,7 @@
     <Compile Include="Assets/Mapbox/Unity/Utilities/HTTPRequest.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/VectorLayer.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Factories/TileProcessFinishedEventArgs.cs" />
+    <Compile Include="Assets/Scripts/QRScanner/QRScanner.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/InfrastructureOverlapResolver.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/ReloadMap.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/Map/MapboxOfflineManager.cs" />
@@ -907,6 +908,10 @@
     </Reference>
     <Reference Include="Mapbox.VectorTile.VectorTileReader">
       <HintPath>Assets/Mapbox/Core/Plugins/Mapbox/vector-tile-cs/net46/Mapbox.VectorTile.VectorTileReader.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="zxing.unity">
+      <HintPath>Assets/Plugins/zxing.unity.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="DOTween">
