@@ -370,7 +370,7 @@ body {
     color: #333;
 }
 #map-overview {
-    height: 430px;
+    height: 550px;
     width: 100%;
     border-radius: 8px;
     border: 1px solid #ddd;
@@ -402,10 +402,9 @@ body {
 
 .close {
     position: absolute;
-    right: 15px;
-    top: 10px;
-    font-size: 28px;
-    font-weight: bold;
+    right: 23px;
+    top: 3px;
+    font-size: 55px;
     cursor: pointer;
     color: #444;
     z-index: 1001;

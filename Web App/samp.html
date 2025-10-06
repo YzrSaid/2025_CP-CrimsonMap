@@ -1,68 +1,65 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Firestore Migration - Remove Wrong Coordinate Fields</title>
+  <meta charset="UTF-8">
+  <title>Fix Node Types (Outdoor → Infrastructure)</title>
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    // Import Firebase SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collectionGroup, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // TODO: Replace with your Firebase config
  import { firebaseConfig } from "../firebaseConfig.js";
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    async function migrate() {
-      const mapVersionsRef = collection(db, "MapVersions");
-      const mapVersionsSnap = await getDocs(mapVersionsRef);
+    async function migrateOutdoorToInfra() {
+      const logs = document.getElementById("logs");
+      logs.textContent = "Starting migration...\n";
 
-      for (const mapDoc of mapVersionsSnap.docs) {
-        const mapDocId = mapDoc.id;
-        console.log(`Processing Map: ${mapDocId}`);
+      try {
+        // 🔹 Search all versions subcollections under MapVersions
+        const querySnap = await getDocs(collectionGroup(db, "versions"));
 
-        const versionsRef = collection(db, "MapVersions", mapDocId, "versions");
-        const versionsSnap = await getDocs(versionsRef);
+        let updatedCount = 0;
 
-        for (const versionDoc of versionsSnap.docs) {
-          const versionId = versionDoc.id;
+        for (const versionDoc of querySnap.docs) {
+          const versionRef = versionDoc.ref;
           const versionData = versionDoc.data();
 
-          let updated = false;
-          let nodes = versionData.nodes || [];
+          if (!Array.isArray(versionData.nodes)) continue;
 
-          let cleanedNodes = nodes.map((node) => {
-            let newNode = { ...node };
-
-            if ("x_coordinates" in newNode) {
-              delete newNode.x_coordinates;
-              updated = true;
+          let modified = false;
+          const updatedNodes = versionData.nodes.map(node => {
+            if (node.type === "outdoor") {
+              node.type = "infrastructure";
+              modified = true;
+              updatedCount++;
+              logs.textContent += `✔️ Updated ${node.node_id} (${node.name})\n`;
             }
-            if ("y_coordinates" in newNode) {
-              delete newNode.y_coordinates;
-              updated = true;
-            }
-
-            return newNode;
+            return node;
           });
 
-          if (updated) {
-            console.log(`Removing wrong fields in version ${versionId} of map ${mapDocId}`);
-            await updateDoc(doc(db, "MapVersions", mapDocId, "versions", versionId), {
-              nodes: cleanedNodes
-            });
+          if (modified) {
+            await updateDoc(versionRef, { nodes: updatedNodes });
           }
         }
-      }
 
-      alert("Migration completed: deleted x_coordinates and y_coordinates!");
+        logs.textContent += `\n✅ Migration complete. ${updatedCount} nodes updated.`;
+
+      } catch (err) {
+        logs.textContent += `\n❌ Error: ${err.message}`;
+        console.error(err);
+      }
     }
 
-    window.runMigration = migrate;
+    window.runMigration = migrateOutdoorToInfra;
   </script>
 </head>
-<body>
-  <h1>Firestore Migration Tool - Remove Wrong Coordinate Fields</h1>
-  <button onclick="runMigration()">Run Migration</button>
-  <p>Check console for logs.</p>
+<body style="font-family: Arial; padding: 20px;">
+  <h2>Fix Node Types: Outdoor → Infrastructure</h2>
+  <p>Click below to run the migration. It will scan all map versions and update nodes with <b>type: "outdoor"</b> to <b>"infrastructure"</b>.</p>
+  <button onclick="runMigration()" style="padding: 10px 20px; font-size: 16px;">Run Migration</button>
+  <pre id="logs" style="margin-top: 20px; background: #111; color: #0f0; padding: 10px; height: 400px; overflow-y: scroll;"></pre>
 </body>
 </html>
