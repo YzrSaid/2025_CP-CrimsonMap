@@ -592,17 +592,20 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
             y: parseNumberOrNull(document.getElementById("yCoord").value)
         };
 
-        // if all values are null, collapse to null
         if (!indoor.floor && indoor.x === null && indoor.y === null) {
             indoor = null;
         }
     } else if (typeValue === "infrastructure") {
-        type = "outdoor";
+        type = "infrastructure";
         indoor = null;
-    } else if (typeValue === "barrier" || typeValue === "intermediate") {
-        type = null;
+    } else if (typeValue === "barrier") {
+        type = "barrier";
+        indoor = null;
+    } else if (typeValue === "intermediate") {
+        type = "intermediate";
         indoor = null;
     }
+
 
     // Cartesian conversion only if lat/lng are valid
     let xCoord = null, yCoord = null;
@@ -2142,6 +2145,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
+
+
+
 // ✅ Helper: compute geographic center of nodes
 function getGeographicCenter(nodes, campusId) {
   // Special case for CAMP-02 → always use fixed center
@@ -2189,17 +2195,6 @@ function getCampusBounds(nodes, campusId) {
 
   return latLngs.length ? L.latLngBounds(latLngs) : null;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2685,10 +2680,10 @@ function renderDataOnMap(map, data, enableClick = false) {
   // --- Infrastructure (Buildings) ---
   nodes.filter(d => d.type === "infrastructure").forEach(building => {
     const marker = L.circleMarker([building.latitude, building.longitude], {
-      radius: 6,
-      color: "blue",
-      fillColor: "lightblue",
-      fillOpacity: 0.7
+        radius: 6,
+        color: "red",
+        fillColor: "pink",
+        fillOpacity: 0.7
     }).addTo(map);
 
     if (enableClick) {
@@ -2763,6 +2758,25 @@ nodes.filter(d => d.type === "outdoor").forEach(outdoor => {
   
 });
   // ======================================================
+
+
+
+
+
+  // --- Intermediate Nodes ---
+nodes.filter(d => d.type === "intermediate").forEach(intermediate => {
+  const marker = L.circleMarker([intermediate.latitude, intermediate.longitude], {
+    radius: 3,        // slightly smaller
+    color: "black",   // border
+    fillColor: "black", 
+    fillOpacity: 1.0  // solid black dot
+  }).addTo(map);
+
+  if (enableClick) {
+    marker.on("click", () => showDetails(intermediate));
+  }
+});
+
 }
 
 

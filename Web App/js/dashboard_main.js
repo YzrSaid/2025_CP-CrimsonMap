@@ -10,57 +10,105 @@
   
 
 async function updateDashboardStats() {
-    try {
-        let nodes, categories, rooms, mapVersions;
+  try {
+    let categories = [];
+    let indoorInfras = [];
+    let buildingsCount = 0;
+    let categoriesCount = 0;
+    let roomsCount = 0;
+    let currentVersion = "—";
 
-        if (navigator.onLine) {
-            // Online: fetch from Firestore
-            nodes = (await getDocs(collection(db, "Nodes"))).docs.map(d => d.data());
-            categories = (await getDocs(collection(db, "Categories"))).docs.map(d => d.data());
-            rooms = (await getDocs(collection(db, "Rooms"))).docs.map(d => d.data());
-            mapVersions = (await getDocs(query(collection(db, "MapVersions"), orderBy("createdAt", "desc"), limit(1)))).docs.map(d => d.data());
-        } else {
-            // Offline: fetch from local JSON
-            nodes = await fetch("../assets/firestore/Nodes.json").then(res => res.json());
-            categories = await fetch("../assets/firestore/Categories.json").then(res => res.json());
-            rooms = await fetch("../assets/firestore/Rooms.json").then(res => res.json());
-            mapVersions = await fetch("../assets/firestore/MapVersions.json").then(res => res.json());
+    if (navigator.onLine) {
+      // 🔹 Online: Firestore
+      const [categoriesSnap, indoorSnap, mapVersionsSnap] = await Promise.all([
+        getDocs(collection(db, "Categories")),
+        getDocs(collection(db, "IndoorInfrastructure")),
+        getDocs(collection(db, "MapVersions"))
+      ]);
+
+      categories = categoriesSnap.docs.map(d => d.data());
+      indoorInfras = indoorSnap.docs.map(d => d.data());
+
+      // 🗺️ Find the active map based on its own current_active_map
+      const mapVersions = mapVersionsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const activeMap = mapVersions.find(m => m.current_active_map && m.current_version);
+
+      if (activeMap) {
+        const mapId = activeMap.map_id || activeMap.id;
+        const activeVersion = activeMap.current_version;
+        currentVersion = activeVersion || "—";
+
+        // ✅ Fetch nodes from that specific version inside the subcollection
+        if (mapId && activeVersion) {
+          const versionRef = doc(db, "MapVersions", mapId, "versions", activeVersion);
+          const versionSnap = await getDoc(versionRef);
+
+          if (versionSnap.exists()) {
+            const versionData = versionSnap.data();
+            const nodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
+            const infraNodes = nodes.filter(n => n.type === "infrastructure" && !n.is_deleted);
+            buildingsCount = infraNodes.length;
+          }
         }
+      }
 
-        // --- Count calculations ---
-        const buildingsCount = nodes.filter(d => d.type === "infrastructure" && !d.is_deleted).length;
-        const categoriesCount = categories.filter(d => !d.is_deleted).length;
-        const roomsCount = rooms.filter(d => !d.is_deleted).length;
+      // ✅ Counts for other collections
+      categoriesCount = categories.filter(c => !c.is_deleted).length;
+      roomsCount = indoorInfras.filter(r => !r.is_deleted).length;
 
-        let currentVersion = "—";
-        if (mapVersions.length > 0) {
-            // Pick latest by createdAt (handle Firestore timestamps and JSON timestamps)
-            const latestMap = mapVersions.reduce((prev, curr) => {
-                const prevTime = prev.createdAt ? (prev.createdAt.seconds ?? prev.createdAt._seconds) : 0;
-                const currTime = curr.createdAt ? (curr.createdAt.seconds ?? curr.createdAt._seconds) : 0;
-                return currTime > prevTime ? curr : prev;
-            });
-            currentVersion = latestMap.current_version || "—";
+    } else {
+      // 🔹 Offline: JSON
+      const [categoriesRes, indoorRes, mapsRes] = await Promise.all([
+        fetch("../assets/firestore/Categories.json"),
+        fetch("../assets/firestore/IndoorInfrastructure.json"),
+        fetch("../assets/firestore/MapVersions.json")
+      ]);
+
+      categories = await categoriesRes.json();
+      indoorInfras = await indoorRes.json();
+      const mapVersions = await mapsRes.json();
+
+      // 🗺️ Get active map and its version
+      const activeMap = mapVersions.find(m => m.current_active_map && m.current_version);
+
+      if (activeMap) {
+        const activeVersion = activeMap.current_version;
+        currentVersion = activeVersion || "—";
+
+        if (activeVersion && activeMap.versions) {
+          const version = activeMap.versions.find(v => v.id === activeVersion);
+          if (version) {
+            const nodes = Array.isArray(version.nodes) ? version.nodes : [];
+            const infraNodes = nodes.filter(n => n.type === "infrastructure" && !n.is_deleted);
+            buildingsCount = infraNodes.length;
+          }
         }
+      }
 
-        // --- Update HTML ---
-        const statsCards = document.querySelectorAll(".stats .card .info h2");
-        if (statsCards.length >= 4) {
-            statsCards[0].textContent = buildingsCount;      // Buildings
-            statsCards[1].textContent = categoriesCount;     // Categories
-            statsCards[2].textContent = currentVersion;      // Current Map
-            statsCards[3].textContent = roomsCount;          // Rooms & Offices
-        }
-
-    } catch (err) {
-        console.error("Error updating dashboard stats:", err);
+      categoriesCount = categories.filter(c => !c.is_deleted).length;
+      roomsCount = indoorInfras.filter(r => !r.is_deleted).length;
     }
+
+    // 🔹 Update the dashboard HTML
+    const statsCards = document.querySelectorAll(".stats .card .info h2");
+    if (statsCards.length >= 4) {
+      statsCards[0].textContent = buildingsCount;   // Buildings (Infrastructure)
+      statsCards[1].textContent = categoriesCount;  // Categories
+      statsCards[2].textContent = currentVersion;   // ✅ Correct Current Version
+      statsCards[3].textContent = roomsCount;       // IndoorInfrastructure
+    }
+
+    console.log(
+      `🏢 Buildings: ${buildingsCount} | 🗂️ Categories: ${categoriesCount} | 🏷️ Version: ${currentVersion} | 🏠 Rooms: ${roomsCount}`
+    );
+
+  } catch (err) {
+    console.error("Error updating dashboard stats:", err);
+  }
 }
 
 // Call on page load
 document.addEventListener("DOMContentLoaded", updateDashboardStats);
-
-// Re-run if online/offline status changes
 window.addEventListener("online", updateDashboardStats);
 window.addEventListener("offline", updateDashboardStats);
 
@@ -268,6 +316,9 @@ async function populateCampuses(mapId, selectCurrent = true, mapsData = null) {
     });
 }
 
+
+
+
 async function populateVersions(mapId, selectCurrent = true) {
     const versionSelect = document.getElementById("versionSelect");
     versionSelect.innerHTML = '<option value="">Select Version</option>';
@@ -331,9 +382,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-
-
-
 async function loadMap(mapId = null, campusId = null, versionId = null) {
   try {
     let mapData = null;
@@ -357,6 +405,12 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
 
       mapData = mapDoc.data();
       mapId = mapDoc.id;
+
+      // ✅ Ensure correct campus is shown on startup
+      if (!campusId) {
+        campusId = mapData.current_active_campus;
+        console.log(`🌍 Defaulting to active campus: ${campusId}`);
+      }
 
       const currentVersion = versionId || mapData.current_version || "v1.0.0";
 
@@ -393,6 +447,12 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
       }
       mapId = mapData.map_id;
 
+      // ✅ Ensure correct campus is shown on startup (offline mode)
+      if (!campusId) {
+        campusId = mapData.current_active_campus;
+        console.log(`🌍 Defaulting to active campus (offline): ${campusId}`);
+      }
+
       const currentVersion = versionId || mapData.current_version || (mapData.versions?.[0]?.id || "v1.0.0");
 
       versionData = mapData.versions.find(v => v.id === currentVersion);
@@ -416,8 +476,26 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
       campusJson.forEach(c => campusMap[c.campus_id] = c.campus_name);
     }
 
-    // 🔹 Filter nodes by campusId if provided
-    if (campusId) nodes = nodes.filter(n => n.campus_id === campusId);
+    // 🔹 Filter nodes & edges by campus
+// 🔹 Filter nodes & edges by campus (case-insensitive + fallback)
+if (campusId) {
+  const normalizedCampusId = campusId.trim().toLowerCase();
+
+  nodes = nodes.filter(n => 
+    n.campus_id && n.campus_id.trim().toLowerCase() === normalizedCampusId
+  );
+
+  const nodeIds = new Set(nodes.map(n => n.node_id));
+  edges = edges.filter(e => nodeIds.has(e.from_node) && nodeIds.has(e.to_node));
+
+  console.log(`🎓 Showing ${nodes.length} nodes for campus: ${campusId}`);
+} else {
+  console.warn("⚠️ No campusId specified — showing all nodes.");
+}
+
+console.log("🔍 Campus nodes preview:", campusId, nodes);
+console.log("🔍 Unique node types:", [...new Set(nodes.map(n => n.type))]);
+
 
     // Attach readable names
     nodes.forEach(d => {
@@ -438,23 +516,54 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
     nodes.filter(n => n.type === "infrastructure")
          .forEach(b => b.cartesian = latLngToXY(b.latitude, b.longitude, origin));
 
-    // 🔹 Render map
+    // 🔹 Render map (Overview)
     const mapContainer = document.getElementById("map-overview");
-    if (mapContainer._leaflet_id) {
-      mapContainer._leaflet_id = null;
-      mapContainer.innerHTML = "";
+
+    // 🧹 Properly destroy previous Leaflet instance before creating a new one
+    if (mapContainer._leaflet_map_instance) {
+      mapContainer._leaflet_map_instance.remove();
+      mapContainer._leaflet_map_instance = null;
     }
 
+    // 🧩 Also clear any leftover content
+    mapContainer.innerHTML = "";
+
+
+    // 🧭 Dynamically compute the campus center
+    let centerLat = 6.9130;
+    let centerLng = 122.0630;
+
+    if (nodes.length > 0) {
+      // Get only nodes that have valid coordinates
+      const validNodes = nodes.filter(n => n.latitude && n.longitude);
+
+      if (validNodes.length > 0) {
+        const sumLat = validNodes.reduce((acc, n) => acc + n.latitude, 0);
+        const sumLng = validNodes.reduce((acc, n) => acc + n.longitude, 0);
+        centerLat = sumLat / validNodes.length;
+        centerLng = sumLng / validNodes.length;
+        console.log(`📍 Auto-centered map at campus midpoint: ${centerLat}, ${centerLng}`);
+      } else {
+        console.warn("⚠️ No valid coordinates found for nodes, using default center.");
+      }
+    }
+
+    // 🗺️ Create map centered on campus
     const map = L.map("map-overview", {
-      center: [6.9130, 122.0630],
+      center: [centerLat, centerLng],
       zoom: 18,
       zoomControl: false,
-      dragging: false,
+      dragging: true,
       scrollWheelZoom: false,
       doubleClickZoom: false,
       boxZoom: false,
       keyboard: false
     });
+
+
+    // 💾 Store this map instance for cleanup next time
+    mapContainer._leaflet_map_instance = map;
+
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors"
@@ -462,20 +571,60 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
 
     renderDataOnMap(map, nodes, false, edges);
 
-    // 🔹 Modal logic
+    // 🔹 Modal logic (final safe version)
     const modal = document.getElementById("mapModal");
     const closeBtn = document.getElementById("closeModal");
+    const mapContainerFull = document.getElementById("map-full");
+    let mapFull = null; // store reference
+
+    function destroyFullMap() {
+      if (mapFull) {
+        try {
+          mapFull.off();
+          mapFull.remove();
+        } catch (e) {
+          console.warn("Map cleanup warning:", e);
+        }
+        mapFull = null;
+      }
+
+      // 🧹 Reset Leaflet internal reference to avoid "reused container" bug
+      if (mapContainerFull._leaflet_id) {
+        delete mapContainerFull._leaflet_id;
+      }
+
+      mapContainerFull.innerHTML = "";
+    }
 
     mapContainer.addEventListener("click", () => {
       modal.style.display = "block";
       setTimeout(() => {
-        const mapFull = L.map("map-full", { center: [6.9130, 122.0630], zoom: 18, zoomControl: true });
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(mapFull);
+        destroyFullMap(); // ensure no residual map
+
+        // 🧭 Use same computed campus center for modal map
+        mapFull = L.map("map-full", {
+          center: [centerLat, centerLng],
+          zoom: 18,
+          zoomControl: true
+        });
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap contributors"
+        }).addTo(mapFull);
+
         renderDataOnMap(mapFull, nodes, true, edges);
+
+        // 🧩 Optional: ensure map tiles load properly after modal animation
+        setTimeout(() => mapFull.invalidateSize(), 300);
       }, 200);
     });
 
-    closeBtn.addEventListener("click", () => { modal.style.display = "none"; });
+
+    closeBtn.addEventListener("click", () => {
+      modal.style.display = "none";
+      destroyFullMap(); // fully clean map when closing
+    });
+
 
   } catch (err) {
     console.error("Error loading map data:", err);
@@ -485,33 +634,35 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
 
 
 
-// ---- Show details in popup ----
-function showDetails(node) {
-  let content = `
-    <b>${node.name || "Unnamed"}</b><br>
-    Type: ${node.type || "-"}<br>
-    Lat: ${node.latitude}<br>
-    Lng: ${node.longitude}
-  `;
 
-  if (node.campusName) content += `<br>Campus: ${node.campusName}`;
-  if (node.infraName) content += `<br>Infrastructure: ${node.infraName}`;
 
-  L.popup()
-    .setLatLng([node.latitude, node.longitude])
-    .setContent(content)
-    .openOn(node._map || window._activeMap);
-}
 
-// ---- Render barriers, buildings, rooms, edges ----
+
+
+
 function renderDataOnMap(map, data, enableClick = false, edges = []) {
   window._activeMap = map; // keep reference for popups
 
-  // --- Barriers (polygon + corner markers) ---
+  // --- 🟩 GROUP BARRIERS BY CAMPUS (but use same color globally) ---
   const barrierNodes = data.filter(d => d.type === "barrier");
+  const barriersByCampus = {};
 
-  if (barrierNodes.length > 0) {
-    const centroid = barrierNodes.reduce(
+  barrierNodes.forEach(node => {
+    if (!barriersByCampus[node.campus_id]) {
+      barriersByCampus[node.campus_id] = [];
+    }
+    barriersByCampus[node.campus_id].push(node);
+  });
+
+  const barrierColor = "green"; // ✅ unified barrier color for all campuses
+
+  // --- Render barrier polygons for each campus ---
+  Object.keys(barriersByCampus).forEach(campusId => {
+    const campusBarriers = barriersByCampus[campusId];
+    if (campusBarriers.length === 0) return;
+
+    // 🔹 Calculate centroid to sort polygon points
+    const centroid = campusBarriers.reduce(
       (acc, n) => {
         acc.lat += n.latitude;
         acc.lng += n.longitude;
@@ -519,10 +670,11 @@ function renderDataOnMap(map, data, enableClick = false, edges = []) {
       },
       { lat: 0, lng: 0 }
     );
-    centroid.lat /= barrierNodes.length;
-    centroid.lng /= barrierNodes.length;
+    centroid.lat /= campusBarriers.length;
+    centroid.lng /= campusBarriers.length;
 
-    const sortedNodes = [...barrierNodes].sort((a, b) => {
+    // 🔹 Sort barrier nodes around centroid (clockwise)
+    const sortedNodes = [...campusBarriers].sort((a, b) => {
       const angleA = Math.atan2(a.latitude - centroid.lat, a.longitude - centroid.lng);
       const angleB = Math.atan2(b.latitude - centroid.lat, b.longitude - centroid.lng);
       return angleA - angleB;
@@ -530,26 +682,38 @@ function renderDataOnMap(map, data, enableClick = false, edges = []) {
 
     const barrierCoords = sortedNodes.map(b => [b.latitude, b.longitude]);
 
+    // 🔹 Draw polygon (same color for all campuses)
     const polygon = L.polygon(barrierCoords, {
-      color: "green",
+      color: barrierColor,
       weight: 3,
       fillOpacity: 0.1
+    }).addTo(map);
+
+    // 🏷️ Campus label (optional, still shows campus name)
+    const label = L.marker([centroid.lat, centroid.lng], {
+      icon: L.divIcon({
+        className: "campus-label",
+        html: `<b style="color:${barrierColor}; font-size:14px;">${campusId}</b>`,
+        iconSize: [100, 20],
+        iconAnchor: [50, 10]
+      })
     }).addTo(map);
 
     if (enableClick) {
       polygon.on("click", (e) => {
         showDetails({
-          name: "Campus Area",
+          name: `Campus ${campusId} Area`,
           type: "Barrier Fence",
           latitude: e.latlng.lat.toFixed(6),
           longitude: e.latlng.lng.toFixed(6)
         });
       });
 
+      // 🔹 Barrier corner markers
       sortedNodes.forEach(node => {
         const cornerMarker = L.circleMarker([node.latitude, node.longitude], {
           radius: 6,
-          color: "darkgreen",
+          color: barrierColor,
           fillColor: "lightgreen",
           fillOpacity: 0.9
         }).addTo(map);
@@ -557,14 +721,14 @@ function renderDataOnMap(map, data, enableClick = false, edges = []) {
         cornerMarker.on("click", () => showDetails({ ...node, _map: map }));
       });
     }
-  }
+  });
 
-  // --- Infrastructure (Buildings) ---
+  // --- 🏢 Infrastructure (Buildings) ---
   data.filter(d => d.type === "infrastructure").forEach(building => {
     const marker = L.circleMarker([building.latitude, building.longitude], {
-      radius: 8,
-      color: "blue",
-      fillColor: "lightblue",
+      radius: 6,
+      color: "red",
+      fillColor: "pink",
       fillOpacity: 0.7
     }).addTo(map);
 
@@ -573,24 +737,51 @@ function renderDataOnMap(map, data, enableClick = false, edges = []) {
     }
   });
 
-  // --- Rooms ---
+  // --- 🚪 Rooms ---
   data.filter(d => d.type === "room").forEach(room => {
     const marker = L.marker([room.latitude, room.longitude]).addTo(map);
-
     if (enableClick) {
       marker.on("click", () => showDetails({ ...room, _map: map }));
     }
   });
 
-  // --- Edges (lines between nodes, skip barriers) ---
+  // --- 🌳 Outdoor Nodes ---
+  data.filter(d => d.type === "outdoor").forEach(outdoor => {
+    const marker = L.circleMarker([outdoor.latitude, outdoor.longitude], {
+      radius: 5,
+      color: "green",
+      fillColor: "#90ee90",
+      fillOpacity: 0.8
+    }).addTo(map);
+
+    if (enableClick) {
+      marker.on("click", () => showDetails({ ...outdoor, _map: map }));
+    }
+  });
+
+  // --- ⚙️ Intermediate Nodes ---
+  data.filter(d => d.type === "intermediate").forEach(intermediate => {
+    const marker = L.circleMarker([intermediate.latitude, intermediate.longitude], {
+      radius: 4,
+      color: "purple",
+      fillColor: "violet",
+      fillOpacity: 0.8
+    }).addTo(map);
+
+    if (enableClick) {
+      marker.on("click", () => showDetails({ ...intermediate, _map: map }));
+    }
+  });
+
+  // --- 🟧 Edges (lines between nodes, skip barriers) ---
   if (edges.length > 0) {
-    // Build lookup (store both coords + node type)
     const nodeMap = new Map();
     data.forEach(node => {
       if (node.node_id && node.latitude && node.longitude) {
         nodeMap.set(node.node_id, {
           coords: [node.latitude, node.longitude],
-          type: node.type
+          type: node.type,
+          campus_id: node.campus_id
         });
       }
     });
@@ -600,11 +791,12 @@ function renderDataOnMap(map, data, enableClick = false, edges = []) {
       const from = nodeMap.get(edge.from_node);
       const to = nodeMap.get(edge.to_node);
 
-      // 🚫 Skip edges if either endpoint is a barrier
+      // 🚫 Skip edges if barrier or cross-campus
       if (!from || !to || from.type === "barrier" || to.type === "barrier") return;
+      if (from.campus_id !== to.campus_id) return;
 
       const line = L.polyline([from.coords, to.coords], {
-        color: "orange",
+        color: "orange", // ✅ same color for all campuses
         weight: 3,
         opacity: 0.8
       }).addTo(map);
@@ -626,6 +818,34 @@ function renderDataOnMap(map, data, enableClick = false, edges = []) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+// ---- Show details in popup ----
+function showDetails(node) {
+  let content = `
+    <b>${node.name || "Unnamed"}</b><br>
+    Type: ${node.type || "-"}<br>
+    Lat: ${node.latitude}<br>
+    Lng: ${node.longitude}
+  `;
+
+  if (node.campusName) content += `<br>Campus: ${node.campusName}`;
+  if (node.infraName) content += `<br>Infrastructure: ${node.infraName}`;
+
+  L.popup()
+    .setLatLng([node.latitude, node.longitude])
+    .setContent(content)
+    .openOn(node._map || window._activeMap);
+}
 
 
 
