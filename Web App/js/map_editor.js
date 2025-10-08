@@ -959,72 +959,74 @@ typeSelect.addEventListener("change", (e) => {
 
 
 
-// ----------- Edit Node Save Handler -----------
+// ----------- Edit Node Save Handler (Fixed for Indoor Infra + Field IDs) -----------
 document.getElementById("editNodeForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const form = e.target;
-    const docId = form.dataset.docId;
-    if (!docId) {
-        alert("No document ID found for update");
-        return;
-    }
+  const form = e.target;
+  const versionRefPath = form.dataset.mapVersionRef; // stored earlier
+  if (!versionRefPath) {
+    alert("No map version reference found for update.");
+    return;
+  }
 
-    const nodeId = document.getElementById("editNodeIdHidden").value;
-    const nodeName = document.getElementById("editNodeName").value;
+  const nodeId = document.getElementById("editNodeIdHidden").value.trim();
+  const nodeName = document.getElementById("editNodeName").value.trim();
+  const type = document.getElementById("editNodeType").value;
+  const relatedInfraId = document.getElementById("editRelatedInfra").value;
+  const relatedIndoorInfraId = document.getElementById("editRelatedIndoorInfra").value;
+  const campusId = document.getElementById("editCampusDropdown").value;
 
-    // ✅ Parse to float so they save as Firestore numbers
-    const latitude = parseFloat(document.getElementById("editLatitude").value);
-    const longitude = parseFloat(document.getElementById("editLongitude").value);
+  // Indoor/Outdoor data handling
+  let latitude = parseFloat(document.getElementById("editLatitude").value);
+  let longitude = parseFloat(document.getElementById("editLongitude").value);
 
-    // Type: could be select or input
-    let typeEl = document.getElementById("editNodeType");
-    let type = typeEl ? typeEl.value : "";
-    if (!type && typeEl && typeEl.tagName === "INPUT") {
-        type = typeEl.value;
-    }
+  let indoor = null;
+  if (type === "indoorInfra") {
+    indoor = {
+      floor: document.getElementById("editFloor").value.trim(),
+      x: parseFloat(document.getElementById("editXCoord").value) || 0,
+      y: parseFloat(document.getElementById("editYCoord").value) || 0
+    };
+    // Indoor infra should not have lat/long
+    latitude = null;
+    longitude = null;
+  }
 
-    const relatedInfraId = document.getElementById("editRelatedInfra").value;
-    const relatedRoomId = document.getElementById("editRelatedRoom").value;
+  try {
+    const versionRef = doc(db, versionRefPath);
+    const versionSnap = await getDoc(versionRef);
+    if (!versionSnap.exists()) throw new Error("Version document not found!");
 
-    // Indoor/Outdoor
-    const isIndoor = document.getElementById("editIndoorCheckbox").checked;
-    let indoor = null;
-    if (isIndoor) {
-        indoor = {
-            floor: document.getElementById("editFloor").value,
-            x: parseFloat(document.getElementById("editXCoord").value) || 0,
-            y: parseFloat(document.getElementById("editYCoord").value) || 0
+    const versionData = versionSnap.data();
+    const updatedNodes = versionData.nodes.map((node) => {
+      if (node.node_id === nodeId) {
+        return {
+          ...node,
+          name: nodeName,
+          latitude,
+          longitude,
+          type,
+          related_infra_id: relatedInfraId,
+          related_room_id: relatedIndoorInfraId,
+          indoor,
+          campus_id: campusId,
+          updated_at: new Date(),
         };
-    }
+      }
+      return node;
+    });
 
-    const campusId = document.getElementById("editCampusDropdown").value;
+    await updateDoc(versionRef, { nodes: updatedNodes });
 
-    try {
-        const nodeRef = doc(db, "Nodes", docId);
+    alert("✅ Node updated successfully!");
+    document.getElementById("editNodeModal").style.display = "none";
+    renderNodesTable();
 
-        await updateDoc(nodeRef, {
-            node_id: nodeId,
-            name: nodeName,
-            latitude: latitude,   // ✅ now number
-            longitude: longitude, // ✅ now number
-            type: type,
-            related_infra_id: relatedInfraId,
-            related_room_id: relatedIndoorInfraId,
-            indoor: indoor,
-            is_active: true,
-            campus_id: campusId,
-            updated_at: new Date()
-        });
-
-        alert("Node updated!");
-        document.getElementById("editNodeModal").style.display = "none";
-        renderNodesTable();
-
-    } catch (err) {
-        console.error("Error updating node:", err);
-        alert("Error updating node: " + err.message);
-    }
+  } catch (err) {
+    console.error("Error updating node:", err);
+    alert("❌ Failed to update node: " + err.message);
+  }
 });
 
 
