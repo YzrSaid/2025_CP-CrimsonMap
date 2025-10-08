@@ -515,6 +515,11 @@ document.addEventListener("DOMContentLoaded", function() {
     const relatedInfraSelect = document.getElementById("relatedInfra");
     const relatedIndoorInfraSelect = document.getElementById("relatedIndoorInfra");
     const indoorDetails = document.getElementById("indoorDetails");
+    const coordinatesBlock = Array.from(document.querySelectorAll(".form-group"))
+        .find(group => group.querySelector("label")?.textContent.trim() === "Coordinates");
+
+    // ✅ Reset node type to default ("Select type") on load
+    nodeTypeSelect.value = "";
 
     // Hide indoor details by default
     indoorDetails.style.display = "none";
@@ -528,24 +533,39 @@ document.addEventListener("DOMContentLoaded", function() {
             relatedIndoorInfraSelect.disabled = false;
             relatedIndoorInfraSelect.classList.remove("disabled");
             indoorDetails.style.display = "block"; // Show indoor details
+
+            // ✅ Hide entire coordinates block
+            if (coordinatesBlock) coordinatesBlock.style.display = "none";
+
         } else if (type === "infrastructure") {
             relatedInfraSelect.disabled = false;
             relatedInfraSelect.classList.remove("disabled");
             relatedIndoorInfraSelect.disabled = true;
             relatedIndoorInfraSelect.classList.add("disabled");
             indoorDetails.style.display = "none"; // Hide indoor details
+
+            // ✅ Show coordinates block again
+            if (coordinatesBlock) coordinatesBlock.style.display = "";
+            
         } else if (type === "intermediate" || type === "barrier") {
             relatedInfraSelect.disabled = true;
             relatedInfraSelect.classList.add("disabled");
             relatedIndoorInfraSelect.disabled = true;
             relatedIndoorInfraSelect.classList.add("disabled");
             indoorDetails.style.display = "none"; // Hide indoor details
+
+            // ✅ Show coordinates block again
+            if (coordinatesBlock) coordinatesBlock.style.display = "";
+
         } else {
             relatedInfraSelect.disabled = false;
             relatedInfraSelect.classList.remove("disabled");
             relatedIndoorInfraSelect.disabled = false;
             relatedIndoorInfraSelect.classList.remove("disabled");
             indoorDetails.style.display = "none";
+
+            // ✅ Show coordinates block again
+            if (coordinatesBlock) coordinatesBlock.style.display = "";
         }
     });
 });
@@ -764,121 +784,176 @@ async function saveNode(option) {
 
 
 
-// ----------- Edit Node Modal Open Handler -----------
+// ----------- Edit Node Modal Open Handler (Fixed & Updated for Related Indoor Infra) -----------
 document.querySelector(".nodetbl").addEventListener("click", async (e) => {
-    if (!e.target.classList.contains("fa-edit")) return;
+  if (!e.target.classList.contains("fa-edit")) return;
 
-    const row = e.target.closest("tr");
-    if (!row) return;
+  const row = e.target.closest("tr");
+  if (!row) return;
 
-    const nodeId = row.querySelector("td")?.textContent?.trim();
-    if (!nodeId) return;
+  const nodeId = row.querySelector("td")?.textContent?.trim();
+  if (!nodeId) return;
 
-    try {
-        // Fetch node data from Firestore
-        const nodesQ = query(collection(db, "Nodes"), where("node_id", "==", nodeId));
-        const snap = await getDocs(nodesQ);
+  try {
+    // 🔹 STEP 1: Find node from MapVersions
+    const mapVersionsSnap = await getDocs(collection(db, "MapVersions"));
+    let nodeData = null;
+    let versionRef = null;
 
-        if (snap.empty) {
-            alert("Node not found in Firestore");
-            return;
-        }
+    for (const mapDoc of mapVersionsSnap.docs) {
+      const mapData = mapDoc.data();
+      const currentVersion = mapData.current_version;
+      if (!currentVersion) continue;
 
-        const docSnap = snap.docs[0];
-        const nodeData = docSnap.data();
+      const versionDocRef = doc(db, "MapVersions", mapDoc.id, "versions", currentVersion);
+      const versionSnap = await getDoc(versionDocRef);
+      if (!versionSnap.exists()) continue;
 
-        // Populate dropdowns for edit modal
-        // Populate dropdowns for edit modal, then set value
-        await populateInfraDropdown("editRelatedInfra");
-        document.getElementById("editRelatedInfra").value = nodeData.related_infra_id ?? "";
-
-        await populateRoomDropdown("editRelatedRoom");
-        document.getElementById("editRelatedRoom").value = nodeData.related_room_id ?? "";
-
-        await populateCampusDropdown("editCampusDropdown");
-        document.getElementById("editCampusDropdown").value = nodeData.campus_id ?? "";
-
-        // Set values
-        document.getElementById("editNodeId").value = nodeData.node_id ?? "";
-        document.getElementById("editNodeIdHidden").value = nodeData.node_id ?? "";
-        document.getElementById("editNodeName").value = nodeData.name ?? "";
-        document.getElementById("editLatitude").value = nodeData.latitude ?? "";
-        document.getElementById("editLongitude").value = nodeData.longitude ?? "";
-
-        // Type (handle custom input for "other")
-        let typeSelect = document.getElementById("editNodeType");
-        if (
-            ["room", "barrier", "infrastructure"].includes(nodeData.type)
-        ) {
-            // Restore select if needed
-            if (typeSelect.tagName !== "SELECT") {
-                const parent = typeSelect.parentNode;
-                const newSelect = document.createElement("select");
-                newSelect.id = "editNodeType";
-                newSelect.innerHTML = `
-                    <option value="">Select type</option>
-                    <option value="room">Room</option>
-                    <option value="barrier">Barrier</option>
-                    <option value="infrastructure">Infrastructure</option>
-                `;
-                parent.replaceChild(newSelect, typeSelect);
-                typeSelect = newSelect;
-            }
-            typeSelect.value = nodeData.type;
-        } else if (nodeData.type) {
-            // Custom type
-            if (typeSelect.tagName === "SELECT") {
-                // Replace select with input
-                const input = document.createElement("input");
-                input.type = "text";
-                input.id = "editNodeType";
-                input.value = nodeData.type;
-                input.classList.add("custom-input");
-                typeSelect.parentNode.replaceChild(input, typeSelect);
-            } else {
-                typeSelect.value = nodeData.type;
-            }
-        } else {
-            if (typeSelect.tagName === "SELECT") typeSelect.value = "";
-            else typeSelect.value = "";
-        }
-
-        // Related infra/room
-        document.getElementById("editRelatedInfra").value = nodeData.related_infra_id ?? "";
-        document.getElementById("editRelatedRoom").value = nodeData.related_room_id ?? "";
-
-        // Indoor/Outdoor
-        const indoorCheckbox = document.getElementById("editIndoorCheckbox");
-        const outdoorCheckbox = document.getElementById("editOutdoorCheckbox");
-        const indoorDetails = document.getElementById("editIndoorDetails");
-        if (nodeData.indoor) {
-            indoorCheckbox.checked = true;
-            outdoorCheckbox.checked = false;
-            indoorDetails.style.display = "block";
-            document.getElementById("editFloor").value = nodeData.indoor.floor ?? "";
-            document.getElementById("editXCoord").value = nodeData.indoor.x ?? "";
-            document.getElementById("editYCoord").value = nodeData.indoor.y ?? "";
-        } else {
-            indoorCheckbox.checked = false;
-            outdoorCheckbox.checked = true;
-            indoorDetails.style.display = "none";
-            document.getElementById("editFloor").value = "";
-            document.getElementById("editXCoord").value = "";
-            document.getElementById("editYCoord").value = "";
-        }
-
-        // Campus
-        document.getElementById("editCampusDropdown").value = nodeData.campus_id ?? "";
-
-        // Show modal
-        document.getElementById("editNodeModal").style.display = "flex";
-        // Store docId for update
-        document.getElementById("editNodeForm").dataset.docId = docSnap.id;
-
-    } catch (err) {
-        console.error("Error opening edit modal:", err);
+      const versionData = versionSnap.data();
+      const nodeFound = versionData.nodes?.find((n) => n.node_id === nodeId);
+      if (nodeFound) {
+        nodeData = nodeFound;
+        versionRef = versionDocRef;
+        break;
+      }
     }
+
+    if (!nodeData) {
+      alert("Node not found in the current map versions.");
+      return;
+    }
+
+    // 🔹 STEP 2: Populate dropdowns
+    await populateInfraDropdown("editRelatedInfra");
+    document.getElementById("editRelatedInfra").value = nodeData.related_infra_id ?? "";
+
+    await populateIndoorInfraDropdown("editRelatedIndoorInfra");
+    document.getElementById("editRelatedIndoorInfra").value = nodeData.related_room_id ?? "";
+
+    await populateCampusDropdown("editCampusDropdown");
+    document.getElementById("editCampusDropdown").value = nodeData.campus_id ?? "";
+
+    // 🔹 STEP 3: Populate form fields
+    document.getElementById("editNodeId").value = nodeData.node_id ?? "";
+    document.getElementById("editNodeIdHidden").value = nodeData.node_id ?? "";
+    document.getElementById("editNodeName").value = nodeData.name ?? "";
+    document.getElementById("editLatitude").value = nodeData.latitude ?? "";
+    document.getElementById("editLongitude").value = nodeData.longitude ?? "";
+
+    // 🔹 STEP 4: Type Handling (Fixed + Dropdown Logic)
+    let typeSelect = document.getElementById("editNodeType");
+    let relatedInfraSelect = document.getElementById("editRelatedInfra");
+    let relatedIndoorSelect = document.getElementById("editRelatedIndoorInfra");
+
+    let typeValue = nodeData.type;
+    if (typeValue === "indoor") typeValue = "indoorInfra";
+
+    // Ensure it's a select element
+    if (typeSelect.tagName !== "SELECT") {
+      const parent = typeSelect.parentNode;
+      const newSelect = document.createElement("select");
+      newSelect.id = "editNodeType";
+      newSelect.innerHTML = `
+        <option value="">Select type</option>
+        <option value="infrastructure">Infrastructure</option>
+        <option value="indoorInfra">Indoor Infrastructure</option>
+        <option value="barrier">Barrier</option>
+        <option value="intermediate">Intermediate</option>
+      `;
+      parent.replaceChild(newSelect, typeSelect);
+      typeSelect = newSelect;
+    }
+
+    // Set dropdown value
+    if (["infrastructure", "indoorInfra", "barrier", "intermediate"].includes(typeValue)) {
+      typeSelect.value = typeValue;
+    } else {
+      typeSelect.value = "";
+    }
+
+    // ----------------------------------------------------------------
+// Find the coordinates and indoor details blocks
+const coordinatesBlock = document.getElementById("coordinatesGroup");
+const indoorDetails = document.getElementById("editIndoorDetails");
+
+// ----------------------------------------------------------------
+// STEP 5: Disable/Enable dropdowns + toggle visibility
+function updateDropdownStates(selectedType) {
+  // Reset dropdown states first
+  relatedInfraSelect.disabled = false;
+  relatedIndoorSelect.disabled = false;
+
+  switch (selectedType) {
+    case "infrastructure":
+    case "barrier":
+      relatedIndoorSelect.disabled = true;
+      relatedInfraSelect.disabled = false;
+      // Show coordinates, hide indoor
+      if (coordinatesBlock) coordinatesBlock.style.display = "block";
+      if (indoorDetails) indoorDetails.style.display = "none";
+      break;
+
+    case "intermediate":
+      relatedInfraSelect.disabled = true;
+      relatedIndoorSelect.disabled = true;
+      // Show coordinates, hide indoor
+      if (coordinatesBlock) coordinatesBlock.style.display = "block";
+      if (indoorDetails) indoorDetails.style.display = "none";
+      break;
+
+    case "indoorInfra":
+      relatedInfraSelect.disabled = true;
+      relatedIndoorSelect.disabled = false;
+      // ✅ Hide coordinates, show indoor details
+      if (coordinatesBlock) coordinatesBlock.style.display = "none";
+      if (indoorDetails) indoorDetails.style.display = "block";
+      break;
+
+    default:
+      relatedInfraSelect.disabled = false;
+      relatedIndoorSelect.disabled = false;
+      // Show coordinates, hide indoor
+      if (coordinatesBlock) coordinatesBlock.style.display = "block";
+      if (indoorDetails) indoorDetails.style.display = "none";
+      break;
+  }
+}
+
+// Run on modal open (for existing node)
+updateDropdownStates(typeSelect.value);
+
+// Run again when user changes the type (if ever enabled)
+typeSelect.addEventListener("change", (e) => {
+  updateDropdownStates(e.target.value);
 });
+
+
+    if (nodeData.indoor || nodeData.type === "indoorInfra") {
+      indoorDetails.style.display = "block";
+      document.getElementById("editFloor").value = nodeData.indoor?.floor ?? "";
+      document.getElementById("editXCoord").value = nodeData.indoor?.x ?? "";
+      document.getElementById("editYCoord").value = nodeData.indoor?.y ?? "";
+    } else {
+      indoorDetails.style.display = "none";
+      document.getElementById("editFloor").value = "";
+      document.getElementById("editXCoord").value = "";
+      document.getElementById("editYCoord").value = "";
+    }
+
+    // 🔹 STEP 7: Campus Dropdown
+    document.getElementById("editCampusDropdown").value = nodeData.campus_id ?? "";
+
+    // 🔹 STEP 8: Show modal
+    document.getElementById("editNodeModal").style.display = "flex";
+    document.getElementById("editNodeForm").dataset.mapVersionRef = versionRef.path;
+  } catch (err) {
+    console.error("Error opening edit modal:", err);
+    alert("Failed to open edit modal. Check console for details.");
+  }
+});
+
+
+
 
 
 
@@ -2306,7 +2381,7 @@ function createOverviewMap(nodes, edges, activeCampus) {
   const bounds = getCampusBounds(nodes, activeCampus);
   if (bounds) {
     mapOverview.fitBounds(bounds, { padding: [20, 20], maxZoom: 20, animate: true });
-    mapOverview.setZoom(mapOverview.getZoom() + 1); // ✅ closer
+    mapOverview.setZoom(mapOverview.getZoom() + .4); // ✅ closer
   } else {
     mapOverview.setView(getGeographicCenter(nodes, activeCampus), 18);
   }

@@ -398,7 +398,7 @@
             </div>
             <div class="form-group">
                 <label for="editNodeId">Node ID</label>
-                <input id="editNodeId" name="nodeId_display" type="text">
+                <input id="editNodeId" name="nodeId_display" type="text" disabled>
                 <input id="editNodeIdHidden" name="nodeId" type="hidden">
             </div>
         </div>
@@ -406,11 +406,11 @@
         <!-- Type Dropdown/Input -->
         <div class="form-group">
             <label>Type</label>
-            <select id="editNodeType">
+            <select id="editNodeType" disabled>
                 <option value="">Select type</option>
-                <option value="room">Room</option>
-                <option value="barrier">Barrier</option>
                 <option value="infrastructure">Infrastructure</option>
+                <option value="indoorInfra">Indoor Infrastructure</option>
+                <option value="barrier">Barrier</option>
                 <option value="intermediate">Intermediate</option>
             </select>
         </div>
@@ -418,21 +418,22 @@
         <!-- Related Infrastructure -->
         <div class="form-group">
             <label>Related Infrastructure</label>
-            <select id="editRelatedInfra">
+            <select id="editRelatedInfra" disabled>
                 <option value="">Select infrastructure</option>
             </select>
         </div>
 
         <!-- Related Room -->
         <div class="form-group">
-            <label>Related Room</label>
-            <select id="editRelatedRoom">
-                <option value="">Select room</option>
+        <label>Related Indoor Infrastructure</label>
+            <select id="editRelatedIndoorInfra" disabled>
+                <option value="">Select indoor infrastructure</option>
             </select>
         </div>
 
+
         <!-- Coordinates -->
-        <div class="form-group">
+        <div class="form-group" id="coordinatesGroup">
             <label>Coordinates</label>
             <div class="form-row">
                 <div class="form-group">
@@ -444,13 +445,6 @@
             </div>
         </div>
 
-        <!-- Indoor/Outdoor -->
-        <div class="form-group checkbox-row">
-            <label>Indoor</label>
-            <input type="checkbox" id="editIndoorCheckbox">
-            <label style="margin-left:20px;">Outdoor</label>
-            <input type="checkbox" id="editOutdoorCheckbox">
-        </div>
 
         <!-- Indoor Details (hidden by default, shown if Indoor checked) -->
         <div id="editIndoorDetails" style="display:none;">
