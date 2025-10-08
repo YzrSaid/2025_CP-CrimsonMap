@@ -1363,7 +1363,7 @@ async function saveEdge(option) {
 
 
 
-// ----------- Load Edges Table from Current Active Map/Campus/Version -----------
+// ----------- Load Edges Table (filtered by current active campus) -----------
 async function renderEdgesTable() {
     const tbody = document.querySelector(".edgetbl tbody");
     if (!tbody) return;
@@ -1373,60 +1373,50 @@ async function renderEdgesTable() {
         let edges = [];
         let mapVersions = [];
 
-        if (navigator.onLine) {
-            // 🔹 Online: Firestore
-            const mapVersionsSnap = await getDocs(collection(db, "MapVersions"));
-            mapVersions = mapVersionsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const mapVersionsSnap = await getDocs(collection(db, "MapVersions"));
+        mapVersions = mapVersionsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-            for (const mapData of mapVersions) {
-                const currentCampus = mapData.current_active_campus;
-                const currentVersion = mapData.current_version;
-                if (!currentCampus || !currentVersion) continue;
+        for (const mapData of mapVersions) {
+            const currentCampus = mapData.current_active_campus;
+            const currentVersion = mapData.current_version;
+            if (!currentCampus || !currentVersion) continue;
 
-                const versionRef = doc(db, "MapVersions", mapData.id, "versions", currentVersion);
-                const versionSnap = await getDoc(versionRef);
-                if (!versionSnap.exists()) continue;
+            const versionRef = doc(db, "MapVersions", mapData.id, "versions", currentVersion);
+            const versionSnap = await getDoc(versionRef);
+            if (!versionSnap.exists()) continue;
 
-                const versionData = versionSnap.data();
-                const mapEdges = Array.isArray(versionData.edges) ? versionData.edges : [];
-                edges.push(
-                    ...mapEdges.filter(e => {
-                        if (e.is_deleted) return false;
-                        if (e.campus_id) return e.campus_id === currentCampus;
-                        return mapData.campus_included?.includes(currentCampus);
-                    })
-                );
-            }
-        } else {
-            // 🔹 Offline: JSON fallback
-            const mapRes = await fetch("../assets/firestore/MapVersions.json");
-            mapVersions = (await mapRes.json()).filter(m => !m.is_deleted);
+            const versionData = versionSnap.data();
 
-            for (const mapData of mapVersions) {
-                const currentCampus = mapData.current_active_campus;
-                const currentVersion = mapData.current_version;
-                if (!currentCampus || !currentVersion) continue;
+            const allNodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
+            const allEdges = Array.isArray(versionData.edges) ? versionData.edges : [];
 
-                const version = mapData.versions.find(v => v.id === currentVersion);
-                if (!version) continue;
+            // 🧠 Build a map: node_id → campus_id
+            const nodeCampusMap = {};
+            allNodes.forEach(n => {
+                if (n.node_id && n.campus_id) {
+                    nodeCampusMap[n.node_id] = n.campus_id;
+                }
+            });
 
-                const mapEdges = Array.isArray(version.edges) ? version.edges : [];
-                edges.push(
-                    ...mapEdges.filter(e => {
-                        if (e.is_deleted) return false;
-                        if (e.campus_id) return e.campus_id === currentCampus;
-                        return mapData.campus_included?.includes(currentCampus);
-                    })
-                );
-            }
+            // 🧩 Filter edges
+            const filteredEdges = allEdges.filter(e => {
+                if (e.is_deleted) return false;
 
-            console.log("📂 Offline → Edges loaded from JSON");
+                const fromCampus = nodeCampusMap[e.from_node];
+                const toCampus = nodeCampusMap[e.to_node];
+
+                // Show if either end belongs to the current active campus
+                return fromCampus === currentCampus || toCampus === currentCampus;
+            });
+
+            edges.push(...filteredEdges);
         }
 
         // 🔹 Sort edges by created_at
         edges.sort((a, b) => {
-            if (!a.created_at || !b.created_at) return 0;
-            return (a.created_at.seconds || 0) - (b.created_at.seconds || 0);
+            const aSec = a?.created_at?.seconds || 0;
+            const bSec = b?.created_at?.seconds || 0;
+            return aSec - bSec;
         });
 
         // 🔹 Render edges
@@ -1458,8 +1448,8 @@ async function renderEdgesTable() {
             tbody.appendChild(tr);
         });
 
-        setupEdgeDeleteHandlers(); // ✅ Keep delete modal functionality
-
+        setupEdgeDeleteHandlers(); // ✅ Maintain delete/edit actions
+        console.log(`✅ Rendered ${edges.length} edges for the current active campus`);
     } catch (err) {
         console.error("Error loading edges:", err);
     }
@@ -1758,19 +1748,22 @@ handleOtherOption("elevation");
 handleOtherOption("editPathType");
 handleOtherOption("editElevation");
 
-// ----------- Edit Edge Save Handler -----------
+
+// ----------- Edit Edge Save Handler (saves to correct MapVersions/versions/edges path) -----------
 document.querySelector("#editEdgeModal form").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const docId = document.getElementById("editEdgeModal").dataset.docId;
+    const modal = document.getElementById("editEdgeModal");
+    const docId = modal.dataset.docId; // this will be the edge_id (we’ll find it properly below)
 
-    // Grab either select OR input value
+    // Helper: get either <select> or <input> value
     const getFieldValue = (id) => {
         const select = document.getElementById(id);
         const input = document.querySelector(`input[name='${id}']`);
         return select ? select.value.trim() : (input ? input.value.trim() : "");
     };
 
+    // Helper: convert to snake_case
     const toSnakeCase = str => str.toLowerCase().replace(/\s+/g, "_");
 
     let pathType = getFieldValue("editPathType");
@@ -1791,13 +1784,56 @@ document.querySelector("#editEdgeModal form").addEventListener("submit", async (
     };
 
     try {
-        await updateDoc(doc(db, "Edges", docId), updatedData);
+        // 🔹 Get the active MapVersion info first
+        const mapVersionsSnap = await getDocs(collection(db, "MapVersions"));
+        let activeVersionRef = null;
 
-        alert("Edge updated!");
-        document.getElementById("editEdgeModal").style.display = "none";
+        for (const mapDoc of mapVersionsSnap.docs) {
+            const mapData = mapDoc.data();
+            if (mapData.current_active_map && mapData.current_active_campus && mapData.current_version) {
+                activeVersionRef = doc(db, "MapVersions", mapDoc.id, "versions", mapData.current_version);
+                break;
+            }
+        }
+
+        if (!activeVersionRef) {
+            alert("No active map version found!");
+            return;
+        }
+
+        // 🔹 Get the version data
+        const versionSnap = await getDoc(activeVersionRef);
+        if (!versionSnap.exists()) {
+            alert("Active version document not found!");
+            return;
+        }
+
+        const versionData = versionSnap.data();
+        const edges = Array.isArray(versionData.edges) ? [...versionData.edges] : [];
+
+        // 🔹 Find the edge by ID and update it
+        const edgeIndex = edges.findIndex(edge => edge.edge_id === docId);
+        if (edgeIndex === -1) {
+            alert("Edge not found in current version!");
+            return;
+        }
+
+        edges[edgeIndex] = {
+            ...edges[edgeIndex],
+            ...updatedData,
+            updated_at: new Date(),
+        };
+
+        // 🔹 Save the updated edges array
+        await updateDoc(activeVersionRef, { edges });
+
+        alert("Edge updated successfully!");
+        modal.style.display = "none";
         renderEdgesTable();
+
     } catch (err) {
-        alert("Error updating edge: " + err);
+        console.error("Error updating edge:", err);
+        alert("Error updating edge: " + err.message);
     }
 });
 
