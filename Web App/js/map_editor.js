@@ -1866,11 +1866,11 @@ window.onload = () => {
     renderEdgesTable();
 };
 
-// ----------- Tab & Modal Controls -----------
 document.addEventListener("DOMContentLoaded", function () {
     const tabs = document.querySelectorAll(".top-tabs .tab");
     const tables = document.querySelectorAll(".bottom-tbl > div");
     const addButton = document.querySelector(".addnode .add-btn");
+    const breadcrumbDetail = document.querySelector(".breadcrumb .span-details"); // added
 
     // Modals
     const addNodeModal = document.getElementById("addNodeModal");
@@ -1880,10 +1880,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const cancelEdgeBtn = document.querySelector("#addEdgeModal .cancel-btn");
 
     // Button text mapping
-    const buttonTexts = [
-        "Add Node",
-        "Add Edge"
-    ];
+    const buttonTexts = ["Add Node", "Add Edge"];
+
+    // Breadcrumb text mapping
+    const breadcrumbTexts = ["Nodes", "Edges"]; // <-- what shows in the breadcrumb span
 
     // Tab switching
     tabs.forEach((tab, index) => {
@@ -1895,6 +1895,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (buttonTexts[index]) {
                 addButton.textContent = buttonTexts[index];
+            }
+
+            // ✅ Update breadcrumb
+            if (breadcrumbTexts[index]) {
+                breadcrumbDetail.textContent = ' ' + breadcrumbTexts[index];
             }
         });
     });
@@ -1930,6 +1935,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+
 
 
 
