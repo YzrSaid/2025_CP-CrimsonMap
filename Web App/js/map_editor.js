@@ -958,7 +958,6 @@ typeSelect.addEventListener("change", (e) => {
 
 
 
-
 // ----------- Edit Node Save Handler (Fixed for Indoor Infra + Field IDs) -----------
 document.getElementById("editNodeForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -1028,6 +1027,7 @@ document.getElementById("editNodeForm").addEventListener("submit", async (e) => 
     alert("❌ Failed to update node: " + err.message);
   }
 });
+
 
 
 
@@ -1545,6 +1545,9 @@ window.closeEdgeModal = function () {
 };
 
 
+
+
+
 // ======================= EDIT EDGE SECTION =============================
 
 // ----------- Select Template Storage for Edit Modal -----------
@@ -1601,34 +1604,67 @@ function handlePreselectOrCustom(selectId, value) {
     }
 }
 
-// ----------- Edit Edge Modal Open Handler -----------
+// ----------- Edit Edge Modal Open Handler (corrected to use MapVersions schema) -----------
 document.querySelector(".edgetbl").addEventListener("click", async (e) => {
-    if (e.target.classList.contains("fa-edit")) {
-        const tr = e.target.closest("tr");
-        const edgeId = tr.children[0].textContent;
+    if (!e.target.classList.contains("fa-edit")) return;
 
-        // Get edge data from Firestore
-        const q = query(collection(db, "Edges"), where("edge_id", "==", edgeId));
-        const snapshot = await getDocs(q);
+    const tr = e.target.closest("tr");
+    const edgeId = tr.children[0].textContent.trim();
+    if (!edgeId) return;
 
-        if (!snapshot.empty) {
-            const docSnap = snapshot.docs[0];
-            const data = docSnap.data();
+    try {
+        let edgeData = null;
 
-            document.getElementById("editEdgeId").value = data.edge_id;
+        // 🔹 Search through MapVersions → versions → edges arrays
+        const mapVersionsSnap = await getDocs(collection(db, "MapVersions"));
+        for (const mapDoc of mapVersionsSnap.docs) {
+            const mapData = mapDoc.data();
+            const currentVersion = mapData.current_version;
+            if (!currentVersion) continue;
 
-            await loadNodesDropdownsForEditEdge(data.from_node, data.to_node);
+            const versionRef = doc(db, "MapVersions", mapDoc.id, "versions", currentVersion);
+            const versionSnap = await getDoc(versionRef);
+            if (!versionSnap.exists()) continue;
 
-            handlePreselectOrCustom("editPathType", data.path_type);
-            handlePreselectOrCustom("editElevation", data.elevations);
+            const versionData = versionSnap.data();
+            const found = Array.isArray(versionData.edges)
+                ? versionData.edges.find(e => e.edge_id === edgeId)
+                : null;
 
-            document.getElementById("editEdgeModal").dataset.docId = docSnap.id;
-            document.getElementById("editEdgeModal").style.display = "flex";
+            if (found) {
+                edgeData = found;
+                break;
+            }
         }
+
+        if (!edgeData) {
+            alert("Edge data not found in MapVersions.");
+            return;
+        }
+
+        // ✅ Fill modal fields
+        document.getElementById("editEdgeId").value = edgeData.edge_id || "";
+
+        await loadNodesDropdownsForEditEdge(edgeData.from_node, edgeData.to_node);
+
+        handlePreselectOrCustom("editPathType", edgeData.path_type);
+        handlePreselectOrCustom("editElevation", edgeData.elevations || edgeData.elevation);
+
+        // ✅ Store info for saving later
+        const modal = document.getElementById("editEdgeModal");
+        modal.dataset.edgeId = edgeData.edge_id;
+        modal.dataset.mapId = edgeData.map_id || "";
+        modal.style.display = "flex";
+
+    } catch (err) {
+        console.error("Error opening edge edit modal:", err);
+        alert("Failed to load edge data. See console for details.");
     }
 });
 
-// ----------- Load Nodes into Edit Edge Dropdowns -----------
+
+
+// ----------- Load Nodes into Edit Edge Dropdowns (uses MapVersions -> versions -> nodes) -----------
 async function loadNodesDropdownsForEditEdge(selectedFrom, selectedTo) {
     const startNodeSelect = document.getElementById("editStartNode");
     const endNodeSelect = document.getElementById("editEndNode");
@@ -1636,26 +1672,62 @@ async function loadNodesDropdownsForEditEdge(selectedFrom, selectedTo) {
     startNodeSelect.innerHTML = `<option value="">Select start node</option>`;
     endNodeSelect.innerHTML = `<option value="">Select end node</option>`;
 
-    const q = query(collection(db, "Nodes"), orderBy("created_at", "asc"));
-    const snapshot = await getDocs(q);
+    try {
+        const mapVersionsSnap = await getDocs(collection(db, "MapVersions"));
 
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.node_id) {
-            const option1 = document.createElement("option");
-            option1.value = data.node_id;
-            option1.textContent = `${data.node_id} - ${data.name}`;
-            if (data.node_id === selectedFrom) option1.selected = true;
-            startNodeSelect.appendChild(option1);
+        for (const mapDoc of mapVersionsSnap.docs) {
+            const mapData = mapDoc.data();
 
-            const option2 = document.createElement("option");
-            option2.value = data.node_id;
-            option2.textContent = `${data.node_id} - ${data.name}`;
-            if (data.node_id === selectedTo) option2.selected = true;
-            endNodeSelect.appendChild(option2);
+            // use the same "current active" fields as your add-edge loader
+            const currentMap = mapData.current_active_map;
+            const currentCampus = mapData.current_active_campus;
+            const currentVersion = mapData.current_version;
+
+            if (!currentMap || !currentCampus || !currentVersion) {
+                // skip docs that are not currently active
+                continue;
+            }
+
+            const versionRef = doc(db, "MapVersions", mapDoc.id, "versions", currentVersion);
+            const versionSnap = await getDoc(versionRef);
+            if (!versionSnap.exists()) continue;
+
+            const versionData = versionSnap.data();
+            const nodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
+
+            // filter nodes: not deleted and belonging to current campus
+            const filteredNodes = nodes.filter(n => !n.is_deleted && n.campus_id === currentCampus);
+
+            // sort by created_at.seconds (fallback to 0 if missing)
+            filteredNodes.sort((a, b) => {
+                const aSec = (a.created_at && a.created_at.seconds) ? a.created_at.seconds : 0;
+                const bSec = (b.created_at && b.created_at.seconds) ? b.created_at.seconds : 0;
+                return aSec - bSec;
+            });
+
+            // append to selects (preserve order across versions)
+            filteredNodes.forEach(node => {
+                if (!node.node_id) return;
+                const label = `${node.node_id} - ${node.name || "Unnamed"}`;
+
+                const opt1 = document.createElement("option");
+                opt1.value = node.node_id;
+                opt1.textContent = label;
+                if (node.node_id === selectedFrom) opt1.selected = true;
+                startNodeSelect.appendChild(opt1);
+
+                const opt2 = document.createElement("option");
+                opt2.value = node.node_id;
+                opt2.textContent = label;
+                if (node.node_id === selectedTo) opt2.selected = true;
+                endNodeSelect.appendChild(opt2);
+            });
         }
-    });
+    } catch (err) {
+        console.error("Error loading nodes into edit edge dropdowns:", err);
+    }
 }
+
 
 // ----------- Handle "Other" Option for Selects -----------
 function handleOtherOption(selectId) {
@@ -1738,6 +1810,16 @@ document.getElementById("editEdgeModal").addEventListener("click", (e) => {
         document.getElementById("editEdgeModal").style.display = "none";
     }
 });
+
+
+
+
+
+
+
+
+
+
 
 
 // ======================= UI & TAB CONTROLS =============================
