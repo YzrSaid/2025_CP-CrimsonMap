@@ -1588,33 +1588,51 @@ const tables = {
     categoriestbl: document.querySelector('.categoriestbl')
 };
 const addButton = document.querySelector('.addbtn button');
+const breadcrumbDetail = document.querySelector('.span-details'); // breadcrumb span
+
 const buttonTexts = {
     infratbl: 'Add Infrastructure',
-    roomstbl: 'Add Room',
+    roomstbl: 'Add Indoor Infrastructure',
     categoriestbl: 'Add Category'
 };
+
 // Add to your tables and buttonTexts objects:
 tables.maptbl = document.querySelector('.maptbl');
 tables.campustbl = document.querySelector('.campustbl');
+
 buttonTexts.maptbl = 'Add Map';
 buttonTexts.campustbl = 'Add Campus';
+
+// New object for breadcrumb text
+const breadcrumbTexts = {
+    infratbl: 'Infrastructure',
+    roomstbl: 'Indoor Infrastructure',
+    categoriestbl: 'Categories',
+    maptbl: 'Maps',
+    campustbl: 'Campus'
+};
 
 tabs.forEach(tab => {
     tab.addEventListener('click', () => {
         tabs.forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
+
         Object.values(tables).forEach(tbl => tbl.style.display = 'none');
+
         const target = tab.getAttribute('data-target');
         if (tables[target]) tables[target].style.display = '';
         if (buttonTexts[target]) addButton.textContent = buttonTexts[target];
+
+        // ✅ Update breadcrumb text with a space before
+        if (breadcrumbTexts[target]) breadcrumbDetail.textContent = ' ' + breadcrumbTexts[target];
     });
 });
 
-// Extend Add Button Handler:
+// ----------- Add Button Handler -----------
 addButton.addEventListener('click', () => {
     if (addButton.textContent === 'Add Infrastructure') {
         showInfraModal();
-    } else if (addButton.textContent === 'Add Room') {
+    } else if (addButton.textContent === 'Add Indoor Infrastructure') {
         showRoomModal();
     } else if (addButton.textContent === 'Add Category') {
         showCategoryModal();
