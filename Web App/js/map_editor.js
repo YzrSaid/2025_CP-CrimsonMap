@@ -6,6 +6,7 @@ import {
 
 import { firebaseConfig } from "../firebaseConfig.js";
 
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -3058,83 +3059,90 @@ if (node.created_at) {
   await renderQrSection(node);
 }
 
+
+
+
 // ---- Render QR Section ----
 async function renderQrSection(node) {
   const qrSection = document.querySelector(".map-sidebar .qr-section");
   qrSection.innerHTML = "<em>Checking QR...</em>";
 
-  const qrRef = doc(db, "NodeQRCodes", node.node_id);
+  // Always use CRIMSON_ prefix for node_id
+  const crimsonNodeId = `CRIMSON_${node.node_id}`;
+
+  const qrRef = doc(db, "NodeQRCodes", crimsonNodeId);
   const qrSnap = await getDoc(qrRef);
 
-  if (qrSnap.exists()) {
-    const qrData = qrSnap.data();
+  const hasQR = qrSnap.exists();
+  const qrData = hasQR ? qrSnap.data() : null;
 
-    qrSection.innerHTML = `
-      <div class="details-item"><span>QR Code for ${node.node_id}</span></div>
-      <div class="qr-preview" style="margin:10px 0;">
-        <img src="${qrData.qr_base64}" width="200" height="200" />
-      </div>
-      <div class="qr-actions" style="display:flex; justify-content:center; gap:10px; margin-top:10px;">
-        <button class="view-qr-btn">👁 View</button>
-        <button class="download-qr-btn">⬇️ Download</button>
-        <button class="delete-qr-btn">🗑 Delete</button>
-      </div>
-    `;
+  qrSection.innerHTML = `
+    <div class="details-item">
+      <span>QR Code for ${crimsonNodeId}</span>
+      ${hasQR ? "<br><small style='color:green'>This node already has a QR</small>" : ""}
+    </div>
+    <div class="qr-actions" style="display:flex; justify-content:center; gap:10px; margin-top:10px;">
+      <button class="generate-qr-btn">📷 Generate QR</button>
+      ${hasQR ? `<button class="view-qr-btn">👁 View</button>` : ""}
+    </div>
+  `;
 
-    // View in modal
-    qrSection.querySelector(".view-qr-btn").addEventListener("click", () => {
-      openQrModal(qrData.qr_base64, node.node_id);
-    });
-
-    // Download
-    qrSection.querySelector(".download-qr-btn").addEventListener("click", () => {
-      const a = document.createElement("a");
-      a.href = qrData.qr_base64;
-      a.download = `${node.node_id}_qr.png`;
-      a.click();
-    });
-
-    // Delete
-    qrSection.querySelector(".delete-qr-btn").addEventListener("click", async () => {
-      if (confirm("Are you sure you want to delete this QR code?")) {
-        await deleteDoc(qrRef);
-        alert("✅ QR deleted");
-        await renderQrSection(node); // refresh UI (will show generate button again)
-      }
-    });
-
-  } else {
-    // No QR exists → show generate button
-    qrSection.innerHTML = `
-      <div class="details-actions" style="text-align:center;">
-        <button class="generate-qr-btn">📷 Generate QR</button>
-      </div>
-    `;
-
-    qrSection.querySelector(".generate-qr-btn").addEventListener("click", async () => {
+  // View QR if exists → regenerate dynamically, do not save
+  if (hasQR) {
+    qrSection.querySelector(".view-qr-btn").addEventListener("click", async () => {
       try {
         const qrDiv = document.createElement("div");
         new QRCode(qrDiv, {
-          text: JSON.stringify(node),
-          width: 256,
-          height: 256
+          text: crimsonNodeId, // regenerate QR data
+          width: 512,
+          height: 512,
+          correctLevel: QRCode.CorrectLevel.H
         });
 
-        const qrCanvas = qrDiv.querySelector("canvas");
-        await saveQrToFirebase(node, qrCanvas);
-        alert("✅ QR Code generated and saved to Firestore!");
-        await renderQrSection(node); // refresh UI (will show QR with actions)
+        await new Promise(res => setTimeout(res, 100));
+        const canvas = qrDiv.querySelector("canvas");
+        const dataUrl = canvas.toDataURL("image/png");
+
+        openQrModal(dataUrl, crimsonNodeId, canvas);
       } catch (err) {
-        console.error("Error generating QR:", err);
-        alert("❌ Failed to generate QR");
+        console.error(err);
       }
     });
   }
+
+  // Generate QR button → saves minimal info (node_id, last_generated)
+  qrSection.querySelector(".generate-qr-btn").addEventListener("click", async () => {
+    try {
+      const qrDiv = document.createElement("div");
+      const qr = new QRCode(qrDiv, {
+        text: crimsonNodeId,
+        width: 512,
+        height: 512,
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      await new Promise(res => setTimeout(res, 100));
+      const canvas = qrDiv.querySelector("canvas");
+      const dataUrl = canvas.toDataURL("image/png");
+
+      openQrModal(dataUrl, crimsonNodeId, canvas);
+
+      // Save minimal info to Firestore
+      await setDoc(qrRef, {
+        node_id: crimsonNodeId,
+        last_generated: new Date(),
+        node_name: node.name || "-"
+      }, { merge: true });
+
+      await renderQrSection(node);
+    } catch (err) {
+      console.error(err);
+    }
+  });
 }
 
 // ---- Modal function ----
-function openQrModal(qrBase64, nodeId) {
-  // Create modal wrapper
+function openQrModal(qrDataUrl, nodeId, canvas = null) {
   const modal = document.createElement("div");
   modal.className = "qr-modal";
   modal.innerHTML = `
@@ -3142,7 +3150,12 @@ function openQrModal(qrBase64, nodeId) {
     <div class="qr-modal-content">
       <span class="qr-modal-close">&times;</span>
       <h3>QR Code for ${nodeId}</h3>
-      <img src="${qrBase64}" style="max-width:100%; height:auto;" />
+      <img src="${qrDataUrl}" id="modal-qr" style="max-width:100%; height:auto;"/>
+      <div style="margin-top:10px; display:flex; justify-content:center; gap:10px;">
+        <button id="download-qr-btn">⬇️ Download PNG</button>
+        <button id="print-qr-btn">🖨 Print</button>
+        <button id="pdf-qr-btn">📄 Export PDF</button>
+      </div>
     </div>
   `;
 
@@ -3151,36 +3164,32 @@ function openQrModal(qrBase64, nodeId) {
   // Close events
   modal.querySelector(".qr-modal-close").addEventListener("click", () => modal.remove());
   modal.querySelector(".qr-modal-overlay").addEventListener("click", () => modal.remove());
-}
 
+  // Download PNG
+  modal.querySelector("#download-qr-btn").addEventListener("click", () => {
+    const a = document.createElement("a");
+    a.href = qrDataUrl;
+    a.download = `${nodeId}_qr.png`;
+    a.click();
+  });
 
-// ---- Save QR ----
-async function saveQrToFirebase(node, canvas) {
-  if (!node || !node.node_id) throw new Error("❌ Node is missing node_id");
+  // Print QR
+  modal.querySelector("#print-qr-btn").addEventListener("click", () => {
+    const w = window.open("");
+    w.document.write(`<img src="${qrDataUrl}" style="width:512px;height:512px;">`);
+    w.document.close();
+    w.focus();
+    w.print();
+    w.close();
+  });
 
-  const qrDataUrl = canvas.toDataURL("image/png");
-  const qrRef = doc(db, "NodeQRCodes", node.node_id);
-
-  await setDoc(qrRef, {
-    node_id: node.node_id,
-    name: node.name,
-    campus_id: node.campus_id,
-    latitude: node.latitude,
-    longitude: node.longitude,
-    type: node.type,
-    is_active: node.is_active,
-    created_at: node.created_at || new Date(),
-    qr_base64: qrDataUrl,
-    raw_data: node
-  }, { merge: true });
-
-  console.log(`✅ QR saved for ${node.node_id}`);
-}
-
-
-
-async function deleteQr(nodeId) {
-  const fileName = `qrcodes/${nodeId}.png`;
-  await deleteObject(ref(storage, fileName));
-  await deleteDoc(doc(db, "NodeQRCodes", nodeId));
+  // Export PDF
+  modal.querySelector("#pdf-qr-btn").addEventListener("click", () => {
+    if (!canvas) return alert("Cannot export PDF because QR canvas not available.");
+    const imgData = canvas.toDataURL("image/png");
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF();
+    pdf.addImage(imgData, "PNG", 20, 20, 170, 170);
+    pdf.save(`${nodeId}_qr.pdf`);
+  });
 }
