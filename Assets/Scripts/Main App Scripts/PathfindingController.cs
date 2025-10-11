@@ -9,64 +9,82 @@ public class PathfindingController : MonoBehaviour
 {
     [Header("References")]
     public AStarPathfinding pathfinding;
-    public InfrastructurePopulator infrastructurePopulator; // Reference to your existing populator
+    public InfrastructurePopulator infrastructurePopulator;
+    public GPSManager gpsManager;
 
     [Header("UI Elements")]
-    public TMP_Dropdown fromDropdown;
     public TMP_Dropdown toDropdown;
     public Button findPathButton;
-    
+
     [Header("Result Display")]
     public GameObject resultPanel;
+    public GameObject destinationPanel;
+    public TextMeshProUGUI fromText;
+    public TextMeshProUGUI toText;
     public TextMeshProUGUI distanceText;
     public TextMeshProUGUI walkingTimeText;
     public TextMeshProUGUI pathInfoText;
 
     [Header("Static Test Settings")]
-    public bool useStaticTesting = true; // Use hardcoded nodes for testing
-    public string staticFromNodeId = "ND-025"; // Default: Gate Camp B for employees
-    public string staticToNodeId = "ND-017"; // Default: College of Computing Studies
+    public bool useStaticTesting = false;
+    public string staticFromNodeId = "ND-025";
+    public string staticToNodeId = "ND-017";
+
+    [Header("GPS Settings")]
+    public bool useGPSForFromLocation = true;
+    public float nearestNodeSearchRadius = 500f;
+    public bool autoUpdateGPSLocation = true;
+    public float gpsUpdateInterval = 5f;
 
     [Header("Settings")]
     public bool enableDebugLogs = true;
 
-    // Data
-    private Dictionary<string, Node> allNodes = new Dictionary<string, Node>(); // All nodes from pathfinding
-    private Dictionary<string, string> infraIdToNodeId = new Dictionary<string, string>(); // Map infra_id to node_id
+    private Dictionary<string, Node> allNodes = new Dictionary<string, Node>();
+    private Dictionary<string, string> infraIdToNodeId = new Dictionary<string, string>();
     private string selectedFromNodeId;
     private string selectedToNodeId;
+    private Node currentNearestNode;
+    private float lastGPSUpdateTime;
+    private bool nodesLoaded = false;
+
+    private string currentMapId;
+    private List<string> currentCampusIds;
 
     void Start()
     {
-        DebugLog("🎮 PathfindingController initialized");
-
-        // Setup UI listeners
         if (findPathButton != null)
         {
             findPathButton.onClick.AddListener(OnFindPathClicked);
         }
-
-        // DON'T setup dropdown listeners - InfrastructurePopulator handles the dropdowns
-
-        // Hide result panel initially
-        if (resultPanel != null)
+        if (toDropdown != null)
         {
-            resultPanel.SetActive(false);
+            toDropdown.onValueChanged.AddListener(OnToDropdownChanged);
+            if (resultPanel != null)
+            {
+                resultPanel.SetActive(false);
+                destinationPanel.SetActive(false);
+            }
         }
-
-        // Subscribe to MapManager events
         if (MapManager.Instance != null)
         {
             MapManager.Instance.OnMapChanged += OnMapChanged;
+        }
+        if (gpsManager == null)
+        {
+            gpsManager = GPSManager.Instance;
         }
     }
 
     void OnDestroy()
     {
-        // Unsubscribe from events
         if (findPathButton != null)
         {
             findPathButton.onClick.RemoveListener(OnFindPathClicked);
+        }
+
+        if (toDropdown != null)
+        {
+            toDropdown.onValueChanged.RemoveListener(OnToDropdownChanged);
         }
 
         if (MapManager.Instance != null)
@@ -75,78 +93,107 @@ public class PathfindingController : MonoBehaviour
         }
     }
 
+    void Update()
+    {
+        if (useGPSForFromLocation && autoUpdateGPSLocation && !useStaticTesting && nodesLoaded)
+        {
+            if (Time.time - lastGPSUpdateTime >= gpsUpdateInterval)
+            {
+                UpdateFromLocationByGPS();
+                lastGPSUpdateTime = Time.time;
+            }
+        }
+    }
+
     #region MapManager Integration
 
     private void OnMapChanged(MapInfo mapInfo)
     {
-        DebugLog($"🔄 Map changed - loading node data");
         ClearCurrentPath();
     }
 
-    /// <summary>
-    /// Called by MapManager when map data is ready
-    /// </summary>
     public IEnumerator InitializeForMap(string mapId, List<string> campusIds)
     {
-        DebugLog($"🗺️ Initializing for map: {mapId}");
+        currentMapId = mapId;
+        currentCampusIds = campusIds;
 
-        // Wait for pathfinding to load graph data
+        yield return StartCoroutine(LoadNodesFromJSON(mapId));
+
+        yield return StartCoroutine(BuildInfrastructureNodeMapping());
+
+        if (useGPSForFromLocation && !useStaticTesting)
+        {
+            UpdateFromLocationByGPS();
+        }
+
         if (pathfinding != null)
         {
             yield return StartCoroutine(pathfinding.LoadGraphDataForMap(mapId, campusIds));
         }
+    }
 
-        // Build infrastructure to node mapping
-        yield return StartCoroutine(BuildInfrastructureNodeMapping());
+    #endregion
 
-        DebugLog("✅ PathfindingController initialized for map");
+    #region Node Loading from JSON
+
+    private IEnumerator LoadNodesFromJSON(string mapId)
+    {
+        string fileName = $"nodes_{mapId}.json";
+        bool loadSuccess = false;
+        string errorMsg = "";
+
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
+            fileName,
+            (jsonContent) =>
+            {
+                try
+                {
+                    Node[] nodesArray = JsonHelper.FromJson<Node>(jsonContent);
+
+                    allNodes.Clear();
+                    foreach (Node node in nodesArray)
+                    {
+                        allNodes[node.node_id] = node;
+                    }
+
+                    nodesLoaded = true;
+                    loadSuccess = true;
+                }
+                catch (System.Exception e)
+                {
+                    errorMsg = $"Error parsing nodes JSON: {e.Message}";
+                }
+            },
+            (error) =>
+            {
+                errorMsg = $"Failed to load {fileName}: {error}";
+            }
+        ));
+
+        yield return null;
     }
 
     #endregion
 
     #region Infrastructure to Node Mapping
 
-    /// <summary>
-    /// Build mapping between infrastructure IDs and node IDs
-    /// </summary>
     private IEnumerator BuildInfrastructureNodeMapping()
     {
-        if (pathfinding == null)
-        {
-            Debug.LogError("❌ AStarPathfinding reference not set!");
-            yield break;
-        }
-
-        // Get all nodes from pathfinding
-        allNodes = pathfinding.GetAllNodes();
-
         if (allNodes == null || allNodes.Count == 0)
         {
-            Debug.LogWarning("⚠️ No nodes available from pathfinding");
             yield break;
         }
 
-        // Build mapping: related_infra_id → node_id
         infraIdToNodeId.Clear();
-        
+
         foreach (var kvp in allNodes)
         {
             Node node = kvp.Value;
-            
-            // Map infrastructure nodes by their related_infra_id
+
             if (node.type == "infrastructure" && !string.IsNullOrEmpty(node.related_infra_id))
             {
                 infraIdToNodeId[node.related_infra_id] = node.node_id;
             }
-        }
-
-        DebugLog($"📊 Built infrastructure mapping: {infraIdToNodeId.Count} infrastructure nodes");
-
-        // Set static FROM location if using it
-        if (useStaticTesting)
-        {
-            selectedFromNodeId = staticFromNodeId;
-            DebugLog($"📍 FROM set to static: {staticFromNodeId}");
         }
 
         yield return null;
@@ -154,38 +201,99 @@ public class PathfindingController : MonoBehaviour
 
     #endregion
 
-    #region Dropdown Handlers (Using InfrastructurePopulator)
+    #region GPS Location Handling
 
-    /// <summary>
-    /// Get the node_id from the selected infrastructure in dropdown
-    /// </summary>
-    private string GetNodeIdFromDropdown(TMP_Dropdown dropdown)
+    private void UpdateFromLocationByGPS()
     {
-        if (infrastructurePopulator == null)
+        if (gpsManager == null)
         {
-            Debug.LogError("❌ InfrastructurePopulator reference not set!");
+            return;
+        }
+
+        if (!nodesLoaded || allNodes == null || allNodes.Count == 0)
+        {
+            return;
+        }
+
+        Vector2 coords = gpsManager.GetSmoothedCoordinates();
+
+        Node nearestNode = FindNearestNode(coords.x, coords.y);
+
+        if (nearestNode != null)
+        {
+            selectedFromNodeId = nearestNode.node_id;
+            currentNearestNode = nearestNode;
+        }
+    }
+
+    private Node FindNearestNode(float latitude, float longitude)
+    {
+        if (allNodes == null || allNodes.Count == 0)
+        {
             return null;
         }
 
-        // Get the selected infrastructure from InfrastructurePopulator
-        Infrastructure selectedInfra = infrastructurePopulator.GetSelectedInfrastructure(dropdown);
+        Node nearestNode = null;
+        float nearestDistance = float.MaxValue;
+
+        foreach (var kvp in allNodes)
+        {
+            Node node = kvp.Value;
+
+            float distance = CalculateDistance(latitude, longitude, node.latitude, node.longitude);
+
+            if (distance < nearestDistance && distance <= nearestNodeSearchRadius)
+            {
+                nearestDistance = distance;
+                nearestNode = node;
+            }
+        }
+
+        return nearestNode;
+    }
+
+    private float CalculateDistance(float lat1, float lon1, float lat2, float lon2)
+    {
+        const float R = 6371000f;
+
+        float dLat = (lat2 - lat1) * Mathf.Deg2Rad;
+        float dLon = (lon2 - lon1) * Mathf.Deg2Rad;
+
+        float a = Mathf.Sin(dLat / 2) * Mathf.Sin(dLat / 2) +
+                  Mathf.Cos(lat1 * Mathf.Deg2Rad) * Mathf.Cos(lat2 * Mathf.Deg2Rad) *
+                  Mathf.Sin(dLon / 2) * Mathf.Sin(dLon / 2);
+
+        float c = 2 * Mathf.Atan2(Mathf.Sqrt(a), Mathf.Sqrt(1 - a));
+
+        return R * c;
+    }
+
+    #endregion
+
+    #region Dropdown Handlers
+
+    private void OnToDropdownChanged(int index)
+    {
+        if (infrastructurePopulator == null || toDropdown == null)
+        {
+            return;
+        }
+
+        Infrastructure selectedInfra = infrastructurePopulator.GetSelectedInfrastructure(toDropdown);
 
         if (selectedInfra == null)
         {
-            DebugLog("⚠️ No infrastructure selected from dropdown");
-            return null;
+            selectedToNodeId = null;
+            return;
         }
 
-        // Map infrastructure ID to node ID
         if (infraIdToNodeId.TryGetValue(selectedInfra.infra_id, out string nodeId))
         {
-            DebugLog($"✅ Mapped {selectedInfra.name} (infra: {selectedInfra.infra_id}) → node: {nodeId}");
-            return nodeId;
+            selectedToNodeId = nodeId;
         }
         else
         {
-            Debug.LogWarning($"⚠️ No node found for infrastructure: {selectedInfra.name} ({selectedInfra.infra_id})");
-            return null;
+            selectedToNodeId = null;
         }
     }
 
@@ -195,51 +303,40 @@ public class PathfindingController : MonoBehaviour
 
     private void OnFindPathClicked()
     {
-        DebugLog("🔍 Find Path button clicked");
-
         string fromNodeId;
         string toNodeId;
 
-        // STATIC TESTING MODE
         if (useStaticTesting)
         {
             fromNodeId = staticFromNodeId;
             toNodeId = staticToNodeId;
-            
-            DebugLog($"🧪 STATIC TEST MODE: FROM={fromNodeId}, TO={toNodeId}");
         }
         else
         {
-            // Normal dropdown mode (for later)
-            fromNodeId = GetNodeIdFromDropdown(fromDropdown);
-            toNodeId = GetNodeIdFromDropdown(toDropdown);
+            UpdateFromLocationByGPS();
+            fromNodeId = selectedFromNodeId;
 
             if (string.IsNullOrEmpty(fromNodeId))
             {
-                Debug.LogWarning("⚠️ No FROM location selected!");
-                ShowError("Please select a starting point");
+                ShowError("Cannot determine your location. Please check GPS.");
                 return;
             }
 
+            toNodeId = selectedToNodeId;
+
             if (string.IsNullOrEmpty(toNodeId))
             {
-                Debug.LogWarning("⚠️ No TO location selected!");
                 ShowError("Please select a destination");
                 return;
             }
         }
 
-        // Check if FROM and TO are the same
         if (fromNodeId == toNodeId)
         {
-            Debug.LogWarning("⚠️ FROM and TO are the same location!");
             ShowError("You are already at this location!");
             return;
         }
 
-        DebugLog($"🧭 Pathfinding: FROM={fromNodeId}, TO={toNodeId}");
-
-        // Start pathfinding
         StartCoroutine(FindAndDisplayPath(fromNodeId, toNodeId));
     }
 
@@ -247,35 +344,27 @@ public class PathfindingController : MonoBehaviour
     {
         if (pathfinding == null)
         {
-            Debug.LogError("❌ AStarPathfinding reference not set!");
             yield break;
         }
 
-        DebugLog($"🧭 Finding path: {fromNodeId} → {toNodeId}");
-
-        // Disable button during calculation
         if (findPathButton != null)
         {
             findPathButton.interactable = false;
         }
 
-        // Find the path
         yield return StartCoroutine(pathfinding.FindPath(fromNodeId, toNodeId));
 
-        // Re-enable button
         if (findPathButton != null)
         {
             findPathButton.interactable = true;
         }
 
-        // Check if path was found
         if (!pathfinding.HasPath())
         {
             ShowError("No path found between these locations");
             yield break;
         }
 
-        // Display results
         DisplayPathResults();
     }
 
@@ -285,58 +374,52 @@ public class PathfindingController : MonoBehaviour
 
     private void DisplayPathResults()
     {
-        if (resultPanel != null)
+        if (resultPanel != null && destinationPanel != null)
         {
             resultPanel.SetActive(true);
+            destinationPanel.SetActive(true);
         }
 
-        // Get path data
         var path = pathfinding.GetCurrentPath();
         float distance = pathfinding.GetTotalDistance();
         string formattedDistance = pathfinding.GetFormattedDistance();
         string walkingTime = pathfinding.GetEstimatedWalkingTime();
 
-        // Display distance
+        var fromNode = pathfinding.GetStartNode();
+        var toNode = pathfinding.GetEndNode();
+
+        if (fromText != null)
+        {
+            fromText.text = $"<b>From:</b> {fromNode.name}";
+        }
+
+        if (toText != null)
+        {
+            toText.text = $"<b>To:</b> {toNode.name}";
+        }
+
         if (distanceText != null)
         {
-            distanceText.text = $"Distance: {formattedDistance}";
+            distanceText.text = $"<b>Distance:</b> {formattedDistance}";
         }
 
-        // Display walking time
         if (walkingTimeText != null)
         {
-            walkingTimeText.text = $"Walking Time: ~{walkingTime}";
+            walkingTimeText.text = $"<b>Time:</b> ~{walkingTime}";
         }
 
-        // Display path info
         if (pathInfoText != null)
         {
-            var fromNode = pathfinding.GetStartNode();
-            var toNode = pathfinding.GetEndNode();
-
-            string pathInfo = $"<b>From:</b> {fromNode.name}\n";
-            pathInfo += $"<b>To:</b> {toNode.name}\n\n";
-            pathInfo += $"<b>Route ({path.Count} stops):</b>\n";
+            string pathInfo = $"<b>Route ({path.Count} stops):</b>\n";
 
             for (int i = 0; i < path.Count; i++)
             {
                 var node = path[i].node;
-                string prefix = i == 0 ? "🔵 " : i == path.Count - 1 ? "🔴 " : "⚪ ";
-                
-                pathInfo += $"{prefix}{node.name}";
-                
-                if (i < path.Count - 1 && path[i].distanceToNext > 0)
-                {
-                    pathInfo += $" → {path[i].distanceToNext:F0}m";
-                }
-                
-                pathInfo += "\n";
+                pathInfo += $"{i + 1}. {node.name}\n";
             }
 
             pathInfoText.text = pathInfo;
         }
-
-        DebugLog($"✅ Path displayed: {formattedDistance}, {walkingTime}");
     }
 
     private void ShowError(string message)
@@ -344,6 +427,16 @@ public class PathfindingController : MonoBehaviour
         if (resultPanel != null)
         {
             resultPanel.SetActive(true);
+        }
+
+        if (fromText != null)
+        {
+            fromText.text = "";
+        }
+
+        if (toText != null)
+        {
+            toText.text = "";
         }
 
         if (distanceText != null)
@@ -360,8 +453,6 @@ public class PathfindingController : MonoBehaviour
         {
             pathInfoText.text = message;
         }
-
-        Debug.LogWarning($"⚠️ {message}");
     }
 
     public void HideResults()
@@ -380,53 +471,37 @@ public class PathfindingController : MonoBehaviour
             pathfinding.ClearCurrentPath();
         }
         HideResults();
-        DebugLog("🧹 Cleared current path");
     }
 
     #endregion
 
-    #region Public Methods for GPS/QR Integration (Future)
+    #region Public Methods for External Integration
 
-    /// <summary>
-    /// Set FROM location from GPS coordinates
-    /// </summary>
-    public void SetFromLocationByGPS(float latitude, float longitude)
+    public void RefreshGPSLocation()
     {
-        // TODO: Find nearest node to GPS coordinates
-        DebugLog($"📍 GPS location received: ({latitude}, {longitude})");
-        
-        // For now, just log - implement nearest node search later
-        Debug.LogWarning("⚠️ GPS location setting not yet implemented");
+        if (useGPSForFromLocation && !useStaticTesting && nodesLoaded)
+        {
+            UpdateFromLocationByGPS();
+        }
     }
 
-    /// <summary>
-    /// Set FROM location from QR code scan
-    /// </summary>
     public void SetFromLocationByQR(string nodeId)
     {
-        DebugLog($"📱 QR code scanned: {nodeId}");
-
         if (allNodes.ContainsKey(nodeId))
         {
             selectedFromNodeId = nodeId;
-            staticFromNodeId = nodeId;
-            useStaticTesting = true;
-
-            DebugLog($"✅ FROM location set to: {allNodes[nodeId].name}");
-        }
-        else
-        {
-            Debug.LogError($"❌ Invalid node ID from QR: {nodeId}");
+            currentNearestNode = allNodes[nodeId];
         }
     }
 
-    /// <summary>
-    /// Enable manual FROM selection (disable static/GPS/QR)
-    /// </summary>
-    public void EnableManualFromSelection()
+    public void ToggleGPSMode(bool useGPS)
     {
-        useStaticTesting = false;
-        DebugLog("✅ Manual FROM selection enabled");
+        useGPSForFromLocation = useGPS;
+
+        if (useGPS && nodesLoaded)
+        {
+            UpdateFromLocationByGPS();
+        }
     }
 
     #endregion
@@ -437,36 +512,23 @@ public class PathfindingController : MonoBehaviour
     {
         if (enableDebugLogs)
         {
-            Debug.Log($"[PathfindingController] {message}");
         }
     }
 
-    #endregion
-
-    #region Debug Testing
-
-    void Update()
+    public string GetCurrentFromLocationName()
     {
-        // Debug controls (uncomment for testing)
-        // if (Application.isEditor && Input.GetKeyDown(KeyCode.T))
-        // {
-        //     // Test pathfinding with first two infrastructure nodes
-        //     var infraNodes = allNodes.Values.Where(n => n.type == "infrastructure").ToList();
-        //     if (infraNodes.Count >= 2)
-        //     {
-        //         Debug.Log($"🧪 Testing path: {infraNodes[0].name} → {infraNodes[1].name}");
-        //         StartCoroutine(FindAndDisplayPath(infraNodes[0].node_id, infraNodes[1].node_id));
-        //     }
-        // }
-        //
-        // if (Application.isEditor && Input.GetKeyDown(KeyCode.R))
-        // {
-        //     Debug.Log($"=== PATHFINDING STATUS ===");
-        //     Debug.Log($"All nodes: {allNodes.Count}");
-        //     Debug.Log($"Infrastructure mapping: {infraIdToNodeId.Count}");
-        //     Debug.Log($"Static FROM: {staticFromNodeId}");
-        //     Debug.Log($"Selected TO: {selectedToNodeId}");
-        // }
+        if (currentNearestNode != null)
+        {
+            return currentNearestNode.name;
+        }
+        return "Unknown";
+    }
+
+    public bool IsReadyForPathfinding()
+    {
+        return nodesLoaded &&
+               !string.IsNullOrEmpty(selectedFromNodeId) &&
+               !string.IsNullOrEmpty(selectedToNodeId);
     }
 
     #endregion
