@@ -16,6 +16,14 @@ public class PathfindingController : MonoBehaviour
     public TMP_Dropdown toDropdown;
     public Button findPathButton;
 
+    [Header("Confirmation Panel")]
+    public GameObject confirmationPanel;
+    public TextMeshProUGUI confirmFromText;
+    public TextMeshProUGUI confirmToText;
+    public TextMeshProUGUI confirmErrorText;
+    public Button confirmButton;
+    public Button cancelButton;
+
     [Header("Result Display")]
     public GameObject resultPanel;
     public GameObject destinationPanel;
@@ -56,19 +64,42 @@ public class PathfindingController : MonoBehaviour
         {
             findPathButton.onClick.AddListener(OnFindPathClicked);
         }
+
+        if (confirmButton != null)
+        {
+            confirmButton.onClick.AddListener(OnConfirmClicked);
+        }
+
+        if (cancelButton != null)
+        {
+            cancelButton.onClick.AddListener(OnCancelClicked);
+        }
+
         if (toDropdown != null)
         {
             toDropdown.onValueChanged.AddListener(OnToDropdownChanged);
-            if (resultPanel != null)
-            {
-                resultPanel.SetActive(false);
-                destinationPanel.SetActive(false);
-            }
         }
+
+        if (resultPanel != null)
+        {
+            resultPanel.SetActive(false);
+        }
+
+        if (destinationPanel != null)
+        {
+            destinationPanel.SetActive(false);
+        }
+
+        if (confirmationPanel != null)
+        {
+            confirmationPanel.SetActive(false);
+        }
+
         if (MapManager.Instance != null)
         {
             MapManager.Instance.OnMapChanged += OnMapChanged;
         }
+
         if (gpsManager == null)
         {
             gpsManager = GPSManager.Instance;
@@ -80,6 +111,16 @@ public class PathfindingController : MonoBehaviour
         if (findPathButton != null)
         {
             findPathButton.onClick.RemoveListener(OnFindPathClicked);
+        }
+
+        if (confirmButton != null)
+        {
+            confirmButton.onClick.RemoveListener(OnConfirmClicked);
+        }
+
+        if (cancelButton != null)
+        {
+            cancelButton.onClick.RemoveListener(OnCancelClicked);
         }
 
         if (toDropdown != null)
@@ -299,7 +340,7 @@ public class PathfindingController : MonoBehaviour
 
     #endregion
 
-    #region Pathfinding Trigger
+    #region Confirmation Panel
 
     private void OnFindPathClicked()
     {
@@ -315,30 +356,121 @@ public class PathfindingController : MonoBehaviour
         {
             UpdateFromLocationByGPS();
             fromNodeId = selectedFromNodeId;
-
-            if (string.IsNullOrEmpty(fromNodeId))
-            {
-                ShowError("Cannot determine your location. Please check GPS.");
-                return;
-            }
-
             toNodeId = selectedToNodeId;
+        }
 
-            if (string.IsNullOrEmpty(toNodeId))
-            {
-                ShowError("Please select a destination");
-                return;
-            }
+        if (string.IsNullOrEmpty(toNodeId))
+        {
+            ShowConfirmationError("Please select a destination");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(fromNodeId))
+        {
+            ShowConfirmationError("Cannot determine your location. Please check GPS.");
+            return;
         }
 
         if (fromNodeId == toNodeId)
         {
-            ShowError("You are already at this location!");
+            ShowConfirmationError("You are already at this location!");
             return;
+        }
+
+        ShowConfirmationPanel(fromNodeId, toNodeId);
+    }
+
+    private void ShowConfirmationPanel(string fromNodeId, string toNodeId)
+    {
+        if (confirmationPanel != null)
+        {
+            confirmationPanel.SetActive(true);
+        }
+
+        if (allNodes.TryGetValue(fromNodeId, out Node fromNode))
+        {
+            if (confirmFromText != null)
+            {
+                confirmFromText.text = $"<b>From:</b> {fromNode.name}";
+            }
+        }
+
+        if (allNodes.TryGetValue(toNodeId, out Node toNode))
+        {
+            if (confirmToText != null)
+            {
+                confirmToText.text = $"<b>To:</b> {toNode.name}";
+            }
+        }
+
+        if (confirmErrorText != null)
+        {
+            confirmErrorText.text = "";
+        }
+    }
+
+    private void ShowConfirmationError(string message)
+    {
+        if (confirmationPanel != null)
+        {
+            confirmationPanel.transform.Find("Title").GetComponent<TextMeshProUGUI>().text = "Error";
+            cancelButton.GetComponentInChildren<TextMeshProUGUI>().text = "Close";
+            confirmationPanel.SetActive(true);
+            confirmButton.gameObject.SetActive(false);
+            confirmErrorText.gameObject.SetActive(true);
+        }
+
+        if (confirmFromText != null)
+        {
+            confirmFromText.text = "";
+        }
+
+        if (confirmToText != null)
+        {
+            confirmToText.text = "";
+        }
+
+        if (confirmErrorText != null)
+        {
+            confirmErrorText.text = message;
+        }
+    }
+
+    private void OnConfirmClicked()
+    {
+        string fromNodeId;
+        string toNodeId;
+
+        if (useStaticTesting)
+        {
+            fromNodeId = staticFromNodeId;
+            toNodeId = staticToNodeId;
+        }
+        else
+        {
+            fromNodeId = selectedFromNodeId;
+            toNodeId = selectedToNodeId;
+        }
+
+        if (confirmationPanel != null)
+        {
+            confirmationPanel.SetActive(false);
         }
 
         StartCoroutine(FindAndDisplayPath(fromNodeId, toNodeId));
     }
+
+    private void OnCancelClicked()
+    {
+        if (confirmationPanel != null)
+        {
+            confirmationPanel.SetActive(false);
+        }
+    }
+
+    #endregion
+
+    #region Pathfinding Trigger
 
     private IEnumerator FindAndDisplayPath(string fromNodeId, string toNodeId)
     {
@@ -361,7 +493,7 @@ public class PathfindingController : MonoBehaviour
 
         if (!pathfinding.HasPath())
         {
-            ShowError("No path found between these locations");
+            ShowConfirmationError("No path found between these locations");
             yield break;
         }
 
@@ -422,44 +554,16 @@ public class PathfindingController : MonoBehaviour
         }
     }
 
-    private void ShowError(string message)
-    {
-        if (resultPanel != null)
-        {
-            resultPanel.SetActive(true);
-        }
-
-        if (fromText != null)
-        {
-            fromText.text = "";
-        }
-
-        if (toText != null)
-        {
-            toText.text = "";
-        }
-
-        if (distanceText != null)
-        {
-            distanceText.text = "❌ Error";
-        }
-
-        if (walkingTimeText != null)
-        {
-            walkingTimeText.text = "";
-        }
-
-        if (pathInfoText != null)
-        {
-            pathInfoText.text = message;
-        }
-    }
-
     public void HideResults()
     {
         if (resultPanel != null)
         {
             resultPanel.SetActive(false);
+        }
+
+        if (destinationPanel != null)
+        {
+            destinationPanel.SetActive(false);
         }
     }
 
@@ -507,13 +611,6 @@ public class PathfindingController : MonoBehaviour
     #endregion
 
     #region Utility Methods
-
-    private void DebugLog(string message)
-    {
-        if (enableDebugLogs)
-        {
-        }
-    }
 
     public string GetCurrentFromLocationName()
     {
