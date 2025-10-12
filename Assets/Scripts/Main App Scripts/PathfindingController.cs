@@ -29,9 +29,12 @@ public class PathfindingController : MonoBehaviour
     public GameObject destinationPanel;
     public TextMeshProUGUI fromText;
     public TextMeshProUGUI toText;
-    public TextMeshProUGUI distanceText;
-    public TextMeshProUGUI walkingTimeText;
-    public TextMeshProUGUI pathInfoText;
+
+    [Header("Route List")]
+    public Transform routeListContainer;
+    public GameObject routeItemPrefab;
+    public ScrollRect routeScrollView;
+    public Button confirmRouteButton;
 
     [Header("Static Test Settings")]
     public bool useStaticTesting = false;
@@ -58,6 +61,10 @@ public class PathfindingController : MonoBehaviour
     private string currentMapId;
     private List<string> currentCampusIds;
 
+    private List<RouteData> currentRoutes = new List<RouteData>();
+    private List<RouteItem> routeItemInstances = new List<RouteItem>();
+    private int selectedRouteIndex = -1;
+
     void Start()
     {
         if (findPathButton != null)
@@ -78,6 +85,12 @@ public class PathfindingController : MonoBehaviour
         if (toDropdown != null)
         {
             toDropdown.onValueChanged.AddListener(OnToDropdownChanged);
+        }
+
+        if (confirmRouteButton != null)
+        {
+            confirmRouteButton.onClick.AddListener(OnConfirmRouteClicked);
+            confirmRouteButton.gameObject.SetActive(false); // Hidden until route is selected
         }
 
         if (resultPanel != null)
@@ -126,6 +139,11 @@ public class PathfindingController : MonoBehaviour
         if (toDropdown != null)
         {
             toDropdown.onValueChanged.RemoveListener(OnToDropdownChanged);
+        }
+
+        if (confirmRouteButton != null)
+        {
+            confirmRouteButton.onClick.RemoveListener(OnConfirmRouteClicked);
         }
 
         if (MapManager.Instance != null)
@@ -457,7 +475,7 @@ public class PathfindingController : MonoBehaviour
             confirmationPanel.SetActive(false);
         }
 
-        StartCoroutine(FindAndDisplayPath(fromNodeId, toNodeId));
+        StartCoroutine(FindAndDisplayPaths(fromNodeId, toNodeId));
     }
 
     private void OnCancelClicked()
@@ -472,7 +490,7 @@ public class PathfindingController : MonoBehaviour
 
     #region Pathfinding Trigger
 
-    private IEnumerator FindAndDisplayPath(string fromNodeId, string toNodeId)
+    private IEnumerator FindAndDisplayPaths(string fromNodeId, string toNodeId)
     {
         if (pathfinding == null)
         {
@@ -484,27 +502,31 @@ public class PathfindingController : MonoBehaviour
             findPathButton.interactable = false;
         }
 
-        yield return StartCoroutine(pathfinding.FindPath(fromNodeId, toNodeId));
+        // Find multiple paths (up to 3)
+        yield return StartCoroutine(pathfinding.FindMultiplePaths(fromNodeId, toNodeId, 3));
 
         if (findPathButton != null)
         {
             findPathButton.interactable = true;
         }
 
-        if (!pathfinding.HasPath())
+        var routes = pathfinding.GetAllRoutes();
+
+        if (routes == null || routes.Count == 0)
         {
             ShowConfirmationError("No path found between these locations");
             yield break;
         }
 
-        DisplayPathResults();
+        currentRoutes = routes;
+        DisplayAllRoutes();
     }
 
     #endregion
 
     #region Result Display
 
-    private void DisplayPathResults()
+    private void DisplayAllRoutes()
     {
         if (resultPanel != null && destinationPanel != null)
         {
@@ -512,46 +534,140 @@ public class PathfindingController : MonoBehaviour
             destinationPanel.SetActive(true);
         }
 
-        var path = pathfinding.GetCurrentPath();
-        float distance = pathfinding.GetTotalDistance();
-        string formattedDistance = pathfinding.GetFormattedDistance();
-        string walkingTime = pathfinding.GetEstimatedWalkingTime();
+        // Clear existing route items
+        ClearRouteItems();
 
-        var fromNode = pathfinding.GetStartNode();
-        var toNode = pathfinding.GetEndNode();
+        if (currentRoutes.Count == 0)
+        {
+            return;
+        }
+
+        // Set From and To (same for all routes)
+        var firstRoute = currentRoutes[0];
 
         if (fromText != null)
         {
-            fromText.text = $"<b>From:</b> {fromNode.name}";
+            fromText.text = $"<b>From:</b> {firstRoute.startNode.name}";
         }
 
         if (toText != null)
         {
-            toText.text = $"<b>To:</b> {toNode.name}";
+            toText.text = $"<b>To:</b> {firstRoute.endNode.name}";
         }
 
-        if (distanceText != null)
+        // Create route items
+        for (int i = 0; i < currentRoutes.Count; i++)
         {
-            distanceText.text = $"<b>Distance:</b> {formattedDistance}";
+            CreateRouteItem(i, currentRoutes[i]);
         }
 
-        if (walkingTimeText != null)
+        // Auto-select first route
+        if (currentRoutes.Count > 0)
         {
-            walkingTimeText.text = $"<b>Time:</b> ~{walkingTime}";
+            OnRouteSelected(0);
         }
-
-        if (pathInfoText != null)
+        else
         {
-            string pathInfo = $"<b>Route ({path.Count} stops):</b>\n";
-
-            for (int i = 0; i < path.Count; i++)
+            // No routes, hide confirm button
+            if (confirmRouteButton != null)
             {
-                var node = path[i].node;
-                pathInfo += $"{i + 1}. {node.name}\n";
+                confirmRouteButton.gameObject.SetActive(false);
             }
-
-            pathInfoText.text = pathInfo;
         }
+
+        // Reset scroll position
+        if (routeScrollView != null)
+        {
+            Canvas.ForceUpdateCanvases();
+            routeScrollView.verticalNormalizedPosition = 1f;
+        }
+    }
+
+    private void CreateRouteItem(int index, RouteData routeData)
+    {
+        if (routeItemPrefab == null || routeListContainer == null)
+        {
+            return;
+        }
+
+        GameObject itemObj = Instantiate(routeItemPrefab, routeListContainer);
+        RouteItem routeItem = itemObj.GetComponent<RouteItem>();
+
+        if (routeItem != null)
+        {
+            routeItem.Initialize(index, routeData, OnRouteSelected);
+            routeItemInstances.Add(routeItem);
+        }
+    }
+
+    private void ClearRouteItems()
+    {
+        if (routeListContainer == null)
+        {
+            return;
+        }
+
+        routeItemInstances.Clear();
+
+        foreach (Transform child in routeListContainer)
+        {
+            Destroy(child.gameObject);
+        }
+    }
+
+    private void OnRouteSelected(int routeIndex)
+    {
+        if (routeIndex < 0 || routeIndex >= currentRoutes.Count)
+        {
+            return;
+        }
+
+        selectedRouteIndex = routeIndex;
+
+        // Update visual state of all route items (radio button behavior)
+        for (int i = 0; i < routeItemInstances.Count; i++)
+        {
+            routeItemInstances[i].SetSelected(i == routeIndex);
+        }
+
+        // Show confirm button when a route is selected
+        if (confirmRouteButton != null)
+        {
+            confirmRouteButton.gameObject.SetActive(true);
+        }
+
+        // Update pathfinding visualization to show selected route
+        if (pathfinding != null)
+        {
+            pathfinding.SetActiveRoute(routeIndex);
+        }
+
+        if (enableDebugLogs)
+        {
+            Debug.Log($"Selected Route #{routeIndex + 1}");
+        }
+    }
+
+    private void OnConfirmRouteClicked()
+    {
+        if (selectedRouteIndex < 0 || selectedRouteIndex >= currentRoutes.Count)
+        {
+            return;
+        }
+
+        // TODO: You'll handle the AR view scene transition here
+        // For now, just log it
+        if (enableDebugLogs)
+        {
+            Debug.Log($"Confirmed Route #{selectedRouteIndex + 1} - Ready to open AR view");
+        }
+
+        // You can access the selected route data like this:
+        RouteData selectedRoute = currentRoutes[selectedRouteIndex];
+        
+        // Example: Load AR scene with selected route
+        // SceneManager.LoadScene("ARNavigationScene");
+        // Pass selectedRoute data to the next scene
     }
 
     public void HideResults()
@@ -565,15 +681,27 @@ public class PathfindingController : MonoBehaviour
         {
             destinationPanel.SetActive(false);
         }
+
+        ClearRouteItems();
     }
 
     public void ClearCurrentPath()
     {
         selectedToNodeId = null;
+        currentRoutes.Clear();
+        routeItemInstances.Clear();
+        selectedRouteIndex = -1;
+
+        if (confirmRouteButton != null)
+        {
+            confirmRouteButton.gameObject.SetActive(false);
+        }
+
         if (pathfinding != null)
         {
             pathfinding.ClearCurrentPath();
         }
+
         HideResults();
     }
 
@@ -606,6 +734,20 @@ public class PathfindingController : MonoBehaviour
         {
             UpdateFromLocationByGPS();
         }
+    }
+
+    public RouteData GetSelectedRoute()
+    {
+        if (selectedRouteIndex >= 0 && selectedRouteIndex < currentRoutes.Count)
+        {
+            return currentRoutes[selectedRouteIndex];
+        }
+        return null;
+    }
+
+    public List<RouteData> GetAllRoutes()
+    {
+        return new List<RouteData>(currentRoutes);
     }
 
     #endregion

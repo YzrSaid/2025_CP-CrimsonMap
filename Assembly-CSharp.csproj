@@ -75,6 +75,7 @@
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/TileJSON/TileJSONReponse.cs" />
     <Compile Include="Assets/Mapbox/Examples/2_AstronautGame/AstronautGame/Astronaut/AstronautMouseController.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/ISubLayerCustomStyle.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/RouteItem.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/AngleSmoothing/AngleSmoothingLowPass.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Factories/TerrainStrategies/ElevationBasedTerrainStrategy.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/MaterialModifier.cs" />
