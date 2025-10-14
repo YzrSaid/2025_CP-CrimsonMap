@@ -7,4 +7,4 @@ node_modules/
 # Ignore environment files
 .env
 
-/assets/firestore/*.json
+# /assets/firestore/*.json

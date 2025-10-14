@@ -141,6 +141,12 @@ document.getElementById('categoryForm')?.addEventListener('submit', async (e) =>
         });
 
         alert("Category saved!");
+
+        // ✅ Update StaticDataVersions/GlobalInfo after saving or updating a node
+        const staticDataRef = doc(db, "StaticDataVersions", "GlobalInfo");
+        await updateDoc(staticDataRef, {
+            categories_updated: true,
+        });
         document.getElementById('categoryForm').reset();
         hideCategoryModal();
         renderCategoriesTable();
@@ -1127,6 +1133,11 @@ document.querySelector("#addCampusModal form")?.addEventListener("submit", async
         });
 
         alert("Campus saved!");
+        // ✅ Update StaticDataVersions/GlobalInfo after saving or updating a node
+        const staticDataRef = doc(db, "StaticDataVersions", "GlobalInfo");
+        await updateDoc(staticDataRef, {
+            campus_updated: true,
+        });
         e.target.reset();
         hideCampusModal();
         renderCampusTable();
@@ -1240,6 +1251,12 @@ document.querySelector("#categoriesTableBody").addEventListener("click", async (
 
         // Store docId in form for update
         document.getElementById("editCategoryForm").dataset.docId = docId;
+
+        // ✅ Update StaticDataVersions/GlobalInfo after saving or updating a node
+        const staticDataRef = doc(db, "StaticDataVersions", "GlobalInfo");
+        await updateDoc(staticDataRef, {
+            categories_updated: true,
+        });
 
         // Show modal
         document.getElementById("editCategoryModal").style.display = "flex";
@@ -1472,6 +1489,11 @@ document.querySelector(".campus-table tbody").addEventListener("click", async (e
 
         // Store docId for updating
         document.getElementById("editCampusForm").dataset.docId = docSnap.id;
+        // ✅ Update StaticDataVersions/GlobalInfo after saving or updating a node
+        const staticDataRef = doc(db, "StaticDataVersions", "GlobalInfo");
+        await updateDoc(staticDataRef, {
+            campus_updated: true,
+        });
 
         // Show modal
         document.getElementById("editCampusModal").style.display = "flex";
@@ -1642,6 +1664,7 @@ addButton.addEventListener('click', () => {
         showCampusModal();
     }
 });
+
 
 // ----------- Modal Cancel Button Handlers -----------
 const cancelInfraBtn = document.querySelector('#addInfraModal .cancel-btn');

@@ -1,0 +1,149 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+}
+
+body, html {
+  height: 100%;
+  background-color: #fafafa;
+}
+
+/* LAYOUT */
+.container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+}
+
+.left {
+  background: url('/assets/imgs/wmsubg.jpg') no-repeat center center;
+  background-size: cover;
+  position: relative;
+  width: 70%;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    rgba(153, 0, 0, 0.55),
+    rgba(90, 0, 0, 0.55)
+  );
+}
+
+/* RIGHT SIDE */
+.right {
+  flex: 1;
+  background: #f9f9f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+/* FORM AREA */
+.form-box {
+  width: 100%;
+  max-width: 350px;
+  text-align: center;
+  color: #222;
+}
+
+.form-box img {
+  width: 250px;
+  margin-bottom: 20px;
+  transition: transform 0.3s ease;
+}
+
+.form-box img:hover {
+  transform: scale(1.05);
+}
+
+.form-box h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #b30000;
+  letter-spacing: 0.5px;
+  margin-bottom: 30px;
+}
+
+/* INPUTS */
+.form-box input[type="email"],
+.form-box input[type="password"] {
+  width: 100%;
+  padding: 12px 10px;
+  margin-bottom: 22px;
+  border: none;
+  border-bottom: 2px solid #ccc;
+  font-size: 15px;
+  background-color: transparent;
+  transition: border-color 0.3s ease;
+}
+
+.form-box input[type="email"]:focus,
+.form-box input[type="password"]:focus {
+  outline: none;
+  border-color: #b30000;
+}
+
+/* FORGOT PASSWORD */
+.form-box .forgot {
+  display: block;
+  text-align: right;
+  font-size: 13px;
+  color: #b30000;
+  margin-top: -10px;
+  margin-bottom: 25px;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.form-box .forgot:hover {
+  color: #8b0000;
+  text-decoration: underline;
+}
+
+/* BUTTON */
+.form-box button {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #b30000, #8b0000);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.3px;
+}
+
+.form-box button:hover {
+  background: linear-gradient(135deg, #a00000, #700000);
+  transform: translateY(-2px);
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .left {
+    width: 100%;
+    height: 40vh;
+  }
+
+  .right {
+    height: 60vh;
+  }
+
+  .form-box h2 {
+    font-size: 18px;
+  }
+}

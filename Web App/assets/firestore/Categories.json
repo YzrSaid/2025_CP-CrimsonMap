@@ -1,0 +1,142 @@
+[
+  {
+    "id": "3hFzZT9hQhuSYv6hyK7A",
+    "is_deleted": false,
+    "icon": null,
+    "name": "Lobbies / Waiting Areass",
+    "updatedAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1757938093,
+      "nanoseconds": 927000000
+    },
+    "color": "#2a9d8f",
+    "category_id": "CAT-04",
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756908352,
+      "nanoseconds": 91000000
+    },
+    "buildings": 0
+  },
+  {
+    "id": "GEklwq8BSgJ7UK9koul5",
+    "name": "Health & Wellness Services",
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756908930,
+      "nanoseconds": 371000000
+    },
+    "is_deleted": false,
+    "icon": null,
+    "color": "#f1a208",
+    "buildings": 0,
+    "category_id": "CAT-07"
+  },
+  {
+    "id": "LHJFyr5xMnNC9Lhfvbyb",
+    "category_id": "CAT-09",
+    "name": "Courts & Gyms",
+    "buildings": 0,
+    "color": "#813d9c",
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1759158574,
+      "nanoseconds": 216000000
+    },
+    "is_deleted": false
+  },
+  {
+    "id": "N0HNFB5sC1f6Xv8c8WL6",
+    "category_id": "CAT-03",
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756908231,
+      "nanoseconds": 115000000
+    },
+    "color": "#8d99ae",
+    "is_deleted": false,
+    "name": "Canteen / Cafeterias",
+    "icon": null,
+    "buildings": 0
+  },
+  {
+    "id": "PUHFtmdiqM1FOkw9C0cV",
+    "category_id": "CAT-01",
+    "is_deleted": false,
+    "icon": null,
+    "buildings": 0,
+    "name": "Academics",
+    "color": "#ef476f",
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756907782,
+      "nanoseconds": 760000000
+    }
+  },
+  {
+    "id": "RC6LPNrgCTaHiCoIdaZM",
+    "updatedAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1758631016,
+      "nanoseconds": 342000000
+    },
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756908553,
+      "nanoseconds": 990000000
+    },
+    "color": "#865e3c",
+    "name": "Parks & Green Spaces",
+    "icon": null,
+    "buildings": 0,
+    "category_id": "CAT-05",
+    "is_deleted": false
+  },
+  {
+    "id": "abpznLNteKagGrvvT0MD",
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756909139,
+      "nanoseconds": 569000000
+    },
+    "color": "#8d99ae",
+    "icon": null,
+    "category_id": "CAT-08",
+    "is_deleted": false,
+    "name": "Campus Facilities & Shops",
+    "buildings": 0
+  },
+  {
+    "id": "cYbiVuFA12t8f2GXg0XT",
+    "color": "#e63946",
+    "icon": null,
+    "name": "Administrative Offices",
+    "buildings": 0,
+    "category_id": "CAT-06",
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756908694,
+      "nanoseconds": 708000000
+    },
+    "is_deleted": false
+  },
+  {
+    "id": "xlYtX68DfQ7erT6RpdoD",
+    "name": "Barriers & Gates",
+    "updatedAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1758438974,
+      "nanoseconds": 398000000
+    },
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756908009,
+      "nanoseconds": 858000000
+    },
+    "color": "#c0bfbc",
+    "category_id": "CAT-02",
+    "icon": null,
+    "is_deleted": false,
+    "buildings": 0
+  }
+]

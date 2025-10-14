@@ -1,0 +1,618 @@
+[
+  {
+    "id": "0QWxbR6AWf1MoXa6ZCsF",
+    "node_id": "ND-007",
+    "is_active": true,
+    "campus_id": "CAMP-02",
+    "x_coordinates": -108.50989641548328,
+    "y_coordinates": -32.357723653546486,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756912691,
+      "nanoseconds": 234000000
+    },
+    "latitude": 6.91305,
+    "indoor": null,
+    "type": "infrastructure",
+    "longitude": 122.06271,
+    "related_room_id": "",
+    "name": "CSM Social Hall",
+    "related_infra_id": "INFRA-25"
+  },
+  {
+    "id": "22BqCrikujg2iyCZgXNl",
+    "indoor": null,
+    "related_room_id": "",
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756913155,
+      "nanoseconds": 998000000
+    },
+    "name": "MSA",
+    "type": "infrastructure",
+    "latitude": 6.91273,
+    "x_coordinates": -26.82391132101816,
+    "related_infra_id": "INFRA-15",
+    "longitude": 122.06345,
+    "node_id": "ND-018",
+    "campus_id": "CAMP-02",
+    "is_active": true,
+    "y_coordinates": -67.94010017984087
+  },
+  {
+    "id": "6oqNZOq1Z0fdjb9GoOY8",
+    "longitude": 122.06338,
+    "related_room_id": "",
+    "name": "Garments ",
+    "type": "infrastructure",
+    "campus_id": "CAMP-02",
+    "x_coordinates": -34.550963965894724,
+    "related_infra_id": "INFRA-19",
+    "latitude": 6.91318,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756913266,
+      "nanoseconds": 644000000
+    },
+    "y_coordinates": -17.902383189807292,
+    "is_active": true,
+    "node_id": "ND-022",
+    "indoor": null
+  },
+  {
+    "id": "6zywTJq1rziqqhJp35o2",
+    "campus_id": "CAMP-02",
+    "related_room_id": "",
+    "name": "Biorisk Management Office",
+    "type": "infrastructure",
+    "related_infra_id": "INFRA-09",
+    "node_id": "ND-012",
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756912879,
+      "nanoseconds": 648000000
+    },
+    "y_coordinates": -57.9325567818144,
+    "longitude": 122.06283,
+    "is_active": true,
+    "latitude": 6.91282,
+    "indoor": null,
+    "x_coordinates": -95.26352045328593
+  },
+  {
+    "id": "8dEaXUWMvDCrCtLIk7yR",
+    "name": "Barrier",
+    "node_id": "ND-029",
+    "is_active": true,
+    "y_coordinates": -13.454586123995805,
+    "campus_id": "CAMP-02",
+    "x_coordinates": 22.84999853330017,
+    "related_infra_id": "INFRA-30",
+    "indoor": null,
+    "longitude": 122.0639,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756913915,
+      "nanoseconds": 906000000
+    },
+    "type": "barrier",
+    "latitude": 6.91322,
+    "related_room_id": ""
+  },
+  {
+    "id": "9KU8H5amdjSXFUH2iPjv",
+    "related_infra_id": "INFRA-02",
+    "type": "infrastructure",
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756912603,
+      "nanoseconds": 83000000
+    },
+    "y_coordinates": -32.357723653546486,
+    "latitude": 6.91305,
+    "related_room_id": "",
+    "campus_id": "CAMP-02",
+    "name": "Canteen",
+    "node_id": "ND-004",
+    "is_active": true,
+    "indoor": null,
+    "longitude": 122.06231,
+    "x_coordinates": -152.66448295248085
+  },
+  {
+    "id": "AhdR8kMRB6oQCMII8ZK9",
+    "campus_id": "CAMP-02",
+    "longitude": 122.062888,
+    "related_room_id": "",
+    "is_active": true,
+    "related_infra_id": "INFRA-10",
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1757576241,
+      "nanoseconds": 199000000
+    },
+    "node_id": "ND-031",
+    "name": "12345",
+    "type": "infrastructure",
+    "indoor": null,
+    "is_deleted": true,
+    "x_coordinates": -88.86110540588406,
+    "deletedAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1757991617,
+      "nanoseconds": 972000000
+    },
+    "updated_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1757925413,
+      "nanoseconds": 207000000
+    },
+    "y_coordinates": -14.121755683857652,
+    "latitude": 6.913214
+  },
+  {
+    "id": "BoyKVD4RZCxMuwah8Up3",
+    "is_active": true,
+    "campus_id": "CAMP-02",
+    "node_id": "ND-008",
+    "longitude": 122.06268,
+    "x_coordinates": -111.82149040524828,
+    "indoor": null,
+    "latitude": 6.91286,
+    "name": "Department of Biological Sciences",
+    "type": "infrastructure",
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756912714,
+      "nanoseconds": 767000000
+    },
+    "y_coordinates": -53.48475971600291,
+    "related_infra_id": "INFRA-05",
+    "related_room_id": ""
+  },
+  {
+    "id": "DTL1Z9CbDFnVpsLlHMQS",
+    "longitude": 122.06362,
+    "related_room_id": "",
+    "name": "Old building Campus B",
+    "campus_id": "CAMP-02",
+    "type": "infrastructure",
+    "x_coordinates": -8.058212043068723,
+    "latitude": 6.91288,
+    "related_infra_id": "INFRA-17",
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756913224,
+      "nanoseconds": 94000000
+    },
+    "y_coordinates": -51.26086118309717,
+    "is_active": true,
+    "node_id": "ND-020",
+    "indoor": null
+  },
+  {
+    "id": "KIwjW43MuDJMdgbtG4Gq",
+    "longitude": 122.06349,
+    "is_active": true,
+    "y_coordinates": -37.91746998576147,
+    "campus_id": "CAMP-02",
+    "related_room_id": "",
+    "x_coordinates": -22.408452667475277,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756913246,
+      "nanoseconds": 528000000
+    },
+    "name": "College of Medicine",
+    "type": "infrastructure",
+    "related_infra_id": "INFRA-18",
+    "node_id": "ND-021",
+    "latitude": 6.913,
+    "indoor": null
+  },
+  {
+    "id": "KbGdTBv5wJya3eba1U0o",
+    "related_room_id": "",
+    "longitude": 122.0623933,
+    "node_id": "ND-003",
+    "latitude": 6.9131681,
+    "indoor": null,
+    "name": "Overpass",
+    "related_infra_id": "INFRA-26",
+    "campus_id": "CAMP-02",
+    "y_coordinates": -19.225602816835348,
+    "type": "infrastructure",
+    "is_active": true,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756912562,
+      "nanoseconds": 907000000
+    },
+    "x_coordinates": -143.46929030612873
+  },
+  {
+    "id": "No0u3VHnnLJjagZzlllc",
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756913365,
+      "nanoseconds": 689000000
+    },
+    "is_active": true,
+    "related_room_id": "",
+    "related_infra_id": "INFRA-23",
+    "type": "infrastructure",
+    "campus_id": "CAMP-02",
+    "y_coordinates": 5.448551405554878,
+    "node_id": "ND-025",
+    "indoor": null,
+    "name": "Gate Camp B for employees ",
+    "x_coordinates": -22.408452667475277,
+    "latitude": 6.91339,
+    "longitude": 122.06349
+  },
+  {
+    "id": "OiyV4F7VYrBcMyb2icVB",
+    "indoor": null,
+    "related_infra_id": "INFRA-04",
+    "longitude": 122.06263,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756912667,
+      "nanoseconds": 22000000
+    },
+    "is_active": true,
+    "x_coordinates": -117.34081372256908,
+    "latitude": 6.91307,
+    "campus_id": "CAMP-02",
+    "type": "infrastructure",
+    "y_coordinates": -30.133825120640743,
+    "node_id": "ND-006",
+    "related_room_id": "",
+    "name": "CSM LOBBY"
+  },
+  {
+    "id": "PspTWpklXLKjh7WA0v2h",
+    "type": "infrastructure",
+    "campus_id": "CAMP-02",
+    "name": "College of Asian Islamic Studies",
+    "y_coordinates": -102.09918164504397,
+    "longitude": 122.063147,
+    "indoor": null,
+    "related_infra_id": "INFRA-12",
+    "latitude": 6.9124228,
+    "node_id": "ND-015",
+    "x_coordinates": -60.27101062313499,
+    "related_room_id": "",
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756913015,
+      "nanoseconds": 569000000
+    },
+    "is_active": true
+  },
+  {
+    "id": "SFKRlrqbNUbDraGDKmSJ",
+    "latitude": 6.91289,
+    "x_coordinates": -109.6137610776925,
+    "indoor": null,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756912752,
+      "nanoseconds": 713000000
+    },
+    "name": "Fernery",
+    "related_infra_id": "INFRA-06",
+    "type": "infrastructure",
+    "related_room_id": "",
+    "y_coordinates": -50.14891191669367,
+    "longitude": 122.0627,
+    "node_id": "ND-009",
+    "is_active": true,
+    "campus_id": "CAMP-02"
+  },
+  {
+    "id": "WHYkl1u2NnlfdxLkjjDv",
+    "related_infra_id": "INFRA-13",
+    "related_room_id": "",
+    "node_id": "ND-016",
+    "type": "infrastructure",
+    "campus_id": "CAMP-02",
+    "longitude": 122.06335,
+    "name": "College of Social Work and Community Development",
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756913087,
+      "nanoseconds": 145000000
+    },
+    "indoor": null,
+    "x_coordinates": -37.862557955659724,
+    "is_active": true,
+    "latitude": 6.9123,
+    "y_coordinates": -115.7539186369687
+  },
+  {
+    "id": "Z3IlNT12BG97SF7oV0xq",
+    "x_coordinates": -122.86013703988984,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756912284,
+      "nanoseconds": 822000000
+    },
+    "longitude": 122.06258,
+    "y_coordinates": -4.558991992471589,
+    "is_active": true,
+    "name": "Gate Campus B",
+    "type": "infrastructure",
+    "indoor": null,
+    "node_id": "ND-001",
+    "latitude": 6.9133,
+    "related_infra_id": "INFRA-01",
+    "related_room_id": "",
+    "campus_id": "CAMP-02"
+  },
+  {
+    "id": "ZW1UnEtm5qlZBYKv4Zh4",
+    "related_room_id": "",
+    "node_id": "ND-005",
+    "is_active": true,
+    "y_coordinates": -36.80552071935797,
+    "name": "College of Sciences and Mathematics",
+    "x_coordinates": -130.58718968319772,
+    "type": "infrastructure",
+    "campus_id": "CAMP-02",
+    "indoor": null,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756912632,
+      "nanoseconds": 707000000
+    },
+    "latitude": 6.91301,
+    "related_infra_id": "INFRA-03",
+    "longitude": 122.06251
+  },
+  {
+    "id": "cFZKtzwLGDB7IU5TVOKa",
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756913136,
+      "nanoseconds": 18000000
+    },
+    "related_room_id": "",
+    "indoor": null,
+    "x_coordinates": -11.369806032833717,
+    "is_active": true,
+    "related_infra_id": "INFRA-14",
+    "type": "infrastructure",
+    "longitude": 122.06359,
+    "node_id": "ND-017",
+    "latitude": 6.91261,
+    "campus_id": "CAMP-02",
+    "name": "College of Computing Studies",
+    "y_coordinates": -81.28349137717657
+  },
+  {
+    "id": "gxFEdRi2Iqv9MmAV7v0i",
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756912508,
+      "nanoseconds": 24000000
+    },
+    "campus_id": "CAMP-02",
+    "indoor": null,
+    "related_infra_id": "INFRA-24",
+    "type": "infrastructure",
+    "latitude": 6.91308,
+    "is_active": true,
+    "name": "Park",
+    "y_coordinates": -29.02187585423725,
+    "related_room_id": "",
+    "longitude": 122.06251,
+    "node_id": "ND-002",
+    "x_coordinates": -130.58718968319772
+  },
+  {
+    "id": "kI3vno0vNnU8XnjDQjFy",
+    "name": "Wmsu Integrated School SHS building",
+    "node_id": "ND-024",
+    "is_active": true,
+    "y_coordinates": -17.902383189807292,
+    "x_coordinates": -34.550963965894724,
+    "campus_id": "CAMP-02",
+    "related_infra_id": "INFRA-21",
+    "indoor": null,
+    "longitude": 122.06338,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756913310,
+      "nanoseconds": 879000000
+    },
+    "type": "infrastructure",
+    "latitude": 6.91318,
+    "related_room_id": ""
+  },
+  {
+    "id": "ktCYE6Cu180wtq2Og97B",
+    "latitude": 6.91285,
+    "name": "Wmsu Clinic Campus B",
+    "y_coordinates": -54.59670898250516,
+    "type": "infrastructure",
+    "node_id": "ND-019",
+    "related_room_id": "",
+    "indoor": null,
+    "longitude": 122.06342,
+    "x_coordinates": -30.135505312351842,
+    "related_infra_id": "INFRA-16",
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756913198,
+      "nanoseconds": 297000000
+    },
+    "campus_id": "CAMP-02",
+    "is_active": true
+  },
+  {
+    "id": "lhRY7R5vmsD2yQfivGaf",
+    "related_room_id": "",
+    "related_infra_id": "INFRA-10",
+    "node_id": "ND-013",
+    "name": "CCJE",
+    "x_coordinates": -59.93985122494284,
+    "is_active": true,
+    "campus_id": "CAMP-02",
+    "type": "infrastructure",
+    "longitude": 122.06315,
+    "latitude": 6.9128,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756912923,
+      "nanoseconds": 822000000
+    },
+    "y_coordinates": -60.156455314720134,
+    "indoor": null
+  },
+  {
+    "id": "ngIAZQeLKD769nbDKdTI",
+    "indoor": null,
+    "name": "Campus B Canteen(Garments)",
+    "x_coordinates": -31.23936997456105,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756913287,
+      "nanoseconds": 724000000
+    },
+    "related_infra_id": "INFRA-20",
+    "longitude": 122.06341,
+    "node_id": "ND-023",
+    "latitude": 6.91325,
+    "type": "infrastructure",
+    "campus_id": "CAMP-02",
+    "related_room_id": "",
+    "is_active": true,
+    "y_coordinates": -10.11873832468657
+  },
+  {
+    "id": "oqKuraLy9IqfxIoQ7yKH",
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756913805,
+      "nanoseconds": 780000000
+    },
+    "campus_id": "CAMP-02",
+    "node_id": "ND-027",
+    "is_active": true,
+    "x_coordinates": -172.5340468942082,
+    "type": "barrier",
+    "related_infra_id": "INFRA-28",
+    "indoor": null,
+    "latitude": 6.91298,
+    "related_room_id": "",
+    "y_coordinates": -40.141368518667214,
+    "name": "Barrier",
+    "longitude": 122.06213
+  },
+  {
+    "id": "qrRSAKKwa7rgLxgsKwP1",
+    "indoor": null,
+    "longitude": 122.06297,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756913748,
+      "nanoseconds": 375000000
+    },
+    "related_room_id": "",
+    "x_coordinates": -79.8094151651015,
+    "node_id": "ND-026",
+    "campus_id": "CAMP-02",
+    "latitude": 6.91379,
+    "related_infra_id": "INFRA-27",
+    "name": "Barrier",
+    "y_coordinates": 49.92652206337347,
+    "is_active": true,
+    "type": "barrier"
+  },
+  {
+    "id": "rBdsHc9XvifARb242RSe",
+    "campus_id": "CAMP-02",
+    "indoor": null,
+    "latitude": 6.91284,
+    "node_id": "ND-010",
+    "x_coordinates": -88.64033247375596,
+    "related_infra_id": "INFRA-07",
+    "longitude": 122.06289,
+    "is_active": true,
+    "type": "infrastructure",
+    "name": "CSM Graduate Studies",
+    "related_room_id": "",
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756912820,
+      "nanoseconds": 97000000
+    },
+    "y_coordinates": -55.708658248908655
+  },
+  {
+    "id": "vPkKebusRTDEq1k3RwRy",
+    "indoor": null,
+    "related_room_id": "",
+    "related_infra_id": "INFRA-08",
+    "node_id": "ND-011",
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756912849,
+      "nanoseconds": 585000000
+    },
+    "is_active": true,
+    "latitude": 6.91274,
+    "x_coordinates": -104.09443776194041,
+    "longitude": 122.06275,
+    "type": "infrastructure",
+    "campus_id": "CAMP-02",
+    "name": "CSM Office of the dean",
+    "y_coordinates": -66.8281509133386
+  },
+  {
+    "id": "yULLTkiRZGriPkfGRkZW",
+    "related_room_id": "",
+    "is_active": true,
+    "x_coordinates": -26.82391132101816,
+    "longitude": 122.06345,
+    "latitude": 6.912,
+    "campus_id": "CAMP-02",
+    "node_id": "ND-028",
+    "type": "barrier",
+    "updated_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756914236,
+      "nanoseconds": 471000000
+    },
+    "name": "Barrier",
+    "related_infra_id": "INFRA-29",
+    "indoor": null,
+    "y_coordinates": -149.11239663035732,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756913864,
+      "nanoseconds": 357000000
+    }
+  },
+  {
+    "id": "yza7iSnKJLXVkVWy2IMC",
+    "x_coordinates": -89.74419713596515,
+    "is_active": true,
+    "related_infra_id": "INFRA-11",
+    "indoor": null,
+    "campus_id": "CAMP-02",
+    "type": "infrastructure",
+    "longitude": 122.06288,
+    "related_room_id": "",
+    "name": "Department of Mathematics and statistics",
+    "node_id": "ND-014",
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756912990,
+      "nanoseconds": 320000000
+    },
+    "y_coordinates": -77.94764357786732,
+    "latitude": 6.91264
+  }
+]

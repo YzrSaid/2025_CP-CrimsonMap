@@ -1,0 +1,5430 @@
+[
+  {
+    "id": "MAP-01",
+    "current_active_campus": "CAMP-02",
+    "map_id": "MAP-01",
+    "current_version_update": true,
+    "current_active_map": "MAP-01",
+    "campus_included": [
+      "CAMP-01",
+      "CAMP-02"
+    ],
+    "map_name": "WMSU MAP",
+    "current_version": "v1.0.1",
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1757999128,
+      "nanoseconds": 245000000
+    },
+    "versions": [
+      {
+        "id": "v1.0.0",
+        "nodes": [
+          {
+            "x_coordinate": -122.86013703988984,
+            "created_at": {
+              "seconds": 1756912284,
+              "nanoseconds": 822000000
+            },
+            "y_coordinate": -4.558991992471589,
+            "related_room_id": null,
+            "type": "infrastructure",
+            "longitude": 122.06258,
+            "name": "Gate Campus B",
+            "related_infra_id": "INFRA-01",
+            "is_active": true,
+            "latitude": 6.9133,
+            "node_id": "ND-001",
+            "campus_id": "CAMP-02",
+            "indoor": null
+          },
+          {
+            "related_room_id": null,
+            "x_coordinate": -130.58718968319772,
+            "created_at": {
+              "nanoseconds": 24000000,
+              "seconds": 1756912508
+            },
+            "is_active": true,
+            "type": "infrastructure",
+            "indoor": null,
+            "campus_id": "CAMP-02",
+            "y_coordinate": -29.02187585423725,
+            "latitude": 6.91308,
+            "node_id": "ND-002",
+            "name": "Park",
+            "related_infra_id": "INFRA-24",
+            "longitude": 122.06251
+          },
+          {
+            "x_coordinate": -143.46929030612873,
+            "longitude": 122.0623933,
+            "campus_id": "CAMP-02",
+            "indoor": null,
+            "created_at": {
+              "nanoseconds": 907000000,
+              "seconds": 1756912562
+            },
+            "type": "infrastructure",
+            "node_id": "ND-003",
+            "latitude": 6.9131681,
+            "name": "Overpass",
+            "y_coordinate": -19.225602816835348,
+            "related_infra_id": "INFRA-26",
+            "related_room_id": null,
+            "is_active": true
+          },
+          {
+            "created_at": {
+              "nanoseconds": 83000000,
+              "seconds": 1756912603
+            },
+            "indoor": null,
+            "name": "Canteen",
+            "related_infra_id": "INFRA-02",
+            "x_coordinate": -152.66448295248085,
+            "is_active": true,
+            "latitude": 6.91305,
+            "type": "infrastructure",
+            "y_coordinate": -32.357723653546486,
+            "campus_id": "CAMP-02",
+            "longitude": 122.06231,
+            "related_room_id": null,
+            "node_id": "ND-004"
+          },
+          {
+            "x_coordinate": -130.58718968319772,
+            "campus_id": "CAMP-02",
+            "related_room_id": null,
+            "latitude": 6.91301,
+            "node_id": "ND-005",
+            "type": "infrastructure",
+            "name": "College of Sciences and Mathematics",
+            "related_infra_id": "INFRA-03",
+            "indoor": null,
+            "created_at": {
+              "nanoseconds": 707000000,
+              "seconds": 1756912632
+            },
+            "longitude": 122.06251,
+            "y_coordinate": -36.80552071935797,
+            "is_active": true
+          },
+          {
+            "type": "infrastructure",
+            "related_infra_id": "INFRA-04",
+            "longitude": 122.06263,
+            "related_room_id": null,
+            "campus_id": "CAMP-02",
+            "x_coordinate": -117.34081372256908,
+            "latitude": 6.91307,
+            "indoor": null,
+            "created_at": {
+              "nanoseconds": 22000000,
+              "seconds": 1756912667
+            },
+            "node_id": "ND-006",
+            "name": "CSM LOBBY",
+            "is_active": true,
+            "y_coordinate": -30.133825120640743
+          },
+          {
+            "related_infra_id": "INFRA-25",
+            "related_room_id": null,
+            "longitude": 122.06271,
+            "indoor": null,
+            "campus_id": "CAMP-02",
+            "type": "infrastructure",
+            "is_active": true,
+            "y_coordinate": -32.357723653546486,
+            "name": "CSM Social Hall",
+            "created_at": {
+              "nanoseconds": 234000000,
+              "seconds": 1756912691
+            },
+            "node_id": "ND-007",
+            "x_coordinate": -108.50989641548328,
+            "latitude": 6.91305
+          },
+          {
+            "latitude": 6.91286,
+            "is_active": true,
+            "related_room_id": null,
+            "y_coordinate": -53.48475971600291,
+            "type": "infrastructure",
+            "name": "Department of Biological Sciences",
+            "related_infra_id": "INFRA-05",
+            "x_coordinate": -111.82149040524828,
+            "campus_id": "CAMP-02",
+            "created_at": {
+              "seconds": 1756912714,
+              "nanoseconds": 767000000
+            },
+            "longitude": 122.06268,
+            "node_id": "ND-008",
+            "indoor": null
+          },
+          {
+            "type": "infrastructure",
+            "y_coordinate": -55.708658248908655,
+            "is_active": true,
+            "name": "CSM Graduate Studies",
+            "latitude": 6.91284,
+            "related_room_id": null,
+            "indoor": null,
+            "created_at": {
+              "seconds": 1756912820,
+              "nanoseconds": 97000000
+            },
+            "related_infra_id": "INFRA-07",
+            "node_id": "ND-009",
+            "campus_id": "CAMP-02",
+            "longitude": 122.06289,
+            "x_coordinate": -88.64033247375596
+          },
+          {
+            "type": "infrastructure",
+            "name": "CSM Office of the dean",
+            "indoor": null,
+            "longitude": 122.06275,
+            "x_coordinate": -104.09443776194041,
+            "campus_id": "CAMP-02",
+            "node_id": "ND-010",
+            "related_infra_id": "INFRA-08",
+            "related_room_id": null,
+            "is_active": true,
+            "created_at": {
+              "seconds": 1756912849,
+              "nanoseconds": 585000000
+            },
+            "latitude": 6.91274,
+            "y_coordinate": -66.8281509133386
+          },
+          {
+            "related_infra_id": "INFRA-09",
+            "created_at": {
+              "seconds": 1756912879,
+              "nanoseconds": 648000000
+            },
+            "y_coordinate": -57.9325567818144,
+            "is_active": true,
+            "indoor": null,
+            "longitude": 122.06283,
+            "campus_id": "CAMP-02",
+            "related_room_id": null,
+            "type": "infrastructure",
+            "name": "Biorisk Management Office",
+            "x_coordinate": -95.26352045328593,
+            "node_id": "ND-011",
+            "latitude": 6.91282
+          },
+          {
+            "is_active": true,
+            "type": "infrastructure",
+            "node_id": "ND-012",
+            "related_infra_id": "INFRA-10",
+            "name": "CCJE",
+            "created_at": {
+              "nanoseconds": 822000000,
+              "seconds": 1756912923
+            },
+            "x_coordinate": -59.93985122494284,
+            "latitude": 6.9128,
+            "indoor": null,
+            "campus_id": "CAMP-02",
+            "related_room_id": null,
+            "longitude": 122.06315,
+            "y_coordinate": -60.156455314720134
+          },
+          {
+            "latitude": 6.91264,
+            "type": "infrastructure",
+            "x_coordinate": -89.74419713596515,
+            "node_id": "ND-013",
+            "created_at": {
+              "seconds": 1756912990,
+              "nanoseconds": 320000000
+            },
+            "name": "Department of Mathematics and statistics",
+            "is_active": true,
+            "longitude": 122.06288,
+            "indoor": null,
+            "related_infra_id": "INFRA-11",
+            "y_coordinate": -77.94764357786732,
+            "related_room_id": null,
+            "campus_id": "CAMP-02"
+          },
+          {
+            "longitude": 122.063147,
+            "indoor": null,
+            "y_coordinate": -102.09918164504397,
+            "is_active": true,
+            "x_coordinate": -60.27101062313499,
+            "latitude": 6.9124228,
+            "node_id": "ND-014",
+            "related_infra_id": "INFRA-12",
+            "created_at": {
+              "seconds": 1756913015,
+              "nanoseconds": 569000000
+            },
+            "name": "College of Asian Islamic Studies",
+            "related_room_id": null,
+            "campus_id": "CAMP-02",
+            "type": "infrastructure"
+          },
+          {
+            "related_room_id": null,
+            "related_infra_id": "INFRA-13",
+            "type": "infrastructure",
+            "is_active": true,
+            "longitude": 122.06335,
+            "node_id": "ND-015",
+            "y_coordinate": -115.7539186369687,
+            "name": "College of Social Work and Community Development",
+            "indoor": null,
+            "campus_id": "CAMP-02",
+            "created_at": {
+              "seconds": 1756913087,
+              "nanoseconds": 145000000
+            },
+            "latitude": 6.9123,
+            "x_coordinate": -37.862557955659724
+          },
+          {
+            "latitude": 6.91261,
+            "longitude": 122.06359,
+            "node_id": "ND-016",
+            "campus_id": "CAMP-02",
+            "x_coordinate": -11.369806032833717,
+            "indoor": null,
+            "y_coordinate": -81.28349137717657,
+            "related_infra_id": "INFRA-14",
+            "type": "infrastructure",
+            "name": "College of Computing Studies",
+            "related_room_id": null,
+            "created_at": {
+              "seconds": 1756913136,
+              "nanoseconds": 18000000
+            },
+            "is_active": true
+          },
+          {
+            "is_active": true,
+            "x_coordinate": -26.82391132101816,
+            "related_room_id": null,
+            "campus_id": "CAMP-02",
+            "node_id": "ND-017",
+            "indoor": null,
+            "name": "MSA",
+            "y_coordinate": -67.94010017984087,
+            "longitude": 122.06345,
+            "created_at": {
+              "nanoseconds": 998000000,
+              "seconds": 1756913155
+            },
+            "related_infra_id": "INFRA-15",
+            "type": "infrastructure",
+            "latitude": 6.91273
+          },
+          {
+            "type": "infrastructure",
+            "indoor": null,
+            "y_coordinate": -54.59670898250516,
+            "is_active": true,
+            "latitude": 6.91285,
+            "campus_id": "CAMP-02",
+            "node_id": "ND-018",
+            "created_at": {
+              "nanoseconds": 297000000,
+              "seconds": 1756913198
+            },
+            "x_coordinate": -30.135505312351842,
+            "longitude": 122.06342,
+            "related_infra_id": "INFRA-16",
+            "related_room_id": null,
+            "name": "Wmsu Clinic Campus B"
+          },
+          {
+            "longitude": 122.06362,
+            "created_at": {
+              "nanoseconds": 94000000,
+              "seconds": 1756913224
+            },
+            "indoor": null,
+            "related_infra_id": "INFRA-17",
+            "y_coordinate": -51.26086118309717,
+            "is_active": true,
+            "campus_id": "CAMP-02",
+            "node_id": "ND-019",
+            "x_coordinate": -8.058212043068723,
+            "name": "Old building Campus B",
+            "related_room_id": null,
+            "latitude": 6.91288,
+            "type": "infrastructure"
+          },
+          {
+            "created_at": {
+              "seconds": 1756913246,
+              "nanoseconds": 528000000
+            },
+            "is_active": true,
+            "y_coordinate": -37.91746998576147,
+            "type": "infrastructure",
+            "related_infra_id": "INFRA-18",
+            "longitude": 122.06349,
+            "x_coordinate": -22.408452667475277,
+            "related_room_id": null,
+            "latitude": 6.913,
+            "campus_id": "CAMP-02",
+            "node_id": "ND-020",
+            "name": "College of Medicine",
+            "indoor": null
+          },
+          {
+            "related_room_id": null,
+            "latitude": 6.91318,
+            "created_at": {
+              "seconds": 1756913266,
+              "nanoseconds": 644000000
+            },
+            "is_active": true,
+            "related_infra_id": "INFRA-19",
+            "indoor": null,
+            "y_coordinate": -17.902383189807292,
+            "type": "infrastructure",
+            "node_id": "ND-021",
+            "campus_id": "CAMP-02",
+            "longitude": 122.06338,
+            "x_coordinate": -34.550963965894724,
+            "name": "Garments "
+          },
+          {
+            "y_coordinate": -10.11873832468657,
+            "created_at": {
+              "nanoseconds": 724000000,
+              "seconds": 1756913287
+            },
+            "longitude": 122.06341,
+            "name": "Campus B Canteen(Garments)",
+            "latitude": 6.91325,
+            "indoor": null,
+            "related_room_id": null,
+            "campus_id": "CAMP-02",
+            "type": "infrastructure",
+            "is_active": true,
+            "node_id": "ND-022",
+            "related_infra_id": "INFRA-20",
+            "x_coordinate": -31.23936997456105
+          },
+          {
+            "longitude": 122.06338,
+            "x_coordinate": -34.550963965894724,
+            "y_coordinate": -17.902383189807292,
+            "node_id": "ND-023",
+            "is_active": true,
+            "related_room_id": null,
+            "latitude": 6.91318,
+            "related_infra_id": "INFRA-21",
+            "name": "Wmsu Integrated School SHS building",
+            "campus_id": "CAMP-02",
+            "type": "infrastructure",
+            "indoor": null,
+            "created_at": {
+              "nanoseconds": 879000000,
+              "seconds": 1756913310
+            }
+          },
+          {
+            "x_coordinate": -22.408452667475277,
+            "related_infra_id": "INFRA-23",
+            "campus_id": "CAMP-02",
+            "node_id": "ND-024",
+            "longitude": 122.06349,
+            "latitude": 6.91339,
+            "is_active": true,
+            "indoor": null,
+            "y_coordinate": 5.448551405554878,
+            "name": "Gate Camp B for employees ",
+            "type": "infrastructure",
+            "created_at": {
+              "nanoseconds": 689000000,
+              "seconds": 1756913365
+            },
+            "related_room_id": null
+          },
+          {
+            "is_active": true,
+            "related_room_id": null,
+            "latitude": 6.91379,
+            "name": "Barrier",
+            "related_infra_id": "INFRA-27",
+            "longitude": 122.06297,
+            "type": "barrier",
+            "x_coordinate": -79.8094151651015,
+            "created_at": {
+              "nanoseconds": 375000000,
+              "seconds": 1756913748
+            },
+            "node_id": "ND-025",
+            "campus_id": "CAMP-02",
+            "y_coordinate": 49.92652206337347,
+            "indoor": null
+          },
+          {
+            "longitude": 122.06213,
+            "related_infra_id": "INFRA-28",
+            "indoor": null,
+            "created_at": {
+              "nanoseconds": 780000000,
+              "seconds": 1756913805
+            },
+            "latitude": 6.91298,
+            "related_room_id": null,
+            "x_coordinate": -172.5340468942082,
+            "campus_id": "CAMP-02",
+            "y_coordinate": -40.141368518667214,
+            "node_id": "ND-026",
+            "type": "barrier",
+            "is_active": true,
+            "name": "Barrier"
+          },
+          {
+            "related_room_id": null,
+            "longitude": 122.06345,
+            "campus_id": "CAMP-02",
+            "is_active": true,
+            "node_id": "ND-027",
+            "updated_at": {
+              "seconds": 1756914236,
+              "nanoseconds": 471000000
+            },
+            "created_at": {
+              "seconds": 1756913864,
+              "nanoseconds": 357000000
+            },
+            "name": "Barrier",
+            "indoor": null,
+            "y_coordinate": -149.11239663035732,
+            "related_infra_id": "INFRA-29",
+            "type": "barrier",
+            "x_coordinate": -26.82391132101816,
+            "latitude": 6.912
+          },
+          {
+            "node_id": "ND-028",
+            "related_room_id": null,
+            "y_coordinate": -13.454586123995805,
+            "campus_id": "CAMP-02",
+            "created_at": {
+              "seconds": 1756913915,
+              "nanoseconds": 906000000
+            },
+            "x_coordinate": 22.84999853330017,
+            "indoor": null,
+            "is_active": true,
+            "type": "barrier",
+            "latitude": 6.91322,
+            "longitude": 122.0639,
+            "name": "Barrier",
+            "related_infra_id": "INFRA-30"
+          },
+          {
+            "related_infra_id": null,
+            "node_id": "ND-029",
+            "type": "intermediate",
+            "related_room_id": null,
+            "name": "Intermediate 1",
+            "y_coordinate": -70.38638856596805,
+            "created_at": {
+              "nanoseconds": 161000000,
+              "seconds": 1758009263
+            },
+            "longitude": 122.063275,
+            "campus_id": "CAMP-02",
+            "x_coordinate": -46.141542930856545,
+            "is_active": true,
+            "indoor": null,
+            "latitude": 6.912708
+          }
+        ],
+        "edges": []
+      },
+      {
+        "id": "v1.0.1",
+        "nodes": [
+          {
+            "x_coordinate": -122.86013703988984,
+            "related_room_id": null,
+            "longitude": 122.062534,
+            "campus_id": "CAMP-02",
+            "indoor": null,
+            "name": "Gate Campus B",
+            "latitude": 6.913369,
+            "node_id": "ND-001",
+            "is_active": true,
+            "y_coordinate": -4.558991992471589,
+            "related_infra_id": "INFRA-01",
+            "created_at": {
+              "seconds": 1756912284,
+              "nanoseconds": 822000000
+            },
+            "type": "infrastructure"
+          },
+          {
+            "related_infra_id": "INFRA-24",
+            "y_coordinate": -29.02187585423725,
+            "is_active": true,
+            "type": "infrastructure",
+            "created_at": {
+              "seconds": 1756912508,
+              "nanoseconds": 24000000
+            },
+            "related_room_id": null,
+            "x_coordinate": -130.58718968319772,
+            "name": "Park",
+            "node_id": "ND-002",
+            "campus_id": "CAMP-02",
+            "latitude": 6.91308,
+            "indoor": null,
+            "longitude": 122.06251
+          },
+          {
+            "campus_id": "CAMP-02",
+            "type": "infrastructure",
+            "longitude": 122.06231,
+            "name": "Canteen",
+            "x_coordinate": -152.66448295248085,
+            "latitude": 6.91305,
+            "created_at": {
+              "nanoseconds": 83000000,
+              "seconds": 1756912603
+            },
+            "indoor": null,
+            "related_infra_id": "INFRA-02",
+            "is_active": true,
+            "related_room_id": null,
+            "y_coordinate": -32.357723653546486,
+            "node_id": "ND-003"
+          },
+          {
+            "y_coordinate": -36.80552071935797,
+            "x_coordinate": -130.58718968319772,
+            "related_infra_id": "INFRA-03",
+            "indoor": null,
+            "name": "College of Sciences and Mathematics",
+            "node_id": "ND-004",
+            "longitude": 122.06251,
+            "type": "infrastructure",
+            "campus_id": "CAMP-02",
+            "latitude": 6.91301,
+            "created_at": {
+              "seconds": 1756912632,
+              "nanoseconds": 707000000
+            },
+            "is_active": true,
+            "related_room_id": null
+          },
+          {
+            "created_at": {
+              "nanoseconds": 22000000,
+              "seconds": 1756912667
+            },
+            "y_coordinate": -30.133825120640743,
+            "related_room_id": null,
+            "type": "infrastructure",
+            "node_id": "ND-005",
+            "is_active": true,
+            "name": "CSM LOBBY",
+            "longitude": 122.06263,
+            "related_infra_id": "INFRA-04",
+            "indoor": null,
+            "latitude": 6.91307,
+            "x_coordinate": -117.34081372256908,
+            "campus_id": "CAMP-02"
+          },
+          {
+            "related_room_id": null,
+            "indoor": null,
+            "node_id": "ND-006",
+            "latitude": 6.91305,
+            "related_infra_id": "INFRA-25",
+            "type": "infrastructure",
+            "y_coordinate": -32.357723653546486,
+            "longitude": 122.06271,
+            "name": "CSM Social Hall",
+            "is_active": true,
+            "x_coordinate": -108.50989641548328,
+            "campus_id": "CAMP-02",
+            "created_at": {
+              "seconds": 1756912691,
+              "nanoseconds": 234000000
+            }
+          },
+          {
+            "x_coordinate": -111.82149040524828,
+            "name": "Department of Biological Sciences",
+            "type": "infrastructure",
+            "y_coordinate": -53.48475971600291,
+            "is_active": true,
+            "related_infra_id": "INFRA-05",
+            "longitude": 122.06268,
+            "campus_id": "CAMP-02",
+            "node_id": "ND-007",
+            "latitude": 6.91286,
+            "indoor": null,
+            "created_at": {
+              "nanoseconds": 767000000,
+              "seconds": 1756912714
+            },
+            "related_room_id": null
+          },
+          {
+            "created_at": {
+              "nanoseconds": 97000000,
+              "seconds": 1756912820
+            },
+            "indoor": null,
+            "node_id": "ND-008",
+            "y_coordinate": -55.708658248908655,
+            "is_active": true,
+            "longitude": 122.06289,
+            "related_room_id": null,
+            "name": "CSM Graduate Studies",
+            "x_coordinate": -88.64033247375596,
+            "campus_id": "CAMP-02",
+            "latitude": 6.91284,
+            "related_infra_id": "INFRA-07",
+            "type": "infrastructure"
+          },
+          {
+            "x_coordinate": -104.09443776194041,
+            "node_id": "ND-009",
+            "latitude": 6.91274,
+            "related_infra_id": "INFRA-08",
+            "type": "infrastructure",
+            "indoor": null,
+            "created_at": {
+              "nanoseconds": 585000000,
+              "seconds": 1756912849
+            },
+            "name": "CSM Office of the dean",
+            "y_coordinate": -66.8281509133386,
+            "related_room_id": null,
+            "campus_id": "CAMP-02",
+            "longitude": 122.06275,
+            "is_active": true
+          },
+          {
+            "indoor": null,
+            "x_coordinate": -95.26352045328593,
+            "campus_id": "CAMP-02",
+            "created_at": {
+              "seconds": 1756912879,
+              "nanoseconds": 648000000
+            },
+            "type": "infrastructure",
+            "node_id": "ND-010",
+            "is_active": true,
+            "y_coordinate": -57.9325567818144,
+            "related_infra_id": "INFRA-09",
+            "latitude": 6.91282,
+            "related_room_id": null,
+            "name": "Biorisk Management Office",
+            "longitude": 122.06283
+          },
+          {
+            "type": "infrastructure",
+            "created_at": {
+              "seconds": 1756912923,
+              "nanoseconds": 822000000
+            },
+            "node_id": "ND-011",
+            "longitude": 122.06315,
+            "latitude": 6.9128,
+            "related_room_id": null,
+            "indoor": null,
+            "y_coordinate": -60.156455314720134,
+            "related_infra_id": "INFRA-10",
+            "name": "CCJE",
+            "x_coordinate": -59.93985122494284,
+            "campus_id": "CAMP-02",
+            "is_active": true
+          },
+          {
+            "x_coordinate": -89.74419713596515,
+            "related_room_id": null,
+            "name": "Department of Mathematics and statistics",
+            "is_active": true,
+            "longitude": 122.06288,
+            "node_id": "ND-012",
+            "created_at": {
+              "nanoseconds": 320000000,
+              "seconds": 1756912990
+            },
+            "y_coordinate": -77.94764357786732,
+            "related_infra_id": "INFRA-11",
+            "campus_id": "CAMP-02",
+            "latitude": 6.91264,
+            "indoor": null,
+            "type": "infrastructure"
+          },
+          {
+            "campus_id": "CAMP-02",
+            "latitude": 6.9124228,
+            "indoor": null,
+            "is_active": true,
+            "node_id": "ND-013",
+            "y_coordinate": -102.09918164504397,
+            "related_room_id": null,
+            "name": "College of Asian Islamic Studies",
+            "longitude": 122.063147,
+            "created_at": {
+              "nanoseconds": 569000000,
+              "seconds": 1756913015
+            },
+            "type": "infrastructure",
+            "x_coordinate": -60.27101062313499,
+            "related_infra_id": "INFRA-12"
+          },
+          {
+            "related_infra_id": "INFRA-13",
+            "latitude": 6.9123,
+            "is_active": true,
+            "node_id": "ND-014",
+            "longitude": 122.06335,
+            "x_coordinate": -37.862557955659724,
+            "y_coordinate": -115.7539186369687,
+            "related_room_id": null,
+            "indoor": null,
+            "campus_id": "CAMP-02",
+            "created_at": {
+              "seconds": 1756913087,
+              "nanoseconds": 145000000
+            },
+            "type": "infrastructure",
+            "name": "College of Social Work and Community Development"
+          },
+          {
+            "type": "infrastructure",
+            "is_active": true,
+            "name": "College of Computing Studies",
+            "related_infra_id": "INFRA-14",
+            "y_coordinate": -81.28349137717657,
+            "related_room_id": null,
+            "node_id": "ND-015",
+            "campus_id": "CAMP-02",
+            "latitude": 6.91261,
+            "longitude": 122.06359,
+            "created_at": {
+              "nanoseconds": 18000000,
+              "seconds": 1756913136
+            },
+            "x_coordinate": -11.369806032833717,
+            "indoor": null
+          },
+          {
+            "y_coordinate": -67.94010017984087,
+            "longitude": 122.06345,
+            "related_room_id": null,
+            "type": "infrastructure",
+            "campus_id": "CAMP-02",
+            "latitude": 6.91273,
+            "node_id": "ND-016",
+            "is_active": true,
+            "x_coordinate": -26.82391132101816,
+            "name": "MSA",
+            "indoor": null,
+            "related_infra_id": "INFRA-15",
+            "created_at": {
+              "seconds": 1756913155,
+              "nanoseconds": 998000000
+            }
+          },
+          {
+            "name": "Wmsu Clinic Campus B",
+            "created_at": {
+              "nanoseconds": 297000000,
+              "seconds": 1756913198
+            },
+            "indoor": null,
+            "related_infra_id": "INFRA-16",
+            "type": "infrastructure",
+            "related_room_id": null,
+            "campus_id": "CAMP-02",
+            "longitude": 122.06342,
+            "is_active": true,
+            "x_coordinate": -30.135505312351842,
+            "latitude": 6.91285,
+            "y_coordinate": -54.59670898250516,
+            "node_id": "ND-017"
+          },
+          {
+            "created_at": {
+              "nanoseconds": 94000000,
+              "seconds": 1756913224
+            },
+            "related_infra_id": "INFRA-17",
+            "type": "infrastructure",
+            "related_room_id": null,
+            "longitude": 122.06362,
+            "indoor": null,
+            "name": "Old building Campus B",
+            "campus_id": "CAMP-02",
+            "latitude": 6.91288,
+            "is_active": true,
+            "y_coordinate": -51.26086118309717,
+            "x_coordinate": -8.058212043068723,
+            "node_id": "ND-018"
+          },
+          {
+            "latitude": 6.912975,
+            "related_infra_id": "INFRA-18",
+            "x_coordinate": -22.408452667475277,
+            "type": "infrastructure",
+            "indoor": null,
+            "campus_id": "CAMP-02",
+            "created_at": {
+              "seconds": 1756913246,
+              "nanoseconds": 528000000
+            },
+            "y_coordinate": -37.91746998576147,
+            "related_room_id": null,
+            "name": "College of Medicine",
+            "node_id": "ND-019",
+            "longitude": 122.063531,
+            "is_active": true
+          },
+          {
+            "latitude": 6.91318,
+            "campus_id": "CAMP-02",
+            "name": "Garments ",
+            "related_room_id": null,
+            "related_infra_id": "INFRA-19",
+            "type": "infrastructure",
+            "indoor": null,
+            "is_active": true,
+            "y_coordinate": -17.902383189807292,
+            "created_at": {
+              "nanoseconds": 644000000,
+              "seconds": 1756913266
+            },
+            "x_coordinate": -34.550963965894724,
+            "node_id": "ND-020",
+            "longitude": 122.06338
+          },
+          {
+            "node_id": "ND-021",
+            "y_coordinate": -10.11873832468657,
+            "x_coordinate": -31.23936997456105,
+            "related_infra_id": "INFRA-20",
+            "longitude": 122.06341,
+            "name": "Campus B Canteen(Garments)",
+            "type": "infrastructure",
+            "latitude": 6.91325,
+            "campus_id": "CAMP-02",
+            "is_active": true,
+            "indoor": null,
+            "created_at": {
+              "nanoseconds": 724000000,
+              "seconds": 1756913287
+            },
+            "related_room_id": null
+          },
+          {
+            "node_id": "ND-022",
+            "related_infra_id": "INFRA-21",
+            "type": "infrastructure",
+            "related_room_id": null,
+            "name": "Wmsu Integrated School SHS building",
+            "y_coordinate": -17.902383189807292,
+            "created_at": {
+              "nanoseconds": 879000000,
+              "seconds": 1756913310
+            },
+            "longitude": 122.062979,
+            "campus_id": "CAMP-02",
+            "x_coordinate": -34.550963965894724,
+            "is_active": true,
+            "indoor": null,
+            "latitude": 6.91306
+          },
+          {
+            "node_id": "ND-023",
+            "related_room_id": null,
+            "y_coordinate": 0,
+            "created_at": {
+              "nanoseconds": 689000000,
+              "seconds": 1756913365
+            },
+            "campus_id": "CAMP-02",
+            "x_coordinate": 0,
+            "indoor": null,
+            "is_active": true,
+            "type": "infrastructure",
+            "latitude": 6.913358,
+            "longitude": 122.063682,
+            "name": "Gate Camp B for employees ",
+            "related_infra_id": "INFRA-23"
+          },
+          {
+            "related_room_id": "",
+            "longitude": 122.062982,
+            "campus_id": "CAMP-02",
+            "is_active": true,
+            "node_id": "ND-024",
+            "updated_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759925226,
+              "nanoseconds": 70000000
+            },
+            "created_at": {
+              "nanoseconds": 375000000,
+              "seconds": 1756913748
+            },
+            "name": "Barrier",
+            "indoor": null,
+            "y_coordinate": 49.92652206337347,
+            "related_infra_id": "INFRA-27",
+            "type": "barrier",
+            "x_coordinate": -79.8094151651015,
+            "latitude": 6.9138071
+          },
+          {
+            "longitude": 122.062234,
+            "related_infra_id": "INFRA-28",
+            "indoor": null,
+            "updated_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759924885,
+              "nanoseconds": 652000000
+            },
+            "created_at": {
+              "seconds": 1756913805,
+              "nanoseconds": 780000000
+            },
+            "latitude": 6.913081,
+            "related_room_id": "",
+            "y_coordinate": -40.141368518667214,
+            "x_coordinate": -172.5340468942082,
+            "campus_id": "CAMP-02",
+            "node_id": "ND-025",
+            "type": "barrier",
+            "is_active": true,
+            "name": "Barrier"
+          },
+          {
+            "is_active": true,
+            "related_room_id": null,
+            "latitude": 6.912,
+            "name": "Barrier",
+            "related_infra_id": "INFRA-29",
+            "type": "barrier",
+            "longitude": 122.06345,
+            "x_coordinate": -26.82391132101816,
+            "updated_at": {
+              "nanoseconds": 471000000,
+              "seconds": 1756914236
+            },
+            "created_at": {
+              "nanoseconds": 357000000,
+              "seconds": 1756913864
+            },
+            "node_id": "ND-026",
+            "campus_id": "CAMP-02",
+            "y_coordinate": -149.11239663035732,
+            "indoor": null
+          },
+          {
+            "x_coordinate": 22.84999853330017,
+            "related_infra_id": "INFRA-30",
+            "node_id": "ND-027",
+            "campus_id": "CAMP-02",
+            "longitude": 122.0639,
+            "is_active": true,
+            "latitude": 6.91322,
+            "indoor": null,
+            "y_coordinate": -13.454586123995805,
+            "name": "Barrier",
+            "type": "barrier",
+            "created_at": {
+              "seconds": 1756913915,
+              "nanoseconds": 906000000
+            },
+            "related_room_id": null
+          },
+          {
+            "longitude": 122.063275,
+            "x_coordinate": -46.141542930856545,
+            "y_coordinate": -70.38638856596805,
+            "is_active": true,
+            "node_id": "ND-028",
+            "related_room_id": null,
+            "latitude": 6.912708,
+            "related_infra_id": null,
+            "name": "Intermediate 5",
+            "type": "intermediate",
+            "campus_id": "CAMP-02",
+            "indoor": null,
+            "created_at": {
+              "seconds": 1758009263,
+              "nanoseconds": 161000000
+            }
+          },
+          {
+            "y_coordinate": null,
+            "created_at": {
+              "seconds": 1759140524,
+              "nanoseconds": 18000000
+            },
+            "longitude": null,
+            "name": "Department of Computer Science",
+            "latitude": null,
+            "indoor": {
+              "floor": "1",
+              "x": -4.2672,
+              "y": 8.4582
+            },
+            "related_room_id": "IND-001",
+            "campus_id": "CAMP-02",
+            "is_active": true,
+            "type": "indoor",
+            "node_id": "ND-029",
+            "related_infra_id": null,
+            "x_coordinate": null
+          },
+          {
+            "related_room_id": "IND-002",
+            "latitude": null,
+            "created_at": {
+              "seconds": 1759151492,
+              "nanoseconds": 685000000
+            },
+            "is_active": true,
+            "related_infra_id": null,
+            "indoor": {
+              "x": -0.4572,
+              "y": 14.6304,
+              "floor": "1"
+            },
+            "y_coordinate": null,
+            "node_id": "ND-030",
+            "type": "indoor",
+            "campus_id": "CAMP-02",
+            "longitude": null,
+            "x_coordinate": null,
+            "name": "Department of Information Technology"
+          },
+          {
+            "is_active": true,
+            "created_at": {
+              "seconds": 1759152043,
+              "nanoseconds": 935000000
+            },
+            "y_coordinate": null,
+            "type": "indoor",
+            "related_infra_id": null,
+            "longitude": null,
+            "x_coordinate": null,
+            "related_room_id": "IND-003",
+            "latitude": null,
+            "campus_id": "CAMP-02",
+            "node_id": "ND-031",
+            "name": "Deans Office",
+            "indoor": {
+              "y": 13.716,
+              "x": 0,
+              "floor": "1"
+            }
+          },
+          {
+            "longitude": null,
+            "created_at": {
+              "seconds": 1759152250,
+              "nanoseconds": 900000000
+            },
+            "indoor": {
+              "x": 5.4864,
+              "floor": "1",
+              "y": 8.6868
+            },
+            "related_infra_id": null,
+            "y_coordinate": null,
+            "is_active": true,
+            "campus_id": "CAMP-02",
+            "node_id": "ND-032",
+            "x_coordinate": null,
+            "name": "Staris Floor 1",
+            "related_room_id": "IND-006",
+            "type": "indoor",
+            "latitude": null
+          },
+          {
+            "type": "indoor",
+            "indoor": {
+              "floor": "1",
+              "x": 5.7912,
+              "y": 4.8768
+            },
+            "y_coordinate": null,
+            "is_active": true,
+            "latitude": null,
+            "campus_id": "CAMP-02",
+            "node_id": "ND-033",
+            "created_at": {
+              "nanoseconds": 426000000,
+              "seconds": 1759152325
+            },
+            "x_coordinate": null,
+            "longitude": null,
+            "related_infra_id": null,
+            "related_room_id": "IND-004",
+            "name": "Laboratory 1"
+          },
+          {
+            "is_active": true,
+            "x_coordinate": null,
+            "related_room_id": "IND-005",
+            "campus_id": "CAMP-02",
+            "node_id": "ND-034",
+            "indoor": {
+              "x": 11.9634,
+              "y": 0,
+              "floor": "1"
+            },
+            "name": "Laboratory 2",
+            "y_coordinate": null,
+            "longitude": null,
+            "created_at": {
+              "nanoseconds": 70000000,
+              "seconds": 1759152392
+            },
+            "related_infra_id": null,
+            "type": "indoor",
+            "latitude": null
+          },
+          {
+            "latitude": null,
+            "longitude": null,
+            "node_id": "ND-035",
+            "campus_id": "CAMP-02",
+            "x_coordinate": null,
+            "indoor": {
+              "floor": "1",
+              "y": -4.8768,
+              "x": 17.9832
+            },
+            "y_coordinate": null,
+            "related_infra_id": null,
+            "type": "indoor",
+            "name": "Fire Exit ",
+            "related_room_id": "IND-011",
+            "is_active": true,
+            "created_at": {
+              "seconds": 1759152744,
+              "nanoseconds": 835000000
+            }
+          },
+          {
+            "related_room_id": "IND-012",
+            "related_infra_id": null,
+            "is_active": true,
+            "type": "indoor",
+            "longitude": null,
+            "node_id": "ND-036",
+            "y_coordinate": null,
+            "name": "Auditorium",
+            "indoor": {
+              "x": -4.2672,
+              "y": 8.4582,
+              "floor": "2"
+            },
+            "campus_id": "CAMP-02",
+            "latitude": null,
+            "created_at": {
+              "nanoseconds": 938000000,
+              "seconds": 1759153332
+            },
+            "x_coordinate": null
+          },
+          {
+            "longitude": null,
+            "indoor": {
+              "y": 14.6304,
+              "x": -0.4572,
+              "floor": "2"
+            },
+            "y_coordinate": null,
+            "is_active": true,
+            "x_coordinate": null,
+            "latitude": null,
+            "node_id": "ND-037",
+            "related_infra_id": null,
+            "name": "Guidance Offcie",
+            "created_at": {
+              "nanoseconds": 363000000,
+              "seconds": 1759153401
+            },
+            "related_room_id": "IND-010",
+            "campus_id": "CAMP-02",
+            "type": "indoor"
+          },
+          {
+            "latitude": null,
+            "type": "indoor",
+            "x_coordinate": null,
+            "node_id": "ND-038",
+            "name": "PhiCCS",
+            "created_at": {
+              "seconds": 1759153504,
+              "nanoseconds": 873000000
+            },
+            "is_active": true,
+            "longitude": null,
+            "indoor": {
+              "x": 0,
+              "floor": "2",
+              "y": 13.716
+            },
+            "y_coordinate": null,
+            "related_infra_id": null,
+            "related_room_id": "IND-013",
+            "campus_id": "CAMP-02"
+          },
+          {
+            "is_active": true,
+            "type": "indoor",
+            "node_id": "ND-039",
+            "related_infra_id": null,
+            "name": "Stairs Floor 2",
+            "created_at": {
+              "seconds": 1759153583,
+              "nanoseconds": 622000000
+            },
+            "x_coordinate": null,
+            "latitude": null,
+            "indoor": {
+              "floor": "2",
+              "y": 8.6868,
+              "x": 5.4864
+            },
+            "campus_id": "CAMP-02",
+            "related_room_id": "IND-007",
+            "longitude": null,
+            "y_coordinate": null
+          },
+          {
+            "related_infra_id": "",
+            "created_at": {
+              "nanoseconds": 175000000,
+              "seconds": 1759153646
+            },
+            "y_coordinate": null,
+            "is_active": true,
+            "indoor": {
+              "x": 5.7912,
+              "floor": "2",
+              "y": 4.8768
+            },
+            "longitude": null,
+            "campus_id": "CAMP-02",
+            "updated_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759908830,
+              "nanoseconds": 663000000
+            },
+            "related_room_id": "IND-008",
+            "type": "indoorInfra",
+            "name": "Lecture Room 1",
+            "x_coordinate": null,
+            "node_id": "ND-040",
+            "latitude": null
+          },
+          {
+            "type": "indoor",
+            "name": "Lecture Room 2",
+            "indoor": {
+              "y": 0,
+              "x": 11.6586,
+              "floor": "2"
+            },
+            "longitude": null,
+            "node_id": "ND-041",
+            "x_coordinate": null,
+            "campus_id": "CAMP-02",
+            "related_infra_id": null,
+            "related_room_id": "IND-009",
+            "is_active": true,
+            "created_at": {
+              "nanoseconds": 538000000,
+              "seconds": 1759153685
+            },
+            "latitude": null,
+            "y_coordinate": null
+          },
+          {
+            "y_coordinate": -30.133825120640743,
+            "type": "infrastructure",
+            "is_active": true,
+            "name": "Overpass Campus B",
+            "latitude": 6.913134,
+            "related_room_id": null,
+            "indoor": null,
+            "created_at": {
+              "nanoseconds": 729000000,
+              "seconds": 1759154638
+            },
+            "related_infra_id": null,
+            "node_id": "ND-042",
+            "campus_id": "CAMP-02",
+            "longitude": 122.062346,
+            "x_coordinate": -146.04129497138214
+          },
+          {
+            "latitude": 6.91325,
+            "is_active": true,
+            "y_coordinate": -10.11873832468657,
+            "related_room_id": null,
+            "type": "infrastructure",
+            "name": "Overpass Campus A (intermediate)",
+            "related_infra_id": null,
+            "x_coordinate": -164.8069942493316,
+            "campus_id": "CAMP-01",
+            "created_at": {
+              "seconds": 1759154685,
+              "nanoseconds": 771000000
+            },
+            "longitude": 122.0622,
+            "node_id": "ND-043",
+            "indoor": null
+          },
+          {
+            "related_infra_id": null,
+            "related_room_id": null,
+            "longitude": 122.06214,
+            "indoor": null,
+            "campus_id": "CAMP-01",
+            "is_active": true,
+            "type": "infrastructure",
+            "y_coordinate": -1.223144193063593,
+            "name": "Overpass Campus A",
+            "created_at": {
+              "nanoseconds": 500000000,
+              "seconds": 1759154798
+            },
+            "node_id": "ND-044",
+            "x_coordinate": -171.43018223043026,
+            "latitude": 6.91333
+          },
+          {
+            "type": "infrastructure",
+            "related_infra_id": null,
+            "longitude": 122.11927,
+            "related_room_id": null,
+            "campus_id": "CAMP-02",
+            "latitude": 6.91463,
+            "x_coordinate": 6134.94863993103,
+            "indoor": null,
+            "node_id": "ND-045",
+            "created_at": {
+              "seconds": 1759155776,
+              "nanoseconds": 872000000
+            },
+            "name": "Bahay Ni Aldrin Main Door",
+            "is_active": true,
+            "y_coordinate": 143.33026044482216
+          },
+          {
+            "x_coordinate": 6127.221587287722,
+            "campus_id": "CAMP-02",
+            "related_room_id": null,
+            "node_id": "ND-046",
+            "latitude": 6.91461,
+            "type": "infrastructure",
+            "name": "Gate Ni Aldrin",
+            "indoor": null,
+            "related_infra_id": null,
+            "created_at": {
+              "seconds": 1759155803,
+              "nanoseconds": 887000000
+            },
+            "longitude": 122.1192,
+            "y_coordinate": 141.10636191191642,
+            "is_active": true
+          },
+          {
+            "indoor": null,
+            "name": "Puno Ni Aldrin",
+            "created_at": {
+              "seconds": 1759155835,
+              "nanoseconds": 91000000
+            },
+            "related_infra_id": null,
+            "x_coordinate": 6136.052504594808,
+            "is_active": true,
+            "latitude": 6.9147,
+            "y_coordinate": 151.11390530994285,
+            "type": "infrastructure",
+            "campus_id": "CAMP-02",
+            "related_room_id": null,
+            "longitude": 122.11928,
+            "node_id": "ND-047"
+          },
+          {
+            "x_coordinate": 6130.5331812774875,
+            "longitude": 122.11923,
+            "indoor": null,
+            "campus_id": "CAMP-02",
+            "created_at": {
+              "nanoseconds": 670000000,
+              "seconds": 1759155859
+            },
+            "type": "infrastructure",
+            "latitude": 6.91477,
+            "node_id": "ND-048",
+            "name": "Dirty Kitchen Ni Aldrin",
+            "y_coordinate": 158.89755017506357,
+            "related_infra_id": null,
+            "related_room_id": null,
+            "is_active": true
+          },
+          {
+            "related_room_id": null,
+            "x_coordinate": -210.8381507141241,
+            "created_at": {
+              "seconds": 1759158795,
+              "nanoseconds": 235000000
+            },
+            "is_active": true,
+            "type": "infrastructure",
+            "indoor": null,
+            "campus_id": "CAMP-01",
+            "y_coordinate": -29.800240340759203,
+            "latitude": 6.913044,
+            "node_id": "ND-049",
+            "name": "Canteen Camp A",
+            "related_infra_id": "INFRA-31",
+            "longitude": 122.06182
+          },
+          {
+            "x_coordinate": -175.84564088397315,
+            "created_at": {
+              "nanoseconds": 496000000,
+              "seconds": 1759158928
+            },
+            "y_coordinate": -4.892576772353133,
+            "related_room_id": null,
+            "type": "infrastructure",
+            "name": "University Press",
+            "longitude": 122.0621,
+            "related_infra_id": "INFRA-32",
+            "is_active": true,
+            "latitude": 6.913297,
+            "node_id": "ND-050",
+            "indoor": null,
+            "campus_id": "CAMP-01"
+          },
+          {
+            "is_active": true,
+            "campus_id": "CAMP-01",
+            "y_coordinate": 18.791942602890582,
+            "x_coordinate": -156.30723634200666,
+            "related_infra_id": "INFRA-33",
+            "name": "College of home economics",
+            "longitude": 122.062236,
+            "created_at": {
+              "seconds": 1759158951,
+              "nanoseconds": 629000000
+            },
+            "type": "infrastructure",
+            "related_room_id": null,
+            "latitude": 6.913612,
+            "node_id": "ND-051",
+            "indoor": null
+          },
+          {
+            "latitude": 6.913404,
+            "created_at": {
+              "nanoseconds": 174000000,
+              "seconds": 1759158992
+            },
+            "is_active": true,
+            "y_coordinate": 7.0052803785987745,
+            "node_id": "ND-052",
+            "name": "College of Nursing",
+            "x_coordinate": -166.02124537917354,
+            "campus_id": "CAMP-01",
+            "indoor": null,
+            "type": "infrastructure",
+            "related_infra_id": "INFRA-34",
+            "related_room_id": null,
+            "longitude": 122.062189
+          },
+          {
+            "y_coordinate": 15.011315097039699,
+            "related_infra_id": "INFRA-35",
+            "related_room_id": null,
+            "is_active": true,
+            "name": "Hostel",
+            "type": "infrastructure",
+            "longitude": 122.062134,
+            "indoor": null,
+            "latitude": 6.9135,
+            "x_coordinate": -165.0277671830284,
+            "campus_id": "CAMP-01",
+            "created_at": {
+              "seconds": 1759159178,
+              "nanoseconds": 744000000
+            },
+            "node_id": "ND-053"
+          },
+          {
+            "is_active": true,
+            "campus_id": "CAMP-01",
+            "indoor": null,
+            "longitude": 122.061969,
+            "related_infra_id": "INFRA-36",
+            "x_coordinate": -190.30626797444376,
+            "created_at": {
+              "nanoseconds": 454000000,
+              "seconds": 1759159205
+            },
+            "name": "College of Nutri Dietetics",
+            "type": "infrastructure",
+            "y_coordinate": 29.244265707557453,
+            "related_room_id": null,
+            "latitude": 6.913604,
+            "node_id": "ND-054"
+          },
+          {
+            "campus_id": "CAMP-01",
+            "latitude": 6.913852,
+            "is_active": true,
+            "node_id": "ND-055",
+            "name": "Covered Court",
+            "x_coordinate": -222.7598890804155,
+            "related_infra_id": "INFRA-37",
+            "related_room_id": null,
+            "created_at": {
+              "nanoseconds": 184000000,
+              "seconds": 1759159235
+            },
+            "y_coordinate": 52.48400537625952,
+            "type": "infrastructure",
+            "indoor": null,
+            "longitude": 122.061598
+          },
+          {
+            "latitude": 6.91398,
+            "x_coordinate": -227.39612066608646,
+            "name": "Scholarship Office",
+            "created_at": {
+              "nanoseconds": 212000000,
+              "seconds": 1759159259
+            },
+            "indoor": null,
+            "type": "infrastructure",
+            "y_coordinate": 72.38789724565235,
+            "related_room_id": null,
+            "related_infra_id": "INFRA-38",
+            "longitude": 122.061539,
+            "campus_id": "CAMP-01",
+            "is_active": true,
+            "node_id": "ND-056"
+          },
+          {
+            "is_active": true,
+            "longitude": 122.061582,
+            "indoor": null,
+            "name": "NSTP",
+            "type": "infrastructure",
+            "y_coordinate": 78.28122835774889,
+            "x_coordinate": -238.3243808346639,
+            "related_room_id": null,
+            "campus_id": "CAMP-01",
+            "latitude": 6.914043,
+            "created_at": {
+              "nanoseconds": 643000000,
+              "seconds": 1759159288
+            },
+            "related_infra_id": "INFRA-39",
+            "node_id": "ND-057"
+          },
+          {
+            "related_infra_id": "INFRA-40",
+            "type": "infrastructure",
+            "campus_id": "CAMP-01",
+            "x_coordinate": -229.16230412781735,
+            "latitude": 6.914097,
+            "y_coordinate": 89.1783311689574,
+            "name": "Admission Office",
+            "node_id": "ND-058",
+            "is_active": true,
+            "related_room_id": null,
+            "indoor": null,
+            "created_at": {
+              "seconds": 1759159312,
+              "nanoseconds": 497000000
+            },
+            "longitude": 122.061619
+          },
+          {
+            "related_infra_id": "INFRA-41",
+            "name": "SPED",
+            "latitude": 6.914214,
+            "longitude": 122.061764,
+            "campus_id": "CAMP-01",
+            "y_coordinate": 96.29480647421627,
+            "created_at": {
+              "seconds": 1759159334,
+              "nanoseconds": 119000000
+            },
+            "related_room_id": null,
+            "type": "infrastructure",
+            "is_active": true,
+            "node_id": "ND-059",
+            "x_coordinate": -218.8963627571928,
+            "indoor": null
+          },
+          {
+            "x_coordinate": -199.13718528309826,
+            "name": "Elementary",
+            "indoor": null,
+            "type": "infrastructure",
+            "latitude": 6.914363,
+            "campus_id": "CAMP-01",
+            "is_active": true,
+            "related_infra_id": "INFRA-42",
+            "created_at": {
+              "nanoseconds": 120000000,
+              "seconds": 1759159359
+            },
+            "longitude": 122.061889,
+            "node_id": "ND-060",
+            "related_room_id": null,
+            "y_coordinate": 113.64121503072306
+          },
+          {
+            "y_coordinate": 134.99064094649967,
+            "type": "infrastructure",
+            "created_at": {
+              "nanoseconds": 244000000,
+              "seconds": 1759159393
+            },
+            "x_coordinate": -217.35095222915874,
+            "indoor": null,
+            "is_active": true,
+            "related_infra_id": "INFRA-43",
+            "name": "WMSU WATER REFILLING STATION",
+            "latitude": 6.914555,
+            "related_room_id": null,
+            "campus_id": "CAMP-01",
+            "longitude": 122.061724,
+            "node_id": "ND-061"
+          },
+          {
+            "y_coordinate": 109.86058752487219,
+            "longitude": 122.061705,
+            "related_infra_id": "INFRA-44",
+            "is_active": true,
+            "x_coordinate": -212.93549357561585,
+            "name": "Office of the principal",
+            "latitude": 6.914331,
+            "indoor": null,
+            "created_at": {
+              "seconds": 1759159419,
+              "nanoseconds": 609000000
+            },
+            "related_room_id": null,
+            "node_id": "ND-062",
+            "campus_id": "CAMP-01",
+            "type": "infrastructure"
+          },
+          {
+            "created_at": {
+              "seconds": 1759159443,
+              "nanoseconds": 678000000
+            },
+            "latitude": 6.9140394286,
+            "y_coordinate": 73.27745665873564,
+            "longitude": 122.0612752,
+            "is_active": true,
+            "x_coordinate": -258.5251041745834,
+            "campus_id": "CAMP-01",
+            "name": "RESEARCH AND INNOVATION CENTER FOR METALS AND ENGINEERING",
+            "node_id": "ND-063",
+            "related_room_id": null,
+            "indoor": null,
+            "related_infra_id": "INFRA-45",
+            "type": "infrastructure"
+          },
+          {
+            "created_at": {
+              "nanoseconds": 573000000,
+              "seconds": 1759159469
+            },
+            "type": "infrastructure",
+            "longitude": 122.061265,
+            "node_id": "ND-064",
+            "related_infra_id": "INFRA-46",
+            "name": "College of Engineering",
+            "is_active": true,
+            "indoor": null,
+            "related_room_id": null,
+            "x_coordinate": -258.74587710671153,
+            "y_coordinate": 98.51870500712201,
+            "campus_id": "CAMP-01",
+            "latitude": 6.914294
+          },
+          {
+            "related_room_id": null,
+            "indoor": null,
+            "campus_id": "CAMP-01",
+            "x_coordinate": -252.89539439119858,
+            "latitude": 6.914408,
+            "y_coordinate": 118.64498672973627,
+            "type": "infrastructure",
+            "is_active": true,
+            "name": "College of Architecture",
+            "related_infra_id": "INFRA-47",
+            "node_id": "ND-065",
+            "longitude": 122.061402,
+            "created_at": {
+              "nanoseconds": 278000000,
+              "seconds": 1759159495
+            }
+          },
+          {
+            "related_room_id": null,
+            "y_coordinate": 47.03545397060588,
+            "latitude": 6.913764,
+            "created_at": {
+              "nanoseconds": 776000000,
+              "seconds": 1759159522
+            },
+            "node_id": "ND-066",
+            "type": "infrastructure",
+            "is_active": true,
+            "name": "MA in Special Education",
+            "x_coordinate": -268.901432011272,
+            "indoor": null,
+            "related_infra_id": "INFRA-48",
+            "campus_id": "CAMP-01",
+            "longitude": 122.061257
+          },
+          {
+            "name": "Barrier A",
+            "type": "barrier",
+            "x_coordinate": -469.0320954905154,
+            "indoor": null,
+            "latitude": 6.912515,
+            "y_coordinate": -93.51493330810878,
+            "longitude": 122.059484,
+            "node_id": "ND-067",
+            "is_active": true,
+            "related_infra_id": null,
+            "created_at": {
+              "seconds": 1759159779,
+              "nanoseconds": 796000000
+            },
+            "campus_id": "CAMP-01",
+            "related_room_id": null
+          },
+          {
+            "name": "Barrier B",
+            "campus_id": "CAMP-01",
+            "node_id": "ND-068",
+            "related_infra_id": null,
+            "created_at": {
+              "seconds": 1759159811,
+              "nanoseconds": 313000000
+            },
+            "indoor": null,
+            "is_active": true,
+            "x_coordinate": -346.28234491668957,
+            "longitude": 122.060691,
+            "latitude": 6.911903,
+            "y_coordinate": -155.33931252243414,
+            "related_room_id": null,
+            "type": "barrier"
+          },
+          {
+            "related_infra_id": null,
+            "y_coordinate": -186.14030720303552,
+            "type": "barrier",
+            "longitude": 122.060879,
+            "created_at": {
+              "nanoseconds": 5000000,
+              "seconds": 1759159839
+            },
+            "name": "Barrier C",
+            "x_coordinate": -346.28234491668957,
+            "campus_id": "CAMP-01",
+            "related_room_id": null,
+            "latitude": 6.911913,
+            "node_id": "ND-069",
+            "indoor": null,
+            "is_active": true
+          },
+          {
+            "is_active": true,
+            "related_room_id": null,
+            "campus_id": "CAMP-01",
+            "node_id": "ND-070",
+            "name": "Barrier D",
+            "y_coordinate": -155.33931252243414,
+            "longitude": 122.062692,
+            "type": "barrier",
+            "indoor": null,
+            "related_infra_id": null,
+            "x_coordinate": -315.7052937400815,
+            "created_at": {
+              "nanoseconds": 620000000,
+              "seconds": 1759159861
+            },
+            "latitude": 6.913719
+          },
+          {
+            "related_room_id": null,
+            "campus_id": "CAMP-01",
+            "type": "barrier",
+            "is_active": true,
+            "longitude": 122.062537,
+            "related_infra_id": null,
+            "y_coordinate": 30.022630194079397,
+            "name": "Barrier E",
+            "x_coordinate": -101.0036167043035,
+            "node_id": "ND-071",
+            "created_at": {
+              "nanoseconds": 348000000,
+              "seconds": 1759159888
+            },
+            "latitude": 6.913862,
+            "indoor": null
+          },
+          {
+            "node_id": "ND-072",
+            "name": "Barrier F",
+            "is_active": true,
+            "type": "barrier",
+            "x_coordinate": -469.0320954905154,
+            "campus_id": "CAMP-01",
+            "y_coordinate": -93.51493330810878,
+            "related_room_id": null,
+            "longitude": 122.062671,
+            "created_at": {
+              "seconds": 1759159907,
+              "nanoseconds": 799000000
+            },
+            "latitude": 6.914017,
+            "indoor": null,
+            "related_infra_id": null
+          },
+          {
+            "related_infra_id": null,
+            "latitude": 6.914816,
+            "longitude": 122.061474,
+            "y_coordinate": 153.56019369616882,
+            "node_id": "ND-073",
+            "related_room_id": null,
+            "name": "Barrier G",
+            "x_coordinate": -254.33041845316862,
+            "campus_id": "CAMP-01",
+            "created_at": {
+              "nanoseconds": 911000000,
+              "seconds": 1759160005
+            },
+            "type": "barrier",
+            "indoor": null,
+            "is_active": true
+          },
+          {
+            "is_active": true,
+            "latitude": 6.913609,
+            "longitude": 122.061045,
+            "node_id": "ND-074",
+            "related_infra_id": "INFRA-49",
+            "x_coordinate": -292.30336287646116,
+            "created_at": {
+              "seconds": 1759161679,
+              "nanoseconds": 388000000
+            },
+            "y_coordinate": 29.800240340759203,
+            "type": "infrastructure",
+            "campus_id": "CAMP-01",
+            "indoor": null,
+            "name": "University Clinic",
+            "related_room_id": null
+          },
+          {
+            "related_infra_id": "INFRA-50",
+            "is_active": true,
+            "name": "OSA",
+            "x_coordinate": -308.97171929291886,
+            "type": "infrastructure",
+            "created_at": {
+              "nanoseconds": 568000000,
+              "seconds": 1759161721
+            },
+            "related_room_id": null,
+            "indoor": null,
+            "node_id": "ND-075",
+            "y_coordinate": 19.792696942732732,
+            "longitude": 122.060894,
+            "latitude": 6.913519,
+            "campus_id": "CAMP-01"
+          },
+          {
+            "x_coordinate": -320.4519117933853,
+            "name": "CLA",
+            "campus_id": "CAMP-01",
+            "longitude": 122.06079,
+            "created_at": {
+              "seconds": 1759161753,
+              "nanoseconds": 377000000
+            },
+            "node_id": "ND-076",
+            "type": "infrastructure",
+            "latitude": 6.913561,
+            "is_active": true,
+            "related_room_id": null,
+            "y_coordinate": 24.46288386176566,
+            "indoor": null,
+            "related_infra_id": "INFRA-51"
+          },
+          {
+            "type": "infrastructure",
+            "related_infra_id": "INFRA-52",
+            "y_coordinate": 5.55974633221498,
+            "campus_id": "CAMP-01",
+            "latitude": 6.913391,
+            "created_at": {
+              "seconds": 1759161782,
+              "nanoseconds": 861000000
+            },
+            "x_coordinate": -321.44538998953044,
+            "related_room_id": null,
+            "is_active": true,
+            "indoor": null,
+            "longitude": 122.060781,
+            "node_id": "ND-077",
+            "name": "CPADS"
+          },
+          {
+            "created_at": {
+              "seconds": 1759161810,
+              "nanoseconds": 238000000
+            },
+            "latitude": 6.913301,
+            "is_active": true,
+            "y_coordinate": -4.447797065811487,
+            "campus_id": "CAMP-01",
+            "indoor": null,
+            "type": "infrastructure",
+            "longitude": 122.060656,
+            "node_id": "ND-078",
+            "related_room_id": null,
+            "x_coordinate": -335.2436982836167,
+            "name": "Law- Canteen",
+            "related_infra_id": "INFRA-53"
+          },
+          {
+            "longitude": 122.060629,
+            "name": "College of Law",
+            "x_coordinate": -338.22413287362093,
+            "latitude": 6.913193,
+            "created_at": {
+              "seconds": 1759161832,
+              "nanoseconds": 881000000
+            },
+            "y_coordinate": -16.456849143423497,
+            "campus_id": "CAMP-01",
+            "related_infra_id": "INFRA-54",
+            "indoor": null,
+            "related_room_id": null,
+            "type": "infrastructure",
+            "is_active": true,
+            "node_id": "ND-079"
+          },
+          {
+            "y_coordinate": -50.70488654989543,
+            "indoor": null,
+            "x_coordinate": -358.0936968153482,
+            "campus_id": "CAMP-01",
+            "longitude": 122.060401,
+            "type": "infrastructure",
+            "latitude": 6.912955,
+            "is_active": true,
+            "related_infra_id": "INFRA-55",
+            "created_at": {
+              "seconds": 1759161858,
+              "nanoseconds": 722000000
+            },
+            "node_id": "ND-080",
+            "name": "Research Building",
+            "related_room_id": null
+          },
+          {
+            "indoor": null,
+            "name": "Peace Education",
+            "type": "infrastructure",
+            "node_id": "ND-081",
+            "related_room_id": null,
+            "x_coordinate": -382.26833294455434,
+            "is_active": true,
+            "campus_id": "CAMP-01",
+            "latitude": 6.912784,
+            "related_infra_id": "INFRA-56",
+            "longitude": 122.06023,
+            "y_coordinate": -61.93557414098547,
+            "created_at": {
+              "nanoseconds": 872000000,
+              "seconds": 1759161879
+            }
+          },
+          {
+            "x_coordinate": -380.83330888258433,
+            "longitude": 122.060243,
+            "related_room_id": null,
+            "node_id": "ND-082",
+            "related_infra_id": "INFRA-57",
+            "is_active": true,
+            "name": "Gym",
+            "type": "infrastructure",
+            "campus_id": "CAMP-01",
+            "created_at": {
+              "nanoseconds": 581000000,
+              "seconds": 1759161899
+            },
+            "indoor": null,
+            "latitude": 6.912364,
+            "y_coordinate": -108.63744333170982
+          },
+          {
+            "node_id": "ND-083",
+            "type": "infrastructure",
+            "latitude": 6.912169,
+            "indoor": null,
+            "x_coordinate": -370.45698104589576,
+            "longitude": 122.060337,
+            "y_coordinate": -130.32045402746675,
+            "name": "GATE 1",
+            "related_room_id": null,
+            "campus_id": "CAMP-01",
+            "created_at": {
+              "nanoseconds": 684000000,
+              "seconds": 1759161922
+            },
+            "is_active": true,
+            "related_infra_id": "INFRA-58"
+          },
+          {
+            "campus_id": "CAMP-01",
+            "longitude": 122.060469,
+            "indoor": null,
+            "y_coordinate": -115.6427237103086,
+            "latitude": 6.912301,
+            "is_active": true,
+            "created_at": {
+              "seconds": 1759161944,
+              "nanoseconds": 715000000
+            },
+            "node_id": "ND-084",
+            "related_infra_id": "INFRA-59",
+            "name": "Friendship Garden",
+            "x_coordinate": -355.88596748936106,
+            "related_room_id": null,
+            "type": "infrastructure"
+          },
+          {
+            "created_at": {
+              "nanoseconds": 506000000,
+              "seconds": 1759161973
+            },
+            "related_infra_id": "INFRA-60",
+            "latitude": 6.912621,
+            "longitude": 122.06056,
+            "y_coordinate": -80.06034718411297,
+            "node_id": "ND-085",
+            "is_active": true,
+            "related_room_id": null,
+            "name": "University Library",
+            "x_coordinate": -345.84079905243334,
+            "indoor": null,
+            "type": "infrastructure",
+            "campus_id": "CAMP-01"
+          },
+          {
+            "latitude": 6.912385,
+            "x_coordinate": -321.44538998953044,
+            "is_active": true,
+            "node_id": "ND-086",
+            "type": "infrastructure",
+            "indoor": null,
+            "name": "Admin",
+            "related_infra_id": "INFRA-61",
+            "related_room_id": null,
+            "created_at": {
+              "seconds": 1759162062,
+              "nanoseconds": 541000000
+            },
+            "longitude": 122.060781,
+            "y_coordinate": -106.30234987224273,
+            "campus_id": "CAMP-01"
+          },
+          {
+            "indoor": null,
+            "related_infra_id": "INFRA-62",
+            "latitude": 6.912107,
+            "campus_id": "CAMP-01",
+            "longitude": 122.060807,
+            "node_id": "ND-087",
+            "name": "MIS Tech Office",
+            "x_coordinate": -318.5753418655903,
+            "y_coordinate": -137.21453947940543,
+            "created_at": {
+              "nanoseconds": 336000000,
+              "seconds": 1759162086
+            },
+            "related_room_id": null,
+            "is_active": true,
+            "type": "infrastructure"
+          },
+          {
+            "type": "infrastructure",
+            "node_id": "ND-088",
+            "created_at": {
+              "seconds": 1759162104,
+              "nanoseconds": 911000000
+            },
+            "related_room_id": null,
+            "campus_id": "CAMP-01",
+            "indoor": null,
+            "latitude": 6.912199,
+            "is_active": true,
+            "longitude": 122.061074,
+            "name": "Barcode",
+            "y_coordinate": -126.98460622805875,
+            "related_infra_id": "INFRA-63",
+            "x_coordinate": -289.10215535119147
+          },
+          {
+            "name": "Registrar Building",
+            "indoor": null,
+            "node_id": "ND-089",
+            "latitude": 6.912338,
+            "x_coordinate": -281.3751027078836,
+            "longitude": 122.061144,
+            "type": "infrastructure",
+            "y_coordinate": -111.52851142447741,
+            "created_at": {
+              "seconds": 1759162133,
+              "nanoseconds": 267000000
+            },
+            "related_room_id": null,
+            "campus_id": "CAMP-01",
+            "related_infra_id": "INFRA-64",
+            "is_active": true
+          },
+          {
+            "indoor": null,
+            "related_infra_id": "INFRA-65",
+            "related_room_id": null,
+            "name": "Interfaith Center",
+            "node_id": "ND-090",
+            "type": "infrastructure",
+            "created_at": {
+              "seconds": 1759162156,
+              "nanoseconds": 773000000
+            },
+            "y_coordinate": -96.5171963274377,
+            "x_coordinate": -284.1347643657597,
+            "longitude": 122.061119,
+            "is_active": true,
+            "latitude": 6.912473,
+            "campus_id": "CAMP-01"
+          },
+          {
+            "y_coordinate": -84.28575439660426,
+            "indoor": null,
+            "is_active": true,
+            "related_infra_id": "INFRA-66",
+            "name": "CTE Park",
+            "created_at": {
+              "nanoseconds": 301000000,
+              "seconds": 1759162197
+            },
+            "x_coordinate": -284.1347643657597,
+            "latitude": 6.912583,
+            "campus_id": "CAMP-01",
+            "related_room_id": null,
+            "node_id": "ND-091",
+            "type": "infrastructure",
+            "longitude": 122.061119
+          },
+          {
+            "longitude": 122.061423,
+            "indoor": null,
+            "node_id": "ND-092",
+            "x_coordinate": -250.5772785975788,
+            "created_at": {
+              "seconds": 1759162225,
+              "nanoseconds": 150000000
+            },
+            "y_coordinate": -68.82965959302291,
+            "related_infra_id": "INFRA-67",
+            "type": "infrastructure",
+            "related_room_id": null,
+            "latitude": 6.912722,
+            "is_active": true,
+            "campus_id": "CAMP-01",
+            "name": "CTE"
+          },
+          {
+            "latitude": 6.91334,
+            "related_infra_id": "INFRA-68",
+            "type": "infrastructure",
+            "longitude": 122.0616,
+            "created_at": {
+              "nanoseconds": 579000000,
+              "seconds": 1759162256
+            },
+            "x_coordinate": -231.0388740556123,
+            "y_coordinate": -0.11119492666010133,
+            "related_room_id": null,
+            "indoor": null,
+            "name": "Camp A Field",
+            "campus_id": "CAMP-01",
+            "node_id": "ND-093",
+            "is_active": true
+          },
+          {
+            "related_room_id": null,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759494978,
+              "nanoseconds": 613000000
+            },
+            "indoor": null,
+            "related_infra_id": null,
+            "y_coordinate": -52.81759015614106,
+            "name": "Intermediate 1",
+            "type": "intermediate",
+            "x_coordinate": -222.31834321459056,
+            "latitude": 6.912867,
+            "node_id": "ND-094",
+            "longitude": 122.061603,
+            "is_active": true,
+            "campus_id": "CAMP-01"
+          },
+          {
+            "x_coordinate": -184.3453987928668,
+            "y_coordinate": -0.7783644865219485,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759495006,
+              "nanoseconds": 962000000
+            },
+            "related_infra_id": null,
+            "name": "Intermediate 2",
+            "longitude": 122.062023,
+            "related_room_id": null,
+            "type": "intermediate",
+            "node_id": "ND-095",
+            "latitude": 6.913334,
+            "indoor": null,
+            "is_active": true,
+            "campus_id": "CAMP-01"
+          },
+          {
+            "name": "Intermediate 3",
+            "is_active": true,
+            "related_infra_id": null,
+            "latitude": 6.913516,
+            "related_room_id": null,
+            "longitude": 122.061928,
+            "campus_id": "CAMP-01",
+            "type": "intermediate",
+            "y_coordinate": 19.459112162851188,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759495184,
+              "nanoseconds": 348000000
+            },
+            "node_id": "ND-096",
+            "indoor": null,
+            "x_coordinate": -194.83211309561938
+          },
+          {
+            "node_id": "ND-097",
+            "type": "intermediate",
+            "y_coordinate": 63.492303114029376,
+            "is_active": true,
+            "latitude": 6.913964,
+            "longitude": 122.061394,
+            "campus_id": "CAMP-01",
+            "name": "Intermediate 4",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759495415,
+              "nanoseconds": 17000000
+            },
+            "x_coordinate": -253.55771318915157,
+            "related_infra_id": null,
+            "indoor": null,
+            "related_room_id": null
+          },
+          {
+            "is_active": true,
+            "name": "Intermediate 5",
+            "type": "intermediate",
+            "related_infra_id": null,
+            "indoor": null,
+            "node_id": "ND-098",
+            "x_coordinate": -200.68259581113233,
+            "related_room_id": null,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759495550,
+              "nanoseconds": 262000000
+            },
+            "latitude": 6.914464,
+            "longitude": 122.06185,
+            "campus_id": "CAMP-01",
+            "y_coordinate": 120.31291062944027
+          },
+          {
+            "y_coordinate": 90.17908550870078,
+            "longitude": 122.061219,
+            "type": "intermediate",
+            "latitude": 6.914152,
+            "indoor": null,
+            "related_room_id": null,
+            "related_infra_id": null,
+            "x_coordinate": -273.09611773268676,
+            "name": "Intermediate 6",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759495580,
+              "nanoseconds": 55000000
+            },
+            "node_id": "ND-099",
+            "is_active": true,
+            "campus_id": "CAMP-01"
+          },
+          {
+            "y_coordinate": -69.8304139327663,
+            "related_room_id": null,
+            "name": "Intermediate 9",
+            "latitude": 6.912686,
+            "type": "intermediate",
+            "longitude": 122.060166,
+            "related_infra_id": null,
+            "x_coordinate": -391.320023185337,
+            "campus_id": "CAMP-01",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759495645,
+              "nanoseconds": 769000000
+            },
+            "node_id": "ND-100",
+            "is_active": true,
+            "indoor": null
+          },
+          {
+            "type": "intermediate",
+            "y_coordinate": -110.86134186461557,
+            "indoor": null,
+            "name": "Intermediate 10",
+            "is_active": true,
+            "longitude": 122.060562,
+            "related_room_id": null,
+            "latitude": 6.912344,
+            "node_id": "ND-101",
+            "x_coordinate": -345.6200261187366,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759495672,
+              "nanoseconds": 170000000
+            },
+            "related_infra_id": null,
+            "campus_id": "CAMP-01"
+          },
+          {
+            "is_active": true,
+            "related_room_id": null,
+            "indoor": null,
+            "x_coordinate": -312.7248591485087,
+            "y_coordinate": -77.16927909134539,
+            "latitude": 6.912647,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759495804,
+              "nanoseconds": 213000000
+            },
+            "name": "Intermediate 11",
+            "related_infra_id": null,
+            "node_id": "ND-102",
+            "type": "intermediate",
+            "longitude": 122.06086,
+            "campus_id": "CAMP-01"
+          },
+          {
+            "related_room_id": null,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759495828,
+              "nanoseconds": 999000000
+            },
+            "type": "intermediate",
+            "related_infra_id": null,
+            "x_coordinate": -318.02340953370134,
+            "y_coordinate": -136.43617499288348,
+            "latitude": 6.912114,
+            "indoor": null,
+            "campus_id": "CAMP-01",
+            "name": "Intermediate 12",
+            "node_id": "ND-103",
+            "longitude": 122.060812,
+            "is_active": true
+          },
+          {
+            "indoor": null,
+            "y_coordinate": -135.43542065304132,
+            "related_infra_id": null,
+            "node_id": "ND-104",
+            "is_active": true,
+            "latitude": 6.912123,
+            "longitude": 122.060981,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759495855,
+              "nanoseconds": 281000000
+            },
+            "related_room_id": null,
+            "type": "intermediate",
+            "campus_id": "CAMP-01",
+            "name": "Intermediate 13",
+            "x_coordinate": -299.368096721816
+          },
+          {
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759495883,
+              "nanoseconds": 429000000
+            },
+            "type": "intermediate",
+            "longitude": 122.061222,
+            "indoor": null,
+            "related_room_id": null,
+            "campus_id": "CAMP-01",
+            "x_coordinate": -272.76495833292597,
+            "related_infra_id": null,
+            "latitude": 6.912445,
+            "node_id": "ND-105",
+            "name": "Intermediate 14",
+            "y_coordinate": -99.6306542735255
+          },
+          {
+            "longitude": 122.061032,
+            "node_id": "ND-106",
+            "related_room_id": null,
+            "type": "intermediate",
+            "name": "Intermediate 15",
+            "latitude": 6.913073,
+            "campus_id": "CAMP-01",
+            "related_infra_id": null,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759495904,
+              "nanoseconds": 561000000
+            },
+            "y_coordinate": -29.800240340759203,
+            "is_active": true,
+            "x_coordinate": -293.7383869384312,
+            "indoor": null
+          },
+          {
+            "campus_id": "CAMP-01",
+            "name": "Intermediate 16",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759495923,
+              "nanoseconds": 118000000
+            },
+            "latitude": 6.913117,
+            "node_id": "ND-107",
+            "related_infra_id": null,
+            "longitude": 122.061431,
+            "indoor": null,
+            "type": "intermediate",
+            "x_coordinate": -249.14225453560874,
+            "is_active": true,
+            "related_room_id": null,
+            "y_coordinate": -30.689799753941248
+          },
+          {
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759495988,
+              "nanoseconds": 795000000
+            },
+            "y_coordinate": 11.786662224291804,
+            "name": "Intermediate 17",
+            "related_room_id": null,
+            "related_infra_id": null,
+            "longitude": 122.060895,
+            "campus_id": "CAMP-01",
+            "node_id": "ND-108",
+            "indoor": null,
+            "x_coordinate": -308.8613328268548,
+            "latitude": 6.913447,
+            "type": "intermediate",
+            "is_active": true
+          },
+          {
+            "x_coordinate": -297.0499809281962,
+            "indoor": null,
+            "type": "intermediate",
+            "node_id": "ND-109",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759499944,
+              "nanoseconds": 101000000
+            },
+            "latitude": 6.912749,
+            "campus_id": "CAMP-01",
+            "related_room_id": null,
+            "is_active": true,
+            "name": "Intermediate 18",
+            "longitude": 122.061002,
+            "related_infra_id": null,
+            "y_coordinate": -65.82739657359522
+          },
+          {
+            "is_active": true,
+            "related_room_id": null,
+            "y_coordinate": -35.026401892993874,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759503327,
+              "nanoseconds": 883000000
+            },
+            "campus_id": "CAMP-01",
+            "x_coordinate": -390.5473179213199,
+            "indoor": null,
+            "latitude": 6.913026,
+            "longitude": 122.060155,
+            "related_infra_id": "INFRA-51",
+            "name": "CLA",
+            "type": "infrastructure",
+            "node_id": "ND-110"
+          },
+          {
+            "y_coordinate": -54.48551405584506,
+            "related_infra_id": null,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759503411,
+              "nanoseconds": 697000000
+            },
+            "name": "Intermediate 19",
+            "indoor": null,
+            "is_active": true,
+            "related_room_id": null,
+            "type": "intermediate",
+            "campus_id": "CAMP-01",
+            "x_coordinate": -371.0089133777847,
+            "latitude": 6.912851,
+            "node_id": "ND-111",
+            "longitude": 122.060332
+          },
+          {
+            "name": "Barrier",
+            "is_active": true,
+            "related_infra_id": null,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759924804,
+              "nanoseconds": 528000000
+            },
+            "x_coordinate": -15.454105288184445,
+            "latitude": 6.912394,
+            "y_coordinate": -105.30159553240058,
+            "longitude": 122.063553,
+            "campus_id": "CAMP-02",
+            "type": "barrier",
+            "indoor": null,
+            "related_room_id": null,
+            "node_id": "ND-112"
+          },
+          {
+            "longitude": 122.063726,
+            "indoor": null,
+            "updated_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759925114,
+              "nanoseconds": 386000000
+            },
+            "related_infra_id": "",
+            "latitude": 6.912345,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1759925040,
+              "nanoseconds": 122000000
+            },
+            "node_id": "ND-113",
+            "x_coordinate": 2.538888725747942,
+            "related_room_id": "",
+            "is_active": true,
+            "name": "Barrier",
+            "y_coordinate": -110.99477577656818,
+            "campus_id": "CAMP-02",
+            "type": "barrier"
+          },
+          {
+            "related_room_id": null,
+            "y_coordinate": -65.60500672027501,
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760198793,
+              "nanoseconds": 65000000
+            },
+            "x_coordinate": -218.01327102711173,
+            "latitude": 6.912751,
+            "node_id": "ND-114",
+            "longitude": 122.061718,
+            "campus_id": "CAMP-01",
+            "name": "Gate Campus A",
+            "indoor": null,
+            "type": "infrastructure",
+            "related_infra_id": "INFRA-69"
+          },
+          {
+            "longitude": 122.062574,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760239061,
+              "nanoseconds": 454000000
+            },
+            "related_infra_id": null,
+            "node_id": "ND-115",
+            "related_room_id": null,
+            "x_coordinate": -123.52245583784283,
+            "is_active": true,
+            "indoor": null,
+            "latitude": 6.913288,
+            "y_coordinate": -5.893331112195283,
+            "campus_id": "CAMP-02",
+            "type": "intermediate",
+            "name": "Intermediate 1"
+          },
+          {
+            "node_id": "ND-116",
+            "type": "intermediate",
+            "latitude": 6.913142,
+            "x_coordinate": -136.3272859326466,
+            "related_room_id": null,
+            "campus_id": "CAMP-02",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760239112,
+              "nanoseconds": 621000000
+            },
+            "indoor": null,
+            "related_infra_id": null,
+            "is_active": true,
+            "y_coordinate": -22.127790402298576,
+            "longitude": 122.062458,
+            "name": "Intermediate 2"
+          },
+          {
+            "node_id": "ND-117",
+            "y_coordinate": -84.61933917648581,
+            "name": "Intermediate 3",
+            "latitude": 6.912565,
+            "related_infra_id": null,
+            "type": "intermediate",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760239140,
+              "nanoseconds": 624000000
+            },
+            "is_active": true,
+            "x_coordinate": -67.99806326644288,
+            "indoor": null,
+            "related_room_id": null,
+            "longitude": 122.063054,
+            "campus_id": "CAMP-02"
+          },
+          {
+            "name": "Intermediate 4",
+            "y_coordinate": -45.36753007100065,
+            "related_room_id": null,
+            "latitude": 6.91298,
+            "longitude": 122.06344,
+            "indoor": null,
+            "is_active": true,
+            "node_id": "ND-118",
+            "campus_id": "CAMP-02",
+            "related_infra_id": null,
+            "x_coordinate": -26.60313838889006,
+            "type": "intermediate",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760239170,
+              "nanoseconds": 480000000
+            }
+          }
+        ],
+        "edges": [
+          {
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760243288,
+              "nanoseconds": 157000000
+            },
+            "edge_id": "EDG-001",
+            "distance": 18.1,
+            "is_deleted": false,
+            "elevations": "flat",
+            "from_node": "ND-114",
+            "path_type": "walkway",
+            "to_node": "ND-094",
+            "is_active": true
+          },
+          {
+            "to_node": "ND-049",
+            "from_node": "ND-094",
+            "edge_id": "EDG-002",
+            "distance": 30.32,
+            "path_type": "walkway",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245432,
+              "nanoseconds": 659000000
+            },
+            "is_deleted": false,
+            "is_active": true
+          },
+          {
+            "from_node": "ND-049",
+            "distance": 39.3,
+            "is_deleted": false,
+            "to_node": "ND-095",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245608,
+              "nanoseconds": 116000000
+            },
+            "edge_id": "EDG-003",
+            "elevations": "flat",
+            "is_active": true,
+            "path_type": "walkway"
+          },
+          {
+            "elevations": "flat",
+            "from_node": "ND-095",
+            "edge_id": "EDG-004",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245625,
+              "nanoseconds": 881000000
+            },
+            "path_type": "walkway",
+            "is_active": true,
+            "to_node": "ND-096",
+            "is_deleted": false,
+            "distance": 22.79
+          },
+          {
+            "is_deleted": false,
+            "distance": 77.18,
+            "to_node": "ND-097",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245641,
+              "nanoseconds": 832000000
+            },
+            "from_node": "ND-096",
+            "elevations": "flat",
+            "is_active": true,
+            "edge_id": "EDG-005",
+            "path_type": "walkway"
+          },
+          {
+            "to_node": "ND-098",
+            "is_deleted": false,
+            "from_node": "ND-097",
+            "is_active": true,
+            "path_type": "walkway",
+            "distance": 75,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245663,
+              "nanoseconds": 480000000
+            },
+            "elevations": "flat",
+            "edge_id": "EDG-006"
+          },
+          {
+            "is_deleted": false,
+            "distance": 28.46,
+            "from_node": "ND-097",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245678,
+              "nanoseconds": 74000000
+            },
+            "edge_id": "EDG-007",
+            "is_active": true,
+            "elevations": "flat",
+            "path_type": "walkway",
+            "to_node": "ND-099"
+          },
+          {
+            "from_node": "ND-097",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245694,
+              "nanoseconds": 979000000
+            },
+            "to_node": "ND-108",
+            "elevations": "flat",
+            "is_active": true,
+            "is_deleted": false,
+            "edge_id": "EDG-008",
+            "distance": 79.62,
+            "path_type": "walkway"
+          },
+          {
+            "distance": 90.85,
+            "elevations": "flat",
+            "is_active": true,
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245736,
+              "nanoseconds": 859000000
+            },
+            "to_node": "ND-111",
+            "edge_id": "EDG-009",
+            "is_deleted": false,
+            "from_node": "ND-108"
+          },
+          {
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245752,
+              "nanoseconds": 613000000
+            },
+            "to_node": "ND-100",
+            "from_node": "ND-111",
+            "edge_id": "EDG-010",
+            "path_type": "walkway",
+            "is_deleted": false,
+            "distance": 25.93,
+            "is_active": true
+          },
+          {
+            "is_deleted": false,
+            "elevations": "flat",
+            "to_node": "ND-101",
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245780,
+              "nanoseconds": 608000000
+            },
+            "path_type": "walkway",
+            "edge_id": "EDG-011",
+            "from_node": "ND-100",
+            "distance": 57.94
+          },
+          {
+            "edge_id": "EDG-012",
+            "to_node": "ND-103",
+            "is_deleted": false,
+            "from_node": "ND-101",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245796,
+              "nanoseconds": 627000000
+            },
+            "distance": 37.63,
+            "is_active": true,
+            "path_type": "walkway"
+          },
+          {
+            "elevations": "flat",
+            "path_type": "walkway",
+            "edge_id": "EDG-013",
+            "to_node": "ND-102",
+            "is_deleted": false,
+            "is_active": true,
+            "distance": 47.09,
+            "from_node": "ND-101",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245809,
+              "nanoseconds": 68000000
+            }
+          },
+          {
+            "is_active": true,
+            "distance": 18.68,
+            "to_node": "ND-104",
+            "edge_id": "EDG-014",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245839,
+              "nanoseconds": 444000000
+            },
+            "is_deleted": false,
+            "path_type": "walkway",
+            "from_node": "ND-103",
+            "elevations": "flat"
+          },
+          {
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245850,
+              "nanoseconds": 859000000
+            },
+            "path_type": "walkway",
+            "distance": 44.61,
+            "edge_id": "EDG-015",
+            "to_node": "ND-105",
+            "is_active": true,
+            "from_node": "ND-104",
+            "is_deleted": false
+          },
+          {
+            "elevations": "flat",
+            "is_active": true,
+            "path_type": "walkway",
+            "to_node": "ND-105",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245867,
+              "nanoseconds": 199000000
+            },
+            "distance": 45.84,
+            "is_deleted": false,
+            "edge_id": "EDG-016",
+            "from_node": "ND-102"
+          },
+          {
+            "is_deleted": false,
+            "from_node": "ND-105",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245884,
+              "nanoseconds": 353000000
+            },
+            "to_node": "ND-094",
+            "distance": 63.01,
+            "edge_id": "EDG-017",
+            "is_active": true,
+            "elevations": "flat",
+            "path_type": "walkway"
+          },
+          {
+            "from_node": "ND-105",
+            "elevations": "flat",
+            "is_deleted": false,
+            "path_type": "walkway",
+            "to_node": "ND-109",
+            "edge_id": "EDG-018",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245914,
+              "nanoseconds": 483000000
+            },
+            "is_active": true,
+            "distance": 41.62
+          },
+          {
+            "is_deleted": false,
+            "from_node": "ND-109",
+            "is_active": true,
+            "edge_id": "EDG-019",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245933,
+              "nanoseconds": 970000000
+            },
+            "path_type": "walkway",
+            "distance": 36.18,
+            "elevations": "flat",
+            "to_node": "ND-106"
+          },
+          {
+            "elevations": "flat",
+            "path_type": "walkway",
+            "edge_id": "EDG-020",
+            "from_node": "ND-106",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245951,
+              "nanoseconds": 560000000
+            },
+            "distance": 44.25,
+            "is_deleted": false,
+            "is_active": true,
+            "to_node": "ND-108"
+          },
+          {
+            "is_deleted": false,
+            "edge_id": "EDG-021",
+            "to_node": "ND-107",
+            "distance": 33.66,
+            "is_active": true,
+            "from_node": "ND-094",
+            "elevations": "flat",
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245981,
+              "nanoseconds": 451000000
+            }
+          },
+          {
+            "edge_id": "EDG-022",
+            "to_node": "ND-106",
+            "distance": 44.32,
+            "elevations": "flat",
+            "path_type": "walkway",
+            "is_deleted": false,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760245990,
+              "nanoseconds": 427000000
+            },
+            "from_node": "ND-107",
+            "is_active": true
+          },
+          {
+            "edge_id": "EDG-023",
+            "is_active": true,
+            "to_node": "ND-095",
+            "from_node": "ND-094",
+            "elevations": "flat",
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246103,
+              "nanoseconds": 660000000
+            },
+            "is_deleted": false,
+            "distance": 69.61
+          },
+          {
+            "is_deleted": false,
+            "to_node": "ND-050",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246138,
+              "nanoseconds": 534000000
+            },
+            "edge_id": "EDG-024",
+            "elevations": "flat",
+            "distance": 9.44,
+            "path_type": "walkway",
+            "is_active": true,
+            "from_node": "ND-095"
+          },
+          {
+            "edge_id": "EDG-025",
+            "path_type": "walkway",
+            "is_deleted": false,
+            "elevations": "flat",
+            "from_node": "ND-095",
+            "to_node": "ND-044",
+            "is_active": true,
+            "distance": 12.92,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246155,
+              "nanoseconds": 257000000
+            }
+          },
+          {
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246192,
+              "nanoseconds": 721000000
+            },
+            "edge_id": "EDG-026",
+            "is_deleted": false,
+            "distance": 19.91,
+            "to_node": "ND-052",
+            "from_node": "ND-095",
+            "elevations": "flat",
+            "is_active": true,
+            "path_type": "walkway"
+          },
+          {
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246232,
+              "nanoseconds": 835000000
+            },
+            "is_deleted": false,
+            "to_node": "ND-053",
+            "elevations": "flat",
+            "is_active": true,
+            "from_node": "ND-095",
+            "edge_id": "EDG-027",
+            "distance": 22.16
+          },
+          {
+            "elevations": "flat",
+            "edge_id": "EDG-028",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246262,
+              "nanoseconds": 401000000
+            },
+            "from_node": "ND-095",
+            "is_active": true,
+            "to_node": "ND-051",
+            "path_type": "walkway",
+            "is_deleted": false,
+            "distance": 38.84
+          },
+          {
+            "edge_id": "EDG-029",
+            "is_deleted": false,
+            "elevations": "flat",
+            "path_type": "walkway",
+            "distance": 5.74,
+            "from_node": "ND-050",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246279,
+              "nanoseconds": 284000000
+            },
+            "is_active": true,
+            "to_node": "ND-044"
+          },
+          {
+            "path_type": "walkway",
+            "from_node": "ND-044",
+            "to_node": "ND-052",
+            "edge_id": "EDG-030",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246295,
+              "nanoseconds": 50000000
+            },
+            "is_active": true,
+            "is_deleted": false,
+            "distance": 9.85
+          },
+          {
+            "is_active": true,
+            "path_type": "walkway",
+            "to_node": "ND-053",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246312,
+              "nanoseconds": 510000000
+            },
+            "edge_id": "EDG-031",
+            "elevations": "flat",
+            "is_deleted": false,
+            "distance": 12.28,
+            "from_node": "ND-052"
+          },
+          {
+            "path_type": "walkway",
+            "is_active": true,
+            "elevations": "flat",
+            "to_node": "ND-051",
+            "distance": 16.79,
+            "from_node": "ND-053",
+            "edge_id": "EDG-032",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246329,
+              "nanoseconds": 615000000
+            },
+            "is_deleted": false
+          },
+          {
+            "elevations": "flat",
+            "edge_id": "EDG-033",
+            "to_node": "ND-054",
+            "from_node": "ND-096",
+            "distance": 10.78,
+            "is_active": true,
+            "is_deleted": false,
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246348,
+              "nanoseconds": 558000000
+            }
+          },
+          {
+            "to_node": "ND-055",
+            "is_active": true,
+            "distance": 52.18,
+            "path_type": "walkway",
+            "elevations": "flat",
+            "is_deleted": false,
+            "from_node": "ND-096",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246363,
+              "nanoseconds": 561000000
+            },
+            "edge_id": "EDG-034"
+          },
+          {
+            "from_node": "ND-097",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246399,
+              "nanoseconds": 46000000
+            },
+            "distance": 25.73,
+            "is_active": true,
+            "path_type": "walkway",
+            "is_deleted": false,
+            "edge_id": "EDG-035",
+            "elevations": "flat",
+            "to_node": "ND-055"
+          },
+          {
+            "path_type": "walkway",
+            "to_node": "ND-056",
+            "distance": 16.1,
+            "is_active": true,
+            "edge_id": "EDG-036",
+            "from_node": "ND-097",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246425,
+              "nanoseconds": 513000000
+            },
+            "is_deleted": false
+          },
+          {
+            "from_node": "ND-097",
+            "elevations": "flat",
+            "distance": 22.54,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246442,
+              "nanoseconds": 722000000
+            },
+            "is_active": true,
+            "to_node": "ND-057",
+            "path_type": "walkway",
+            "edge_id": "EDG-037",
+            "is_deleted": false
+          },
+          {
+            "elevations": "flat",
+            "from_node": "ND-097",
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246460,
+              "nanoseconds": 852000000
+            },
+            "to_node": "ND-058",
+            "edge_id": "EDG-038",
+            "is_active": true,
+            "is_deleted": false,
+            "distance": 28.91
+          },
+          {
+            "elevations": "flat",
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246499,
+              "nanoseconds": 850000000
+            },
+            "is_deleted": false,
+            "distance": 49.41,
+            "to_node": "ND-059",
+            "from_node": "ND-097",
+            "path_type": "walkway",
+            "edge_id": "EDG-039"
+          },
+          {
+            "is_deleted": false,
+            "elevations": "flat",
+            "edge_id": "EDG-040",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246532,
+              "nanoseconds": 241000000
+            },
+            "distance": 53.33,
+            "to_node": "ND-062",
+            "is_active": true,
+            "from_node": "ND-097",
+            "path_type": "walkway"
+          },
+          {
+            "distance": 12.03,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246566,
+              "nanoseconds": 66000000
+            },
+            "is_active": true,
+            "is_deleted": false,
+            "to_node": "ND-060",
+            "edge_id": "EDG-041",
+            "from_node": "ND-098",
+            "elevations": "flat",
+            "path_type": "walkway"
+          },
+          {
+            "elevations": "flat",
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246583,
+              "nanoseconds": 340000000
+            },
+            "edge_id": "EDG-042",
+            "is_active": true,
+            "distance": 17.2,
+            "is_deleted": false,
+            "to_node": "ND-061",
+            "from_node": "ND-098"
+          },
+          {
+            "elevations": "flat",
+            "is_deleted": false,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246606,
+              "nanoseconds": 475000000
+            },
+            "edge_id": "EDG-043",
+            "to_node": "ND-062",
+            "is_active": true,
+            "from_node": "ND-098",
+            "path_type": "walkway",
+            "distance": 21.79
+          },
+          {
+            "is_active": true,
+            "from_node": "ND-098",
+            "is_deleted": false,
+            "edge_id": "EDG-044",
+            "distance": 29.38,
+            "elevations": "flat",
+            "to_node": "ND-059",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246624,
+              "nanoseconds": 328000000
+            },
+            "path_type": "walkway"
+          },
+          {
+            "from_node": "ND-098",
+            "path_type": "walkway",
+            "to_node": "ND-058",
+            "is_deleted": false,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246670,
+              "nanoseconds": 966000000
+            },
+            "distance": 48.12,
+            "edge_id": "EDG-045",
+            "elevations": "flat",
+            "is_active": true
+          },
+          {
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246709,
+              "nanoseconds": 735000000
+            },
+            "from_node": "ND-098",
+            "edge_id": "EDG-046",
+            "distance": 55.38,
+            "is_deleted": false,
+            "to_node": "ND-057",
+            "is_active": true,
+            "path_type": "walkway",
+            "elevations": "flat"
+          },
+          {
+            "from_node": "ND-098",
+            "elevations": "flat",
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246737,
+              "nanoseconds": 784000000
+            },
+            "path_type": "walkway",
+            "is_deleted": false,
+            "edge_id": "EDG-047",
+            "to_node": "ND-056",
+            "distance": 63.84
+          },
+          {
+            "elevations": "flat",
+            "from_node": "ND-097",
+            "is_deleted": false,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246767,
+              "nanoseconds": 289000000
+            },
+            "path_type": "walkway",
+            "edge_id": "EDG-048",
+            "distance": 15.57,
+            "is_active": true,
+            "to_node": "ND-063"
+          },
+          {
+            "distance": 26.89,
+            "from_node": "ND-097",
+            "to_node": "ND-066",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246799,
+              "nanoseconds": 493000000
+            },
+            "edge_id": "EDG-049",
+            "is_active": true,
+            "is_deleted": false,
+            "path_type": "walkway",
+            "elevations": "flat"
+          },
+          {
+            "path_type": "walkway",
+            "is_active": true,
+            "distance": 13.97,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246852,
+              "nanoseconds": 457000000
+            },
+            "edge_id": "EDG-050",
+            "is_deleted": false,
+            "elevations": "flat",
+            "from_node": "ND-099",
+            "to_node": "ND-063"
+          },
+          {
+            "from_node": "ND-099",
+            "edge_id": "EDG-051",
+            "to_node": "ND-064",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246891,
+              "nanoseconds": 912000000
+            },
+            "elevations": "flat",
+            "is_active": true,
+            "is_deleted": false,
+            "path_type": "walkway",
+            "distance": 16.59
+          },
+          {
+            "elevations": "flat",
+            "is_active": true,
+            "is_deleted": false,
+            "distance": 34.91,
+            "edge_id": "EDG-052",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246909,
+              "nanoseconds": 55000000
+            },
+            "path_type": "walkway",
+            "from_node": "ND-099",
+            "to_node": "ND-065"
+          },
+          {
+            "from_node": "ND-064",
+            "path_type": "walkway",
+            "edge_id": "EDG-053",
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760246931,
+              "nanoseconds": 888000000
+            },
+            "is_deleted": false,
+            "to_node": "ND-065",
+            "distance": 19.73,
+            "elevations": "flat"
+          },
+          {
+            "is_active": true,
+            "is_deleted": false,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247013,
+              "nanoseconds": 259000000
+            },
+            "edge_id": "EDG-054",
+            "to_node": "ND-074",
+            "from_node": "ND-097",
+            "path_type": "walkway",
+            "distance": 55.16,
+            "elevations": "flat"
+          },
+          {
+            "is_deleted": false,
+            "edge_id": "EDG-055",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247052,
+              "nanoseconds": 706000000
+            },
+            "from_node": "ND-108",
+            "path_type": "walkway",
+            "is_active": true,
+            "to_node": "ND-066",
+            "elevations": "flat",
+            "distance": 53.28
+          },
+          {
+            "is_active": true,
+            "path_type": "walkway",
+            "is_deleted": false,
+            "from_node": "ND-108",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247070,
+              "nanoseconds": 745000000
+            },
+            "to_node": "ND-074",
+            "distance": 24.47,
+            "edge_id": "EDG-056"
+          },
+          {
+            "edge_id": "EDG-057",
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247102,
+              "nanoseconds": 866000000
+            },
+            "elevations": "flat",
+            "is_deleted": false,
+            "from_node": "ND-108",
+            "path_type": "walkway",
+            "distance": 8.01,
+            "to_node": "ND-075"
+          },
+          {
+            "path_type": "walkway",
+            "to_node": "ND-076",
+            "is_deleted": false,
+            "edge_id": "EDG-058",
+            "from_node": "ND-108",
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247117,
+              "nanoseconds": 910000000
+            },
+            "distance": 17.18,
+            "elevations": "flat"
+          },
+          {
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247143,
+              "nanoseconds": 691000000
+            },
+            "from_node": "ND-108",
+            "elevations": "flat",
+            "is_active": true,
+            "path_type": "walkway",
+            "edge_id": "EDG-059",
+            "to_node": "ND-077",
+            "distance": 14.04,
+            "is_deleted": false
+          },
+          {
+            "edge_id": "EDG-060",
+            "to_node": "ND-078",
+            "is_active": true,
+            "elevations": "flat",
+            "from_node": "ND-108",
+            "distance": 30.98,
+            "is_deleted": false,
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247168,
+              "nanoseconds": 822000000
+            }
+          },
+          {
+            "elevations": "flat",
+            "to_node": "ND-079",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247206,
+              "nanoseconds": 361000000
+            },
+            "edge_id": "EDG-061",
+            "is_deleted": false,
+            "distance": 40.74,
+            "path_type": "walkway",
+            "from_node": "ND-108",
+            "is_active": true
+          },
+          {
+            "edge_id": "EDG-062",
+            "is_deleted": false,
+            "to_node": "ND-080",
+            "is_active": true,
+            "elevations": "flat",
+            "from_node": "ND-108",
+            "path_type": "walkway",
+            "distance": 77.24,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247226,
+              "nanoseconds": 270000000
+            }
+          },
+          {
+            "to_node": "ND-074",
+            "path_type": "walkway",
+            "distance": 29.06,
+            "edge_id": "EDG-063",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247271,
+              "nanoseconds": 740000000
+            },
+            "from_node": "ND-066",
+            "is_active": true,
+            "is_deleted": false
+          },
+          {
+            "is_deleted": false,
+            "elevations": "flat",
+            "from_node": "ND-077",
+            "to_node": "ND-078",
+            "path_type": "walkway",
+            "distance": 17.05,
+            "edge_id": "EDG-064",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247426,
+              "nanoseconds": 547000000
+            },
+            "is_active": true
+          },
+          {
+            "to_node": "ND-079",
+            "elevations": "flat",
+            "distance": 12.37,
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247442,
+              "nanoseconds": 440000000
+            },
+            "from_node": "ND-078",
+            "is_active": true,
+            "is_deleted": false,
+            "edge_id": "EDG-065"
+          },
+          {
+            "distance": 36.52,
+            "is_deleted": false,
+            "path_type": "walkway",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247460,
+              "nanoseconds": 285000000
+            },
+            "to_node": "ND-080",
+            "edge_id": "EDG-066",
+            "is_active": true,
+            "from_node": "ND-079"
+          },
+          {
+            "elevations": "flat",
+            "from_node": "ND-111",
+            "edge_id": "EDG-067",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247485,
+              "nanoseconds": 843000000
+            },
+            "distance": 13.85,
+            "is_deleted": false,
+            "path_type": "walkway",
+            "is_active": true,
+            "to_node": "ND-080"
+          },
+          {
+            "is_active": true,
+            "elevations": "flat",
+            "to_node": "ND-079",
+            "edge_id": "EDG-068",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247523,
+              "nanoseconds": 475000000
+            },
+            "from_node": "ND-111",
+            "distance": 50.21,
+            "path_type": "walkway",
+            "is_deleted": false
+          },
+          {
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247639,
+              "nanoseconds": 667000000
+            },
+            "distance": 61.51,
+            "is_active": true,
+            "from_node": "ND-111",
+            "elevations": "flat",
+            "to_node": "ND-078",
+            "edge_id": "EDG-069",
+            "is_deleted": false
+          },
+          {
+            "is_active": true,
+            "is_deleted": false,
+            "edge_id": "EDG-070",
+            "distance": 77.86,
+            "path_type": "walkway",
+            "from_node": "ND-111",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247658,
+              "nanoseconds": 774000000
+            },
+            "to_node": "ND-077",
+            "elevations": "flat"
+          },
+          {
+            "distance": 27.58,
+            "from_node": "ND-111",
+            "is_active": true,
+            "edge_id": "EDG-071",
+            "is_deleted": false,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247678,
+              "nanoseconds": 976000000
+            },
+            "to_node": "ND-110",
+            "path_type": "walkway",
+            "elevations": "flat"
+          },
+          {
+            "path_type": "walkway",
+            "is_active": true,
+            "is_deleted": false,
+            "distance": 13.5,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247703,
+              "nanoseconds": 458000000
+            },
+            "to_node": "ND-081",
+            "edge_id": "EDG-072",
+            "elevations": "flat",
+            "from_node": "ND-111"
+          },
+          {
+            "distance": 35.88,
+            "from_node": "ND-111",
+            "edge_id": "EDG-073",
+            "is_deleted": false,
+            "is_active": true,
+            "path_type": "walkway",
+            "elevations": "flat",
+            "to_node": "ND-085",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247730,
+              "nanoseconds": 744000000
+            }
+          },
+          {
+            "elevations": "flat",
+            "distance": 55.04,
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247759,
+              "nanoseconds": 28000000
+            },
+            "edge_id": "EDG-074",
+            "path_type": "walkway",
+            "to_node": "ND-082",
+            "from_node": "ND-100",
+            "is_deleted": false
+          },
+          {
+            "is_deleted": false,
+            "from_node": "ND-100",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247811,
+              "nanoseconds": 551000000
+            },
+            "elevations": "flat",
+            "path_type": "walkway",
+            "to_node": "ND-081",
+            "is_active": true,
+            "edge_id": "EDG-075",
+            "distance": 12.99
+          },
+          {
+            "edge_id": "EDG-076",
+            "distance": 35.28,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247837,
+              "nanoseconds": 868000000
+            },
+            "elevations": "flat",
+            "from_node": "ND-101",
+            "to_node": "ND-082",
+            "path_type": "walkway",
+            "is_active": true,
+            "is_deleted": false
+          },
+          {
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247850,
+              "nanoseconds": 185000000
+            },
+            "edge_id": "EDG-077",
+            "from_node": "ND-101",
+            "to_node": "ND-083",
+            "is_deleted": false,
+            "is_active": true,
+            "distance": 31.55,
+            "elevations": "flat",
+            "path_type": "walkway"
+          },
+          {
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247862,
+              "nanoseconds": 730000000
+            },
+            "to_node": "ND-084",
+            "path_type": "walkway",
+            "edge_id": "EDG-078",
+            "distance": 11.32,
+            "elevations": "flat",
+            "is_deleted": false,
+            "from_node": "ND-101",
+            "is_active": true
+          },
+          {
+            "is_active": true,
+            "elevations": "flat",
+            "from_node": "ND-084",
+            "edge_id": "EDG-079",
+            "distance": 20.68,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247897,
+              "nanoseconds": 359000000
+            },
+            "is_deleted": false,
+            "to_node": "ND-083",
+            "path_type": "walkway"
+          },
+          {
+            "distance": 20.68,
+            "elevations": "flat",
+            "to_node": "ND-084",
+            "path_type": "walkway",
+            "from_node": "ND-082",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247911,
+              "nanoseconds": 979000000
+            },
+            "is_active": true,
+            "edge_id": "EDG-080",
+            "is_deleted": false
+          },
+          {
+            "edge_id": "EDG-081",
+            "distance": 24.04,
+            "elevations": "flat",
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760247974,
+              "nanoseconds": 426000000
+            },
+            "from_node": "ND-082",
+            "is_deleted": false,
+            "is_active": true,
+            "to_node": "ND-083"
+          },
+          {
+            "is_deleted": false,
+            "to_node": "ND-085",
+            "edge_id": "EDG-082",
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248003,
+              "nanoseconds": 373000000
+            },
+            "from_node": "ND-102",
+            "is_active": true,
+            "distance": 33.24,
+            "elevations": "flat"
+          },
+          {
+            "elevations": "flat",
+            "to_node": "ND-085",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248035,
+              "nanoseconds": 581000000
+            },
+            "is_deleted": false,
+            "path_type": "walkway",
+            "is_active": true,
+            "edge_id": "EDG-083",
+            "distance": 30.8,
+            "from_node": "ND-101"
+          },
+          {
+            "edge_id": "EDG-084",
+            "to_node": "ND-086",
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248050,
+              "nanoseconds": 430000000
+            },
+            "from_node": "ND-101",
+            "elevations": "flat",
+            "is_active": true,
+            "is_deleted": false,
+            "distance": 24.6
+          },
+          {
+            "path_type": "walkway",
+            "to_node": "ND-087",
+            "elevations": "flat",
+            "distance": 0.95,
+            "edge_id": "EDG-085",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248114,
+              "nanoseconds": 356000000
+            },
+            "is_deleted": false,
+            "is_active": true,
+            "from_node": "ND-103"
+          },
+          {
+            "is_active": true,
+            "to_node": "ND-086",
+            "from_node": "ND-103",
+            "distance": 30.33,
+            "edge_id": "EDG-086",
+            "elevations": "flat",
+            "is_deleted": false,
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248128,
+              "nanoseconds": 270000000
+            }
+          },
+          {
+            "to_node": "ND-088",
+            "from_node": "ND-104",
+            "distance": 13.3,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248177,
+              "nanoseconds": 741000000
+            },
+            "is_active": true,
+            "is_deleted": false,
+            "edge_id": "EDG-087",
+            "elevations": "flat",
+            "path_type": "walkway"
+          },
+          {
+            "distance": 29.92,
+            "to_node": "ND-089",
+            "path_type": "walkway",
+            "is_deleted": false,
+            "is_active": true,
+            "from_node": "ND-104",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248206,
+              "nanoseconds": 908000000
+            },
+            "edge_id": "EDG-088"
+          },
+          {
+            "path_type": "walkway",
+            "from_node": "ND-088",
+            "edge_id": "EDG-089",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248226,
+              "nanoseconds": 140000000
+            },
+            "distance": 17.28,
+            "is_active": true,
+            "elevations": "flat",
+            "to_node": "ND-089",
+            "is_deleted": false
+          },
+          {
+            "path_type": "walkway",
+            "edge_id": "EDG-090",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248258,
+              "nanoseconds": 64000000
+            },
+            "to_node": "ND-088",
+            "distance": 31.86,
+            "is_active": true,
+            "from_node": "ND-105",
+            "is_deleted": false
+          },
+          {
+            "path_type": "walkway",
+            "to_node": "ND-089",
+            "is_active": true,
+            "edge_id": "EDG-091",
+            "from_node": "ND-105",
+            "is_deleted": false,
+            "distance": 14.69,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248290,
+              "nanoseconds": 490000000
+            },
+            "elevations": "flat"
+          },
+          {
+            "is_deleted": false,
+            "path_type": "walkway",
+            "edge_id": "EDG-092",
+            "from_node": "ND-105",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248304,
+              "nanoseconds": 768000000
+            },
+            "distance": 11.79,
+            "to_node": "ND-090",
+            "is_active": true,
+            "elevations": "flat"
+          },
+          {
+            "distance": 53.37,
+            "path_type": "walkway",
+            "is_active": true,
+            "to_node": "ND-091",
+            "edge_id": "EDG-093",
+            "elevations": "flat",
+            "is_deleted": false,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248323,
+              "nanoseconds": 175000000
+            },
+            "from_node": "ND-105"
+          },
+          {
+            "edge_id": "EDG-094",
+            "is_deleted": false,
+            "is_active": true,
+            "elevations": "flat",
+            "distance": 37.96,
+            "path_type": "walkway",
+            "to_node": "ND-092",
+            "from_node": "ND-105",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248371,
+              "nanoseconds": 934000000
+            }
+          },
+          {
+            "to_node": "ND-091",
+            "edge_id": "EDG-095",
+            "distance": 22.53,
+            "is_deleted": false,
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248412,
+              "nanoseconds": 467000000
+            },
+            "elevations": "flat",
+            "from_node": "ND-109",
+            "path_type": "walkway"
+          },
+          {
+            "distance": 25.59,
+            "to_node": "ND-092",
+            "is_deleted": false,
+            "path_type": "walkway",
+            "from_node": "ND-094",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248460,
+              "nanoseconds": 191000000
+            },
+            "is_active": true,
+            "elevations": "flat",
+            "edge_id": "EDG-096"
+          },
+          {
+            "from_node": "ND-094",
+            "distance": 52.6,
+            "to_node": "ND-093",
+            "is_deleted": false,
+            "edge_id": "EDG-097",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248485,
+              "nanoseconds": 77000000
+            },
+            "is_active": true,
+            "path_type": "walkway"
+          },
+          {
+            "elevations": "flat",
+            "from_node": "ND-095",
+            "is_deleted": false,
+            "to_node": "ND-093",
+            "distance": 46.7,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248496,
+              "nanoseconds": 912000000
+            },
+            "is_active": true,
+            "path_type": "walkway",
+            "edge_id": "EDG-098"
+          },
+          {
+            "distance": 41.16,
+            "is_active": true,
+            "path_type": "walkway",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248507,
+              "nanoseconds": 879000000
+            },
+            "from_node": "ND-096",
+            "edge_id": "EDG-099",
+            "to_node": "ND-093",
+            "is_deleted": false
+          },
+          {
+            "is_deleted": false,
+            "elevations": "flat",
+            "distance": 73.02,
+            "from_node": "ND-097",
+            "edge_id": "EDG-100",
+            "path_type": "walkway",
+            "to_node": "ND-093",
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248518,
+              "nanoseconds": 200000000
+            }
+          },
+          {
+            "path_type": "walkway",
+            "distance": 78.73,
+            "elevations": "flat",
+            "is_active": true,
+            "from_node": "ND-108",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248536,
+              "nanoseconds": 161000000
+            },
+            "to_node": "ND-093",
+            "edge_id": "EDG-101",
+            "is_deleted": false
+          },
+          {
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248551,
+              "nanoseconds": 488000000
+            },
+            "distance": 31.03,
+            "elevations": "flat",
+            "to_node": "ND-093",
+            "is_active": true,
+            "edge_id": "EDG-102",
+            "from_node": "ND-107",
+            "is_deleted": false,
+            "path_type": "walkway"
+          },
+          {
+            "distance": 68.18,
+            "elevations": "flat",
+            "edge_id": "EDG-103",
+            "path_type": "walkway",
+            "is_active": true,
+            "to_node": "ND-093",
+            "is_deleted": false,
+            "from_node": "ND-074",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248586,
+              "nanoseconds": 42000000
+            }
+          },
+          {
+            "elevations": "flat",
+            "to_node": "ND-093",
+            "is_deleted": false,
+            "path_type": "walkway",
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248598,
+              "nanoseconds": 894000000
+            },
+            "distance": 60.47,
+            "edge_id": "EDG-104",
+            "from_node": "ND-066"
+          },
+          {
+            "edge_id": "EDG-105",
+            "is_deleted": false,
+            "from_node": "ND-055",
+            "is_active": true,
+            "to_node": "ND-093",
+            "elevations": "flat",
+            "distance": 56.93,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248614,
+              "nanoseconds": 301000000
+            },
+            "path_type": "walkway"
+          },
+          {
+            "to_node": "ND-093",
+            "elevations": "flat",
+            "from_node": "ND-049",
+            "is_active": true,
+            "distance": 40.9,
+            "edge_id": "EDG-106",
+            "is_deleted": false,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248626,
+              "nanoseconds": 309000000
+            },
+            "path_type": "walkway"
+          },
+          {
+            "distance": 11.09,
+            "from_node": "ND-044",
+            "edge_id": "EDG-107",
+            "is_deleted": false,
+            "is_active": true,
+            "to_node": "ND-043",
+            "path_type": "walkway",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248670,
+              "nanoseconds": 524000000
+            }
+          },
+          {
+            "elevations": "flat",
+            "is_active": true,
+            "from_node": "ND-001",
+            "path_type": "walkway",
+            "to_node": "ND-115",
+            "is_deleted": false,
+            "edge_id": "EDG-108",
+            "distance": 10.03,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248749,
+              "nanoseconds": 779000000
+            }
+          },
+          {
+            "from_node": "ND-115",
+            "elevations": "flat",
+            "to_node": "ND-116",
+            "edge_id": "EDG-109",
+            "distance": 20.68,
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248760,
+              "nanoseconds": 187000000
+            },
+            "is_deleted": false,
+            "path_type": "walkway"
+          },
+          {
+            "to_node": "ND-042",
+            "path_type": "walkway",
+            "is_deleted": false,
+            "is_active": true,
+            "distance": 12.4,
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248785,
+              "nanoseconds": 473000000
+            },
+            "from_node": "ND-116",
+            "edge_id": "EDG-110"
+          },
+          {
+            "is_active": true,
+            "to_node": "ND-003",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248796,
+              "nanoseconds": 556000000
+            },
+            "from_node": "ND-116",
+            "elevations": "flat",
+            "is_deleted": false,
+            "distance": 19.28,
+            "path_type": "walkway",
+            "edge_id": "EDG-111"
+          },
+          {
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248808,
+              "nanoseconds": 53000000
+            },
+            "distance": 15.76,
+            "is_active": true,
+            "edge_id": "EDG-112",
+            "to_node": "ND-004",
+            "from_node": "ND-116",
+            "path_type": "walkway",
+            "elevations": "flat",
+            "is_deleted": false
+          },
+          {
+            "from_node": "ND-116",
+            "is_deleted": false,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248821,
+              "nanoseconds": 653000000
+            },
+            "elevations": "flat",
+            "to_node": "ND-005",
+            "is_active": true,
+            "path_type": "walkway",
+            "edge_id": "EDG-113",
+            "distance": 20.61
+          },
+          {
+            "elevations": "flat",
+            "from_node": "ND-116",
+            "is_active": true,
+            "to_node": "ND-006",
+            "is_deleted": false,
+            "path_type": "walkway",
+            "edge_id": "EDG-114",
+            "distance": 29.64,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248832,
+              "nanoseconds": 747000000
+            }
+          },
+          {
+            "edge_id": "EDG-115",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248866,
+              "nanoseconds": 497000000
+            },
+            "distance": 8.97,
+            "is_active": true,
+            "path_type": "walkway",
+            "from_node": "ND-116",
+            "is_deleted": false,
+            "to_node": "ND-002"
+          },
+          {
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248906,
+              "nanoseconds": 56000000
+            },
+            "path_type": "walkway",
+            "from_node": "ND-002",
+            "edge_id": "EDG-116",
+            "distance": 13.29,
+            "to_node": "ND-005",
+            "elevations": "flat",
+            "is_deleted": false,
+            "is_active": true
+          },
+          {
+            "path_type": "walkway",
+            "to_node": "ND-006",
+            "from_node": "ND-005",
+            "edge_id": "EDG-117",
+            "distance": 9.11,
+            "is_active": true,
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248916,
+              "nanoseconds": 520000000
+            },
+            "is_deleted": false
+          },
+          {
+            "path_type": "walkway",
+            "is_deleted": false,
+            "edge_id": "EDG-118",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248928,
+              "nanoseconds": 973000000
+            },
+            "from_node": "ND-002",
+            "is_active": true,
+            "to_node": "ND-004",
+            "elevations": "flat",
+            "distance": 7.78
+          },
+          {
+            "to_node": "ND-005",
+            "edge_id": "EDG-119",
+            "is_deleted": false,
+            "distance": 14.83,
+            "is_active": true,
+            "path_type": "walkway",
+            "from_node": "ND-004",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248942,
+              "nanoseconds": 371000000
+            }
+          },
+          {
+            "edge_id": "EDG-120",
+            "elevations": "flat",
+            "path_type": "walkway",
+            "is_active": true,
+            "distance": 22.52,
+            "is_deleted": false,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248955,
+              "nanoseconds": 994000000
+            },
+            "from_node": "ND-004",
+            "to_node": "ND-006"
+          },
+          {
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248973,
+              "nanoseconds": 754000000
+            },
+            "from_node": "ND-004",
+            "is_deleted": false,
+            "to_node": "ND-007",
+            "distance": 25.11,
+            "path_type": "walkway",
+            "is_active": true,
+            "elevations": "flat",
+            "edge_id": "EDG-121"
+          },
+          {
+            "is_active": true,
+            "edge_id": "EDG-122",
+            "from_node": "ND-007",
+            "is_deleted": false,
+            "to_node": "ND-008",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760248997,
+              "nanoseconds": 822000000
+            },
+            "distance": 23.29,
+            "path_type": "walkway"
+          },
+          {
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760249009,
+              "nanoseconds": 681000000
+            },
+            "is_active": true,
+            "is_deleted": false,
+            "elevations": "flat",
+            "distance": 17.14,
+            "edge_id": "EDG-123",
+            "from_node": "ND-007",
+            "path_type": "walkway",
+            "to_node": "ND-010"
+          },
+          {
+            "elevations": "flat",
+            "edge_id": "EDG-124",
+            "is_active": true,
+            "to_node": "ND-008",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760249019,
+              "nanoseconds": 27000000
+            },
+            "distance": 6.99,
+            "from_node": "ND-010",
+            "path_type": "walkway",
+            "is_deleted": false
+          },
+          {
+            "elevations": "flat",
+            "distance": 15.42,
+            "from_node": "ND-007",
+            "to_node": "ND-009",
+            "edge_id": "EDG-125",
+            "is_active": true,
+            "is_deleted": false,
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760249031,
+              "nanoseconds": 781000000
+            }
+          },
+          {
+            "path_type": "walkway",
+            "from_node": "ND-009",
+            "edge_id": "EDG-126",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760249045,
+              "nanoseconds": 484000000
+            },
+            "is_active": true,
+            "to_node": "ND-012",
+            "is_deleted": false,
+            "distance": 18.15
+          },
+          {
+            "is_deleted": false,
+            "is_active": true,
+            "path_type": "via_overpass",
+            "from_node": "ND-042",
+            "to_node": "ND-043",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760352663,
+              "nanoseconds": 439000000
+            },
+            "elevations": "mixed",
+            "distance": 19.07,
+            "edge_id": "EDG-127"
+          },
+          {
+            "elevations": "flat",
+            "path_type": "walkway",
+            "edge_id": "EDG-128",
+            "distance": 20.94,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760352879,
+              "nanoseconds": 443000000
+            },
+            "is_active": true,
+            "from_node": "ND-012",
+            "to_node": "ND-117",
+            "is_deleted": false
+          },
+          {
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353187,
+              "nanoseconds": 656000000
+            },
+            "edge_id": "EDG-129",
+            "path_type": "walkway",
+            "distance": 38.1,
+            "from_node": "ND-012",
+            "is_deleted": false,
+            "to_node": "ND-013",
+            "elevations": "flat",
+            "is_active": true
+          },
+          {
+            "distance": 18.85,
+            "elevations": "flat",
+            "path_type": "walkway",
+            "from_node": "ND-117",
+            "is_active": true,
+            "is_deleted": false,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353208,
+              "nanoseconds": 101000000
+            },
+            "edge_id": "EDG-130",
+            "to_node": "ND-013"
+          },
+          {
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353228,
+              "nanoseconds": 529000000
+            },
+            "path_type": "walkway",
+            "to_node": "ND-011",
+            "is_deleted": false,
+            "edge_id": "EDG-131",
+            "distance": 28.2,
+            "elevations": "flat",
+            "from_node": "ND-117"
+          },
+          {
+            "from_node": "ND-117",
+            "is_active": true,
+            "distance": 29.12,
+            "path_type": "walkway",
+            "elevations": "flat",
+            "to_node": "ND-028",
+            "is_deleted": false,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353248,
+              "nanoseconds": 808000000
+            },
+            "edge_id": "EDG-132"
+          },
+          {
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353263,
+              "nanoseconds": 330000000
+            },
+            "to_node": "ND-014",
+            "elevations": "flat",
+            "edge_id": "EDG-133",
+            "is_deleted": false,
+            "distance": 26.24,
+            "is_active": true,
+            "from_node": "ND-013"
+          },
+          {
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353290,
+              "nanoseconds": 185000000
+            },
+            "elevations": "flat",
+            "from_node": "ND-028",
+            "to_node": "ND-011",
+            "path_type": "walkway",
+            "is_deleted": false,
+            "distance": 17.18,
+            "edge_id": "EDG-134"
+          },
+          {
+            "from_node": "ND-028",
+            "path_type": "walkway",
+            "is_active": true,
+            "is_deleted": false,
+            "to_node": "ND-013",
+            "elevations": "flat",
+            "distance": 34.72,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353352,
+              "nanoseconds": 424000000
+            },
+            "edge_id": "EDG-135"
+          },
+          {
+            "edge_id": "EDG-136",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353364,
+              "nanoseconds": 677000000
+            },
+            "to_node": "ND-014",
+            "is_active": true,
+            "is_deleted": false,
+            "distance": 46.12,
+            "path_type": "walkway",
+            "from_node": "ND-028"
+          },
+          {
+            "to_node": "ND-015",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353377,
+              "nanoseconds": 77000000
+            },
+            "edge_id": "EDG-137",
+            "elevations": "flat",
+            "distance": 36.44,
+            "is_deleted": false,
+            "path_type": "walkway",
+            "from_node": "ND-028",
+            "is_active": true
+          },
+          {
+            "edge_id": "EDG-138",
+            "to_node": "ND-016",
+            "path_type": "walkway",
+            "from_node": "ND-028",
+            "is_active": true,
+            "elevations": "flat",
+            "distance": 19.47,
+            "is_deleted": false,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353388,
+              "nanoseconds": 115000000
+            }
+          },
+          {
+            "edge_id": "EDG-139",
+            "distance": 22.48,
+            "elevations": "flat",
+            "from_node": "ND-028",
+            "is_active": true,
+            "to_node": "ND-017",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353398,
+              "nanoseconds": 73000000
+            },
+            "is_deleted": false,
+            "path_type": "walkway"
+          },
+          {
+            "is_deleted": false,
+            "distance": 35.31,
+            "to_node": "ND-118",
+            "is_active": true,
+            "path_type": "walkway",
+            "edge_id": "EDG-140",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353427,
+              "nanoseconds": 950000000
+            },
+            "from_node": "ND-028"
+          },
+          {
+            "is_active": true,
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353461,
+              "nanoseconds": 719000000
+            },
+            "to_node": "ND-016",
+            "path_type": "walkway",
+            "distance": 20.42,
+            "is_deleted": false,
+            "from_node": "ND-015",
+            "edge_id": "EDG-141"
+          },
+          {
+            "is_active": true,
+            "distance": 13.75,
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353471,
+              "nanoseconds": 42000000
+            },
+            "elevations": "flat",
+            "edge_id": "EDG-142",
+            "is_deleted": false,
+            "to_node": "ND-017",
+            "from_node": "ND-016"
+          },
+          {
+            "is_active": true,
+            "to_node": "ND-014",
+            "from_node": "ND-015",
+            "distance": 43.48,
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353553,
+              "nanoseconds": 264000000
+            },
+            "edge_id": "EDG-143",
+            "path_type": "walkway",
+            "is_deleted": false
+          },
+          {
+            "is_deleted": false,
+            "to_node": "ND-018",
+            "distance": 30.2,
+            "from_node": "ND-015",
+            "elevations": "flat",
+            "edge_id": "EDG-144",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353611,
+              "nanoseconds": 982000000
+            },
+            "path_type": "walkway",
+            "is_active": true
+          },
+          {
+            "is_active": true,
+            "to_node": "ND-017",
+            "edge_id": "EDG-145",
+            "from_node": "ND-019",
+            "distance": 18.53,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353629,
+              "nanoseconds": 578000000
+            },
+            "is_deleted": false,
+            "path_type": "walkway",
+            "elevations": "flat"
+          },
+          {
+            "to_node": "ND-018",
+            "from_node": "ND-019",
+            "is_deleted": false,
+            "elevations": "flat",
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353832,
+              "nanoseconds": 385000000
+            },
+            "path_type": "walkway",
+            "distance": 14.43,
+            "edge_id": "EDG-146"
+          },
+          {
+            "to_node": "ND-019",
+            "from_node": "ND-118",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353845,
+              "nanoseconds": 694000000
+            },
+            "path_type": "walkway",
+            "elevations": "flat",
+            "edge_id": "EDG-147",
+            "is_deleted": false,
+            "distance": 10.06,
+            "is_active": true
+          },
+          {
+            "edge_id": "EDG-148",
+            "is_active": true,
+            "path_type": "walkway",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353854,
+              "nanoseconds": 355000000
+            },
+            "from_node": "ND-118",
+            "elevations": "flat",
+            "distance": 22.77,
+            "to_node": "ND-018",
+            "is_deleted": false
+          },
+          {
+            "distance": 14.62,
+            "path_type": "walkway",
+            "is_deleted": false,
+            "is_active": true,
+            "edge_id": "EDG-149",
+            "to_node": "ND-017",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353866,
+              "nanoseconds": 243000000
+            },
+            "from_node": "ND-118",
+            "elevations": "flat"
+          },
+          {
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353878,
+              "nanoseconds": 414000000
+            },
+            "edge_id": "EDG-150",
+            "to_node": "ND-020",
+            "distance": 23.2,
+            "elevations": "flat",
+            "is_deleted": false,
+            "path_type": "walkway",
+            "from_node": "ND-118",
+            "is_active": true
+          },
+          {
+            "elevations": "flat",
+            "to_node": "ND-021",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353892,
+              "nanoseconds": 117000000
+            },
+            "is_active": true,
+            "from_node": "ND-118",
+            "is_deleted": false,
+            "distance": 30.2,
+            "path_type": "walkway",
+            "edge_id": "EDG-151"
+          },
+          {
+            "is_active": true,
+            "edge_id": "EDG-152",
+            "to_node": "ND-023",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760353912,
+              "nanoseconds": 717000000
+            },
+            "from_node": "ND-118",
+            "elevations": "flat",
+            "path_type": "walkway",
+            "is_deleted": false,
+            "distance": 49.8
+          },
+          {
+            "is_deleted": false,
+            "from_node": "ND-020",
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760354010,
+              "nanoseconds": 322000000
+            },
+            "edge_id": "EDG-153",
+            "to_node": "ND-021",
+            "distance": 8.46,
+            "path_type": "walkway",
+            "elevations": "flat"
+          },
+          {
+            "distance": 32.34,
+            "from_node": "ND-021",
+            "edge_id": "EDG-154",
+            "path_type": "walkway",
+            "elevations": "flat",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760354027,
+              "nanoseconds": 798000000
+            },
+            "is_deleted": false,
+            "is_active": true,
+            "to_node": "ND-023"
+          },
+          {
+            "elevations": "flat",
+            "is_active": true,
+            "is_deleted": false,
+            "edge_id": "EDG-155",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760354045,
+              "nanoseconds": 782000000
+            },
+            "to_node": "ND-022",
+            "from_node": "ND-028",
+            "distance": 50.99,
+            "path_type": "walkway"
+          },
+          {
+            "is_deleted": false,
+            "to_node": "ND-022",
+            "from_node": "ND-011",
+            "distance": 34.53,
+            "elevations": "flat",
+            "path_type": "walkway",
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760354058,
+              "nanoseconds": 956000000
+            },
+            "edge_id": "EDG-156"
+          },
+          {
+            "from_node": "ND-001",
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760354118,
+              "nanoseconds": 836000000
+            },
+            "elevations": "flat",
+            "is_deleted": false,
+            "to_node": "ND-114",
+            "distance": 106.05,
+            "edge_id": "EDG-157",
+            "path_type": "via_gate"
+          },
+          {
+            "is_deleted": false,
+            "edge_id": "EDG-158",
+            "from_node": "ND-048",
+            "path_type": "walkway",
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760355648,
+              "nanoseconds": 460000000
+            },
+            "elevations": "flat",
+            "to_node": "ND-047",
+            "distance": 9.54
+          },
+          {
+            "is_deleted": false,
+            "path_type": "walkway",
+            "elevations": "flat",
+            "edge_id": "EDG-159",
+            "distance": 7.86,
+            "from_node": "ND-047",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760355686,
+              "nanoseconds": 913000000
+            },
+            "to_node": "ND-045",
+            "is_active": true
+          },
+          {
+            "is_active": true,
+            "to_node": "ND-046",
+            "elevations": "flat",
+            "path_type": "walkway",
+            "from_node": "ND-045",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760355701,
+              "nanoseconds": 955000000
+            },
+            "is_deleted": false,
+            "edge_id": "EDG-160",
+            "distance": 8.04
+          },
+          {
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760450381,
+              "nanoseconds": 100000000
+            },
+            "distance": 115.48,
+            "from_node": "ND-024",
+            "path_type": null,
+            "elevations": null,
+            "edge_id": "EDG-161",
+            "to_node": "ND-025",
+            "is_deleted": false
+          },
+          {
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760450396,
+              "nanoseconds": 679000000
+            },
+            "to_node": "ND-026",
+            "is_active": true,
+            "distance": 180.18,
+            "edge_id": "EDG-162",
+            "elevations": null,
+            "is_deleted": false,
+            "path_type": null,
+            "from_node": "ND-025"
+          },
+          {
+            "is_deleted": false,
+            "elevations": null,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760450425,
+              "nanoseconds": 239000000
+            },
+            "is_active": true,
+            "to_node": "ND-112",
+            "path_type": null,
+            "edge_id": "EDG-163",
+            "distance": 45.26,
+            "from_node": "ND-026"
+          },
+          {
+            "distance": 19.86,
+            "is_deleted": false,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760450446,
+              "nanoseconds": 851000000
+            },
+            "is_active": true,
+            "edge_id": "EDG-164",
+            "from_node": "ND-112",
+            "to_node": "ND-113",
+            "path_type": null,
+            "elevations": null
+          },
+          {
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760450460,
+              "nanoseconds": 468000000
+            },
+            "to_node": "ND-027",
+            "distance": 99.17,
+            "is_deleted": false,
+            "path_type": null,
+            "is_active": true,
+            "elevations": null,
+            "edge_id": "EDG-165",
+            "from_node": "ND-113"
+          },
+          {
+            "elevations": null,
+            "is_active": true,
+            "to_node": "ND-024",
+            "path_type": null,
+            "is_deleted": false,
+            "distance": 120.54,
+            "from_node": "ND-027",
+            "edge_id": "EDG-166",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760450469,
+              "nanoseconds": 776000000
+            }
+          },
+          {
+            "is_deleted": false,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760450599,
+              "nanoseconds": 605000000
+            },
+            "from_node": "ND-067",
+            "is_active": true,
+            "path_type": null,
+            "distance": 149.61,
+            "elevations": null,
+            "to_node": "ND-068",
+            "edge_id": "EDG-167"
+          },
+          {
+            "distance": 20.78,
+            "from_node": "ND-068",
+            "is_deleted": false,
+            "is_active": true,
+            "edge_id": "EDG-168",
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760450612,
+              "nanoseconds": 778000000
+            },
+            "to_node": "ND-069",
+            "path_type": null,
+            "elevations": null
+          },
+          {
+            "is_deleted": false,
+            "to_node": "ND-070",
+            "from_node": "ND-069",
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760450621,
+              "nanoseconds": 618000000
+            },
+            "distance": 283.51,
+            "elevations": null,
+            "edge_id": "EDG-169",
+            "path_type": null
+          },
+          {
+            "elevations": null,
+            "edge_id": "EDG-170",
+            "to_node": "ND-071",
+            "path_type": null,
+            "is_deleted": false,
+            "is_active": true,
+            "distance": 23.36,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760450629,
+              "nanoseconds": 975000000
+            },
+            "from_node": "ND-070"
+          },
+          {
+            "edge_id": "EDG-171",
+            "to_node": "ND-072",
+            "path_type": null,
+            "from_node": "ND-071",
+            "is_deleted": false,
+            "distance": 22.71,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760450638,
+              "nanoseconds": 796000000
+            },
+            "is_active": true,
+            "elevations": null
+          },
+          {
+            "elevations": null,
+            "edge_id": "EDG-172",
+            "is_deleted": false,
+            "to_node": "ND-073",
+            "path_type": null,
+            "from_node": "ND-072",
+            "is_active": true,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760450649,
+              "nanoseconds": 301000000
+            },
+            "distance": 159.22
+          },
+          {
+            "is_active": true,
+            "distance": 337.22,
+            "created_at": {
+              "type": "firestore/timestamp/1.0",
+              "seconds": 1760450661,
+              "nanoseconds": 947000000
+            },
+            "edge_id": "EDG-173",
+            "elevations": null,
+            "to_node": "ND-067",
+            "path_type": null,
+            "is_deleted": false,
+            "from_node": "ND-073"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "MAP-02",
+    "map_name": "WMSU MAP 2",
+    "current_active_campus": "CAMP-03",
+    "map_id": "MAP-02",
+    "current_version_update": true,
+    "current_active_map": "MAP-02",
+    "updatedAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1759155488,
+      "nanoseconds": 414000000
+    },
+    "campus_included": [
+      "CAMP-03",
+      "CAMP-05"
+    ],
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1758009035,
+      "nanoseconds": 183000000
+    },
+    "current_version": "v1.0.0",
+    "versions": [
+      {
+        "id": "v1.0.0",
+        "edges": [],
+        "nodes": [
+          {
+            "campus_id": "CAMP-05",
+            "related_room_id": null,
+            "latitude": 6.91477,
+            "is_active": true,
+            "created_at": {
+              "seconds": 1759155719,
+              "nanoseconds": 70000000
+            },
+            "name": "Dirty Kitchen Ni Aldrin",
+            "y_coordinate": 158.89755017506357,
+            "longitude": 122.11923,
+            "x_coordinate": 6130.5331812774875,
+            "indoor": null,
+            "type": "infrastructure",
+            "node_id": "ND-001",
+            "related_infra_id": null
+          }
+        ]
+      }
+    ]
+  }
+]

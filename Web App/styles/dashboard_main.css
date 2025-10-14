@@ -434,3 +434,74 @@ body {
     border-radius: 4px;
     border: 1px solid #ccc;
 }
+
+
+
+/* Container cleanup */
+.side-dropd {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-family: "Poppins", sans-serif;
+}
+
+/* --- Toggle Switch --- */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 55px;
+  height: 28px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Track */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 34px;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Ball */
+.slider::before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Active (On) State */
+.toggle-switch input:checked + .slider {
+  background-color: crimson;
+}
+
+.toggle-switch input:checked + .slider::before {
+  transform: translateX(27px);
+}
+
+
+/* Responsive tweaks */
+@media (max-width: 600px) {
+  .side-dropd {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

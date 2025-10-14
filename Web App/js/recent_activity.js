@@ -7,7 +7,7 @@ import {
     query,
     orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-import { firebaseConfig } from "./../firebaseConfig.js";
+import { firebaseConfig } from "../firebaseConfig.js";
 
 // Initialize Firebase and Firestore
 const app = initializeApp(firebaseConfig);

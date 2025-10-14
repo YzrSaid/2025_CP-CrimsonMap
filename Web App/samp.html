@@ -2,64 +2,45 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Fix Node Types (Outdoor → Infrastructure)</title>
+  <title>Delete All Edges</title>
   <script type="module">
-    // Import Firebase SDK
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collectionGroup, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
- import { firebaseConfig } from "../firebaseConfig.js";
+    import { getFirestore, collectionGroup, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { firebaseConfig } from "../firebaseConfig.js";
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    async function migrateOutdoorToInfra() {
+    async function clearAllEdges() {
       const logs = document.getElementById("logs");
-      logs.textContent = "Starting migration...\n";
+      logs.textContent = "⚠️ Starting to remove all edges...\n";
 
       try {
-        // 🔹 Search all versions subcollections under MapVersions
         const querySnap = await getDocs(collectionGroup(db, "versions"));
-
-        let updatedCount = 0;
+        let count = 0;
 
         for (const versionDoc of querySnap.docs) {
           const versionRef = versionDoc.ref;
-          const versionData = versionDoc.data();
-
-          if (!Array.isArray(versionData.nodes)) continue;
-
-          let modified = false;
-          const updatedNodes = versionData.nodes.map(node => {
-            if (node.type === "outdoor") {
-              node.type = "infrastructure";
-              modified = true;
-              updatedCount++;
-              logs.textContent += `✔️ Updated ${node.node_id} (${node.name})\n`;
-            }
-            return node;
-          });
-
-          if (modified) {
-            await updateDoc(versionRef, { nodes: updatedNodes });
-          }
+          await updateDoc(versionRef, { edges: [] });
+          logs.textContent += `🗑️ Cleared edges for ${versionRef.path}\n`;
+          count++;
         }
 
-        logs.textContent += `\n✅ Migration complete. ${updatedCount} nodes updated.`;
-
+        logs.textContent += `\n✅ Done! Removed edges from ${count} version documents.`;
       } catch (err) {
         logs.textContent += `\n❌ Error: ${err.message}`;
         console.error(err);
       }
     }
 
-    window.runMigration = migrateOutdoorToInfra;
+    window.runClear = clearAllEdges;
   </script>
 </head>
 <body style="font-family: Arial; padding: 20px;">
-  <h2>Fix Node Types: Outdoor → Infrastructure</h2>
-  <p>Click below to run the migration. It will scan all map versions and update nodes with <b>type: "outdoor"</b> to <b>"infrastructure"</b>.</p>
-  <button onclick="runMigration()" style="padding: 10px 20px; font-size: 16px;">Run Migration</button>
-  <pre id="logs" style="margin-top: 20px; background: #111; color: #0f0; padding: 10px; height: 400px; overflow-y: scroll;"></pre>
+  <h2>Delete All Edges</h2>
+  <p>This will permanently remove all <code>edges</code> data from every map version in your Firestore.</p>
+  <p><b>Make sure you have a backup (like your MapVersions.json) before running!</b></p>
+  <button onclick="runClear()" style="padding: 10px 20px; font-size: 16px; background:red; color:white; font-weight:bold;">Delete All Edges</button>
+  <pre id="logs" style="margin-top:20px; background:#111; color:#0f0; padding:10px; height:400px; overflow-y:scroll;"></pre>
 </body>
 </html>

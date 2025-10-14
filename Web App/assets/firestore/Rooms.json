@@ -1,0 +1,104 @@
+[
+  {
+    "id": "FBXameCNrn1dHnFMlOQ4",
+    "latitude": "12345",
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1757492590,
+      "nanoseconds": 852000000
+    },
+    "room_id": "RM-002",
+    "deletedAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1757939299,
+      "nanoseconds": 539000000
+    },
+    "phone": "09123456789",
+    "name": "samp activity",
+    "is_deleted": true,
+    "infra_id": "INFA-14",
+    "longitude": "76543",
+    "location": "23456789jhgf"
+  },
+  {
+    "id": "SmBakMxhxCFxYqvMGz6H",
+    "name": "aasd",
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1758436057,
+      "nanoseconds": 500000000
+    },
+    "indoor_type": "lecture",
+    "is_deleted": false,
+    "room_id": "IND-006",
+    "infra_id": "INFRA-12"
+  },
+  {
+    "id": "b09VWeMWi6b2nEm6gugT",
+    "indoor_type": "laboratory",
+    "name": "Laboratory 1",
+    "room_id": "RM-004",
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1758433609,
+      "nanoseconds": 321000000
+    },
+    "infra_id": "INFRA-14",
+    "is_deleted": false
+  },
+  {
+    "id": "gQqdU9pYhvnjgphOEZ7y",
+    "indoor_type": "laboratory",
+    "infra_id": "INFRA-14",
+    "name": "Lan",
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1758434977,
+      "nanoseconds": 919000000
+    },
+    "room_id": "RM-005",
+    "is_deleted": false
+  },
+  {
+    "id": "tDO08WP0Sq2YNNpelnoO",
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1757492859,
+      "nanoseconds": 628000000
+    },
+    "latitude": "12345",
+    "room_id": "RM-003",
+    "location": "23456789jhgf",
+    "phone": "09123456789",
+    "is_deleted": true,
+    "name": "samp activity",
+    "infra_id": "INFA-14",
+    "longitude": "76543",
+    "deletedAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1757939266,
+      "nanoseconds": 453000000
+    }
+  },
+  {
+    "id": "uzdUp1NacGX6WTezO63K",
+    "latitude": "345",
+    "name": "Sample room",
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1757492413,
+      "nanoseconds": 390000000
+    },
+    "room_id": "RM-001",
+    "deletedAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1757939294,
+      "nanoseconds": 316000000
+    },
+    "phone": "09123456789",
+    "longitude": "65432",
+    "location": "hehe",
+    "infra_id": "INFA-05",
+    "is_deleted": true
+  }
+]

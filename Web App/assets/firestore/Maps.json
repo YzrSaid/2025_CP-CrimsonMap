@@ -1,0 +1,16 @@
+[
+  {
+    "id": "tHP3U95Zd5ARRhiQUO2a",
+    "map_id": "MAP-01",
+    "campus_included": [
+      "CAMP-01",
+      "CAMP-02"
+    ],
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1756907208,
+      "nanoseconds": 977000000
+    },
+    "map_name": "WMSU MAP"
+  }
+]

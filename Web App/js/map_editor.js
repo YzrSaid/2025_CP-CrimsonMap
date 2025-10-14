@@ -758,10 +758,20 @@ async function saveNode(option) {
             });
 
             // --- Update current_version of map ---
-            await updateDoc(doc(db, "MapVersions", mapDocId), { current_version: newVersion });
+            await updateDoc(doc(db, "MapVersions", mapDocId), { 
+                current_version: newVersion,
+                current_version_update: true, // ✅ mark version update flag
+            });
+
 
             alert(`New version created: ${newVersion} with migrated nodes and edges`);
         }
+
+        // ✅ Update StaticDataVersions/GlobalInfo after saving a node
+        const staticDataRef = doc(db, "StaticDataVersions", "GlobalInfo");
+        await updateDoc(staticDataRef, {
+            infrastructure_updated: true,
+        });
 
         // --- Reset UI ---
         document.getElementById("nodeForm").reset();
@@ -776,6 +786,7 @@ async function saveNode(option) {
         alert("Error saving node: " + err);
     }
 }
+
 
 
 
@@ -1018,6 +1029,13 @@ document.getElementById("editNodeForm").addEventListener("submit", async (e) => 
     });
 
     await updateDoc(versionRef, { nodes: updatedNodes });
+
+    // ✅ Update StaticDataVersions/GlobalInfo after saving or updating a node
+    const staticDataRef = doc(db, "StaticDataVersions", "GlobalInfo");
+    await updateDoc(staticDataRef, {
+        infrastructure_updated: true,
+    });
+
 
     alert("✅ Node updated successfully!");
     document.getElementById("editNodeModal").style.display = "none";
@@ -1321,7 +1339,7 @@ async function saveEdge(option) {
             await updateDoc(versionRef, {
                 edges: arrayUnion(pendingEdgeData)
             });
-            alert(`Edge added to current version ${currentVersion}`);
+
         } else if (option === "newVersion") {
             let versionMatch = /^v(\d+)\.(\d+)\.(\d+)$/.exec(currentVersion);
             let major = 1, minor = 0, patch = 0;
@@ -1350,8 +1368,21 @@ async function saveEdge(option) {
             alert(`New version created: ${newVersion} with migrated nodes and edges`);
         }
 
+          // ✅ Update StaticDataVersions/GlobalInfo after saving or updating a node
+          const staticDataRef = doc(db, "StaticDataVersions", "GlobalInfo");
+          await updateDoc(staticDataRef, {
+              infrastructure_updated: true,
+          });
+
+        // ✅ Refresh UI
         renderEdgesTable();
-        loadMap(mapId); 
+        loadMap(mapId);
+
+        // ✅ Close modals automatically
+        document.getElementById("edgeSaveModal").style.display = "none";
+        document.getElementById("addEdgeModal").style.display = "none";
+
+        // ✅ Reset
         pendingEdgeData = null;
 
     } catch (err) {
@@ -1827,6 +1858,12 @@ document.querySelector("#editEdgeModal form").addEventListener("submit", async (
 
         // 🔹 Save the updated edges array
         await updateDoc(activeVersionRef, { edges });
+
+        // ✅ Update StaticDataVersions/GlobalInfo after saving or updating a node
+        const staticDataRef = doc(db, "StaticDataVersions", "GlobalInfo");
+        await updateDoc(staticDataRef, {
+            infrastructure_updated: true,
+        });
 
         alert("Edge updated successfully!");
         modal.style.display = "none";
@@ -2316,6 +2353,20 @@ async function populateVersions(mapId, selectCurrent = true, mapsData = null) {
         if (navigator.onLine) {
             const mapDocRef = doc(db, "MapVersions", selectedMapId);
             await updateDoc(mapDocRef, { current_version: selectedVersion });
+
+            // ✅ Also update ALL MapVersions documents to mark current_version_update = true
+            const mapVersionsCollection = collection(db, "MapVersions");
+            const snapshot = await getDocs(mapVersionsCollection);
+            const batch = writeBatch(db);
+
+            snapshot.docs.forEach((docSnap) => {
+                batch.update(docSnap.ref, {
+                    current_version_update: true,
+                });
+            });
+
+            await batch.commit();
+            console.log("✅ All MapVersions documents updated: current_version_update = true");
         }
 
         await renderNodesTable();
@@ -2400,11 +2451,33 @@ function getCampusBounds(nodes, campusId) {
 
 
 
+
+
+
+
+
+
 let mapFull = null;
 let mapOverview = null;
+let showAllCampuses = false; // 🔹 global toggle state
+let currentMapId = null;     // 🔹 to reload same map when toggle changes
 
+// --- Toggle listener ---
+document.getElementById("customToggle").addEventListener("change", (e) => {
+  showAllCampuses = e.target.checked;
+  console.log(showAllCampuses ? "🟢 Showing ALL campuses" : "🔴 Showing active campus only");
+
+  if (currentMapId) {
+    loadMap(currentMapId); // reload map with toggle state
+  }
+});
+
+// ===============================================================
+// --- LOAD MAP FUNCTION ---
+// ===============================================================
 async function loadMap(mapId, campusId = null, versionId = null) {
   try {
+    currentMapId = mapId; // store current map for toggle reload
     const safeMapId = String(mapId);
 
     let mapData, activeCampus, activeVersion, nodes = [], edges = [];
@@ -2465,23 +2538,48 @@ async function loadMap(mapId, campusId = null, versionId = null) {
       console.log("📂 Offline → Map, nodes, edges loaded from JSON");
     }
 
-    // --- Filter nodes ---
-    nodes = nodes.filter(n => {
-      if (n.is_deleted) return false;
-      if (!n.campus_id) n.campus_id = activeCampus;
-      return n.campus_id === activeCampus;
-    });
+    // ===============================================================
+    // --- FILTER NODES BASED ON TOGGLE ---
+    // ===============================================================
+    if (showAllCampuses && Array.isArray(mapData.campus_included)) {
+      // ✅ SHOW ALL CAMPUSES
+      console.log("🗺️ Displaying all campuses:", mapData.campus_included);
+      nodes = nodes.filter(n => {
+        if (n.is_deleted) return false;
+        if (!n.campus_id) return false;
+        return mapData.campus_included.includes(n.campus_id);
+      });
+    } else {
+      // 🔴 SHOW ONLY ACTIVE CAMPUS
+      nodes = nodes.filter(n => {
+        if (n.is_deleted) return false;
+        if (!n.campus_id) n.campus_id = activeCampus;
+        return n.campus_id === activeCampus;
+      });
+    }
 
+    // ===============================================================
+    // --- FILTER VALID EDGES ---
+    // ===============================================================
     const validNodeIds = new Set(nodes.map(n => n.node_id));
-    edges = edges.filter(e => !e.is_deleted && validNodeIds.has(e.from_node) && validNodeIds.has(e.to_node));
+    edges = edges.filter(e =>
+      !e.is_deleted &&
+      validNodeIds.has(e.from_node) &&
+      validNodeIds.has(e.to_node)
+    );
 
+    // ===============================================================
+    // --- ADD NAME MAPPING TO NODES ---
+    // ===============================================================
     nodes.forEach(d => {
       d.infraName = d.related_infra_id ? (infraMap[d.related_infra_id] || d.related_infra_id) : "-";
       d.roomName = d.related_room_id ? (roomMap[d.related_room_id] || d.related_room_id) : "-";
       d.campusName = d.campus_id ? (campusMap[d.campus_id] || d.campus_id) : "-";
     });
 
-    // --- Create/refresh overview map ---
+    // ===============================================================
+    // --- CREATE / REFRESH OVERVIEW MAP ---
+    // ===============================================================
     createOverviewMap(nodes, edges, activeCampus);
 
   } catch (err) {
@@ -2489,7 +2587,9 @@ async function loadMap(mapId, campusId = null, versionId = null) {
   }
 }
 
-// --- Create Overview Map ---
+// ===============================================================
+// --- CREATE OVERVIEW MAP ---
+// ===============================================================
 function createOverviewMap(nodes, edges, activeCampus) {
   if (mapOverview) {
     mapOverview.remove();
@@ -2508,7 +2608,7 @@ function createOverviewMap(nodes, edges, activeCampus) {
   const bounds = getCampusBounds(nodes, activeCampus);
   if (bounds) {
     mapOverview.fitBounds(bounds, { padding: [20, 20], maxZoom: 20, animate: true });
-    mapOverview.setZoom(mapOverview.getZoom() + .4); // ✅ closer
+    mapOverview.setZoom(mapOverview.getZoom() + 0.4);
   } else {
     mapOverview.setView(getGeographicCenter(nodes, activeCampus), 18);
   }
@@ -2519,7 +2619,9 @@ function createOverviewMap(nodes, edges, activeCampus) {
 
   renderDataOnMap(mapOverview, { nodes, edges });
 
-  // --- Modal map sync ---
+  // ===============================================================
+  // --- MODAL MAP SYNC ---
+  // ===============================================================
   const modal = document.getElementById("mapModal");
   const closeBtn = document.querySelector(".close-btn");
 
@@ -2834,11 +2936,22 @@ function renderDataOnMap(map, data, enableClick = false) {
   const nodes = Array.isArray(data.nodes) ? data.nodes : [];
   const edges = Array.isArray(data.edges) ? data.edges : [];
 
-  // --- Barriers (polygon + corner markers) ---
+  // --- Barriers (grouped per campus) ---
   const barrierNodes = nodes.filter(d => d.type === "barrier");
-  const barrierCoords = barrierNodes.map(b => [b.latitude, b.longitude]);
 
-  if (barrierCoords.length > 0) {
+  // ✅ Group barriers by campus_id
+  const barriersByCampus = {};
+  barrierNodes.forEach(b => {
+    const campusId = b.campus_id || "unknown";
+    if (!barriersByCampus[campusId]) barriersByCampus[campusId] = [];
+    barriersByCampus[campusId].push(b);
+  });
+
+  // ✅ Draw one polygon per campus
+  Object.entries(barriersByCampus).forEach(([campusId, barriers]) => {
+    const barrierCoords = barriers.map(b => [b.latitude, b.longitude]);
+    if (barrierCoords.length === 0) return;
+
     const center = {
       lat: barrierCoords.reduce((sum, c) => sum + c[0], 0) / barrierCoords.length,
       lng: barrierCoords.reduce((sum, c) => sum + c[1], 0) / barrierCoords.length
@@ -2859,14 +2972,14 @@ function renderDataOnMap(map, data, enableClick = false) {
     if (enableClick) {
       polygon.on("click", (e) => {
         showDetails({
-          name: "WMSU Camp B",
+          name: `Campus Area (${campusId})`,
           type: "Campus Area",
           latitude: e.latlng.lat.toFixed(6),
           longitude: e.latlng.lng.toFixed(6)
         });
       });
 
-      barrierNodes.forEach(node => {
+      barriers.forEach(node => {
         const cornerMarker = L.circleMarker([node.latitude, node.longitude], {
           radius: 6,
           color: "darkgreen",
@@ -2877,15 +2990,15 @@ function renderDataOnMap(map, data, enableClick = false) {
         cornerMarker.on("click", () => showDetails(node));
       });
     }
-  }
+  });
 
   // --- Infrastructure (Buildings) ---
   nodes.filter(d => d.type === "infrastructure").forEach(building => {
     const marker = L.circleMarker([building.latitude, building.longitude], {
-        radius: 6,
-        color: "red",
-        fillColor: "pink",
-        fillOpacity: 0.7
+      radius: 6,
+      color: "red",
+      fillColor: "pink",
+      fillOpacity: 0.7
     }).addTo(map);
 
     if (enableClick) {
@@ -2896,10 +3009,7 @@ function renderDataOnMap(map, data, enableClick = false) {
   // --- Rooms ---
   nodes.filter(d => d.type === "room").forEach(room => {
     const marker = L.marker([room.latitude, room.longitude]).addTo(map);
-
-    if (enableClick) {
-      marker.on("click", () => showDetails(room));
-    }
+    if (enableClick) marker.on("click", () => showDetails(room));
   });
 
   // ======================================================
@@ -2917,7 +3027,6 @@ function renderDataOnMap(map, data, enableClick = false) {
   // 🔹 Render edges (lines between nodes, skip barriers)
   edges.forEach(edge => {
     if (!edge.from_node || !edge.to_node) return;
-
     const from = nodeMap.get(edge.from_node);
     const to = nodeMap.get(edge.to_node);
 
@@ -2943,43 +3052,30 @@ function renderDataOnMap(map, data, enableClick = false) {
     }
   });
 
-
   // --- Outdoor Nodes (like pathways, landmarks, etc.) ---
-nodes.filter(d => d.type === "outdoor").forEach(outdoor => {
-  const marker = L.circleMarker([outdoor.latitude, outdoor.longitude], {
-    radius: 6,
-    color: "red",
-    fillColor: "pink",
-    fillOpacity: 0.8
-  }).addTo(map);
-
-  if (enableClick) {
-    marker.on("click", () => showDetails(outdoor));
-  }
-
-  
-});
-  // ======================================================
-
-
-
-
+  nodes.filter(d => d.type === "outdoor").forEach(outdoor => {
+    const marker = L.circleMarker([outdoor.latitude, outdoor.longitude], {
+      radius: 6,
+      color: "red",
+      fillColor: "pink",
+      fillOpacity: 0.8
+    }).addTo(map);
+    if (enableClick) marker.on("click", () => showDetails(outdoor));
+  });
 
   // --- Intermediate Nodes ---
-nodes.filter(d => d.type === "intermediate").forEach(intermediate => {
-  const marker = L.circleMarker([intermediate.latitude, intermediate.longitude], {
-    radius: 3,        // slightly smaller
-    color: "black",   // border
-    fillColor: "black", 
-    fillOpacity: 1.0  // solid black dot
-  }).addTo(map);
+  nodes.filter(d => d.type === "intermediate").forEach(intermediate => {
+    const marker = L.circleMarker([intermediate.latitude, intermediate.longitude], {
+      radius: 3,
+      color: "black",
+      fillColor: "black",
+      fillOpacity: 1.0
+    }).addTo(map);
 
-  if (enableClick) {
-    marker.on("click", () => showDetails(intermediate));
-  }
-});
-
+    if (enableClick) marker.on("click", () => showDetails(intermediate));
+  });
 }
+
 
 
 
@@ -3141,7 +3237,6 @@ async function renderQrSection(node) {
   });
 }
 
-// ---- Modal function ----
 function openQrModal(qrDataUrl, nodeId, canvas = null) {
   const modal = document.createElement("div");
   modal.className = "qr-modal";
@@ -3150,8 +3245,8 @@ function openQrModal(qrDataUrl, nodeId, canvas = null) {
     <div class="qr-modal-content">
       <span class="qr-modal-close">&times;</span>
       <h3>QR Code for ${nodeId}</h3>
-      <img src="${qrDataUrl}" id="modal-qr" style="max-width:100%; height:auto;"/>
-      <div style="margin-top:10px; display:flex; justify-content:center; gap:10px;">
+      <img src="${qrDataUrl}" id="modal-qr"/>
+      <div class="qr-buttons">
         <button id="download-qr-btn">⬇️ Download PNG</button>
         <button id="print-qr-btn">🖨 Print</button>
         <button id="pdf-qr-btn">📄 Export PDF</button>
@@ -3193,3 +3288,7 @@ function openQrModal(qrDataUrl, nodeId, canvas = null) {
     pdf.save(`${nodeId}_qr.pdf`);
   });
 }
+
+
+
+

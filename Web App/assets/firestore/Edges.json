@@ -1,0 +1,71 @@
+[
+  {
+    "id": "EGohxSSF1wNtGiWz10yL",
+    "edge_id": "EDG-001",
+    "to_node": "ND-027",
+    "from_node": "ND-026",
+    "distance": null,
+    "elevations": null,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1757505156,
+      "nanoseconds": 41000000
+    },
+    "is_active": true,
+    "is_deleted": false,
+    "path_type": null
+  },
+  {
+    "id": "LOkIYIyloHQOIZLLyFC8",
+    "path_type": null,
+    "is_deleted": true,
+    "deletedAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1757991547,
+      "nanoseconds": 964000000
+    },
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1757505181,
+      "nanoseconds": 872000000
+    },
+    "elevations": null,
+    "to_node": "ND-026",
+    "distance": null,
+    "from_node": "ND-029",
+    "edge_id": "EDG-004",
+    "is_active": true
+  },
+  {
+    "id": "i92A89tLWDI2kTmyAPJV",
+    "edge_id": "EDG-003",
+    "elevations": null,
+    "is_active": true,
+    "path_type": null,
+    "is_deleted": false,
+    "to_node": "ND-029",
+    "from_node": "ND-028",
+    "distance": null,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1757505174,
+      "nanoseconds": 517000000
+    }
+  },
+  {
+    "id": "xWyCI7XR9TMtCRc8cGHQ",
+    "is_active": true,
+    "is_deleted": false,
+    "path_type": null,
+    "from_node": "ND-027",
+    "distance": null,
+    "edge_id": "EDG-002",
+    "to_node": "ND-028",
+    "elevations": null,
+    "created_at": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1757505167,
+      "nanoseconds": 216000000
+    }
+  }
+]
