@@ -443,6 +443,17 @@
   },
   {
     "phone": "09123456789",
+    "name": "Gate Campus A",
+    "is_deleted": false,
+    "infra_id": "INFRA-69",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-02",
+    "id": "bGA3bPdkqyeew2ioPOuJ"
+  },
+  {
+    "phone": "09123456789",
     "name": "Camp A Field",
     "is_deleted": false,
     "infra_id": "INFRA-68",

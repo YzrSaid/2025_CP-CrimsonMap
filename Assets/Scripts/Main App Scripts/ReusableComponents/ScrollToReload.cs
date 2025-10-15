@@ -39,7 +39,7 @@ public class ScrollToReload : MonoBehaviour
     private float currentPullDistance = 0f;
     private Vector3 originalIndicatorPosition;
     private RectTransform indicatorRect;
-    private bool wasPressed = false; // Track press state
+    private bool wasPressed = false;
 
     void Start()
     {
@@ -61,14 +61,12 @@ public class ScrollToReload : MonoBehaviour
 
     void Update()
     {
-        // ONLY process input when actually needed
         if (isRefreshing) return;
 
         if (Pointer.current != null)
         {
             bool isPressed = Pointer.current.press.isPressed;
 
-            // Only process on state changes or when actively pulling
             if (isPressed != wasPressed)
             {
                 if (isPressed)
@@ -83,12 +81,9 @@ public class ScrollToReload : MonoBehaviour
             }
             else if (isPressed && isPulling)
             {
-                // Only track movement when actively pulling
                 OnTouchMove(Pointer.current.position.ReadValue());
             }
         }
-
-        // Only update indicator position when pulling
         if (isPulling)
         {
             UpdateIndicatorPosition();
@@ -99,7 +94,6 @@ public class ScrollToReload : MonoBehaviour
     {
         lastTouchPosition = position;
 
-        // Only start pulling if at top of scroll
         if (scrollRect.verticalNormalizedPosition >= 0.99f)
         {
             isPulling = true;
@@ -113,7 +107,6 @@ public class ScrollToReload : MonoBehaviour
 
         float deltaY = position.y - lastTouchPosition.y;
 
-        // Only process downward movement when at top
         if (deltaY < 0 && scrollRect.verticalNormalizedPosition >= 0.99f)
         {
             currentPullDistance += Mathf.Abs(deltaY) * 0.5f;
@@ -131,7 +124,6 @@ public class ScrollToReload : MonoBehaviour
                 }
             }
 
-            // Update message based on pull distance
             UpdateReloadMessage();
 
             if (currentPullDistance > pullThreshold && !hasTriggeredReload)
@@ -153,22 +145,18 @@ public class ScrollToReload : MonoBehaviour
         if (!isPulling) return;
 
         isPulling = false;
-
-        // Trigger reload if threshold was met
         if (hasTriggeredReload && currentPullDistance > pullThreshold)
         {
             StartReload();
         }
         else
         {
-            // Snap back to original position
             StartCoroutine(SnapBackIndicator());
         }
     }
 
     void OnScrollValueChanged(Vector2 value)
     {
-        // Reset pull if user scrolls away from top
         if (scrollRect.verticalNormalizedPosition < 0.99f && isPulling)
         {
             isPulling = false;
@@ -182,7 +170,6 @@ public class ScrollToReload : MonoBehaviour
 
         if (currentPullDistance > releaseThreshold)
         {
-            // Move indicator down based on pull distance
             float indicatorOffset = Mathf.Min(currentPullDistance - releaseThreshold, 100f);
             Vector3 newPosition = originalIndicatorPosition;
             newPosition.y = originalIndicatorPosition.y - indicatorOffset;
@@ -247,8 +234,6 @@ public class ScrollToReload : MonoBehaviour
     IEnumerator SnapBackIndicator()
     {
         if (reloadIndicator == null) yield break;
-
-        // Animate pull distance back to 0
         while (currentPullDistance > 0)
         {
             currentPullDistance = Mathf.Lerp(currentPullDistance, 0, snapSpeed * Time.deltaTime);

@@ -510,36 +510,36 @@ public class AStarPathfinding : MonoBehaviour
     #region Heuristic and Distance Calculations
     private string DetermineViaMode(List<string> path)
     {
-        if (path == null || path.Count == 0)
-            return "Direct";
+        if (path == null || path.Count <= 1)
+            return "Via Walkway";
 
-        // Check if path goes through specific types of nodes
-        HashSet<string> intermediateTypes = new HashSet<string>();
+        HashSet<string> pathTypes = new HashSet<string>();
 
-        for (int i = 1; i < path.Count - 1; i++) // Skip start and end nodes
+        for (int i = 0; i < path.Count - 1; i++)
         {
-            if (allNodes.TryGetValue(path[i], out Node node))
+            string fromId = path[i];
+            string toId = path[i + 1];
+
+            if (adjacencyList.ContainsKey(fromId))
             {
-                if (node.type == "pathway")
+                var edge = adjacencyList[fromId].FirstOrDefault(e => e.toNodeId == toId);
+                if (edge != null && edge.edgeData != null)
                 {
-                    intermediateTypes.Add("pathway");
-                }
-                else if (node.type == "intermediate")
-                {
-                    intermediateTypes.Add("intermediate");
+                    string pathType = edge.edgeData.path_type;
+                    if (!string.IsNullOrEmpty(pathType))
+                    {
+                        pathTypes.Add(pathType.ToLower());
+                    }
                 }
             }
         }
 
-        // Determine via mode based on path characteristics
-        if (path.Count <= 2)
-            return "Direct";
-        else if (intermediateTypes.Contains("pathway"))
-            return "Via Pathways";
-        else if (intermediateTypes.Contains("intermediate"))
-            return "Via Intermediate Points";
+        if (pathTypes.Contains("overpass"))
+            return "Via Overpass";
+        else if (pathTypes.Contains("gate"))
+            return "Via Gate";
         else
-            return "Standard Route";
+            return "Via Walkway";
     }
 
     private float Heuristic(Node a, Node b)
@@ -837,24 +837,6 @@ public class AStarPathfinding : MonoBehaviour
 }
 
 #region Supporting Classes
-
-[System.Serializable]
-public class GraphEdge
-{
-    public string toNodeId;
-    public float cost;
-    public Edge edgeData;
-}
-
-[System.Serializable]
-public class PathNode
-{
-    public Node node;
-    public Vector3 worldPosition;
-    public bool isStart;
-    public bool isEnd;
-    public float distanceToNext;
-}
 
 public class AStarNode : System.IComparable<AStarNode>
 {

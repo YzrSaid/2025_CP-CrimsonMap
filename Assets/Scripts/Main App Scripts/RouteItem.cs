@@ -43,6 +43,11 @@ public class RouteItem : MonoBehaviour
             walkingTimeText.text = $"<b>Time:</b> ~{routeData.walkingTime}";
         }
 
+        if (viaModeText != null)
+        {
+            viaModeText.text = $"<b>Route:</b> {routeData.viaMode}";
+        }
+
         if (pathInfoText != null)
         {
             string pathInfo = $"<b>Path ({routeData.path.Count} stops):</b>\n";
@@ -62,10 +67,8 @@ public class RouteItem : MonoBehaviour
             itemButton.onClick.AddListener(OnItemClicked);
         }
 
-        // Initialize visual state
         SetSelected(false);
-        
-        // Make sure outline is disabled by default
+
         if (outlineComponent != null)
         {
             outlineComponent.enabled = false;
@@ -104,17 +107,4 @@ public class RouteItem : MonoBehaviour
             itemButton.onClick.RemoveAllListeners();
         }
     }
-}
-
-[System.Serializable]
-public class RouteData
-{
-    public List<PathNode> path;
-    public float totalDistance;
-    public string formattedDistance;
-    public string walkingTime;
-    public Node startNode;
-    public string viaMode;
-    public bool isRecommended;
-    public Node endNode;
 }

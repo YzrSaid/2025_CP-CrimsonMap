@@ -31,6 +31,39 @@ public class Edge
     public bool is_active;
 }
 
+// RouteData Data
+[System.Serializable]
+public class RouteData
+{
+    public List<PathNode> path;
+    public float totalDistance;
+    public string formattedDistance;
+    public string walkingTime;
+    public Node startNode;
+    public string viaMode;
+    public bool isRecommended;
+    public Node endNode;
+}
+
+[System.Serializable]
+public class GraphEdge
+{
+    public string toNodeId;
+    public float cost;
+    public Edge edgeData;
+}
+
+[System.Serializable]
+public class PathNode
+{
+    public Node node;
+    public Vector3 worldPosition;
+    public bool isStart;
+    public bool isEnd;
+    public float distanceToNext;
+}
+
+
 [System.Serializable]
 public class EdgeList
 {

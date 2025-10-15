@@ -926,7 +926,7 @@ MonoBehaviour:
   titleText: {fileID: 8629581086806442662}
   distanceText: {fileID: 6647838775954719251}
   walkingTimeText: {fileID: 5872660679494017110}
-  viaModeText: {fileID: 0}
+  viaModeText: {fileID: 4580501821944291310}
   pathInfoText: {fileID: 1222568786533017687}
   itemButton: {fileID: 1358815638229630292}
   backgroundImage: {fileID: 6540234415166997774}

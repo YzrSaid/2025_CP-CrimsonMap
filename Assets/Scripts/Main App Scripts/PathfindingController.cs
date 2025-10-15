@@ -15,6 +15,11 @@ public class PathfindingController : MonoBehaviour
     [Header("UI Elements")]
     public TMP_Dropdown toDropdown;
     public Button findPathButton;
+    
+    [Header("Location Lock Display")]
+    public GameObject locationLockDisplay; // Top bar showing current location
+    public TextMeshProUGUI locationLockText; // Shows "Current Location: XXX 🔒"
+    public Button locationLockButton; // Tap to unlock
 
     [Header("Confirmation Panel")]
     public GameObject confirmationPanel;
@@ -23,6 +28,12 @@ public class PathfindingController : MonoBehaviour
     public TextMeshProUGUI confirmErrorText;
     public Button confirmButton;
     public Button cancelButton;
+
+    [Header("Location Conflict Panel")]
+    public GameObject locationConflictPanel;
+    public TextMeshProUGUI conflictMessageText;
+    public Button conflictConfirmButton; // Use GPS
+    public Button conflictCancelButton;  // Keep QR locked
 
     [Header("Result Display")]
     public GameObject resultPanel;
@@ -46,6 +57,7 @@ public class PathfindingController : MonoBehaviour
     public float nearestNodeSearchRadius = 500f;
     public bool autoUpdateGPSLocation = true;
     public float gpsUpdateInterval = 5f;
+    public float qrConflictThresholdMeters = 100f; // Distance to trigger conflict warning
 
     [Header("Settings")]
     public bool enableDebugLogs = true;
@@ -55,6 +67,9 @@ public class PathfindingController : MonoBehaviour
     private string selectedFromNodeId;
     private string selectedToNodeId;
     private Node currentNearestNode;
+    private Node qrScannedNode;
+    private bool isQRLocationLocked = false;
+    private bool hasShownConflictPanel = false; // Prevents spam
     private float lastGPSUpdateTime;
     private bool nodesLoaded = false;
 
@@ -90,7 +105,17 @@ public class PathfindingController : MonoBehaviour
         if (confirmRouteButton != null)
         {
             confirmRouteButton.onClick.AddListener(OnConfirmRouteClicked);
-            confirmRouteButton.gameObject.SetActive(false); // Hidden until route is selected
+            confirmRouteButton.gameObject.SetActive(false);
+        }
+
+        if (conflictConfirmButton != null)
+        {
+            conflictConfirmButton.onClick.AddListener(OnLocationConflictConfirm);
+        }
+
+        if (conflictCancelButton != null)
+        {
+            conflictCancelButton.onClick.AddListener(OnLocationConflictCancel);
         }
 
         if (resultPanel != null)
@@ -108,6 +133,11 @@ public class PathfindingController : MonoBehaviour
             confirmationPanel.SetActive(false);
         }
 
+        if (locationConflictPanel != null)
+        {
+            locationConflictPanel.SetActive(false);
+        }
+
         if (MapManager.Instance != null)
         {
             MapManager.Instance.OnMapChanged += OnMapChanged;
@@ -117,39 +147,29 @@ public class PathfindingController : MonoBehaviour
         {
             gpsManager = GPSManager.Instance;
         }
+
+        // Check if user just scanned a QR code
+        CheckForScannedQRData();
     }
 
     void OnDestroy()
     {
         if (findPathButton != null)
-        {
             findPathButton.onClick.RemoveListener(OnFindPathClicked);
-        }
-
         if (confirmButton != null)
-        {
             confirmButton.onClick.RemoveListener(OnConfirmClicked);
-        }
-
         if (cancelButton != null)
-        {
             cancelButton.onClick.RemoveListener(OnCancelClicked);
-        }
-
         if (toDropdown != null)
-        {
             toDropdown.onValueChanged.RemoveListener(OnToDropdownChanged);
-        }
-
         if (confirmRouteButton != null)
-        {
             confirmRouteButton.onClick.RemoveListener(OnConfirmRouteClicked);
-        }
-
+        if (conflictConfirmButton != null)
+            conflictConfirmButton.onClick.RemoveListener(OnLocationConflictConfirm);
+        if (conflictCancelButton != null)
+            conflictCancelButton.onClick.RemoveListener(OnLocationConflictCancel);
         if (MapManager.Instance != null)
-        {
             MapManager.Instance.OnMapChanged -= OnMapChanged;
-        }
     }
 
     void Update()
@@ -163,6 +183,72 @@ public class PathfindingController : MonoBehaviour
             }
         }
     }
+
+    #region QR Data Handling
+
+    private void CheckForScannedQRData()
+    {
+        string scannedNodeId = PlayerPrefs.GetString("ScannedNodeID", "");
+        
+        if (!string.IsNullOrEmpty(scannedNodeId) && nodesLoaded)
+        {
+            LoadQRScannedNode(scannedNodeId);
+        }
+    }
+
+    private void LoadQRScannedNode(string nodeId)
+    {
+        if (allNodes.TryGetValue(nodeId, out Node node))
+        {
+            qrScannedNode = node;
+            selectedFromNodeId = nodeId;
+            isQRLocationLocked = true; // Lock to QR when scanned
+            hasShownConflictPanel = false; // Reset flag for new QR scan
+            
+            if (enableDebugLogs)
+            {
+                Debug.Log($"QR scanned node loaded: {node.name} ({nodeId}) - Location LOCKED 🔒");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"Scanned node ID {nodeId} not found in loaded nodes");
+        }
+    }
+
+    public void ClearQRData()
+    {
+        PlayerPrefs.DeleteKey("ScannedNodeID");
+        PlayerPrefs.DeleteKey("ScannedLocationName");
+        PlayerPrefs.DeleteKey("ScannedLat");
+        PlayerPrefs.DeleteKey("ScannedLng");
+        PlayerPrefs.DeleteKey("ScannedCampusID");
+        PlayerPrefs.DeleteKey("ScannedX");
+        PlayerPrefs.DeleteKey("ScannedY");
+        PlayerPrefs.Save();
+        
+        qrScannedNode = null;
+        isQRLocationLocked = false;
+    }
+
+    public void UnlockFromQR()
+    {
+        isQRLocationLocked = false;
+        qrScannedNode = null;
+        
+        if (enableDebugLogs)
+        {
+            Debug.Log("QR Location unlocked - GPS tracking resumed 📍");
+        }
+        
+        // Immediately update to current GPS location
+        UpdateFromLocationByGPS();
+        
+        // Clear stored QR data
+        ClearQRData();
+    }
+
+    #endregion
 
     #region MapManager Integration
 
@@ -179,6 +265,11 @@ public class PathfindingController : MonoBehaviour
         yield return StartCoroutine(LoadNodesFromJSON(mapId));
 
         yield return StartCoroutine(BuildInfrastructureNodeMapping());
+
+        if (nodesLoaded)
+        {
+            CheckForScannedQRData();
+        }
 
         if (useGPSForFromLocation && !useStaticTesting)
         {
@@ -280,8 +371,31 @@ public class PathfindingController : MonoBehaviour
 
         if (nearestNode != null)
         {
-            selectedFromNodeId = nearestNode.node_id;
-            currentNearestNode = nearestNode;
+            // If QR location is locked, check for conflict
+            if (isQRLocationLocked && qrScannedNode != null)
+            {
+                float distanceFromQR = CalculateDistance(
+                    qrScannedNode.latitude, qrScannedNode.longitude,
+                    nearestNode.latitude, nearestNode.longitude
+                );
+
+                if (distanceFromQR > qrConflictThresholdMeters)
+                {
+                    // Only show panel once per QR lock
+                    if (!hasShownConflictPanel)
+                    {
+                        hasShownConflictPanel = true;
+                        ShowLocationConflictPanel(qrScannedNode, nearestNode, distanceFromQR);
+                    }
+                    return; // Don't update location, stay locked
+                }
+            }
+            else
+            {
+                // No QR lock - update normally
+                selectedFromNodeId = nearestNode.node_id;
+                currentNearestNode = nearestNode;
+            }
         }
     }
 
@@ -325,6 +439,64 @@ public class PathfindingController : MonoBehaviour
         float c = 2 * Mathf.Atan2(Mathf.Sqrt(a), Mathf.Sqrt(1 - a));
 
         return R * c;
+    }
+
+    #endregion
+
+    #region Location Conflict Panel
+
+    private void ShowLocationConflictPanel(Node qrNode, Node gpsNode, float distanceMeters)
+    {
+        if (locationConflictPanel == null)
+        {
+            return;
+        }
+
+        if (conflictMessageText != null)
+        {
+            conflictMessageText.text = 
+                $"Your location has changed!\n\n" +
+                $"<b>QR Location:</b> {qrNode.name}\n" +
+                $"<b>Current GPS:</b> {gpsNode.name}\n" +
+                $"<b>Distance:</b> {distanceMeters:F0}m apart\n\n" +
+                $"Would you like to update to your current GPS location?";
+        }
+
+        locationConflictPanel.SetActive(true);
+
+        if (enableDebugLogs)
+        {
+            Debug.Log($"⚠️ Location conflict: {distanceMeters:F0}m between QR ({qrNode.name}) and GPS ({gpsNode.name})");
+        }
+    }
+
+    private void OnLocationConflictConfirm()
+    {
+        if (locationConflictPanel != null)
+        {
+            locationConflictPanel.SetActive(false);
+        }
+
+        // User chose to use GPS - unlock from QR
+        UnlockFromQR();
+
+        if (enableDebugLogs)
+        {
+            Debug.Log("User chose GPS - location unlocked");
+        }
+    }
+
+    private void OnLocationConflictCancel()
+    {
+        if (locationConflictPanel != null)
+        {
+            locationConflictPanel.SetActive(false);
+        }
+
+        if (enableDebugLogs)
+        {
+            Debug.Log("User chose to stay with QR location");
+        }
     }
 
     #endregion
@@ -409,7 +581,8 @@ public class PathfindingController : MonoBehaviour
         {
             if (confirmFromText != null)
             {
-                confirmFromText.text = $"<b>From:</b> {fromNode.name}";
+                string lockIndicator = isQRLocationLocked ? " 🔒" : "";
+                confirmFromText.text = $"<b>From:</b> {fromNode.name}{lockIndicator}";
             }
         }
 
@@ -502,7 +675,6 @@ public class PathfindingController : MonoBehaviour
             findPathButton.interactable = false;
         }
 
-        // Find multiple paths (up to 3)
         yield return StartCoroutine(pathfinding.FindMultiplePaths(fromNodeId, toNodeId, 3));
 
         if (findPathButton != null)
@@ -534,7 +706,6 @@ public class PathfindingController : MonoBehaviour
             destinationPanel.SetActive(true);
         }
 
-        // Clear existing route items
         ClearRouteItems();
 
         if (currentRoutes.Count == 0)
@@ -542,12 +713,12 @@ public class PathfindingController : MonoBehaviour
             return;
         }
 
-        // Set From and To (same for all routes)
         var firstRoute = currentRoutes[0];
 
         if (fromText != null)
         {
-            fromText.text = $"<b>From:</b> {firstRoute.startNode.name}";
+            string lockIndicator = isQRLocationLocked ? " 🔒" : "";
+            fromText.text = $"<b>From:</b> {firstRoute.startNode.name}{lockIndicator}";
         }
 
         if (toText != null)
@@ -555,27 +726,23 @@ public class PathfindingController : MonoBehaviour
             toText.text = $"<b>To:</b> {firstRoute.endNode.name}";
         }
 
-        // Create route items
         for (int i = 0; i < currentRoutes.Count; i++)
         {
             CreateRouteItem(i, currentRoutes[i]);
         }
 
-        // Auto-select first route
         if (currentRoutes.Count > 0)
         {
             OnRouteSelected(0);
         }
         else
         {
-            // No routes, hide confirm button
             if (confirmRouteButton != null)
             {
                 confirmRouteButton.gameObject.SetActive(false);
             }
         }
 
-        // Reset scroll position
         if (routeScrollView != null)
         {
             Canvas.ForceUpdateCanvases();
@@ -624,19 +791,16 @@ public class PathfindingController : MonoBehaviour
 
         selectedRouteIndex = routeIndex;
 
-        // Update visual state of all route items (radio button behavior)
         for (int i = 0; i < routeItemInstances.Count; i++)
         {
             routeItemInstances[i].SetSelected(i == routeIndex);
         }
 
-        // Show confirm button when a route is selected
         if (confirmRouteButton != null)
         {
             confirmRouteButton.gameObject.SetActive(true);
         }
 
-        // Update pathfinding visualization to show selected route
         if (pathfinding != null)
         {
             pathfinding.SetActiveRoute(routeIndex);
@@ -655,19 +819,12 @@ public class PathfindingController : MonoBehaviour
             return;
         }
 
-        // TODO: You'll handle the AR view scene transition here
-        // For now, just log it
         if (enableDebugLogs)
         {
             Debug.Log($"Confirmed Route #{selectedRouteIndex + 1} - Ready to open AR view");
         }
 
-        // You can access the selected route data like this:
         RouteData selectedRoute = currentRoutes[selectedRouteIndex];
-        
-        // Example: Load AR scene with selected route
-        // SceneManager.LoadScene("ARNavigationScene");
-        // Pass selectedRoute data to the next scene
     }
 
     public void HideResults()
@@ -748,6 +905,11 @@ public class PathfindingController : MonoBehaviour
     public List<RouteData> GetAllRoutes()
     {
         return new List<RouteData>(currentRoutes);
+    }
+
+    public bool IsLocationLocked()
+    {
+        return isQRLocationLocked;
     }
 
     #endregion
