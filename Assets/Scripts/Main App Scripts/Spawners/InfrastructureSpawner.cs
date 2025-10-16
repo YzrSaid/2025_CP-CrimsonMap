@@ -36,7 +36,6 @@ public class InfrastructureSpawner : MonoBehaviour
 
     void Awake()
     {
-        // Find map if not assigned
         if (mapboxMap == null)
         {
             mapboxMap = FindObjectOfType<AbstractMap>();

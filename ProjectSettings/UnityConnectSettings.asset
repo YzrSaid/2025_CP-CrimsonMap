@@ -22,11 +22,11 @@ UnityConnectSettings:
   UnityAnalyticsSettings:
     m_Enabled: 0
     m_TestMode: 0
-    m_InitializeOnStartup: 1
+    m_InitializeOnStartup: 0
     m_PackageRequiringCoreStatsPresent: 0
   UnityAdsSettings:
     m_Enabled: 0
-    m_InitializeOnStartup: 1
+    m_InitializeOnStartup: 0
     m_TestMode: 0
     m_IosGameId: 
     m_AndroidGameId: 

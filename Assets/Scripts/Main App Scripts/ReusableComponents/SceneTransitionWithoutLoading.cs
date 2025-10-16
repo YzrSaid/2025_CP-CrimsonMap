@@ -20,7 +20,7 @@ public class SceneTransitionWithoutLoading : MonoBehaviour
     }
     public void GoToTargetScene(string sceneName)
     {
-        SceneManager.LoadScene(sceneName, LoadSceneMode.Additive);
+        SceneManager.LoadScene(sceneName);
     }
     public void GoToTargetSceneSimple(string sceneName)
     {

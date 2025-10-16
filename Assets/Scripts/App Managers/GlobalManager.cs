@@ -15,6 +15,7 @@ public class GlobalManager : MonoBehaviour
     [Header("AR Scene Compatibility")]
     public bool isInARMode = false;
     private bool wasInARMode = false;
+    private bool hasInitialized = false;
 
 
     // Global Variables
@@ -53,14 +54,29 @@ public class GlobalManager : MonoBehaviour
             DontDestroyOnLoad(this.gameObject);
 
             onboardingSavePath = Path.Combine(Application.persistentDataPath, "saveData.json");
-            Debug.Log($"Onboarding save path: {onboardingSavePath}");
-
-            CheckOnboardingAndNavigate();
+            if (Application.isFocused)
+            {
+                hasInitialized = true;
+                CheckOnboardingAndNavigate();
+            }
         }
         else
         {
             Destroy(gameObject);
             return;
+        }
+    }
+
+    void OnApplicationFocus(bool hasFocus)
+    {
+        if (hasFocus && Instance == this)
+        {
+            // Only run if we haven't initialized yet
+            if (!hasInitialized) // You'll need to track this
+            {
+                Debug.Log("✅ App gained focus for first time - checking onboarding");
+                CheckOnboardingAndNavigate();
+            }
         }
     }
 

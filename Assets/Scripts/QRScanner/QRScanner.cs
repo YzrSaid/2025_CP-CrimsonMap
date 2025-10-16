@@ -3,6 +3,10 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 using ZXing;
+using ZXing.Common;
+using Unity.Collections;
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -11,8 +15,10 @@ using System.Linq;
 
 public class QRScanner : MonoBehaviour
 {
+    [Header("AR References")]
+    public ARCameraManager arCameraManager;
+
     [Header("UI References")]
-    public RawImage cameraView;
     public TextMeshProUGUI instructionsText;
     public Button backButton;
 
@@ -26,27 +32,34 @@ public class QRScanner : MonoBehaviour
     public string qrSignature = "CRIMSON";
     public string qrDelimiter = "_";
 
-    private WebCamTexture webcamTexture;
     private bool isScanning = false;
     private string scannedNodeId;
     private Node scannedNodeInfo;
     private List<string> availableMapIds = new List<string>();
+    private Texture2D cameraImageTexture;
+    
+    private IBarcodeReader barcodeReader = new BarcodeReader
+    {
+        AutoRotate = true,
+        Options = new DecodingOptions
+        {
+            TryHarder = true,
+            PossibleFormats = new[] { BarcodeFormat.QR_CODE }
+        }
+    };
 
     void Start()
     {
-        // Hide confirmation panel initially
         if (confirmationPanel != null)
         {
             confirmationPanel.SetActive(false);
         }
 
-        // Set initial instruction text
         if (instructionsText != null)
         {
             instructionsText.text = "Point camera at QR code";
         }
 
-        // Setup buttons
         if (backButton != null)
         {
             backButton.onClick.AddListener(GoBack);
@@ -62,30 +75,53 @@ public class QRScanner : MonoBehaviour
             tryAgainButton.onClick.AddListener(OnTryAgain);
         }
 
-        // Load available maps first, then start scanning
         StartCoroutine(InitializeScanner());
     }
 
     IEnumerator InitializeScanner()
     {
-        // Load maps.json to get available map IDs
         yield return StartCoroutine(LoadAvailableMaps());
+        
+        if (arCameraManager == null)
+        {
+            if (instructionsText != null)
+            {
+                instructionsText.text = "AR Camera Manager not found!";
+                instructionsText.color = Color.red;
+            }
+            yield break;
+        }
 
-        // Start scanning after maps are loaded
-        StartScanning();
+        // Wait for AR system to initialize
+        float timeout = 0f;
+        while (!arCameraManager.enabled && timeout < 5f)
+        {
+            timeout += Time.deltaTime;
+            yield return null;
+        }
+
+        if (!arCameraManager.enabled)
+        {
+            if (instructionsText != null)
+            {
+                instructionsText.text = "AR system failed to initialize!";
+                instructionsText.color = Color.red;
+            }
+            yield break;
+        }
+
+        arCameraManager.frameReceived += OnCameraFrameReceived;
+        isScanning = true;
     }
 
     IEnumerator LoadAvailableMaps()
     {
-        bool mapsLoaded = false;
-
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             "maps.json",
             (jsonContent) =>
             {
                 try
                 {
-                    // Parse maps using MapList wrapper
                     MapList mapList = JsonUtility.FromJson<MapList>("{\"maps\":" + jsonContent + "}");
 
                     if (mapList != null && mapList.maps != null && mapList.maps.Count > 0)
@@ -94,157 +130,85 @@ public class QRScanner : MonoBehaviour
                         foreach (var map in mapList.maps)
                         {
                             availableMapIds.Add(map.map_id);
-                            Debug.Log($"Loaded map: {map.map_name} ({map.map_id})");
                         }
-                        mapsLoaded = true;
-                        Debug.Log($"Total maps loaded: {availableMapIds.Count}");
-                    }
-                    else
-                    {
-                        Debug.LogWarning("No maps found in maps.json");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"Error parsing maps.json: {ex.Message}");
+                    Debug.LogError("Error loading maps: " + ex.Message);
                 }
             },
             (error) =>
             {
-                Debug.LogError($"Failed to load maps.json: {error}");
+                Debug.LogError("Error: " + error);
             }
         ));
-
-        if (!mapsLoaded)
-        {
-            Debug.LogWarning("Maps not loaded, will search all nodes*.json files");
-        }
     }
 
-    public void StartScanning()
+    void OnCameraFrameReceived(ARCameraFrameEventArgs eventArgs)
     {
-        // Request camera permission (especially for mobile)
-        if (Application.HasUserAuthorization(UserAuthorization.WebCam))
-        {
-            InitializeCamera();
-        }
-        else
-        {
-            StartCoroutine(RequestCameraPermission());
-        }
-    }
-
-    IEnumerator RequestCameraPermission()
-    {
-        yield return Application.RequestUserAuthorization(UserAuthorization.WebCam);
-
-        if (Application.HasUserAuthorization(UserAuthorization.WebCam))
-        {
-            InitializeCamera();
-        }
-        else
-        {
-            if (instructionsText != null)
-            {
-                instructionsText.text = "Camera permission denied!";
-            }
-            Debug.LogError("Camera permission denied");
-        }
-    }
-
-    void InitializeCamera()
-    {
-        if (webcamTexture != null)
-        {
-            webcamTexture.Stop();
-        }
-
-        // Get available cameras
-        WebCamDevice[] devices = WebCamTexture.devices;
-
-        if (devices.Length == 0)
-        {
-            if (instructionsText != null)
-            {
-                instructionsText.text = "No camera found!";
-            }
-            Debug.LogError("No camera devices found");
+        if (!isScanning || arCameraManager == null)
             return;
-        }
 
-        // Use back camera if available (for mobile)
-        string deviceName = devices[0].name;
-        for (int i = 0; i < devices.Length; i++)
-        {
-            if (!devices[i].isFrontFacing)
-            {
-                deviceName = devices[i].name;
-                break;
-            }
-        }
-
-        // Initialize webcam
-        webcamTexture = new WebCamTexture(deviceName);
-
-        if (cameraView != null)
-        {
-            cameraView.texture = webcamTexture;
-        }
-
-        webcamTexture.Play();
-
-        isScanning = true;
-
-        // Start scanning loop
-        InvokeRepeating("ScanQRCode", 0.5f, 0.5f);
-
-        Debug.Log("Camera started: " + deviceName);
-    }
-
-    void ScanQRCode()
-    {
-        if (!isScanning || webcamTexture == null || !webcamTexture.isPlaying)
+        if (!arCameraManager.TryAcquireLatestCpuImage(out XRCpuImage image))
             return;
 
         try
         {
-            // Create barcode reader
-            IBarcodeReader barcodeReader = new BarcodeReader();
+            var conversionParams = new XRCpuImage.ConversionParams
+            {
+                inputRect = new RectInt(0, 0, image.width, image.height),
+                outputDimensions = new Vector2Int(image.width / 2, image.height / 2),
+                outputFormat = TextureFormat.RGBA32,
+                transformation = XRCpuImage.Transformation.MirrorY
+            };
 
-            // Decode the current camera frame
-            var result = barcodeReader.Decode(webcamTexture.GetPixels32(),
-                                              webcamTexture.width,
-                                              webcamTexture.height);
+            int size = image.GetConvertedDataSize(conversionParams);
+            var buffer = new NativeArray<byte>(size, Allocator.Temp);
+
+            image.Convert(conversionParams, buffer);
+            image.Dispose();
+
+            if (cameraImageTexture == null)
+            {
+                cameraImageTexture = new Texture2D(
+                    conversionParams.outputDimensions.x,
+                    conversionParams.outputDimensions.y,
+                    conversionParams.outputFormat,
+                    false);
+            }
+
+            cameraImageTexture.LoadRawTextureData(buffer);
+            cameraImageTexture.Apply();
+            buffer.Dispose();
+
+            Result result = barcodeReader.Decode(
+                cameraImageTexture.GetPixels32(),
+                cameraImageTexture.width,
+                cameraImageTexture.height);
 
             if (result != null)
             {
-                // QR Code detected!
                 OnQRCodeScanned(result.Text);
             }
         }
         catch (Exception ex)
         {
-            Debug.LogWarning("QR Scan Error: " + ex.Message);
+            Debug.LogError("Error processing frame: " + ex.Message);
         }
     }
 
     void OnQRCodeScanned(string qrData)
     {
-        Debug.Log("QR Code Scanned: " + qrData);
-
-        // Stop scanning to prevent multiple reads
         isScanning = false;
-        CancelInvoke("ScanQRCode");
 
-        // Validate QR code format and signature
         if (!ValidateQRCode(qrData, out string nodeId))
         {
             ShowError("Invalid QR code. Please scan a valid CRIMSON campus location QR code.");
             return;
         }
 
-        // Parse and search for node
-        scannedNodeId = nodeId; // Just the node ID (e.g., "ND-001")
+        scannedNodeId = nodeId;
         StartCoroutine(SearchNodeInLocalFiles(scannedNodeId));
     }
 
@@ -252,41 +216,23 @@ public class QRScanner : MonoBehaviour
     {
         nodeId = null;
 
-        // Check if QR code contains the delimiter
         if (!qrData.Contains(qrDelimiter))
-        {
-            Debug.LogWarning($"QR code doesn't contain delimiter '{qrDelimiter}': {qrData}");
             return false;
-        }
 
-        // Split by delimiter
         string[] parts = qrData.Split(new string[] { qrDelimiter }, StringSplitOptions.None);
 
         if (parts.Length != 2)
-        {
-            Debug.LogWarning($"QR code has invalid format. Expected format: {qrSignature}{qrDelimiter}ND-XXX");
             return false;
-        }
 
-        // Verify signature
         string signature = parts[0];
         if (signature != qrSignature)
-        {
-            Debug.LogWarning($"QR code signature mismatch. Expected '{qrSignature}', got '{signature}'");
             return false;
-        }
 
-        // Extract node ID
         nodeId = parts[1];
 
-        // Basic validation of node ID format
         if (string.IsNullOrEmpty(nodeId) || nodeId.Length < 3)
-        {
-            Debug.LogWarning("Node ID is too short or empty");
             return false;
-        }
 
-        Debug.Log($"QR code validated successfully. Signature: {signature}, Node ID: {nodeId}");
         return true;
     }
 
@@ -299,16 +245,11 @@ public class QRScanner : MonoBehaviour
 
         bool foundNode = false;
 
-        // Search through nodes files for each available map
         if (availableMapIds.Count > 0)
         {
-            // Search using known map IDs
             foreach (string mapId in availableMapIds)
             {
                 string nodesFileName = $"nodes_{mapId}.json";
-
-                Debug.Log($"Searching in {nodesFileName}...");
-
                 bool searchComplete = false;
 
                 yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
@@ -320,43 +261,23 @@ public class QRScanner : MonoBehaviour
                         {
                             scannedNodeInfo = foundNodeInfo;
                             foundNode = true;
-                            Debug.Log($"Found node in {nodesFileName}: {foundNodeInfo.name}");
                         }
                         searchComplete = true;
                     },
                     (error) =>
                     {
-                        Debug.LogWarning($"Could not load {nodesFileName}: {error}");
                         searchComplete = true;
                     }
                 ));
 
-                // Wait for search to complete
                 while (!searchComplete)
-                {
                     yield return null;
-                }
 
-                // If found, stop searching
                 if (foundNode)
                     break;
             }
         }
-        else
-        {
-            // Fallback: Search all nodes*.json files in the directory
-            Debug.LogWarning("No map IDs available, searching all nodes files...");
-            yield return StartCoroutine(SearchAllNodesFiles(nodeId, (found, nodeInfo) =>
-            {
-                foundNode = found;
-                if (found)
-                {
-                    scannedNodeInfo = nodeInfo;
-                }
-            }));
-        }
 
-        // Show result
         if (foundNode)
         {
             ShowConfirmation();
@@ -365,55 +286,6 @@ public class QRScanner : MonoBehaviour
         {
             ShowError("Location not found. This QR code may not be registered in the system.");
         }
-    }
-
-    IEnumerator SearchAllNodesFiles(string nodeId, Action<bool, Node> callback)
-    {
-        string dataPath = Application.isEditor ? Application.streamingAssetsPath : Application.persistentDataPath;
-        DirectoryInfo dirInfo = new DirectoryInfo(dataPath);
-
-        if (!dirInfo.Exists)
-        {
-            Debug.LogError($"Directory does not exist: {dataPath}");
-            callback?.Invoke(false, null);
-            yield break;
-        }
-
-        FileInfo[] jsonFiles = dirInfo.GetFiles("nodes*.json");
-        Debug.Log($"Found {jsonFiles.Length} node files to search");
-
-        foreach (FileInfo file in jsonFiles)
-        {
-            bool searchComplete = false;
-            Node foundNodeInfo = null;
-
-            yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
-                file.Name,
-                (jsonContent) =>
-                {
-                    foundNodeInfo = SearchNodeInJson(jsonContent, nodeId);
-                    searchComplete = true;
-                },
-                (error) =>
-                {
-                    Debug.LogError($"Error reading {file.Name}: {error}");
-                    searchComplete = true;
-                }
-            ));
-
-            while (!searchComplete)
-            {
-                yield return null;
-            }
-
-            if (foundNodeInfo != null)
-            {
-                callback?.Invoke(true, foundNodeInfo);
-                yield break;
-            }
-        }
-
-        callback?.Invoke(false, null);
     }
 
     Node SearchNodeInJson(string jsonContent, string nodeId)
@@ -430,7 +302,7 @@ public class QRScanner : MonoBehaviour
         }
         catch (Exception ex)
         {
-            Debug.LogError($"Error parsing nodes JSON: {ex.Message}");
+            Debug.LogError("Error searching node: " + ex.Message);
         }
 
         return null;
@@ -456,8 +328,6 @@ public class QRScanner : MonoBehaviour
 
     void ShowError(string errorMessage)
     {
-        Debug.LogError(errorMessage);
-
         if (instructionsText != null)
         {
             instructionsText.text = errorMessage;
@@ -469,8 +339,6 @@ public class QRScanner : MonoBehaviour
 
     void OnConfirm()
     {
-        Debug.Log("User confirmed location: " + scannedNodeInfo.name);
-
         PlayerPrefs.SetString("ScannedNodeID", scannedNodeInfo.node_id);
         PlayerPrefs.SetString("ScannedLocationName", scannedNodeInfo.name);
         PlayerPrefs.SetFloat("ScannedLat", scannedNodeInfo.latitude);
@@ -481,17 +349,16 @@ public class QRScanner : MonoBehaviour
         PlayerPrefs.Save();
 
         StopScanning();
-
         SceneManager.LoadScene("MainAppScene");
     }
 
     void OnTryAgain()
     {
-        Debug.Log("User wants to scan again");
-
         if (instructionsText != null)
         {
             instructionsText.color = Color.white;
+            instructionsText.gameObject.SetActive(true);
+            instructionsText.text = "Point camera at QR code";
         }
 
         if (confirmationPanel != null)
@@ -499,32 +366,22 @@ public class QRScanner : MonoBehaviour
             confirmationPanel.SetActive(false);
         }
 
-        if (instructionsText != null)
-        {
-            instructionsText.gameObject.SetActive(true);
-            instructionsText.text = "Point camera at QR code";
-        }
-
         isScanning = true;
-        InvokeRepeating("ScanQRCode", 0.5f, 0.5f);
     }
 
     public void GoBack()
     {
         StopScanning();
-
-       SceneManager.UnloadSceneAsync("ReadQRCode");
+        SceneManager.UnloadSceneAsync("ReadQRCode");
     }
 
     void StopScanning()
     {
         isScanning = false;
-        CancelInvoke("ScanQRCode");
 
-        if (webcamTexture != null)
+        if (arCameraManager != null)
         {
-            webcamTexture.Stop();
-            webcamTexture = null;
+            arCameraManager.frameReceived -= OnCameraFrameReceived;
         }
     }
 
@@ -532,20 +389,4 @@ public class QRScanner : MonoBehaviour
     {
         StopScanning();
     }
-
-    void OnApplicationPause(bool pause)
-    {
-        if (pause)
-        {
-            StopScanning();
-        }
-        else
-        {
-            if (isScanning)
-            {
-                StartScanning();
-            }
-        }
-    }
 }
-
