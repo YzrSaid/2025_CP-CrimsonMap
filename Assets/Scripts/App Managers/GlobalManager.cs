@@ -27,7 +27,6 @@ public class GlobalManager : MonoBehaviour
 
     private string onboardingSavePath;
 
-    // Skip flag for AR/QR returns
     private static bool skipFullInitializationOnReturn = false;
 
     public System.Action OnDataInitializationComplete;
@@ -91,11 +90,9 @@ public class GlobalManager : MonoBehaviour
             sceneName.Equals(scene, System.StringComparison.OrdinalIgnoreCase));
     }
 
-    // Static method to set skip flag from external scripts
     public static void SetSkipFullInitialization(bool skip)
     {
         skipFullInitializationOnReturn = skip;
-        Debug.Log($"Skip full initialization set to: {skip}");
     }
 
     public static bool ShouldSkipFullInitialization()
@@ -117,7 +114,6 @@ public class GlobalManager : MonoBehaviour
             return;
         }
 
-        // Check if returning from AR/QR scene
         if (skipFullInitializationOnReturn)
         {
             StartCoroutine(QuickInitializationFromAR());
@@ -128,13 +124,10 @@ public class GlobalManager : MonoBehaviour
         }
     }
 
-    // Fast path - just recreate managers, no Firebase sync
     private IEnumerator QuickInitializationFromAR()
     {
-        Debug.Log("Quick initialization - coming from AR/QR scene");
-        skipFullInitializationOnReturn = false; // Reset flag
+        skipFullInitializationOnReturn = false;
 
-        // Recreate managers if they were destroyed
         if (JSONFileManager.Instance == null)
         {
             yield return StartCoroutine(RecreateJSONManager());
@@ -145,19 +138,13 @@ public class GlobalManager : MonoBehaviour
             yield return StartCoroutine(RecreateFirestoreManager());
         }
 
-        // Mark as initialized WITHOUT doing Firebase sync
         isDataInitialized = true;
 
-        Debug.Log("Quick initialization complete - skipped Firebase sync");
         OnDataInitializationComplete?.Invoke();
     }
 
-    // Slow path - full Firebase sync on app startup
     private IEnumerator FullInitializationFromScratch()
     {
-        Debug.Log("Full initialization - app startup or fresh load");
-
-        // Create managers if they don't exist
         if (JSONFileManager.Instance == null)
         {
             yield return StartCoroutine(RecreateJSONManager());
@@ -168,7 +155,6 @@ public class GlobalManager : MonoBehaviour
             yield return StartCoroutine(RecreateFirestoreManager());
         }
 
-        // Initialize JSON files
         bool jsonInitComplete = false;
         JSONFileManager.Instance.InitializeJSONFiles(() =>
         {
@@ -176,7 +162,6 @@ public class GlobalManager : MonoBehaviour
         });
         yield return new WaitUntil(() => jsonInitComplete);
 
-        // Initialize Firebase and sync
         bool firebaseInitComplete = false;
         FirestoreManager.Instance.InitializeFirebase((success) =>
         {
@@ -742,7 +727,6 @@ public class GlobalManager : MonoBehaviour
         bool managersRecreated = false;
         yield return StartCoroutine(RecreateDestroyedManagersCoroutine((success) => managersRecreated = success));
 
-        // Set flag to skip full initialization before loading scene
         SetSkipFullInitialization(true);
 
         SceneManager.LoadScene(targetScene, LoadSceneMode.Single);
@@ -750,7 +734,6 @@ public class GlobalManager : MonoBehaviour
 
     private IEnumerator RecreateDestroyedManagersCoroutine(Action<bool> onComplete)
     {
-        Debug.Log("=== RecreateDestroyedManagersCoroutine START ===");
         bool success = true;
         bool shouldRecreateJSON = false;
         bool shouldRecreateFirestore = false;
@@ -759,12 +742,9 @@ public class GlobalManager : MonoBehaviour
         {
             shouldRecreateJSON = ARManagerCleanup.ShouldRecreateJSONManager() && JSONFileManager.Instance == null;
             shouldRecreateFirestore = ARManagerCleanup.ShouldRecreateFirestoreManager() && FirestoreManager.Instance == null;
-
-            Debug.Log($"Should recreate JSON: {shouldRecreateJSON}, Firestore: {shouldRecreateFirestore}");
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"Error checking manager states: {ex.Message}");
             success = false;
         }
 
@@ -772,7 +752,6 @@ public class GlobalManager : MonoBehaviour
         {
             try
             {
-                Debug.Log("Creating JSONFileManager...");
                 GameObject jsonManager;
                 if (jsonFileManagerPrefab != null)
                 {
@@ -787,7 +766,6 @@ public class GlobalManager : MonoBehaviour
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"Error creating JSONFileManager: {ex.Message}");
                 success = false;
             }
         }
@@ -796,7 +774,6 @@ public class GlobalManager : MonoBehaviour
         {
             try
             {
-                Debug.Log("Creating FirestoreManager...");
                 GameObject firestoreManager;
                 if (firestoreManagerPrefab != null)
                 {
@@ -811,33 +788,25 @@ public class GlobalManager : MonoBehaviour
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"Error creating FirestoreManager: {ex.Message}");
                 success = false;
             }
         }
 
         if (shouldRecreateJSON)
         {
-            Debug.Log("Waiting for JSONFileManager.Instance...");
             yield return new WaitUntil(() => JSONFileManager.Instance != null);
-            Debug.Log("JSONFileManager ready!");
         }
 
         if (shouldRecreateFirestore)
         {
-            Debug.Log("Waiting for FirestoreManager.Instance...");
             yield return new WaitUntil(() => FirestoreManager.Instance != null);
-            Debug.Log("FirestoreManager ready!");
         }
 
         yield return new WaitForSeconds(0.2f);
 
-        // DON'T RESET FLAGS HERE - Let EnsureManagersAfterAR do it
-        // ARManagerCleanup.ResetManagerStates(); ← REMOVED
-
-        Debug.Log("=== RecreateDestroyedManagersCoroutine END ===");
         onComplete?.Invoke(success);
     }
+
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         wasInARMode = isInARMode;
@@ -859,7 +828,6 @@ public class GlobalManager : MonoBehaviour
 
     private IEnumerator EnsureManagersAfterAR()
     {
-        Debug.Log("=== EnsureManagersAfterAR START ===");
         yield return new WaitForSeconds(0.1f);
 
         bool needsManagerCheck = false;
@@ -870,13 +838,9 @@ public class GlobalManager : MonoBehaviour
         {
             shouldRecreateJSON = ARManagerCleanup.ShouldRecreateJSONManager() && JSONFileManager.Instance == null;
             shouldRecreateFirestore = ARManagerCleanup.ShouldRecreateFirestoreManager() && FirestoreManager.Instance == null;
-
-            Debug.Log($"EnsureManagersAfterAR - JSON: {shouldRecreateJSON} (Instance null: {JSONFileManager.Instance == null})");
-            Debug.Log($"EnsureManagersAfterAR - Firestore: {shouldRecreateFirestore} (Instance null: {FirestoreManager.Instance == null})");
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"Error in EnsureManagersAfterAR: {ex.Message}");
         }
 
         if (shouldRecreateJSON)
@@ -884,7 +848,6 @@ public class GlobalManager : MonoBehaviour
             needsManagerCheck = true;
             try
             {
-                Debug.Log("Creating JSONFileManager in EnsureManagersAfterAR...");
                 GameObject jsonManager;
                 if (jsonFileManagerPrefab != null)
                 {
@@ -899,7 +862,6 @@ public class GlobalManager : MonoBehaviour
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"Error creating JSONFileManager: {ex.Message}");
             }
         }
 
@@ -908,7 +870,6 @@ public class GlobalManager : MonoBehaviour
             needsManagerCheck = true;
             try
             {
-                Debug.Log("Creating FirestoreManager in EnsureManagersAfterAR...");
                 GameObject firestoreManager;
                 if (firestoreManagerPrefab != null)
                 {
@@ -923,25 +884,18 @@ public class GlobalManager : MonoBehaviour
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"Error creating FirestoreManager: {ex.Message}");
             }
         }
 
         if (needsManagerCheck)
         {
-            Debug.Log("Waiting for managers to be ready...");
             yield return new WaitUntil(() =>
                 (!shouldRecreateJSON || JSONFileManager.Instance != null) &&
                 (!shouldRecreateFirestore || FirestoreManager.Instance != null));
 
-            Debug.Log("Managers ready! Calling InitializeDataSystems...");
             InitializeDataSystems();
         }
 
-        // NOW reset the flags after everything is done
-        Debug.Log("Resetting ARManagerCleanup flags...");
         ARManagerCleanup.ResetManagerStates();
-
-        Debug.Log("=== EnsureManagersAfterAR END ===");
     }
 }

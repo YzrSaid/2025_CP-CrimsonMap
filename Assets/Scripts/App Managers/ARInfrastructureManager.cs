@@ -100,7 +100,6 @@ public class ARInfrastructureManager : MonoBehaviour
     {
         if (isExitingAR) return;
 
-        Debug.Log($"AR Back Button clicked - returning to {sceneName}");
         mainSceneName = sceneName;
         StartCoroutine(SafeExitAR());
     }
@@ -127,7 +126,6 @@ public class ARInfrastructureManager : MonoBehaviour
         if (arSession != null)
         {
             arSession.enabled = false;
-            Debug.Log("AR Session disabled");
         }
 
         yield return new WaitForEndOfFrame();
@@ -186,7 +184,6 @@ public class ARInfrastructureManager : MonoBehaviour
             {
                 if (subsystem.running)
                 {
-                    Debug.Log("Stopping XR Plane Subsystem...");
                     subsystem.Stop();
                 }
             }
@@ -195,7 +192,6 @@ public class ARInfrastructureManager : MonoBehaviour
             {
                 if (subsystem.running)
                 {
-                    Debug.Log("Stopping XR Raycast Subsystem...");
                     subsystem.Stop();
                 }
             }
@@ -262,7 +258,6 @@ public class ARInfrastructureManager : MonoBehaviour
 
         if (isDataLoaded)
         {
-            Debug.Log($"✅ Successfully loaded {currentNodes.Count} nodes and {currentInfrastructures.Count} infrastructures for map: {currentMapId}");
 
             if (debugText != null)
                 debugText.text = $"Loaded: {currentNodes.Count} nodes, {currentInfrastructures.Count} infra";
@@ -314,22 +309,15 @@ public class ARInfrastructureManager : MonoBehaviour
             fileName,
             (jsonData) =>
             {
-                try
-                {
                     Infrastructure[] infrastructures = JsonHelper.FromJson<Infrastructure>(jsonData);
                     currentInfrastructures = infrastructures.Where(i => !i.is_deleted).ToList();
                     Debug.Log($"✅ Found {currentInfrastructures.Count} active infrastructures");
                     loadSuccess = true;
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogError($"❌ Error parsing infrastructure JSON: {e.Message}");
+              
                     loadSuccess = false;
-                }
             },
             (error) =>
             {
-                Debug.LogError($"❌ Failed to load infrastructure file: {error}");
                 loadSuccess = false;
             }
         ));
@@ -385,7 +373,6 @@ public class ARInfrastructureManager : MonoBehaviour
             loadingText.text = message;
             loadingText.gameObject.SetActive(true);
         }
-        Debug.Log($"[AR Loading] {message}");
     }
 
     void HideLoadingUI()
@@ -408,11 +395,6 @@ public class ARInfrastructureManager : MonoBehaviour
 
     void CreateVisibleMarkers()
     {
-        if (!isDataLoaded || currentNodes == null || currentNodes.Count == 0)
-        {
-            Debug.LogWarning("Cannot create markers - data not loaded or no nodes available");
-            return;
-        }
 
         foreach (Node node in currentNodes)
         {
@@ -429,10 +411,6 @@ public class ARInfrastructureManager : MonoBehaviour
     {
         float distance = CalculateDistance(userLocation, new Vector2(node.latitude, node.longitude));
         bool inRange = distance <= maxVisibleDistance && distance >= minMarkerDistance;
-
-        if (!inRange)
-            Debug.Log($"Node {node.name} distance: {distance:F1}m - Out of range");
-
         return inRange;
     }
 
@@ -440,7 +418,6 @@ public class ARInfrastructureManager : MonoBehaviour
     {
         if (buildingMarkerPrefab == null)
         {
-            Debug.LogError("❌ Building marker prefab is not assigned!");
             return;
         }
 
@@ -448,7 +425,6 @@ public class ARInfrastructureManager : MonoBehaviour
 
         if (infra == null)
         {
-            Debug.LogWarning($"⚠️ No infrastructure found for node {node.node_id} with infra_id {node.related_infra_id}");
             return;
         }
 
@@ -461,8 +437,6 @@ public class ARInfrastructureManager : MonoBehaviour
 
         UpdateMarkerText(marker, infra, node);
         activeMarkers.Add(marker);
-
-        Debug.Log($"✅ Created marker for {infra.name} at {worldPosition}");
     }
 
     void UpdateMarkerText(GameObject marker, Infrastructure infra, Node node)
@@ -529,6 +503,5 @@ public class ARInfrastructureManager : MonoBehaviour
         CancelInvoke();
         ClearMarkers();
         StopAllCoroutines();
-        Debug.Log("ARInfrastructureManager destroyed");
     }
 }

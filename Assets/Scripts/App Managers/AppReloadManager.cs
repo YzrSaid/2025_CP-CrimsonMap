@@ -22,7 +22,6 @@ public class AppReloadManager : MonoBehaviour
 
     void OnScrollReloadTriggered()
     {
-        Debug.Log("🔄 AppReloadManager: Starting app reload...");
         StartCoroutine(ReloadApp());
     }
 
@@ -32,13 +31,11 @@ public class AppReloadManager : MonoBehaviour
 
         if (reinitializeData)
         {
-            Debug.Log("🔄 Re-initializing data systems...");
             yield return StartCoroutine(CallMainAppLoaderInitialization());
         }
         else if (reloadCurrentScene)
         {
             string currentScene = SceneManager.GetActiveScene().name;
-            Debug.Log($"🔄 Reloading scene: {currentScene}");
             SceneManager.LoadScene(currentScene);
         }
 
@@ -62,10 +59,6 @@ public class AppReloadManager : MonoBehaviour
             mainAppLoader.ResetForReload();
 
             yield return StartCoroutine(mainAppLoader.InitializeApp());
-        }
-        else
-        {
-            Debug.LogError("MainAppLoader instance not found in the scene.");
         }
     }
 

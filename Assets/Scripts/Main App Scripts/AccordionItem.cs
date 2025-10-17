@@ -141,13 +141,11 @@ public class AccordionItem : MonoBehaviour
 
             infrastructuresLoaded = true;
 
-            Debug.Log($"AccordionItem: Loaded {loadedCount} infrastructures for category {categoryId}");
 
             StartCoroutine(FinishExpandAfterLoad());
         }
-        catch (System.Exception e)
+        catch (System.Exception)
         {
-            Debug.LogError($"AccordionItem: Error parsing infrastructure JSON: {e.Message}");
             infrastructuresLoaded = true;
             
             if (isExpanded)
@@ -193,7 +191,6 @@ public class AccordionItem : MonoBehaviour
 
     void OnInfrastructuresLoadError(string errorMessage)
     {
-        Debug.LogError($"AccordionItem: Failed to load infrastructures: {errorMessage}");
         infrastructuresLoaded = true;
         
         if (isExpanded)
@@ -204,11 +201,6 @@ public class AccordionItem : MonoBehaviour
 
     void SpawnInfrastructureItem(Infrastructure infra)
     {
-        if (infrastructurePrefab == null || infrastructureContainer == null)
-        {
-            Debug.LogWarning("AccordionItem: Cannot spawn infrastructure - missing prefab or container");
-            return;
-        }
 
         GameObject newItem = Instantiate(infrastructurePrefab, infrastructureContainer);
 
@@ -301,7 +293,6 @@ public class AccordionItem : MonoBehaviour
 
         isExpanded = true;
         
-        Debug.Log($"Expanding accordion item. InfrastructuresLoaded: {infrastructuresLoaded}, SpawnedCount: {spawnedInfrastructures.Count}");
 
         if (contentPanel != null)
             contentPanel.gameObject.SetActive(true);
@@ -341,8 +332,6 @@ public class AccordionItem : MonoBehaviour
         if (!isExpanded) return;
 
         isExpanded = false;
-
-        Debug.Log("Collapsing accordion item");
 
         StopAllCoroutines();
 

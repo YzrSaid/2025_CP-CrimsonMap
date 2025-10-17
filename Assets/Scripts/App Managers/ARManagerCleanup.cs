@@ -33,7 +33,6 @@ public class ARManagerCleanup : MonoBehaviour
         
         yield return new WaitForEndOfFrame();
         
-        // Do NOT set skip flag here - we're going TO AR, not coming back
         SceneManager.LoadScene(arSceneName, LoadSceneMode.Single);
     }
     

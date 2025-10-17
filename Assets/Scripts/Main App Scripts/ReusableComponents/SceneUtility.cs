@@ -33,7 +33,7 @@ public class SceneUtility : MonoBehaviour
     
     private bool IsARScene(string sceneName)
     {
-        string[] arScenes = { "ARScee"}
+        string[] arScenes = { "ARScene", "ReadQRCode"};
         return System.Array.Exists(arScenes, scene =>
             sceneName.Equals(scene, System.StringComparison.OrdinalIgnoreCase));
     }

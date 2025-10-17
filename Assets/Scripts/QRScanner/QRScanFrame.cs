@@ -4,77 +4,68 @@ using UnityEngine.UI;
 public class QRScanFrame : MonoBehaviour
 {
     [Header("Frame Settings")]
-    public Color frameColor = new Color(0.925f, 0.69f, 0.204f, 1f);
+    public Color frameColor;
     public float frameSize = 280f;
-    public float cornerLength = 50f;
+    public float cornerLength = 75f;
     public float lineThickness = 5f;
     
     void Start()
     {
         CreateFrame();
     }
-
+    
     void CreateFrame()
     {
-        for (int i = 0; i < 8; i++)
+        float halfFrame = frameSize / 2;
+        float offset = lineThickness / 2;
+        
+        // Top-left horizontal (extends right from corner)
+        CreateLine(new Vector2(-halfFrame + cornerLength/2, halfFrame - offset), true, cornerLength, lineThickness);
+        
+        // Top-left vertical (extends down from corner)
+        CreateLine(new Vector2(-halfFrame + offset, halfFrame - cornerLength/2), false, cornerLength, lineThickness);
+        
+        // Top-right horizontal (extends left from corner)
+        CreateLine(new Vector2(halfFrame - cornerLength/2, halfFrame - offset), true, cornerLength, lineThickness);
+        
+        // Top-right vertical (extends down from corner)
+        CreateLine(new Vector2(halfFrame - offset, halfFrame - cornerLength/2), false, cornerLength, lineThickness);
+        
+        // Bottom-left horizontal (extends right from corner)
+        CreateLine(new Vector2(-halfFrame + cornerLength/2, -halfFrame + offset), true, cornerLength, lineThickness);
+        
+        // Bottom-left vertical (extends up from corner)
+        CreateLine(new Vector2(-halfFrame + offset, -halfFrame + cornerLength/2), false, cornerLength, lineThickness);
+        
+        // Bottom-right horizontal (extends left from corner)
+        CreateLine(new Vector2(halfFrame - cornerLength/2, -halfFrame + offset), true, cornerLength, lineThickness);
+        
+        // Bottom-right vertical (extends up from corner)
+        CreateLine(new Vector2(halfFrame - offset, -halfFrame + cornerLength/2), false, cornerLength, lineThickness);
+    }
+    
+    void CreateLine(Vector2 position, bool isHorizontal, float length, float thickness)
+    {
+        GameObject line = new GameObject("FrameLine");
+        line.transform.SetParent(transform);
+        line.transform.localPosition = Vector3.zero;
+        line.transform.localScale = Vector3.one;
+        
+        Image img = line.AddComponent<Image>();
+        img.color = frameColor;
+        
+        RectTransform rt = img.rectTransform;
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        
+        if (isHorizontal)
         {
-            GameObject line = new GameObject("FrameLine" + i);
-            line.transform.SetParent(transform);
-            line.transform.localPosition = Vector3.zero;
-            line.transform.localScale = Vector3.one;
-            
-            Image img = line.AddComponent<Image>();
-            img.color = frameColor;
-            
-            RectTransform rt = img.rectTransform;
-            
-            // Position based on corner
-            int corner = i / 2; 
-            bool isHorizontal = (i % 2 == 0);
-            
-            // Set size based on orientation
-            if (isHorizontal)
-            {
-                rt.sizeDelta = new Vector2(cornerLength, lineThickness);
-            }
-            else
-            {
-                rt.sizeDelta = new Vector2(lineThickness, cornerLength);
-            }
-            
-            float offset = frameSize / 2;
-            
-            // Position each line
-            switch (corner)
-            {
-                case 0: // Top Left corner
-                    if (isHorizontal)
-                        rt.anchoredPosition = new Vector2(-offset + cornerLength/2, offset);
-                    else
-                        rt.anchoredPosition = new Vector2(-offset, offset - cornerLength/2);
-                    break;
-                    
-                case 1: 
-                    if (isHorizontal)
-                        rt.anchoredPosition = new Vector2(offset - cornerLength/2, offset);
-                    else
-                        rt.anchoredPosition = new Vector2(offset, offset - cornerLength/2);
-                    break;
-                    
-                case 2:
-                    if (isHorizontal)
-                        rt.anchoredPosition = new Vector2(-offset + cornerLength/2, -offset);
-                    else
-                        rt.anchoredPosition = new Vector2(-offset, -offset + cornerLength/2);
-                    break;
-                    
-                case 3: // Bottom Right corner
-                    if (isHorizontal)
-                        rt.anchoredPosition = new Vector2(offset - cornerLength/2, -offset);
-                    else
-                        rt.anchoredPosition = new Vector2(offset, -offset + cornerLength/2);
-                    break;
-            }
+            rt.sizeDelta = new Vector2(length, thickness);
         }
+        else
+        {
+            rt.sizeDelta = new Vector2(thickness, length);
+        }
+        
+        rt.anchoredPosition = position;
     }
 }

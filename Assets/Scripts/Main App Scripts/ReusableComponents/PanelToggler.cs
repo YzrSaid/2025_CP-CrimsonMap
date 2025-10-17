@@ -17,7 +17,6 @@ public class PanelToggler : MonoBehaviour
         button = GetComponent<Button>();
         button.onClick.AddListener(TogglePanels);
 
-        // Save original scales
         foreach (var panel in panelsToToggle)
         {
             if (panel != null && !originalScales.ContainsKey(panel))

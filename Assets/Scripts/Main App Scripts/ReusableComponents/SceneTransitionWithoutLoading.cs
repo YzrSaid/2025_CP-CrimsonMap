@@ -18,7 +18,7 @@ public class SceneTransitionWithoutLoading : MonoBehaviour
             Destroy(gameObject);
         }
     }
-    public void GoToTargetSceneSimple(string sceneName)
+    public static void GoToTargetSceneSimple(string sceneName)
     {
         GlobalManager.SetSkipFullInitialization(true);
     
