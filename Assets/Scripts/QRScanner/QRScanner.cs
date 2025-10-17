@@ -21,6 +21,7 @@ public class QRScanner : MonoBehaviour
     [Header("UI References")]
     public TextMeshProUGUI instructionsText;
     public Button backButton;
+    public RawImage cameraDisplayImage; 
 
     [Header("Confirmation Panel")]
     public GameObject confirmationPanel;
@@ -37,7 +38,8 @@ public class QRScanner : MonoBehaviour
     private Node scannedNodeInfo;
     private List<string> availableMapIds = new List<string>();
     private Texture2D cameraImageTexture;
-    
+    private RenderTexture renderTexture;
+
     private IBarcodeReader barcodeReader = new BarcodeReader
     {
         AutoRotate = true,
@@ -60,10 +62,6 @@ public class QRScanner : MonoBehaviour
             instructionsText.text = "Point camera at QR code";
         }
 
-        if (backButton != null)
-        {
-            backButton.onClick.AddListener(GoBack);
-        }
 
         if (confirmButton != null)
         {
@@ -81,7 +79,7 @@ public class QRScanner : MonoBehaviour
     IEnumerator InitializeScanner()
     {
         yield return StartCoroutine(LoadAvailableMaps());
-        
+
         if (arCameraManager == null)
         {
             if (instructionsText != null)
@@ -181,6 +179,12 @@ public class QRScanner : MonoBehaviour
             cameraImageTexture.LoadRawTextureData(buffer);
             cameraImageTexture.Apply();
             buffer.Dispose();
+
+            // Display camera feed on RawImage
+            if (cameraDisplayImage != null)
+            {
+                cameraDisplayImage.texture = cameraImageTexture;
+            }
 
             Result result = barcodeReader.Decode(
                 cameraImageTexture.GetPixels32(),
@@ -348,8 +352,6 @@ public class QRScanner : MonoBehaviour
         PlayerPrefs.SetFloat("ScannedY", scannedNodeInfo.y_coordinate);
         PlayerPrefs.Save();
 
-        StopScanning();
-        SceneManager.LoadScene("MainAppScene");
     }
 
     void OnTryAgain()
@@ -369,11 +371,6 @@ public class QRScanner : MonoBehaviour
         isScanning = true;
     }
 
-    public void GoBack()
-    {
-        StopScanning();
-        SceneManager.UnloadSceneAsync("ReadQRCode");
-    }
 
     void StopScanning()
     {
@@ -388,5 +385,15 @@ public class QRScanner : MonoBehaviour
     void OnDestroy()
     {
         StopScanning();
+        
+        if (cameraImageTexture != null)
+        {
+            Destroy(cameraImageTexture);
+        }
+        
+        if (renderTexture != null)
+        {
+            Destroy(renderTexture);
+        }
     }
 }

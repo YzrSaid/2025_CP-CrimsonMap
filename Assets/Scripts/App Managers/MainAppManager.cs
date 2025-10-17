@@ -7,6 +7,8 @@ using UnityEngine.UI;
 
 public class MainAppManager : MonoBehaviour
 {
+    public static MainAppManager Instance { get; private set; }
+
     public Button homeButton;
     public Button navigateButton;
     public Button settingsButton;
@@ -25,7 +27,18 @@ public class MainAppManager : MonoBehaviour
     public GameObject explorePanel;
     public GameObject settingsPanel;
 
- 
+    private void Awake()
+    {
+        // Singleton pattern
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
 
     void Start()
     {

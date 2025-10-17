@@ -18,12 +18,10 @@ public class SceneTransitionWithoutLoading : MonoBehaviour
             Destroy(gameObject);
         }
     }
-    public void GoToTargetScene(string sceneName)
-    {
-        SceneManager.LoadScene(sceneName);
-    }
     public void GoToTargetSceneSimple(string sceneName)
     {
+        GlobalManager.SetSkipFullInitialization(true);
+    
         if (GlobalManager.Instance != null)
         {
             GlobalManager.Instance.StartCoroutine(GlobalManager.Instance.SafeARCleanupAndExit(sceneName));

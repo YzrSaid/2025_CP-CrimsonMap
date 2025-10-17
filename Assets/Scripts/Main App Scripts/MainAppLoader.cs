@@ -29,6 +29,22 @@ public class MainAppLoader : MonoBehaviour
 
     void Start()
     {
+        // Check if we're coming back from AR/QR - if so, skip loading screen
+        bool skipFullInitialization = GlobalManager.ShouldSkipFullInitialization();
+        
+        if (skipFullInitialization)
+        {
+            // Coming from AR/QR - hide loading panel immediately
+            Debug.Log("Returning from AR/QR - skipping loading screen");
+            if (loadingPanel != null) loadingPanel.SetActive(false);
+            if (mainAppUI != null) mainAppUI.SetActive(true);
+            if (errorContainer != null) errorContainer.SetActive(false);
+            
+            isInitialized = true;
+            return; // Don't run initialization coroutine
+        }
+
+        // Normal app startup - show loading screen
         if (loadingPanel != null) loadingPanel.SetActive(true);
         if (mainAppUI != null) mainAppUI.SetActive(false);
         if (errorContainer != null) errorContainer.SetActive(false);
@@ -142,7 +158,8 @@ public class MainAppLoader : MonoBehaviour
             UpdateLoadingUI("Map ready...", 0.35f);
             yield return new WaitForSeconds(0.3f);
         }
-        // Initialize data systems (your existing code continues here)
+
+        // Initialize data systems
         UpdateLoadingUI("Setting up data systems...", 0.4f);
         yield return new WaitForSeconds(0.3f);
 
@@ -229,6 +246,7 @@ public class MainAppLoader : MonoBehaviour
             Debug.Log(GlobalManager.Instance.GetSystemStatus());
         }
     }
+
     private void UpdateLoadingUI(string message, float progress)
     {
         // Update loading text
@@ -263,7 +281,6 @@ public class MainAppLoader : MonoBehaviour
             retryButton.gameObject.SetActive(!showRestartMessage);
 
         // Update loading UI to show error state
-        //hide the loadingBar and progressText
         if (loadingBar != null) loadingBar.gameObject.SetActive(false);
         if (progressText != null) progressText.gameObject.SetActive(false);
         if (loadingText != null)
@@ -286,12 +303,13 @@ public class MainAppLoader : MonoBehaviour
         StopAllCoroutines();
         StartCoroutine(InitializeApp());
     }
+
     void OnDestroy()
     {
         // Clean up event subscriptions to prevent memory leaks
         if (GlobalManager.Instance != null && GlobalManager.Instance.OnDataInitializationComplete != null)
         {
-            // Remove all listeners (this is a safer way)
+            // Remove all listeners
             System.Delegate[] invocationList = GlobalManager.Instance.OnDataInitializationComplete.GetInvocationList();
             foreach (System.Action action in invocationList)
             {
@@ -299,6 +317,7 @@ public class MainAppLoader : MonoBehaviour
             }
         }
     }
+
     public void ResetForReload()
     {
         isInitialized = false;

@@ -4,7 +4,7 @@ using UnityEngine.UI;
 public class QRScanFrame : MonoBehaviour
 {
     [Header("Frame Settings")]
-    public Color frameColor = new Color(0.925f, 0.69f, 0.204f, 1f); // #ECB034
+    public Color frameColor = new Color(0.925f, 0.69f, 0.204f, 1f);
     public float frameSize = 280f;
     public float cornerLength = 50f;
     public float lineThickness = 5f;
@@ -16,7 +16,6 @@ public class QRScanFrame : MonoBehaviour
 
     void CreateFrame()
     {
-        // Create 8 lines (2 per corner = 4 corners x 2 lines)
         for (int i = 0; i < 8; i++)
         {
             GameObject line = new GameObject("FrameLine" + i);
@@ -30,7 +29,7 @@ public class QRScanFrame : MonoBehaviour
             RectTransform rt = img.rectTransform;
             
             // Position based on corner
-            int corner = i / 2; // 0=TopLeft, 1=TopRight, 2=BottomLeft, 3=BottomRight
+            int corner = i / 2; 
             bool isHorizontal = (i % 2 == 0);
             
             // Set size based on orientation
@@ -55,14 +54,14 @@ public class QRScanFrame : MonoBehaviour
                         rt.anchoredPosition = new Vector2(-offset, offset - cornerLength/2);
                     break;
                     
-                case 1: // Top Right corner
+                case 1: 
                     if (isHorizontal)
                         rt.anchoredPosition = new Vector2(offset - cornerLength/2, offset);
                     else
                         rt.anchoredPosition = new Vector2(offset, offset - cornerLength/2);
                     break;
                     
-                case 2: // Bottom Left corner
+                case 2:
                     if (isHorizontal)
                         rt.anchoredPosition = new Vector2(-offset + cornerLength/2, -offset);
                     else
