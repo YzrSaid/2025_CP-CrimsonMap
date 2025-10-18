@@ -1127,6 +1127,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   arCameraManager: {fileID: 331264287}
   instructionsText: {fileID: 119765025}
+  debugText: {fileID: 0}
   backButton: {fileID: 2089880374}
   qrFrameContainer: {fileID: 1738500814}
   confirmationPanel: {fileID: 1737200551}
@@ -1135,6 +1136,8 @@ MonoBehaviour:
   tryAgainButton: {fileID: 1751311163}
   qrSignature: CRIMSON
   qrDelimiter: _
+  enableTestMode: 1
+  testNodeId: ND-045
 --- !u!1 &1737200551
 GameObject:
   m_ObjectHideFlags: 0
