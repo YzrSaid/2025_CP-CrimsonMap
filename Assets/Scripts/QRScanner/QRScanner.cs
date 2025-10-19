@@ -314,6 +314,10 @@ public class QRScanner : MonoBehaviour
             canvasGroup.DOFade( 1, 0.5f ).SetEase( Ease.OutQuad );
         }
 
+        if ( backButton != null ) {
+            backButton.gameObject.SetActive( false );
+        }
+
         if ( confirmationText != null ) {
             confirmationText.text = $"The QR code you scanned is referring to [{scannedNodeInfo.name}], use this as your current location?";
         }
@@ -364,6 +368,10 @@ public class QRScanner : MonoBehaviour
 
         if ( qrFrameContainer != null ) {
             qrFrameContainer.SetActive( true );
+        }
+
+        if ( backButton != null ) {
+            backButton.gameObject.SetActive( true );
         }
 
         isScanning = true;

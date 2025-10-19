@@ -521,13 +521,16 @@ public class PathfindingController : MonoBehaviour
     private void ShowConfirmationPanel( string fromNodeId, string toNodeId )
     {
         if ( confirmationPanel != null ) {
+            confirmationPanel.transform.Find( "Title" ).GetComponent<TextMeshProUGUI>().text = "Confirm Location";
+            confirmButton.gameObject.SetActive( true );
+            cancelButton.GetComponentInChildren<TextMeshProUGUI>().text = "Cancel";
             confirmationPanel.SetActive( true );
+            confirmErrorText.gameObject.SetActive( false );
         }
 
         if ( allNodes.TryGetValue( fromNodeId, out Node fromNode ) ) {
             if ( confirmFromText != null ) {
-                string lockIndicator = isQRLocationLocked ? " 🔒" : "";
-                confirmFromText.text = $"<b>From:</b> {fromNode.name}{lockIndicator}";
+                confirmFromText.text = $"<b>From:</b> {fromNode.name}";
             }
         }
 

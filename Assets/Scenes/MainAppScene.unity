@@ -614,7 +614,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &83369566
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1072,8 +1072,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 135.8225, y: -31.89425}
-  m_SizeDelta: {x: 205.8002, y: 62.358}
+  m_AnchoredPosition: {x: 135.8225, y: -35}
+  m_SizeDelta: {x: 205.8002, y: 70}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &130246380
 MonoBehaviour:
@@ -1084,13 +1084,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 130246378}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3ea37884b19aec9c19b91b821e957a12, type: 3}
+  m_Script: {fileID: 11500000, guid: 8d3db627d76ac9f56a1cb120c0aa0d44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   panelsToClose:
   - {fileID: 1177314504}
-  - {fileID: 1259183061}
-  button: {fileID: 0}
 --- !u!114 &130246381
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2425,7 +2423,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 407.46747, y: -31.89425}
-  m_SizeDelta: {x: 205.8002, y: 62.358}
+  m_SizeDelta: {x: 205.8002, y: 70}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &336797204
 MonoBehaviour:
@@ -3541,8 +3539,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 'To:'
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: daa2dec4fe4e69fb3ab5aa3a6410ddb3, type: 2}
-  m_sharedMaterial: {fileID: -7671111005780295698, guid: daa2dec4fe4e69fb3ab5aa3a6410ddb3, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: ab48a3ca35564fe02afaf527acecf6fe, type: 2}
+  m_sharedMaterial: {fileID: 730542738843737679, guid: ab48a3ca35564fe02afaf527acecf6fe, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -4572,8 +4570,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.00030517578, y: -613.12}
-  m_SizeDelta: {x: -176.7003, y: 407.2547}
+  m_AnchoredPosition: {x: 0.00030517578, y: -653.7687}
+  m_SizeDelta: {x: -176.7003, y: 366.606}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &654494068
 MonoBehaviour:
@@ -5699,8 +5697,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 407.46747, y: -31.89425}
-  m_SizeDelta: {x: 205.8002, y: 62.358}
+  m_AnchoredPosition: {x: 407.46747, y: -35}
+  m_SizeDelta: {x: 205.8002, y: 70}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &767062749
 MonoBehaviour:
@@ -7317,8 +7315,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 'From:'
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: daa2dec4fe4e69fb3ab5aa3a6410ddb3, type: 2}
-  m_sharedMaterial: {fileID: -7671111005780295698, guid: daa2dec4fe4e69fb3ab5aa3a6410ddb3, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: ab48a3ca35564fe02afaf527acecf6fe, type: 2}
+  m_sharedMaterial: {fileID: 730542738843737679, guid: ab48a3ca35564fe02afaf527acecf6fe, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -9477,7 +9475,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: -458.2448}
-  m_SizeDelta: {x: -176.7003, y: 692.3245}
+  m_SizeDelta: {x: -176.7003, y: 709.5219}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1177314506
 MonoBehaviour:
@@ -9992,7 +9990,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 271.64978, y: -148.74251}
+  m_AnchoredPosition: {x: 271.64978, y: -142.72899}
   m_SizeDelta: {x: 520.9548, y: 107.4282}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1001 &1246504485
@@ -10324,7 +10322,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 135.8225, y: -31.89425}
-  m_SizeDelta: {x: 205.8002, y: 62.358}
+  m_SizeDelta: {x: 205.8002, y: 70}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1317119622
 MonoBehaviour:
@@ -10335,13 +10333,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1317119620}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3ea37884b19aec9c19b91b821e957a12, type: 3}
+  m_Script: {fileID: 11500000, guid: 8d3db627d76ac9f56a1cb120c0aa0d44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   panelsToClose:
   - {fileID: 654494066}
-  - {fileID: 1259183061}
-  button: {fileID: 0}
 --- !u!114 &1317119623
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11815,7 +11811,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27f5128b937374482acec07bea725234, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dropdownFrom: {fileID: 1115133689}
   dropdownTo: {fileID: 1063534092}
   infrastructureList:
     infrastructures: []
@@ -15831,7 +15826,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 271.64978, y: -405.86017}
+  m_AnchoredPosition: {x: 271.64978, y: -393.83313}
   m_SizeDelta: {x: 543.29, y: 368.2625}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1953062805
@@ -17262,7 +17257,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Confirm
+  m_text: Proceed
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: df291fe0e64d08ea7844b5038b3945b2, type: 2}
   m_sharedMaterial: {fileID: 8424257508095969771, guid: df291fe0e64d08ea7844b5038b3945b2, type: 2}
@@ -17374,8 +17369,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 271.64978, y: -641.15796}
-  m_SizeDelta: {x: 543.29, y: 63.7885}
+  m_AnchoredPosition: {x: 271.64978, y: -643.74316}
+  m_SizeDelta: {x: 543.29, y: 105.04}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2079345798
 MonoBehaviour:
@@ -17394,7 +17389,7 @@ MonoBehaviour:
     m_Right: 0
     m_Top: 0
     m_Bottom: 0
-  m_ChildAlignment: 4
+  m_ChildAlignment: 1
   m_Spacing: 0
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 1

@@ -9,7 +9,7 @@ public class Category
 {
     public string category_id;
     public string name;
-    public string icon;
+    public string color;
 }
 
 [System.Serializable]
@@ -115,7 +115,6 @@ public class Node
     public string type;
     public bool is_active;
 
-    // Unity JsonUtility has issues with nullable ints
     public string related_infra_id;
     public string related_room_id;
 
@@ -124,11 +123,9 @@ public class Node
     public float x_coordinate;
     public float y_coordinate;
 
-    // Helpers
-    public bool HasRelatedInfraId => !string.IsNullOrEmpty(related_infra_id);
-    public bool HasRelatedRoomId => !string.IsNullOrEmpty(related_room_id);
+    public bool HasRelatedInfraId => !string.IsNullOrEmpty( related_infra_id );
+    public bool HasRelatedRoomId => !string.IsNullOrEmpty( related_room_id );
 
-    // If you need them as strings
     public string GetRelatedInfraId() => HasRelatedInfraId ? related_infra_id : null;
     public string GetRelatedRoomId() => HasRelatedRoomId ? related_room_id : null;
 }
@@ -217,7 +214,6 @@ public class SavedDestinationsData
     public Dictionary<string, object>[] saved_destinations;
 }
 
-// This data is important for the onboarding screens
 [System.Serializable]
 public class SaveData
 {
@@ -227,17 +223,17 @@ public class SaveData
 // Helper class for JSON array parsing (Unity's JsonUtility doesn't handle arrays directly)
 public static class JsonHelper
 {
-    public static T[] FromJson<T>(string json)
+    public static T[] FromJson<T>( string json )
     {
-        Wrapper<T> wrapper = JsonUtility.FromJson<Wrapper<T>>("{\"Items\":" + json + "}");
+        Wrapper<T> wrapper = JsonUtility.FromJson<Wrapper<T>>( "{\"Items\":" + json + "}" );
         return wrapper.Items;
     }
 
-    public static string ToJson<T>(T[] array, bool prettyPrint = false)
+    public static string ToJson<T>( T[] array, bool prettyPrint = false )
     {
         Wrapper<T> wrapper = new Wrapper<T>();
         wrapper.Items = array;
-        return JsonUtility.ToJson(wrapper, prettyPrint);
+        return JsonUtility.ToJson( wrapper, prettyPrint );
     }
 
     [System.Serializable]

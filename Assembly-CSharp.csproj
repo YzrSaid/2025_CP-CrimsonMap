@@ -347,6 +347,7 @@
     <Compile Include="Assets/Mapbox/Unity/DataContainers/GeometryExtrusionOptions.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/PoiMarkerHelper.cs" />
     <Compile Include="Assets/Scripts/App Managers/GPSManager.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/PanelCloser.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Factories/ImageDataFetcher.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Data/KdTree/KDNode.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/PositionWithLocationProvider.cs" />
