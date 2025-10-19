@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using System.Collections;
 using System.IO;
+using System.Linq;
 
 public class CategoryDropdown : MonoBehaviour
 {
@@ -30,7 +31,7 @@ public class CategoryDropdown : MonoBehaviour
         float waitTime = 0f;
 
         while ( waitTime < maxWaitTime ) {
-            if ( GlobalManager.Instance != null && IsDataInitializationComplete() ) {
+            if ( GlobalManager.Instance != null && MapManager.Instance != null && MapManager.Instance.IsReady() && IsDataInitializationComplete() ) {
                 yield return StartCoroutine( PopulatePanel() );
                 yield break;
             }
@@ -75,32 +76,32 @@ public class CategoryDropdown : MonoBehaviour
 
     IEnumerator PopulatePanel()
     {
-        bool dataLoaded = false;
+        List<string> currentCampusIds = MapManager.Instance.GetCurrentCampusIds();
+        string currentMapId = MapManager.Instance.GetCurrentMap()?.map_id;
+
+        if ( string.IsNullOrEmpty( currentMapId ) || currentCampusIds.Count == 0 ) {
+            yield break;
+        }
+
+        Node[] allNodes = null;
+        Infrastructure[] allInfrastructures = null;
         CategoryList categoryList = null;
-        string errorMessage = "";
 
-        yield return StartCoroutine( CrossPlatformFileLoader.LoadJsonFile( "categories.json",
-        ( jsonContent ) => {
-            try {
-                categoryList = JsonUtility.FromJson<CategoryList>( "{\"categories\":" + jsonContent + "}" );
-                dataLoaded = true;
-            } catch ( System.Exception e ) {
-                errorMessage = $"Error parsing JSON: {e.Message}";
-            }
-        },
-        ( error ) => {
-            errorMessage = error;
-        } ) );
+        yield return StartCoroutine( LoadNodesForMap( currentMapId, ( nodes ) => allNodes = nodes ) );
+        yield return StartCoroutine( LoadInfrastructureData( ( infras ) => allInfrastructures = infras ) );
+        yield return StartCoroutine( LoadCategoryData( ( cats ) => categoryList = cats ) );
 
-        if ( !dataLoaded ) {
+        if ( allNodes == null || allInfrastructures == null || categoryList == null ) {
             yield break;
         }
 
-        if ( categoryList == null || categoryList.categories == null ) {
-            yield break;
-        }
+        HashSet<string> usedCategoryIds = GetUsedCategoryIds( allNodes, allInfrastructures, currentCampusIds );
 
         foreach ( Category category in categoryList.categories ) {
+            if ( !usedCategoryIds.Contains( category.category_id ) ) {
+                continue;
+            }
+
             Button item = Instantiate( categoryItemPrefab, panelContent );
             spawnedItems.Add( item );
 
@@ -130,5 +131,105 @@ public class CategoryDropdown : MonoBehaviour
                 }
             }
         }
+    }
+
+    private HashSet<string> GetUsedCategoryIds( Node[] nodes, Infrastructure[] infrastructures, List<string> currentCampusIds )
+    {
+        HashSet<string> usedCategories = new HashSet<string>();
+
+        Dictionary<string, Infrastructure> infraDict = new Dictionary<string, Infrastructure>();
+        foreach ( var infra in infrastructures ) {
+            infraDict[infra.infra_id] = infra;
+        }
+
+        foreach ( var node in nodes ) {
+            if ( node.type != "infrastructure" || !node.is_active ) {
+                continue;
+            }
+
+            if ( !currentCampusIds.Contains( node.campus_id ) ) {
+                continue;
+            }
+
+            if ( !string.IsNullOrEmpty( node.related_infra_id ) && infraDict.TryGetValue( node.related_infra_id, out Infrastructure infra ) ) {
+                if ( !string.IsNullOrEmpty( infra.category_id ) ) {
+                    usedCategories.Add( infra.category_id );
+                }
+            }
+        }
+
+        return usedCategories;
+    }
+
+    private IEnumerator LoadNodesForMap( string mapId, System.Action<Node[]> onComplete )
+    {
+        bool loadComplete = false;
+        Node[] nodes = null;
+
+        yield return StartCoroutine( CrossPlatformFileLoader.LoadJsonFile(
+            $"nodes_{mapId}.json",
+            ( jsonContent ) => {
+                try {
+                    nodes = JsonHelper.FromJson<Node>( jsonContent );
+                    loadComplete = true;
+                } catch ( System.Exception e ) {
+                    loadComplete = true;
+                }
+            },
+            ( error ) => {
+                loadComplete = true;
+            }
+        ) );
+
+        yield return new WaitUntil( () => loadComplete );
+        onComplete?.Invoke( nodes );
+    }
+
+    private IEnumerator LoadInfrastructureData( System.Action<Infrastructure[]> onComplete )
+    {
+        bool loadComplete = false;
+        Infrastructure[] infrastructures = null;
+
+        yield return StartCoroutine( CrossPlatformFileLoader.LoadJsonFile(
+            "infrastructure.json",
+            ( jsonContent ) => {
+                try {
+                    infrastructures = JsonHelper.FromJson<Infrastructure>( jsonContent );
+                    loadComplete = true;
+                } catch ( System.Exception e ) {
+                    loadComplete = true;
+                }
+            },
+            ( error ) => {
+                loadComplete = true;
+            }
+        ) );
+
+        yield return new WaitUntil( () => loadComplete );
+        onComplete?.Invoke( infrastructures );
+    }
+
+    private IEnumerator LoadCategoryData( System.Action<CategoryList> onComplete )
+    {
+        bool loadComplete = false;
+        CategoryList categoryList = null;
+
+        yield return StartCoroutine( CrossPlatformFileLoader.LoadJsonFile(
+            "categories.json",
+            ( jsonContent ) => {
+                try {
+                    categoryList = JsonUtility.FromJson<CategoryList>( "{\"categories\":" + jsonContent + "}" );
+                    loadComplete = true;
+                } catch ( System.Exception e ) {
+                    loadComplete = true;
+                }
+            },
+            ( error ) => {
+                loadComplete = true;
+            }
+        ) );
+
+        yield return new WaitUntil( () => loadComplete );
+        onComplete?.Invoke( categoryList );
     }
 }

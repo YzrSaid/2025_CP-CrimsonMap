@@ -7,8 +7,6 @@ public static class CrossPlatformFileLoader
     public static IEnumerator LoadJsonFile(string fileName, System.Action<string> onSuccess, System.Action<string> onError)
     {
         string filePath = GetFilePath(fileName);
-
-        // For all platforms, use File.ReadAllText since we're using persistentDataPath
         yield return LoadFileFromPersistentData(filePath, onSuccess, onError);
     }
 
@@ -22,7 +20,6 @@ public static class CrossPlatformFileLoader
                 yield break;
             }
 
-            // Read the file content
             string jsonContent = File.ReadAllText(filePath);
 
             if (string.IsNullOrEmpty(jsonContent))
@@ -38,7 +35,7 @@ public static class CrossPlatformFileLoader
             onError?.Invoke($"Error reading file {Path.GetFileName(filePath)}: {e.Message}");
         }
 
-        yield return null; // Allow one frame for the callback to execute
+        yield return null; 
     }
 
     private static string GetFilePath(string fileName)
@@ -47,12 +44,10 @@ public static class CrossPlatformFileLoader
 
         if (Application.isEditor)
         {
-            // In Unity editor - use streaming assets path for testing
             dataPath = Application.streamingAssetsPath;
         }
         else
         {
-            // In built app - use persistent data path
             dataPath = Application.persistentDataPath;
         }
 
@@ -61,8 +56,6 @@ public static class CrossPlatformFileLoader
 
         return filePath;
     }
-
-    // Utility method to check if file exists
     public static bool FileExists(string fileName)
     {
         string filePath = GetFilePath(fileName);
