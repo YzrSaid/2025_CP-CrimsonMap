@@ -422,6 +422,7 @@
     <Compile Include="Assets/Mapbox/Unity/Map/Interfaces/IMapScalingStrategy.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Factories/AbstractTileFactory.cs" />
     <Compile Include="Assets/Mapbox/Examples/1_DataExplorer/HighlightBuildings.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/InfrastructureDetailsPanel.cs" />
     <Compile Include="Assets/Scripts/App Managers/JSONFileManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/Utilities/MapVisualizerPerformance.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/SceneUtilitySetup.cs" />

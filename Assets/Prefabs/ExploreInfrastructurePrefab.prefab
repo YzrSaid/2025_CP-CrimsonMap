@@ -989,7 +989,7 @@ MonoBehaviour:
   descriptionText: {fileID: 6789182809183023486}
   navigateButton: {fileID: 9039800365135534093}
   viewDetailsButton: {fileID: 4677908348708706206}
-  reportButton: {fileID: 0}
+  detailsPanelPrefab: {fileID: 1667522515482380833, guid: 03d3515f5812b3a6c8476995dd64775b, type: 3}
 --- !u!1 &7621472915624509116
 GameObject:
   m_ObjectHideFlags: 0
