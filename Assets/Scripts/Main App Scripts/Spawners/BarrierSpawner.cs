@@ -8,34 +8,32 @@ using Mapbox.Unity.Map;
 
 public class BarrierSpawner : MonoBehaviour
 {
-    [Header("Mapbox")]
+    [Header( "Mapbox" )]
     public AbstractMap mapboxMap;
 
-    [Header("Prefabs")]
+    [Header( "Prefabs" )]
     public GameObject nodePrefab;
     public GameObject edgePrefab;
-    public GameObject polygonPrefab; // For background polygons
+    public GameObject polygonPrefab;
 
-    [Header("Settings")]
+    [Header( "Settings" )]
     public bool enableDebugLogs = true;
     public float nodeSize = 2.5f;
     public float heightOffset = 10f;
 
-    [Header("Edge Settings")]
+    [Header( "Edge Settings" )]
     public float edgeWidth = 0.5f;
     public Material edgeMaterial;
 
-    [Header("Polygon Background Settings")]
+    [Header( "Polygon Background Settings" )]
     public bool enablePolygonBackgrounds = true;
     public float polygonHeightOffset = 0.5f;
-    public Color defaultPolygonColor = new Color(0.2f, 0.8f, 0.2f, 0.3f);
+    public Color defaultPolygonColor = new Color( 0.2f, 0.8f, 0.2f, 0.3f );
     public Material polygonMaterial;
 
-    // Current map data - set by MapManager
     private string currentMapId;
     private List<string> currentCampusIds = new List<string>();
 
-    // Spawned objects tracking
     private List<BarrierNode> spawnedNodes = new List<BarrierNode>();
     private List<BarrierEdge> spawnedEdges = new List<BarrierEdge>();
     private List<CampusPolygon> spawnedPolygons = new List<CampusPolygon>();
@@ -45,285 +43,171 @@ public class BarrierSpawner : MonoBehaviour
 
     void Awake()
     {
-        if (mapboxMap == null)
-        {
+        if ( mapboxMap == null ) {
             mapboxMap = FindObjectOfType<AbstractMap>();
         }
     }
 
     void Start()
     {
-        DebugLog("🚧 BarrierSpawner started - waiting for MapManager");
-
-        if (mapboxMap == null)
-        {
-            Debug.LogError("No AbstractMap found! Please assign mapboxMap in inspector");
+        if ( mapboxMap == null ) {
             return;
         }
 
-        // Subscribe to MapManager events
-        if (MapManager.Instance != null)
-        {
+        if ( MapManager.Instance != null ) {
             MapManager.Instance.OnMapChanged += OnMapChanged;
             MapManager.Instance.OnMapLoadingStarted += OnMapLoadingStarted;
-        }
-        else
-        {
-            Debug.LogWarning("MapManager.Instance is null - BarrierSpawner will not receive map change events");
         }
     }
 
     void OnDestroy()
     {
-        // Unsubscribe from MapManager events
-        if (MapManager.Instance != null)
-        {
+        if ( MapManager.Instance != null ) {
             MapManager.Instance.OnMapChanged -= OnMapChanged;
             MapManager.Instance.OnMapLoadingStarted -= OnMapLoadingStarted;
         }
     }
 
-    #region MapManager Integration
-
-    /// <summary>
-    /// Called by MapManager to set current map data
-    /// </summary>
-    public void SetCurrentMapData(string mapId, List<string> campusIds)
+    public void SetCurrentMapData( string mapId, List<string> campusIds )
     {
-        DebugLog($"🗺️ Setting map data - Map ID: {mapId}, Campuses: {string.Join(", ", campusIds)}");
-        
         currentMapId = mapId;
         currentCampusIds.Clear();
-        if (campusIds != null)
-        {
-            currentCampusIds.AddRange(campusIds);
+        if ( campusIds != null ) {
+            currentCampusIds.AddRange( campusIds );
         }
     }
 
-    /// <summary>
-    /// Called when MapManager changes the map
-    /// </summary>
-    private void OnMapChanged(MapInfo mapInfo)
+    private void OnMapChanged( MapInfo mapInfo )
     {
-        DebugLog($"🔄 Map changed to: {mapInfo.map_name} (ID: {mapInfo.map_id})");
-        SetCurrentMapData(mapInfo.map_id, mapInfo.campus_included);
+        SetCurrentMapData( mapInfo.map_id, mapInfo.campus_included );
     }
 
-    /// <summary>
-    /// Called when MapManager starts loading a new map
-    /// </summary>
     private void OnMapLoadingStarted()
     {
-        DebugLog("🧹 Map loading started - clearing existing barriers");
         ClearSpawnedNodes();
     }
 
-    /// <summary>
-    /// Main method called by MapManager to load barriers for a specific map
-    /// </summary>
-    public IEnumerator LoadAndSpawnForMap(string mapId, List<string> campusIds)
+    public IEnumerator LoadAndSpawnForMap( string mapId, List<string> campusIds )
     {
-        if (isSpawning)
-        {
-            DebugLog("Already spawning barriers, skipping");
+        if ( isSpawning ) {
             yield break;
         }
 
-        DebugLog($"🚧 LoadAndSpawnForMap called - Map: {mapId}, Campuses: {string.Join(", ", campusIds ?? new List<string>())}");
+        SetCurrentMapData( mapId, campusIds );
 
-        // Update current map data
-        SetCurrentMapData(mapId, campusIds);
+        yield return StartCoroutine( WaitForMapReady() );
 
-        // Wait for map to be ready
-        yield return StartCoroutine(WaitForMapReady());
-
-        // Spawn polygons first (background layer)
-        if (enablePolygonBackgrounds)
-        {
-            yield return StartCoroutine(LoadAndSpawnPolygons());
+        if ( enablePolygonBackgrounds ) {
+            yield return StartCoroutine( LoadAndSpawnPolygons() );
         }
 
-        // Spawn barrier nodes
-        yield return StartCoroutine(LoadAndSpawnBarrierNodes());
+        yield return StartCoroutine( LoadAndSpawnBarrierNodes() );
 
-        // Spawn barrier edges
-        yield return StartCoroutine(LoadAndSpawnBarrierEdges());
-
-        DebugLog($"✅ Map '{mapId}' barrier spawning completed");
+        yield return StartCoroutine( LoadAndSpawnBarrierEdges() );
     }
-
-    #endregion
-
-    #region Map Readiness Check
 
     private IEnumerator WaitForMapReady()
     {
-        DebugLog("⏳ Waiting for map to be ready...");
-
         float timeout = 30f;
         float elapsed = 0f;
 
-        while (elapsed < timeout)
-        {
-            if (mapboxMap != null && mapboxMap.gameObject.activeInHierarchy)
-            {
-                DebugLog($"🗺️ Map ready after {elapsed:F1}s");
+        while ( elapsed < timeout ) {
+            if ( mapboxMap != null && mapboxMap.gameObject.activeInHierarchy ) {
                 break;
             }
 
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds( 0.5f );
             elapsed += 0.5f;
-
-            if (elapsed % 5f < 0.6f)
-            {
-                DebugLog($"⏳ Still waiting for map... ({elapsed:F1}s/{timeout}s)");
-            }
         }
 
-        if (elapsed >= timeout)
-        {
-            Debug.LogError("Map initialization timeout!");
+        if ( elapsed >= timeout ) {
             yield break;
         }
 
-        yield return new WaitForSeconds(1f); // Extra buffer time
+        yield return new WaitForSeconds( 1f );
     }
 
-    #endregion
-
-    #region File Name Generation
-
-    /// <summary>
-    /// Get the appropriate nodes file name based on current map
-    /// </summary>
     private string GetNodesFileName()
     {
-        if (string.IsNullOrEmpty(currentMapId))
-        {
-            Debug.LogWarning("⚠️ No current map ID set, using default nodes.json");
+        if ( string.IsNullOrEmpty( currentMapId ) ) {
             return "nodes.json";
         }
-        
+
         string fileName = $"nodes_{currentMapId}.json";
-        DebugLog($"📁 Using nodes file: {fileName}");
         return fileName;
     }
 
-    /// <summary>
-    /// Get the appropriate edges file name based on current map
-    /// </summary>
     private string GetEdgesFileName()
     {
-        if (string.IsNullOrEmpty(currentMapId))
-        {
-            Debug.LogWarning("⚠️ No current map ID set, using default edges.json");
+        if ( string.IsNullOrEmpty( currentMapId ) ) {
             return "edges.json";
         }
-        
+
         string fileName = $"edges_{currentMapId}.json";
-        DebugLog($"📁 Using edges file: {fileName}");
         return fileName;
     }
-
-    #endregion
-
-    #region Polygon Background Creation
 
     public IEnumerator LoadAndSpawnPolygons()
     {
-        DebugLog("🔷 Starting LoadAndSpawnPolygons...");
-
-        if (currentCampusIds == null || currentCampusIds.Count == 0)
-        {
-            DebugLog("⚠️ No campus IDs available for polygon creation");
+        if ( currentCampusIds == null || currentCampusIds.Count == 0 ) {
             yield break;
         }
 
-        // Create simple polygon backgrounds for each campus in current map
-        foreach (string campusId in currentCampusIds)
-        {
-            yield return StartCoroutine(CreateCampusPolygon(campusId));
+        foreach ( string campusId in currentCampusIds ) {
+            yield return StartCoroutine( CreateCampusPolygon( campusId ) );
         }
-
-        DebugLog($"✅ Polygon spawning completed: {spawnedPolygons.Count} polygons created");
     }
 
-    private IEnumerator CreateCampusPolygon(string campusId)
+    private IEnumerator CreateCampusPolygon( string campusId )
     {
-        DebugLog($"🔷 Creating polygon for campus: {campusId}");
-
-        // Get all barrier nodes for this campus to create a polygon boundary
         List<Vector2d> campusPoints = new List<Vector2d>();
 
-        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
-            GetNodesFileName(), // Use map-specific nodes file
-            (jsonContent) =>
-            {
-                try
-                {
-                    Node[] nodes = JsonHelper.FromJson<Node>(jsonContent);
-                    if (nodes != null)
-                    {
-                        var campusBarriers = nodes.Where(n =>
-                            n != null && n.type == "barrier" && n.is_active &&
-                            n.campus_id == campusId &&
-                            IsValidCoordinate(n.latitude, n.longitude)
-                        ).ToList();
+        yield return StartCoroutine( CrossPlatformFileLoader.LoadJsonFile(
+                                         GetNodesFileName(),
+        ( jsonContent ) => {
+            try {
+                Node[] nodes = JsonHelper.FromJson<Node>( jsonContent );
+                if ( nodes != null ) {
+                    var campusBarriers = nodes.Where( n =>
+                                                      n != null && n.type == "barrier" && n.is_active &&
+                                                      n.campus_id == campusId &&
+                                                      IsValidCoordinate( n.latitude, n.longitude )
+                                                    ).ToList();
 
-                        foreach (var node in campusBarriers)
-                        {
-                            campusPoints.Add(new Vector2d(node.latitude, node.longitude));
-                        }
-
-                        DebugLog($"Found {campusPoints.Count} barrier points for campus {campusId}");
+                    foreach ( var node in campusBarriers ) {
+                        campusPoints.Add( new Vector2d( node.latitude, node.longitude ) );
                     }
                 }
-                catch (System.Exception e)
-                {
-                    Debug.LogError($"Error parsing nodes for polygon: {e.Message}");
-                }
-            },
-            (error) =>
-            {
-                Debug.LogError($"Error loading nodes for polygon: {error}");
+            } catch ( System.Exception e ) {
             }
-        ));
+        },
+        ( error ) => {
+        }
+                                     ) );
 
-        if (campusPoints.Count >= 3)
-        {
-            // Create convex hull or simple bounding polygon
-            List<Vector2d> hullPoints = CreateConvexHull(campusPoints);
+        if ( campusPoints.Count >= 3 ) {
+            List<Vector2d> hullPoints = CreateConvexHull( campusPoints );
 
-            if (hullPoints.Count >= 3)
-            {
-                GameObject polygonObj = new GameObject($"CampusPolygon_{campusId}");
-                polygonObj.transform.SetParent(mapboxMap.transform);
+            if ( hullPoints.Count >= 3 ) {
+                GameObject polygonObj = new GameObject( $"CampusPolygon_{campusId}" );
+                polygonObj.transform.SetParent( mapboxMap.transform );
 
                 CampusPolygon polygonComponent = polygonObj.AddComponent<CampusPolygon>();
-                polygonComponent.Initialize(mapboxMap, campusId, hullPoints, polygonHeightOffset, defaultPolygonColor, polygonMaterial);
+                polygonComponent.Initialize( mapboxMap, campusId, hullPoints, polygonHeightOffset, defaultPolygonColor, polygonMaterial );
 
-                spawnedPolygons.Add(polygonComponent);
-                DebugLog($"✅ Created polygon for campus {campusId} with {hullPoints.Count} points");
+                spawnedPolygons.Add( polygonComponent );
             }
-        }
-        else
-        {
-            DebugLog($"⚠️ Not enough points to create polygon for campus {campusId}");
         }
     }
 
-    // Simple convex hull algorithm (Gift Wrapping)
-    private List<Vector2d> CreateConvexHull(List<Vector2d> points)
+    private List<Vector2d> CreateConvexHull( List<Vector2d> points )
     {
-        if (points.Count < 3) return points;
+        if ( points.Count < 3 ) return points;
 
-        // Find the leftmost point
         Vector2d leftmost = points[0];
         int leftmostIndex = 0;
-        for (int i = 1; i < points.Count; i++)
-        {
-            if (points[i].x < leftmost.x || (points[i].x == leftmost.x && points[i].y < leftmost.y))
-            {
+        for ( int i = 1; i < points.Count; i++ ) {
+            if ( points[i].x < leftmost.x || ( points[i].x == leftmost.x && points[i].y < leftmost.y ) ) {
                 leftmost = points[i];
                 leftmostIndex = i;
             }
@@ -332,48 +216,36 @@ public class BarrierSpawner : MonoBehaviour
         List<Vector2d> hull = new List<Vector2d>();
         int currentIndex = leftmostIndex;
 
-        do
-        {
-            hull.Add(points[currentIndex]);
-            int nextIndex = (currentIndex + 1) % points.Count;
+        do {
+            hull.Add( points[currentIndex] );
+            int nextIndex = ( currentIndex + 1 ) % points.Count;
 
-            for (int i = 0; i < points.Count; i++)
-            {
-                if (IsCounterClockwise(points[currentIndex], points[i], points[nextIndex]))
-                {
+            for ( int i = 0; i < points.Count; i++ ) {
+                if ( IsCounterClockwise( points[currentIndex], points[i], points[nextIndex] ) ) {
                     nextIndex = i;
                 }
             }
 
             currentIndex = nextIndex;
-        } while (currentIndex != leftmostIndex && hull.Count < points.Count);
+        } while ( currentIndex != leftmostIndex && hull.Count < points.Count );
 
         return hull;
     }
 
-    private bool IsCounterClockwise(Vector2d a, Vector2d b, Vector2d c)
+    private bool IsCounterClockwise( Vector2d a, Vector2d b, Vector2d c )
     {
-        return (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x);
+        return ( c.y - a.y ) * ( b.x - a.x ) > ( b.y - a.y ) * ( c.x - a.x );
     }
-
-    #endregion
-
-    #region Barrier Node Loading and Spawning
 
     public IEnumerator LoadAndSpawnBarrierNodes()
     {
-        if (isSpawning)
-        {
-            DebugLog("Already spawning barriers");
+        if ( isSpawning ) {
             yield break;
         }
 
         isSpawning = true;
-        DebugLog($"🚧 Starting LoadAndSpawnBarrierNodes for map: {currentMapId}");
 
-        if (string.IsNullOrEmpty(currentMapId))
-        {
-            Debug.LogError("❌ No current map ID set - cannot load barrier nodes");
+        if ( string.IsNullOrEmpty( currentMapId ) ) {
             isSpawning = false;
             yield break;
         }
@@ -382,92 +254,60 @@ public class BarrierSpawner : MonoBehaviour
         bool loadingComplete = false;
         string errorMessage = null;
 
-        try
-        {
-            if (currentCampusIds == null || currentCampusIds.Count == 0)
-            {
-                Debug.LogWarning("⚠️ No campus IDs available for barrier loading");
-            }
+        try {
             ClearSpawnedNodes();
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"❌ Error in LoadAndSpawnBarrierNodes: {e.Message}");
+        } catch ( System.Exception e ) {
             isSpawning = false;
             yield break;
         }
 
-        // Load from map-specific nodes file
-        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
-            GetNodesFileName(),
-            (jsonContent) =>
-            {
-                try
-                {
-                    Node[] nodes = JsonHelper.FromJson<Node>(jsonContent);
-                    if (nodes == null || nodes.Length == 0)
-                    {
-                        errorMessage = $"Failed to parse nodes from {GetNodesFileName()}";
-                        return;
-                    }
+        yield return StartCoroutine( CrossPlatformFileLoader.LoadJsonFile(
+                                         GetNodesFileName(),
+        ( jsonContent ) => {
+            try {
+                Node[] nodes = JsonHelper.FromJson<Node>( jsonContent );
+                if ( nodes == null || nodes.Length == 0 ) {
+                    errorMessage = $"Failed to parse nodes from {GetNodesFileName()}";
+                    return;
+                }
 
-                    barrierNodes = FilterBarrierNodes(nodes, currentCampusIds);
-                    loadingComplete = true;
-                }
-                catch (System.Exception e)
-                {
-                    errorMessage = $"Error parsing nodes JSON from {GetNodesFileName()}: {e.Message}";
-                }
-            },
-            (error) =>
-            {
-                errorMessage = $"Error loading {GetNodesFileName()}: {error}";
+                barrierNodes = FilterBarrierNodes( nodes, currentCampusIds );
+                loadingComplete = true;
+            } catch ( System.Exception e ) {
+                errorMessage = $"Error parsing nodes JSON from {GetNodesFileName()}: {e.Message}";
             }
-        ));
+        },
+        ( error ) => {
+            errorMessage = $"Error loading {GetNodesFileName()}: {error}";
+        }
+                                     ) );
 
-        while (!loadingComplete && string.IsNullOrEmpty(errorMessage))
-        {
+        while ( !loadingComplete && string.IsNullOrEmpty( errorMessage ) ) {
             yield return null;
         }
 
-        if (!string.IsNullOrEmpty(errorMessage))
-        {
-            Debug.LogError($"❌ Error loading nodes: {errorMessage}");
+        if ( !string.IsNullOrEmpty( errorMessage ) ) {
             isSpawning = false;
             yield break;
         }
 
-        if (barrierNodes == null || barrierNodes.Count == 0)
-        {
-            Debug.LogWarning($"⚠️ No barrier nodes found for map {currentMapId} and campuses {string.Join(", ", currentCampusIds)}");
+        if ( barrierNodes == null || barrierNodes.Count == 0 ) {
             isSpawning = false;
             yield break;
         }
 
         isSpawning = false;
 
-        yield return StartCoroutine(SpawnNodes(barrierNodes));
-
-        Debug.Log($"✅ BarrierSpawner completed: {spawnedNodes.Count} barrier nodes spawned for map {currentMapId}");
+        yield return StartCoroutine( SpawnNodes( barrierNodes ) );
     }
-
-    #endregion
-
-    #region Barrier Edge Loading and Spawning
 
     public IEnumerator LoadAndSpawnBarrierEdges()
     {
-        DebugLog($"🔗 Starting LoadAndSpawnBarrierEdges for map: {currentMapId}");
-
-        if (spawnedNodes.Count == 0)
-        {
-            Debug.LogWarning("⚠️ No nodes spawned yet, cannot create edges");
+        if ( spawnedNodes.Count == 0 ) {
             yield break;
         }
 
-        if (string.IsNullOrEmpty(currentMapId))
-        {
-            Debug.LogError("❌ No current map ID set - cannot load barrier edges");
+        if ( string.IsNullOrEmpty( currentMapId ) ) {
             yield break;
         }
 
@@ -475,364 +315,207 @@ public class BarrierSpawner : MonoBehaviour
         bool loadingComplete = false;
         string errorMessage = null;
 
-        // Load from map-specific edges file
-        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
-            GetEdgesFileName(),
-            (jsonContent) =>
-            {
-                try
-                {
-                    Edge[] edges = JsonHelper.FromJson<Edge>(jsonContent);
-                    if (edges == null || edges.Length == 0)
-                    {
-                        errorMessage = $"No edges found in {GetEdgesFileName()}";
-                        return;
-                    }
+        yield return StartCoroutine( CrossPlatformFileLoader.LoadJsonFile(
+                                         GetEdgesFileName(),
+        ( jsonContent ) => {
+            try {
+                Edge[] edges = JsonHelper.FromJson<Edge>( jsonContent );
+                if ( edges == null || edges.Length == 0 ) {
+                    errorMessage = $"No edges found in {GetEdgesFileName()}";
+                    return;
+                }
 
-                    validEdges = FilterValidEdges(edges);
-                    DebugLog($"🔗 Found {validEdges.Count} valid edges to spawn from {GetEdgesFileName()}");
-                    loadingComplete = true;
-                }
-                catch (System.Exception e)
-                {
-                    errorMessage = $"Error parsing edges JSON from {GetEdgesFileName()}: {e.Message}";
-                }
-            },
-            (error) =>
-            {
-                errorMessage = $"Error loading {GetEdgesFileName()}: {error}";
+                validEdges = FilterValidEdges( edges );
+                loadingComplete = true;
+            } catch ( System.Exception e ) {
+                errorMessage = $"Error parsing edges JSON from {GetEdgesFileName()}: {e.Message}";
             }
-        ));
+        },
+        ( error ) => {
+            errorMessage = $"Error loading {GetEdgesFileName()}: {error}";
+        }
+                                     ) );
 
-        while (!loadingComplete && string.IsNullOrEmpty(errorMessage))
-        {
+        while ( !loadingComplete && string.IsNullOrEmpty( errorMessage ) ) {
             yield return null;
         }
 
-        if (!string.IsNullOrEmpty(errorMessage))
-        {
-            Debug.LogWarning($"⚠️ {errorMessage}");
+        if ( !string.IsNullOrEmpty( errorMessage ) ) {
             yield break;
         }
 
-        if (validEdges != null && validEdges.Count > 0)
-        {
-            yield return StartCoroutine(SpawnEdges(validEdges));
-            Debug.Log($"✅ EdgeSpawner completed: {spawnedEdges.Count} edges spawned for map {currentMapId}");
+        if ( validEdges != null && validEdges.Count > 0 ) {
+            yield return StartCoroutine( SpawnEdges( validEdges ) );
         }
     }
 
-    #endregion
-
-    #region Node and Edge Filtering
-
-    private List<Node> FilterBarrierNodes(Node[] allNodes, List<string> campusIds)
+    private List<Node> FilterBarrierNodes( Node[] allNodes, List<string> campusIds )
     {
-        var filteredNodes = allNodes.Where(n =>
-            n != null &&
-            n.type == "barrier" &&
-            n.is_active &&
-            (campusIds == null || campusIds.Count == 0 || campusIds.Contains(n.campus_id)) &&
-            IsValidCoordinate(n.latitude, n.longitude)
-        ).ToList();
-
-        DebugLog($"🔍 Filtering process for map {currentMapId}:");
-        DebugLog($"  - Total nodes: {allNodes.Length}");
-        DebugLog($"  - Barrier nodes: {allNodes.Count(n => n?.type == "barrier")}");
-        DebugLog($"  - Active barriers: {allNodes.Count(n => n?.type == "barrier" && n.is_active)}");
-        DebugLog($"  - Campus matched ({string.Join(", ", campusIds ?? new List<string>())}): {filteredNodes.Count}");
+        var filteredNodes = allNodes.Where( n =>
+                                            n != null &&
+                                            n.type == "barrier" &&
+                                            n.is_active &&
+                                            ( campusIds == null || campusIds.Count == 0 || campusIds.Contains( n.campus_id ) ) &&
+                                            IsValidCoordinate( n.latitude, n.longitude )
+                                          ).ToList();
 
         return filteredNodes;
     }
 
-    private List<Edge> FilterValidEdges(Edge[] allEdges)
+    private List<Edge> FilterValidEdges( Edge[] allEdges )
     {
-        var validEdges = allEdges.Where(edge =>
-            edge != null &&
-            edge.is_active &&
-            nodeIdToComponent.ContainsKey(edge.from_node) &&
-            nodeIdToComponent.ContainsKey(edge.to_node)
-        ).ToList();
-
-        DebugLog($"🔍 Edge filtering process for map {currentMapId}:");
-        DebugLog($"  - Total edges: {allEdges.Length}");
-        DebugLog($"  - Active edges: {allEdges.Count(e => e?.is_active == true)}");
-        DebugLog($"  - Valid connections: {validEdges.Count}");
+        var validEdges = allEdges.Where( edge =>
+                                         edge != null &&
+                                         edge.is_active &&
+                                         nodeIdToComponent.ContainsKey( edge.from_node ) &&
+                                         nodeIdToComponent.ContainsKey( edge.to_node )
+                                       ).ToList();
 
         return validEdges;
     }
 
-    #endregion
-
-    #region Spawning Implementation
-
-    private IEnumerator SpawnNodes(List<Node> nodes)
+    private IEnumerator SpawnNodes( List<Node> nodes )
     {
-        DebugLog($"🚧 Spawning {nodes.Count} barrier nodes for map {currentMapId}...");
-
         int spawnedCount = 0;
-        foreach (var node in nodes)
-        {
+        foreach ( var node in nodes ) {
             bool shouldYield = false;
-            try
-            {
-                if (nodePrefab == null)
-                {
-                    Debug.LogError("❌ Node prefab is null!");
+            try {
+                if ( nodePrefab == null ) {
                     break;
                 }
 
-                GameObject nodeObj = Instantiate(nodePrefab, Vector3.zero, Quaternion.identity, mapboxMap.transform);
+                GameObject nodeObj = Instantiate( nodePrefab, Vector3.zero, Quaternion.identity, mapboxMap.transform );
                 nodeObj.name = $"BarrierNode_{node.node_id}_{node.name}";
                 nodeObj.transform.localScale = Vector3.one * nodeSize;
 
                 BarrierNode barrierComponent = nodeObj.AddComponent<BarrierNode>();
-                barrierComponent.Initialize(mapboxMap, node, heightOffset);
+                barrierComponent.Initialize( mapboxMap, node, heightOffset );
 
-                spawnedNodes.Add(barrierComponent);
+                spawnedNodes.Add( barrierComponent );
                 nodeIdToComponent[node.node_id] = barrierComponent;
 
                 spawnedCount++;
 
-                DebugLog($"🚧 Spawned barrier node: {node.name} (ID: {node.node_id}, Campus: {node.campus_id})");
-
-                if (spawnedCount % 10 == 0)
-                {
+                if ( spawnedCount % 10 == 0 ) {
                     shouldYield = true;
                 }
+            } catch ( System.Exception e ) {
             }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"❌ Error spawning node {node.node_id}: {e.Message}");
-            }
-            if (shouldYield)
-            {
+            if ( shouldYield ) {
                 yield return null;
             }
         }
-
-        DebugLog($"✅ Successfully spawned {spawnedCount} barrier nodes for map {currentMapId}");
     }
 
-    private IEnumerator SpawnEdges(List<Edge> edges)
+    private IEnumerator SpawnEdges( List<Edge> edges )
     {
-        DebugLog($"🔗 Spawning {edges.Count} edges for map {currentMapId}...");
-
         int spawnedCount = 0;
-        foreach (var edge in edges)
-        {
+        foreach ( var edge in edges ) {
             bool shouldYield = false;
-            try
-            {
-                if (edgePrefab == null)
-                {
-                    Debug.LogError("❌ Edge prefab is null! Skipping edge creation.");
+            try {
+                if ( edgePrefab == null ) {
                     continue;
                 }
 
-                if (!nodeIdToComponent.TryGetValue(edge.from_node, out BarrierNode fromNode) ||
-                    !nodeIdToComponent.TryGetValue(edge.to_node, out BarrierNode toNode))
-                {
-                    Debug.LogError($"❌ Could not find nodes for edge {edge.edge_id}: {edge.from_node} -> {edge.to_node}");
+                if ( !nodeIdToComponent.TryGetValue( edge.from_node, out BarrierNode fromNode ) ||
+                        !nodeIdToComponent.TryGetValue( edge.to_node, out BarrierNode toNode ) ) {
                     continue;
                 }
 
-                GameObject edgeObj = Instantiate(edgePrefab, Vector3.zero, Quaternion.identity, mapboxMap.transform);
+                GameObject edgeObj = Instantiate( edgePrefab, Vector3.zero, Quaternion.identity, mapboxMap.transform );
                 edgeObj.name = $"BarrierEdge_{edge.edge_id}_{edge.from_node}_to_{edge.to_node}";
 
                 BarrierEdge edgeComponent = edgeObj.AddComponent<BarrierEdge>();
-                edgeComponent.Initialize(mapboxMap, edge, fromNode, toNode, edgeWidth, heightOffset, edgeMaterial);
+                edgeComponent.Initialize( mapboxMap, edge, fromNode, toNode, edgeWidth, heightOffset, edgeMaterial );
 
-                spawnedEdges.Add(edgeComponent);
+                spawnedEdges.Add( edgeComponent );
                 spawnedCount++;
 
-                DebugLog($"🔗 Spawned edge: {edge.edge_id} ({edge.from_node} -> {edge.to_node})");
-
-                if (spawnedCount % 5 == 0)
-                {
+                if ( spawnedCount % 5 == 0 ) {
                     shouldYield = true;
                 }
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"❌ Error spawning edge {edge.edge_id}: {e.Message}");
+            } catch ( System.Exception e ) {
             }
 
-            if (shouldYield)
-            {
+            if ( shouldYield ) {
                 yield return null;
             }
         }
-
-        DebugLog($"✅ Successfully spawned {spawnedCount} edges for map {currentMapId}");
     }
-
-    #endregion
-
-    #region Public Utility Methods
 
     public void ClearSpawnedNodes()
     {
-        DebugLog($"🧹 Clearing {spawnedNodes.Count} barrier nodes, {spawnedEdges.Count} edges, and {spawnedPolygons.Count} polygons");
-
-        // Clear polygons
-        foreach (var polygon in spawnedPolygons)
-        {
-            if (polygon != null && polygon.gameObject != null)
-            {
-                DestroyImmediate(polygon.gameObject);
+        foreach ( var polygon in spawnedPolygons ) {
+            if ( polygon != null && polygon.gameObject != null ) {
+                DestroyImmediate( polygon.gameObject );
             }
         }
         spawnedPolygons.Clear();
 
-        // Clear edges
-        foreach (var edge in spawnedEdges)
-        {
-            if (edge != null && edge.gameObject != null)
-            {
-                DestroyImmediate(edge.gameObject);
+        foreach ( var edge in spawnedEdges ) {
+            if ( edge != null && edge.gameObject != null ) {
+                DestroyImmediate( edge.gameObject );
             }
         }
         spawnedEdges.Clear();
 
-        // Clear nodes
-        foreach (var barrierNode in spawnedNodes)
-        {
-            if (barrierNode != null && barrierNode.gameObject != null)
-            {
-                DestroyImmediate(barrierNode.gameObject);
+        foreach ( var barrierNode in spawnedNodes ) {
+            if ( barrierNode != null && barrierNode.gameObject != null ) {
+                DestroyImmediate( barrierNode.gameObject );
             }
         }
 
         spawnedNodes.Clear();
         nodeIdToComponent.Clear();
-
-        DebugLog("✅ Cleared all barrier nodes, edges, and polygons");
     }
 
     public void ForceUpdateAllEdges()
     {
-        foreach (var edge in spawnedEdges)
-        {
-            if (edge != null)
-            {
+        foreach ( var edge in spawnedEdges ) {
+            if ( edge != null ) {
                 edge.ForceUpdate();
             }
         }
     }
 
-    #endregion
-
-    #region Legacy/Debug Methods
-
     public void ManualSpawn()
     {
-        DebugLog("🔄 Manual spawn triggered");
-        if (!string.IsNullOrEmpty(currentMapId))
-        {
-            StartCoroutine(LoadAndSpawnBarrierNodes());
-        }
-        else
-        {
-            Debug.LogWarning("⚠️ No current map set - cannot manually spawn");
+        if ( !string.IsNullOrEmpty( currentMapId ) ) {
+            StartCoroutine( LoadAndSpawnBarrierNodes() );
         }
     }
 
     public void ManualSpawnEdges()
     {
-        DebugLog("🔄 Manual edge spawn triggered");
-        if (!string.IsNullOrEmpty(currentMapId))
-        {
-            StartCoroutine(LoadAndSpawnBarrierEdges());
-        }
-        else
-        {
-            Debug.LogWarning("⚠️ No current map set - cannot manually spawn edges");
+        if ( !string.IsNullOrEmpty( currentMapId ) ) {
+            StartCoroutine( LoadAndSpawnBarrierEdges() );
         }
     }
 
-    [System.Obsolete("Debug method - remove in production")]
     public void ForceResetSpawning()
     {
-        DebugLog("🔄 Force resetting spawning state");
         isSpawning = false;
         StopAllCoroutines();
-        DebugLog($"✅ Reset complete");
     }
 
-    #endregion
-
-    #region Utility Methods
-
-    private bool IsValidCoordinate(float lat, float lon)
+    private bool IsValidCoordinate( float lat, float lon )
     {
-        return !float.IsNaN(lat) && !float.IsNaN(lon) &&
-               !float.IsInfinity(lat) && !float.IsInfinity(lon) &&
+        return !float.IsNaN( lat ) && !float.IsNaN( lon ) &&
+               !float.IsInfinity( lat ) && !float.IsInfinity( lon ) &&
                lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
     }
 
-    private void DebugLog(string message)
+    private void DebugLog( string message )
     {
-        if (enableDebugLogs)
-        {
-            Debug.Log($"[BarrierSpawner] {message}");
+        if ( enableDebugLogs ) {
+            Debug.Log( $"[BarrierSpawner] {message}" );
         }
     }
 
-    #endregion
-
-    #region Debug Input Handling
-
     void Update()
     {
-        // if (Application.isEditor && enableDebugLogs)
-        // {
-        //     if (Input.GetKeyDown(KeyCode.B))
-        //     {
-        //         Debug.Log($"=== BARRIER SPAWNER STATUS ===");
-        //         Debug.Log($"Current Map ID: {currentMapId ?? "None"}");
-        //         Debug.Log($"Current Campus IDs: {string.Join(", ", currentCampusIds)}");
-        //         Debug.Log($"Is spawning: {isSpawning}");
-        //         Debug.Log($"Nodes spawned: {spawnedNodes.Count}");
-        //         Debug.Log($"Edges spawned: {spawnedEdges.Count}");
-        //         Debug.Log($"Polygons spawned: {spawnedPolygons.Count}");
-        //         Debug.Log($"Map assigned: {mapboxMap != null}");
-        //         Debug.Log($"Nodes file: {GetNodesFileName()}");
-        //         Debug.Log($"Edges file: {GetEdgesFileName()}");
-        //     }
-
-        //     if (Input.GetKeyDown(KeyCode.R))
-        //     {
-        //         ForceResetSpawning();
-        //     }
-
-        //     if (Input.GetKeyDown(KeyCode.S))
-        //     {
-        //         ManualSpawn();
-        //     }
-
-        //     if (Input.GetKeyDown(KeyCode.E))
-        //     {
-        //         ManualSpawnEdges();
-        //     }
-
-        //     if (Input.GetKeyDown(KeyCode.C))
-        //     {
-        //         ClearSpawnedNodes();
-        //     }
-
-        //     if (Input.GetKeyDown(KeyCode.U))
-        //     {
-        //         ForceUpdateAllEdges();
-        //     }
-        // }
     }
-
-    #endregion
 }
-
-// BarrierEdge, BarrierNode, and CampusPolygon classes remain the same as in original
-// (keeping them unchanged since they work properly)
 
 public class BarrierEdge : MonoBehaviour
 {
@@ -843,7 +526,6 @@ public class BarrierEdge : MonoBehaviour
     private float baseWidth;
     private float heightOffset;
 
-    // Cache for consistent scaling - EXACT same approach as PathRenderer
     private float referenceZoomLevel;
     private Vector3 referenceFromPos;
     private Vector3 referenceToPos;
@@ -854,8 +536,8 @@ public class BarrierEdge : MonoBehaviour
     public BarrierNode GetFromNode() => fromNode;
     public BarrierNode GetToNode() => toNode;
 
-    public void Initialize(AbstractMap mapReference, Edge edge, BarrierNode from, BarrierNode to,
-                          float width, float height, Material material = null)
+    public void Initialize( AbstractMap mapReference, Edge edge, BarrierNode from, BarrierNode to,
+                            float width, float height, Material material = null )
     {
         map = mapReference;
         edgeData = edge;
@@ -864,49 +546,38 @@ public class BarrierEdge : MonoBehaviour
         baseWidth = width;
         heightOffset = height;
 
-        // EXACT same initialization as PathRenderer
-        if (map != null)
-        {
+        if ( map != null ) {
             referenceZoomLevel = map.Zoom;
 
             Node fromNodeData = fromNode.GetNodeData();
             Node toNodeData = toNode.GetNodeData();
 
-            // Calculate reference positions and distance at current zoom - SAME AS PathRenderer
-            referenceFromPos = map.GeoToWorldPosition(new Vector2d(fromNodeData.latitude, fromNodeData.longitude), false);
-            referenceToPos = map.GeoToWorldPosition(new Vector2d(toNodeData.latitude, toNodeData.longitude), false);
-            referenceDistance = Vector3.Distance(referenceFromPos, referenceToPos);
+            referenceFromPos = map.GeoToWorldPosition( new Vector2d( fromNodeData.latitude, fromNodeData.longitude ), false );
+            referenceToPos = map.GeoToWorldPosition( new Vector2d( toNodeData.latitude, toNodeData.longitude ), false );
+            referenceDistance = Vector3.Distance( referenceFromPos, referenceToPos );
 
             isInitialized = true;
-
-            // Debug.Log($"BarrierEdge {edge.edge_id} initialized at zoom {referenceZoomLevel:F1} with reference distance {referenceDistance:F3}");
         }
 
-        if (material != null)
-        {
-            ApplyMaterialToEdge(material);
+        if ( material != null ) {
+            ApplyMaterialToEdge( material );
         }
 
-        // Initial transform update
         UpdateEdgeTransform();
     }
 
-    private void ApplyMaterialToEdge(Material material)
+    private void ApplyMaterialToEdge( Material material )
     {
         Renderer[] renderers = GetComponentsInChildren<Renderer>();
-        foreach (var renderer in renderers)
-        {
+        foreach ( var renderer in renderers ) {
             renderer.material = material;
         }
     }
 
     void LateUpdate()
     {
-        if (map != null && fromNode != null && toNode != null && isInitialized)
-        {
-            // Update every few frames for smooth movement - SAME AS PathRenderer
-            if (Time.frameCount % 2 == 0)
-            {
+        if ( map != null && fromNode != null && toNode != null && isInitialized ) {
+            if ( Time.frameCount % 2 == 0 ) {
                 UpdateEdgeTransform();
             }
         }
@@ -914,91 +585,72 @@ public class BarrierEdge : MonoBehaviour
 
     void UpdateEdgeTransform()
     {
-        if (fromNode == null || toNode == null || map == null || !isInitialized) return;
+        if ( fromNode == null || toNode == null || map == null || !isInitialized ) return;
 
         Node fromNodeData = fromNode.GetNodeData();
         Node toNodeData = toNode.GetNodeData();
-        if (fromNodeData == null || toNodeData == null) return;
+        if ( fromNodeData == null || toNodeData == null ) return;
 
-        // Get current positions - SAME AS PathRenderer
-        Vector3 fromPos = map.GeoToWorldPosition(new Vector2d(fromNodeData.latitude, fromNodeData.longitude), false);
-        Vector3 toPos = map.GeoToWorldPosition(new Vector2d(toNodeData.latitude, toNodeData.longitude), false);
+        Vector3 fromPos = map.GeoToWorldPosition( new Vector2d( fromNodeData.latitude, fromNodeData.longitude ), false );
+        Vector3 toPos = map.GeoToWorldPosition( new Vector2d( toNodeData.latitude, toNodeData.longitude ), false );
 
-        // Apply height offset
         fromPos.y = heightOffset;
         toPos.y = heightOffset;
 
-        // Calculate direction
         Vector3 direction = toPos - fromPos;
         float currentDistance = direction.magnitude;
 
-        // Hide if nodes are too close (prevents visual glitches)
-        if (currentDistance < 0.001f)
-        {
-            gameObject.SetActive(false);
+        if ( currentDistance < 0.001f ) {
+            gameObject.SetActive( false );
             return;
         }
 
-        gameObject.SetActive(true);
+        gameObject.SetActive( true );
 
-        // Position at the center between nodes - SAME AS PathRenderer
-        Vector3 centerPos = (fromPos + toPos) * 0.5f;
+        Vector3 centerPos = ( fromPos + toPos ) * 0.5f;
         transform.position = centerPos;
 
-        // Rotate to face the correct direction
-        if (direction != Vector3.zero)
-        {
-            transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+        if ( direction != Vector3.zero ) {
+            transform.rotation = Quaternion.LookRotation( direction.normalized, Vector3.up );
         }
 
-        // KEY FIX: Use the reference distance instead of current distance - EXACT SAME AS PathRenderer
-        // This keeps the visual length consistent regardless of zoom
         float visualDistance = referenceDistance;
 
-        // Apply the scale using the reference distance - EXACT SAME AS PathRenderer
-        transform.localScale = new Vector3(baseWidth, baseWidth, visualDistance);
-
-        // Debug info
-        // Debug.Log($"BarrierEdge {edgeData.edge_id}: current={currentDistance:F3}, reference={referenceDistance:F3}, zoom={map.Zoom:F1}");
+        transform.localScale = new Vector3( baseWidth, baseWidth, visualDistance );
     }
 
     public void ForceUpdate()
     {
-        if (map != null && isInitialized)
-        {
+        if ( map != null && isInitialized ) {
             UpdateEdgeTransform();
         }
     }
 
-    // Optional: Debug visualization in Scene view
     void OnDrawGizmosSelected()
     {
-        if (fromNode != null && toNode != null && map != null)
-        {
+        if ( fromNode != null && toNode != null && map != null ) {
             Node fromNodeData = fromNode.GetNodeData();
             Node toNodeData = toNode.GetNodeData();
-            if (fromNodeData == null || toNodeData == null) return;
+            if ( fromNodeData == null || toNodeData == null ) return;
 
-            Vector3 fromPos = map.GeoToWorldPosition(new Vector2d(fromNodeData.latitude, fromNodeData.longitude), false);
-            Vector3 toPos = map.GeoToWorldPosition(new Vector2d(toNodeData.latitude, toNodeData.longitude), false);
+            Vector3 fromPos = map.GeoToWorldPosition( new Vector2d( fromNodeData.latitude, fromNodeData.longitude ), false );
+            Vector3 toPos = map.GeoToWorldPosition( new Vector2d( toNodeData.latitude, toNodeData.longitude ), false );
 
             fromPos.y = heightOffset;
             toPos.y = heightOffset;
 
             Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(fromPos, 0.2f);
-            Gizmos.DrawWireSphere(toPos, 0.2f);
+            Gizmos.DrawWireSphere( fromPos, 0.2f );
+            Gizmos.DrawWireSphere( toPos, 0.2f );
             Gizmos.color = Color.green;
-            Gizmos.DrawLine(fromPos, toPos);
+            Gizmos.DrawLine( fromPos, toPos );
 
-            // Show the center point
             Gizmos.color = Color.red;
-            Gizmos.DrawWireCube(transform.position, Vector3.one * 0.1f);
+            Gizmos.DrawWireCube( transform.position, Vector3.one * 0.1f );
         }
     }
 }
 
-// Component that keeps a barrier node at its geographic location
 public class BarrierNode : MonoBehaviour
 {
     private AbstractMap map;
@@ -1009,11 +661,11 @@ public class BarrierNode : MonoBehaviour
     public Node GetNodeData() => nodeData;
     public Vector2d GetGeoLocation() => geoLocation;
 
-    public void Initialize(AbstractMap mapReference, Node node, float height)
+    public void Initialize( AbstractMap mapReference, Node node, float height )
     {
         map = mapReference;
         nodeData = node;
-        geoLocation = new Vector2d(node.latitude, node.longitude);
+        geoLocation = new Vector2d( node.latitude, node.longitude );
         heightOffset = height;
 
         UpdatePosition();
@@ -1021,21 +673,19 @@ public class BarrierNode : MonoBehaviour
 
     void Update()
     {
-        if (map != null)
-        {
+        if ( map != null ) {
             UpdatePosition();
         }
     }
 
     void UpdatePosition()
     {
-        Vector3 worldPos = map.GeoToWorldPosition(geoLocation, true);
+        Vector3 worldPos = map.GeoToWorldPosition( geoLocation, true );
         worldPos.y += heightOffset;
         transform.position = worldPos;
     }
 }
 
-// Component for creating 3D polygon backgrounds for campuses
 public class CampusPolygon : MonoBehaviour
 {
     private AbstractMap map;
@@ -1047,12 +697,12 @@ public class CampusPolygon : MonoBehaviour
     private MeshRenderer meshRenderer;
     private MeshFilter meshFilter;
 
-    public void Initialize(AbstractMap mapReference, string campus, List<Vector2d> points,
-                          float height, Color color, Material material = null)
+    public void Initialize( AbstractMap mapReference, string campus, List<Vector2d> points,
+                            float height, Color color, Material material = null )
     {
         map = mapReference;
         campusId = campus;
-        geoPoints = new List<Vector2d>(points);
+        geoPoints = new List<Vector2d>( points );
         heightOffset = height;
         polygonColor = color;
         polygonMaterial = material;
@@ -1062,28 +712,22 @@ public class CampusPolygon : MonoBehaviour
 
     private void CreatePolygonMesh()
     {
-        if (geoPoints.Count < 3) return;
+        if ( geoPoints.Count < 3 ) return;
 
-        // Add MeshFilter and MeshRenderer components
         meshFilter = gameObject.AddComponent<MeshFilter>();
         meshRenderer = gameObject.AddComponent<MeshRenderer>();
 
-        // Create or assign material
-        if (polygonMaterial != null)
-        {
+        if ( polygonMaterial != null ) {
             meshRenderer.material = polygonMaterial;
-        }
-        else
-        {
-            // Create a default material with transparency support
-            Material defaultMat = new Material(Shader.Find("Standard"));
-            defaultMat.SetFloat("_Mode", 3); // Set rendering mode to Transparent
-            defaultMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            defaultMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            defaultMat.SetInt("_ZWrite", 0);
-            defaultMat.DisableKeyword("_ALPHATEST_ON");
-            defaultMat.EnableKeyword("_ALPHABLEND_ON");
-            defaultMat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        } else {
+            Material defaultMat = new Material( Shader.Find( "Standard" ) );
+            defaultMat.SetFloat( "_Mode", 3 );
+            defaultMat.SetInt( "_SrcBlend", ( int )UnityEngine.Rendering.BlendMode.SrcAlpha );
+            defaultMat.SetInt( "_DstBlend", ( int )UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha );
+            defaultMat.SetInt( "_ZWrite", 0 );
+            defaultMat.DisableKeyword( "_ALPHATEST_ON" );
+            defaultMat.EnableKeyword( "_ALPHABLEND_ON" );
+            defaultMat.DisableKeyword( "_ALPHAPREMULTIPLY_ON" );
             defaultMat.renderQueue = 3000;
             defaultMat.color = polygonColor;
             meshRenderer.material = defaultMat;
@@ -1094,11 +738,8 @@ public class CampusPolygon : MonoBehaviour
 
     void Update()
     {
-        if (map != null && geoPoints.Count >= 3)
-        {
-            // Update mesh less frequently for performance
-            if (Time.frameCount % 5 == 0)
-            {
+        if ( map != null && geoPoints.Count >= 3 ) {
+            if ( Time.frameCount % 5 == 0 ) {
                 UpdatePolygonMesh();
             }
         }
@@ -1106,64 +747,51 @@ public class CampusPolygon : MonoBehaviour
 
     private void UpdatePolygonMesh()
     {
-        if (geoPoints.Count < 3) return;
+        if ( geoPoints.Count < 3 ) return;
 
-        // Convert geographic points to world positions
         List<Vector3> worldPoints = new List<Vector3>();
-        foreach (var geoPoint in geoPoints)
-        {
-            Vector3 worldPos = map.GeoToWorldPosition(geoPoint, false);
+        foreach ( var geoPoint in geoPoints ) {
+            Vector3 worldPos = map.GeoToWorldPosition( geoPoint, false );
             worldPos.y = heightOffset;
-            worldPoints.Add(worldPos);
+            worldPoints.Add( worldPos );
         }
 
-        // Calculate center point for positioning
         Vector3 center = Vector3.zero;
-        foreach (var point in worldPoints)
-        {
+        foreach ( var point in worldPoints ) {
             center += point;
         }
         center /= worldPoints.Count;
         transform.position = center;
 
-        // Convert world points to local coordinates relative to center
         List<Vector3> localPoints = new List<Vector3>();
-        foreach (var worldPoint in worldPoints)
-        {
-            localPoints.Add(worldPoint - center);
+        foreach ( var worldPoint in worldPoints ) {
+            localPoints.Add( worldPoint - center );
         }
 
-        // Create mesh using triangulation
         Mesh mesh = new Mesh();
         mesh.name = $"CampusPolygon_{campusId}";
 
-        // Simple fan triangulation from center
-        List<Vector3> vertices = new List<Vector3> { Vector3.zero }; // Center vertex
-        vertices.AddRange(localPoints);
+        List<Vector3> vertices = new List<Vector3> { Vector3.zero };
+        vertices.AddRange( localPoints );
 
         List<int> triangles = new List<int>();
-        for (int i = 1; i < vertices.Count - 1; i++)
-        {
-            triangles.Add(0); // Center
-            triangles.Add(i);
-            triangles.Add(i + 1);
+        for ( int i = 1; i < vertices.Count - 1; i++ ) {
+            triangles.Add( 0 );
+            triangles.Add( i );
+            triangles.Add( i + 1 );
         }
-        // Close the polygon
-        if (vertices.Count > 2)
-        {
-            triangles.Add(0);
-            triangles.Add(vertices.Count - 1);
-            triangles.Add(1);
+        if ( vertices.Count > 2 ) {
+            triangles.Add( 0 );
+            triangles.Add( vertices.Count - 1 );
+            triangles.Add( 1 );
         }
 
-        // Generate UVs
         List<Vector2> uvs = new List<Vector2>();
-        Vector3 bounds = GetLocalBounds(localPoints);
-        foreach (var vertex in vertices)
-        {
-            float u = bounds.x != 0 ? (vertex.x - bounds.x * -0.5f) / bounds.x : 0.5f;
-            float v = bounds.z != 0 ? (vertex.z - bounds.z * -0.5f) / bounds.z : 0.5f;
-            uvs.Add(new Vector2(u, v));
+        Vector3 bounds = GetLocalBounds( localPoints );
+        foreach ( var vertex in vertices ) {
+            float u = bounds.x != 0 ? ( vertex.x - bounds.x * -0.5f ) / bounds.x : 0.5f;
+            float v = bounds.z != 0 ? ( vertex.z - bounds.z * -0.5f ) / bounds.z : 0.5f;
+            uvs.Add( new Vector2( u, v ) );
         }
 
         mesh.vertices = vertices.ToArray();
@@ -1174,46 +802,40 @@ public class CampusPolygon : MonoBehaviour
         meshFilter.mesh = mesh;
     }
 
-    private Vector3 GetLocalBounds(List<Vector3> points)
+    private Vector3 GetLocalBounds( List<Vector3> points )
     {
-        if (points.Count == 0) return Vector3.one;
+        if ( points.Count == 0 ) return Vector3.one;
 
         float minX = float.MaxValue, maxX = float.MinValue;
         float minZ = float.MaxValue, maxZ = float.MinValue;
 
-        foreach (var point in points)
-        {
-            if (point.x < minX) minX = point.x;
-            if (point.x > maxX) maxX = point.x;
-            if (point.z < minZ) minZ = point.z;
-            if (point.z > maxZ) maxZ = point.z;
+        foreach ( var point in points ) {
+            if ( point.x < minX ) minX = point.x;
+            if ( point.x > maxX ) maxX = point.x;
+            if ( point.z < minZ ) minZ = point.z;
+            if ( point.z > maxZ ) maxZ = point.z;
         }
 
-        return new Vector3(maxX - minX, 0, maxZ - minZ);
+        return new Vector3( maxX - minX, 0, maxZ - minZ );
     }
 
-    // Optional: Debug visualization
     void OnDrawGizmosSelected()
     {
-        if (geoPoints != null && geoPoints.Count >= 3 && map != null)
-        {
+        if ( geoPoints != null && geoPoints.Count >= 3 && map != null ) {
             Gizmos.color = polygonColor;
 
             List<Vector3> worldPoints = new List<Vector3>();
-            foreach (var geoPoint in geoPoints)
-            {
-                Vector3 worldPos = map.GeoToWorldPosition(geoPoint, false);
+            foreach ( var geoPoint in geoPoints ) {
+                Vector3 worldPos = map.GeoToWorldPosition( geoPoint, false );
                 worldPos.y = heightOffset;
-                worldPoints.Add(worldPos);
+                worldPoints.Add( worldPos );
             }
 
-            // Draw polygon outline
-            for (int i = 0; i < worldPoints.Count; i++)
-            {
+            for ( int i = 0; i < worldPoints.Count; i++ ) {
                 Vector3 current = worldPoints[i];
-                Vector3 next = worldPoints[(i + 1) % worldPoints.Count];
-                Gizmos.DrawLine(current, next);
-                Gizmos.DrawWireSphere(current, 0.5f);
+                Vector3 next = worldPoints[( i + 1 ) % worldPoints.Count];
+                Gizmos.DrawLine( current, next );
+                Gizmos.DrawWireSphere( current, 0.5f );
             }
         }
     }

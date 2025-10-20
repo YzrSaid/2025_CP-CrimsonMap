@@ -427,10 +427,6 @@ public class PathfindingController : MonoBehaviour
         }
 
         locationConflictPanel.SetActive( true );
-
-        if ( enableDebugLogs ) {
-            Debug.Log( $"⚠️ Location conflict: {distanceMeters:F0}m between QR ({qrNode.name}) and GPS ({gpsNode.name})" );
-        }
     }
 
     private void OnLocationConflictConfirm()
@@ -438,23 +434,13 @@ public class PathfindingController : MonoBehaviour
         if ( locationConflictPanel != null ) {
             locationConflictPanel.SetActive( false );
         }
-
-        // User chose to use GPS - unlock from QR
         UnlockFromQR();
-
-        if ( enableDebugLogs ) {
-            Debug.Log( "User chose GPS - location unlocked" );
-        }
     }
 
     private void OnLocationConflictCancel()
     {
         if ( locationConflictPanel != null ) {
             locationConflictPanel.SetActive( false );
-        }
-
-        if ( enableDebugLogs ) {
-            Debug.Log( "User chose to stay with QR location" );
         }
     }
 

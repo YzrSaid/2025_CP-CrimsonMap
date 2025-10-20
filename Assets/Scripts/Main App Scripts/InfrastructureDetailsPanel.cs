@@ -4,113 +4,114 @@ using TMPro;
 
 public class InfrastructureDetailsPanel : MonoBehaviour
 {
-    [Header("UI References")]
+    [Header( "UI References" )]
     public TextMeshProUGUI titleText;
     public TextMeshProUGUI categoryText;
     public Image categoryColorImage;
     public Image infrastructureImage;
     public TextMeshProUGUI emailText;
     public TextMeshProUGUI phoneText;
+    public TextMeshProUGUI latAndlngText;
+    public TextMeshProUGUI campusText;
     public Button closeButton;
 
-    [Header("Background Settings")]
+    [Header( "Background Settings" )]
     public string backgroundPanelName = "BackgroundForExplorePanel";
 
     private Infrastructure infrastructure;
     private Category category;
+    private Node node;
+    private CampusData campus;
     private Transform backgroundTransform;
 
     void Awake()
     {
-        if (closeButton != null)
-            closeButton.onClick.AddListener(Close);
+        if ( closeButton != null )
+            closeButton.onClick.AddListener( Close );
 
         SetupBackground();
     }
 
     private void SetupBackground()
     {
-        backgroundTransform = transform.root.Find(backgroundPanelName);
+        backgroundTransform = transform.root.Find( backgroundPanelName );
 
-        if (backgroundTransform == null)
-        {
+        if ( backgroundTransform == null ) {
             Canvas canvas = FindObjectOfType<Canvas>();
-            if (canvas != null)
-            {
-                backgroundTransform = SearchAllChildren(canvas.transform, backgroundPanelName);
+            if ( canvas != null ) {
+                backgroundTransform = SearchAllChildren( canvas.transform, backgroundPanelName );
             }
         }
 
-        if (backgroundTransform != null)
-        {
-            backgroundTransform.gameObject.SetActive(true);
-        }
-        else
-        {
-            Debug.Log("Background panel not found!");
+        if ( backgroundTransform != null ) {
+            backgroundTransform.gameObject.SetActive( true );
         }
     }
 
-    private Transform SearchAllChildren(Transform parent, string name)
+    private Transform SearchAllChildren( Transform parent, string name )
     {
-        foreach (Transform child in parent.GetComponentsInChildren<Transform>(true))
-        {
-            if (child.name == name)
-            {
+        foreach ( Transform child in parent.GetComponentsInChildren<Transform>( true ) ) {
+            if ( child.name == name ) {
                 return child;
             }
         }
         return null;
     }
 
-    public void SetData(Infrastructure infra, Category cat)
+    public void SetData( Infrastructure infra, Category cat, Node nodeData, CampusData campusData )
     {
         infrastructure = infra;
         category = cat;
+        node = nodeData;
+        campus = campusData;
         PopulateUI();
     }
 
     void PopulateUI()
     {
-        if (titleText != null)
+        if ( titleText != null )
             titleText.text = infrastructure.name;
 
-        if (category != null)
-        {
-            if (categoryText != null)
+        if ( category != null ) {
+            if ( categoryText != null )
                 categoryText.text = category.name;
 
-            if (categoryColorImage != null && !string.IsNullOrEmpty(category.color))
-            {
-                if (ColorUtility.TryParseHtmlString(category.color, out Color catColor))
-                {
+            if ( categoryColorImage != null && !string.IsNullOrEmpty( category.color ) ) {
+                if ( ColorUtility.TryParseHtmlString( category.color, out Color catColor ) ) {
                     categoryColorImage.color = catColor;
                 }
             }
         }
 
-        if (!string.IsNullOrEmpty(infrastructure.image_url))
-        {
-            Texture2D texture = Resources.Load<Texture2D>(infrastructure.image_url);
-            if (texture != null && infrastructureImage != null)
-            {
-                infrastructureImage.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.one * 0.5f);
+        if ( !string.IsNullOrEmpty( infrastructure.image_url ) ) {
+            Texture2D texture = Resources.Load<Texture2D>( infrastructure.image_url );
+            if ( texture != null && infrastructureImage != null ) {
+                infrastructureImage.sprite = Sprite.Create( texture, new Rect( 0, 0, texture.width, texture.height ), Vector2.one * 0.5f );
             }
         }
 
-        if (emailText != null)
+        if ( emailText != null )
             emailText.text = infrastructure.email;
 
-        if (phoneText != null)
+        if ( phoneText != null )
             phoneText.text = infrastructure.phone;
+
+        if ( node != null ) {
+            if ( latAndlngText != null )
+                latAndlngText.text = node.latitude.ToString( "F6" ) + " | " + node.latitude.ToString( "F6" );
+        }
+
+        if ( campus != null ) {
+            if ( campusText != null )
+                campusText.text = campus.campus_name;
+        }
     }
 
     void Close()
     {
-        Destroy(gameObject);
-        if (backgroundTransform != null)
-        {
-            backgroundTransform.gameObject.SetActive(false);
+        Destroy( gameObject );
+        if ( backgroundTransform != null ) {
+            backgroundTransform.gameObject.SetActive( false );
         }
     }
 }
