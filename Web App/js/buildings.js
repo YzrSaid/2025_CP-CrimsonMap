@@ -28,7 +28,6 @@ window.hideCategoryModal = hideCategoryModal;
 
 let categoriesTableData = [];
 
-// ----------- Load Categories Table (exclude deleted categories) -----------
 async function renderCategoriesTable() {
     const tbody = document.getElementById("categoriesTableBody");
     if (!tbody) return;
@@ -36,28 +35,55 @@ async function renderCategoriesTable() {
 
     try {
         let categories = [];
+        let infrastructures = [];
 
+        // ===== Load Categories =====
         if (navigator.onLine) {
-            const querySnapshot = await getDocs(collection(db, "Categories"));
-            categories = querySnapshot.docs
+            const catSnap = await getDocs(collection(db, "Categories"));
+            categories = catSnap.docs
                 .map(doc => ({ id: doc.id, ...doc.data() }))
                 .filter(data => !data.is_deleted);
+
+            // Also fetch infrastructures
+            const infraSnap = await getDocs(collection(db, "Infrastructure"));
+            infrastructures = infraSnap.docs
+                .map(doc => doc.data())
+                .filter(data => !data.is_deleted);
         } else {
-            const res = await fetch("../assets/firestore/Categories.json");
-            const dataJson = await res.json();
-            categories = dataJson.filter(data => !data.is_deleted);
+            // Offline fallback (optional)
+            const catRes = await fetch("../assets/firestore/Categories.json");
+            const catData = await catRes.json();
+            categories = catData.filter(data => !data.is_deleted);
+
+            const infraRes = await fetch("../assets/firestore/Infrastructure.json");
+            const infraData = await infraRes.json();
+            infrastructures = infraData.filter(data => !data.is_deleted);
         }
 
-        // Sort by createdAt
+        // ===== Count infrastructures per category =====
+        const infraCountMap = {};
+        infrastructures.forEach(infra => {
+            if (infra.category_id) {
+                infraCountMap[infra.category_id] = (infraCountMap[infra.category_id] || 0) + 1;
+            }
+        });
+
+        // ===== Attach building counts to categories =====
+        categories.forEach(cat => {
+            cat.buildings = infraCountMap[cat.category_id] || 0;
+        });
+
+        // ===== Sort by createdAt =====
         categories.sort((a, b) => {
             const timeA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
             const timeB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
             return timeA - timeB;
         });
 
-        // Store for filtering/searching
+        // Save globally for searching/filtering
         categoriesTableData = categories;
 
+        // Render
         renderCategoriesTableRows(categoriesTableData);
 
     } catch (err) {
@@ -65,10 +91,12 @@ async function renderCategoriesTable() {
     }
 }
 
+
 function renderCategoriesTableRows(data) {
     const tbody = document.getElementById("categoriesTableBody");
     if (!tbody) return;
     tbody.innerHTML = "";
+
     data.forEach((data, index) => {
         const tr = document.createElement("tr");
         tr.dataset.id = data.id;
@@ -79,7 +107,7 @@ function renderCategoriesTableRows(data) {
                 <span class="category-color" style="background:${data.color || '#b41c1c'}"></span>
                 <span style="margin-left:8px;">${data.color || '#b41c1c'}</span>
             </td>
-            <td>${data.buildings || 0}</td>
+            <td>${data.buildings}</td>
             <td class="actions">
                 <button class="edit"><i class="fas fa-edit"></i></button>
                 <button class="delete"><i class="fas fa-trash"></i></button>
@@ -88,6 +116,7 @@ function renderCategoriesTableRows(data) {
         tbody.appendChild(tr);
     });
 }
+
 
 
 

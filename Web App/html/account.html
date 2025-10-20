@@ -16,7 +16,7 @@
             <img src="/assets/imgs/CrimsonMap Logo 1.png" alt="CrimsonMap Logo">
         </div>
         <div class="time">11:11:05 PM | 12-12-25</div>
-        <div class="welcome">WELCOME, <span>ADMIN!</span></div> 
+        <div class="welcome">WELCOME, <span id="userName">ADMIN!</span></div>
 
         <div class="sidebar"> 
             <ul> 
@@ -50,8 +50,15 @@
                         <i class="fas fa-user-cog"></i> Account
                     </a>
                 </li> 
+                <!-- Logout at the bottom -->
+                <li class="logout-item">
+                    <a href="/login.html">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li> 
             </ul> 
         </div>
+
 
     </div>
 
@@ -64,6 +71,10 @@
                 <div class="menu-icon">&#9776;</div>
                 <div class="topbar-title">CrimsonMap | WMSU</div>
             </div>
+
+            <button class="add-user-btn">
+                <i class="fas fa-user-plus"></i> Add User
+            </button>
         </div>
 
         <!-- Breadcrumb -->
@@ -77,13 +88,17 @@
             <div class="account-card">
                 <h3>Admin Account</h3>
 
-                <div class="form-group">
-                    <label for="email">Email:</label>
-                    <div class="input-wrapper">
-                        <input type="text" id="email" value="sample_email@gmail.com" readonly>
+                <div class="account-section">
+                    <div class="form-group">
+                        <label for="accountEmail">Email:</label>
+                        <div class="input-wrapper">
+                        <input type="text" id="accountEmail" readonly>
                         <span class="edit-icon">✎</span>
+                        </div>
                     </div>
                 </div>
+
+
 
                 <button class="change-btn">Change Password</button>
             </div>
@@ -92,6 +107,92 @@
     </div>
 
 
+
+<!-- Add User Modal -->
+<div id="addUserModal" class="modal">
+  <div class="modal-content landscape">
+    <span class="close-btn">&times;</span>
+    <h2>Add New User</h2>
+
+    <form id="addUserForm">
+      <div class="form-row">
+        <div class="form-group name-field">
+          <label>First Name</label>
+          <input 
+            type="text" 
+            id="firstName" 
+            placeholder="e.g. John" 
+            required
+          >
+        </div>
+        <div class="form-group mi-field">
+          <label>M.I.</label>
+          <input 
+            type="text" 
+            id="middleInitial" 
+            maxlength="1" 
+            placeholder="e.g. D" 
+          >
+        </div>
+        <div class="form-group lastname-field">
+          <label>Last Name</label>
+          <input 
+            type="text" 
+            id="lastName" 
+            placeholder="e.g. Santos" 
+            required
+          >
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group contact-field">
+          <label>Contact Number</label>
+          <input 
+            type="text" 
+            id="contactNumber" 
+            placeholder="e.g. 09123456789" 
+            required
+          >
+        </div>
+        <div class="form-group email-field">
+          <label>Email</label>
+          <input 
+            type="email" 
+            id="modalEmail" 
+            placeholder="e.g. john.santos@gmail.com" 
+            autocomplete="off" 
+            required
+          >
+        </div>
+        <div class="form-group password-field">
+          <label>Password</label>
+          <input 
+            type="password" 
+            id="modalPassword" 
+            placeholder="e.g. StrongP@ss123" 
+            autocomplete="new-password" 
+            required
+          >
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="cancel-btn">Cancel</button>
+        <button type="submit" class="save-btn">Save</button>
+      </div>
+    </form>
+  </div>
 </div>
+
+
+
+</div>
+
+<script type="module" src="/js/account.js"></script>
+<script type="module" src="/js/welcome.js"></script>
+<script type="module" src="/js/time.js"></script>
+
+
 </body>
 </html>

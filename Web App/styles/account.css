@@ -65,9 +65,19 @@ body {
 }
 
 .sidebar ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.sidebar li.logout-item {
+    margin-top: auto; /* pushes logout to the bottom */
+    background-color: #f8f8f8; /* optional, for subtle separation */
+}
+
+.sidebar li.logout-item:hover {
+    background-color: #e8e8e8;
+    color: #b30000;
 }
 
 .sidebar ul .fas {
@@ -247,4 +257,333 @@ body {
 
 .change-btn:hover {
     background-color: #990000;
+}
+
+
+
+
+
+
+
+/* ============ Add User Button ============ */
+
+.add-user-btn {
+    background-color: #ffffff;
+    color: #b30000;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.add-user-btn i {
+    font-size: 16px;
+}
+
+.add-user-btn:hover {
+    background-color: #b30000;
+    color: #fff;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+
+
+
+
+/* =========================
+   Modal — Robust Professional Styles
+   Replaces / supplements your previous modal styles.
+   ========================= */
+
+/* Base modal overlay */
+.modal {
+    display: none; /* toggled to 'flex' by JS */
+    position: fixed;
+    z-index: 1000;
+    inset: 0; /* shorthand for top:0; right:0; bottom:0; left:0; */
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.48); /* slightly heavier backdrop for focus */
+    align-items: center; /* vertical centering when display:flex */
+    justify-content: center; /* horizontal centering when display:flex */
+    padding: 24px; /* breathe room on very small screens */
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Modal content panel */
+.modal-content {
+    background-color: #ffffff;
+    width: 700px;             /* ideal desktop width for landscape layout */
+    max-width: 100%;          /* never overflow viewport */
+    border-radius: 12px;
+    padding: 28px 34px 26px 34px; /* top/right/bottom/left */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    position: relative;
+    box-sizing: border-box;
+    animation: fadeIn 0.22s ease-out;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    transform-origin: center;
+    /* allow vertical scrolling for tall forms on small heights */
+    max-height: 90vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Slight pop on show */
+.modal-content:focus { outline: none; }
+
+
+
+/* Close button (bigger, clear hit area) */
+.close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    line-height: 1;
+    color: #666;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: none;
+    z-index: 1010;
+}
+
+/* Hover/focus states for close button */
+.close-btn:hover,
+.close-btn:focus {
+    background: rgba(179, 0, 0, 0.06);
+    color: #b30000;
+    transform: translateY(-1px);
+    outline: none;
+}
+
+/* Modal header */
+.modal-content h2 {
+    margin: 6px 0 18px 0;
+    font-size: 20px;
+    color: #b30000;
+    text-align: left;
+    font-weight: 700;
+    letter-spacing: 0.1px;
+}
+
+/* Form rows: horizontally aligned but responsive */
+.form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+    box-sizing: border-box;
+    flex-wrap: wrap; /* allow wrapping so inputs never overflow */
+}
+
+/* Form-group: label below input (column-reverse) per your earlier req */
+.form-group {
+    display: flex;
+    flex-direction: column-reverse; /* input first, then label below it */
+    gap: 8px; /* space between input and label */
+    flex: 1 1 0px; /* grow/shrink as needed */
+    min-width: 0; /* important to allow flex children to shrink properly */
+    box-sizing: border-box;
+}
+
+/* Input and select styling */
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d6d6d6;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #222;
+    background-color: #fff;
+    box-sizing: border-box;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+/* input focus */
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: rgba(179,0,0,0.65);
+    box-shadow: 0 4px 12px rgba(179,0,0,0.06);
+}
+
+/* Labels (placed below inputs) */
+.form-group label {
+    display: block;
+    font-size: 13px;
+    color: #666;
+    font-weight: 600;
+    margin-top: px; /* small gap above label */
+    letter-spacing: 0.1px;
+    margin-left: 3px;
+}
+
+/* Specific width control for each field (landscape proportions) */
+.name-field {
+    flex: 2 1 280px;     /* longest field */
+    min-width: 160px;
+}
+.mi-field {
+    flex: 0 0 64px;      /* small fixed-ish MI field */
+    max-width: 80px;
+    min-width: 56px;
+}
+.lastname-field {
+    flex: 1.2 1 180px;   /* average size */
+    min-width: 120px;
+}
+.contact-field {
+    flex: 1.2 1 160px;
+    min-width: 120px;
+}
+.email-field {
+    flex: 2 1 240px;     /* wide email column */
+    min-width: 180px;
+}
+.password-field {
+    flex: 1.2 1 160px;
+    min-width: 120px;
+}
+
+/* Modal actions (buttons row) */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 10px;
+    margin-bottom: 4px;
+}
+
+/* Buttons */
+.save-btn, .cancel-btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-sizing: border-box;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+/* Primary Save */
+.save-btn {
+    background-color: #b30000;
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(179,0,0,0.12);
+}
+
+
+
+/* Secondary Cancel */
+.cancel-btn {
+    background-color: #f6f6f6;
+    color: #333;
+    border: 1px solid #e6e6e6;
+}
+
+
+
+/* Small helper: ensure long text does not overflow */
+.form-group input::placeholder { color: #bfbfbf; }
+.form-group input::-ms-clear { display: none; }
+
+/* Subtle divider optional (if desired) */
+.modal-divider {
+    height: 1px;
+    background: linear-gradient(90deg, rgba(0,0,0,0.04), rgba(0,0,0,0.02));
+    margin: 12px 0;
+}
+
+/* Accessibility focus states */
+.save-btn:focus, .cancel-btn:focus, .close-btn:focus, .form-group input:focus {
+    outline: 3px solid rgba(179,0,0,0.12);
+    outline-offset: 2px;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.985); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* =========================
+   Responsive tweaks
+   ========================= */
+
+/* Medium screens: reduce width and allow wrap */
+@media (max-width: 900px) {
+    .modal-content { width: 90%; padding: 22px; }
+    .name-field { flex-basis: 45%; }
+    .mi-field { flex-basis: 8%; }
+    .lastname-field { flex-basis: 35%; }
+    .email-field { flex-basis: 60%; }
+    .contact-field, .password-field { flex-basis: 30%; }
+}
+
+/* Small screens: stack fields vertically for comfortable mobile UX */
+@media (max-width: 620px) {
+    .modal-content {
+        width: 100%;
+        max-width: 560px;
+        padding: 18px;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .form-group {
+        flex: 1 1 auto;
+    }
+
+    /* increase close button size slightly on mobile to aid tapping */
+    .close-btn {
+        width: 48px;
+        height: 48px;
+        font-size: 22px;
+    }
+
+    .save-btn, .cancel-btn {
+        width: 48%;
+    }
+}
+
+/* Very small phones */
+@media (max-width: 420px) {
+    .modal-content { padding: 14px; border-radius: 10px; }
+    .modal-content h2 { font-size: 18px; }
+    .save-btn, .cancel-btn { font-size: 13px; padding: 9px 12px; }
+}
+
+/* Prevent body from scrolling when modal is open
+   (you can toggle this on the <body> via JS: document.body.classList.add('modal-open')) */
+body.modal-open {
+    overflow: hidden;
+    touch-action: none;
 }

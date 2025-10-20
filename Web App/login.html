@@ -1,30 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
   <title>CrimsonMap | WMSU</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles/login.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles/login.css" />
 </head>
 <body>
-    <div class="container">
-        <div class="left">
-            <div class="overlay"></div>
-        </div>
-        <div class="right">
-            <div class="form-box">
-                <img src="/assets/imgs/CrimsonMap Logo 1.png" alt="CrimsonMap Logo">
-                <h2>CrimsonMap | WMSU</h2>
-                <form>
-                    <input type="email" placeholder="School Email">
-                    <br>
-                    <input type="password" placeholder="Password">
-                    <a class="forgot" href="#">Forgot Password?</a>
-                    <a href="/html/dashboard_main.html"><button type="button">Log In</button></a>
-                </form>
-            </div>
-        </div>
+  <div class="container">
+    <div class="left">
+      <div class="overlay"></div>
     </div>
+    <div class="right">
+      <div class="form-box">
+        <img src="/assets/imgs/CrimsonMap Logo 1.png" alt="CrimsonMap Logo" />
+        <h2>CrimsonMap | WMSU</h2>
+        <form id="loginForm">
+          <input id="email" type="email" placeholder="School Email" required />
+          <br />
+          <input id="password" type="password" placeholder="Password" required />
+          <a class="forgot" href="#">Forgot Password?</a>
+          <button type="submit">Log In</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Connect the JS file -->
+  <script type="module" src="/js/login.js"></script>
 </body>
 </html>

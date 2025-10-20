@@ -18,7 +18,8 @@
             <img src="/assets/imgs/CrimsonMap Logo 1.png" alt="CrimsonMap Logo">
         </div>
         <div class="time">11:11:05 PM | 12-12-25</div>
-        <div class="welcome">WELCOME, <span>ADMIN!</span></div> 
+        <div class="welcome">WELCOME, <span id="userName">ADMIN!</span></div>
+
 
         <div class="sidebar"> 
             <ul> 
@@ -50,6 +51,11 @@
                 <li>
                     <a href="/html/account.html">
                         <i class="fas fa-user-cog"></i> Account
+                    </a>
+                </li> 
+                <li class="logout-item">
+                    <a href="/login.html">
+                        <i class="fas fa-sign-out-alt"></i> Logout
                     </a>
                 </li> 
             </ul> 
@@ -203,5 +209,9 @@
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script type="module" src="/js/dashboard_main.js"></script>
 <script src="/vendor/leaflet/leaflet.js"></script>
+<script type="module" src="/js/welcome.js"></script>
+<script type="module" src="/js/time.js"></script>
+
+
 </body>
 </html>
