@@ -805,7 +805,6 @@ public class PathfindingController : MonoBehaviour
             pathfinding.SetActiveRoute(routeIndex);
         }
     }
-    // Add these methods to PathfindingController.cs
 
     private void OnConfirmRouteClicked()
     {
@@ -831,6 +830,17 @@ public class PathfindingController : MonoBehaviour
 
     private void SaveRouteDataForAR(RouteData route, List<NavigationDirection> directions)
     {
+        // Save map/campus data so AR scene can access it
+        if (MapManager.Instance != null && MapManager.Instance.GetCurrentMap() != null)
+        {
+            MapInfo currentMap = MapManager.Instance.GetCurrentMap();
+            PlayerPrefs.SetString("ARScene_MapId", currentMap.map_id);
+            PlayerPrefs.SetString("ARScene_MapName", currentMap.map_name);
+
+            string campusIdsJson = string.Join(",", MapManager.Instance.GetCurrentCampusIds());
+            PlayerPrefs.SetString("ARScene_CampusIds", campusIdsJson);
+        }
+
         // Save route info
         PlayerPrefs.SetString("ARNavigation_StartNodeId", route.startNode.node_id);
         PlayerPrefs.SetString("ARNavigation_EndNodeId", route.endNode.node_id);
@@ -841,8 +851,24 @@ public class PathfindingController : MonoBehaviour
         PlayerPrefs.SetString("ARNavigation_WalkingTime", route.walkingTime);
         PlayerPrefs.SetString("ARNavigation_ViaMode", route.viaMode);
 
-        // Save path node count for verification
         PlayerPrefs.SetInt("ARNavigation_PathNodeCount", route.path.Count);
+
+        for (int i = 0; i < route.path.Count; i++)
+        {
+            PlayerPrefs.SetString($"ARNavigation_PathNode_{i}", route.path[i].node.node_id);
+        }
+
+        int edgeCount = route.path.Count - 1; 
+        PlayerPrefs.SetInt("ARNavigation_EdgeCount", edgeCount);
+
+        for (int i = 0; i < edgeCount; i++)
+        {
+            string fromNode = route.path[i].node.node_id;
+            string toNode = route.path[i + 1].node.node_id;
+
+            PlayerPrefs.SetString($"ARNavigation_Edge_{i}_From", fromNode);
+            PlayerPrefs.SetString($"ARNavigation_Edge_{i}_To", toNode);
+        }
 
         // Save directions count
         PlayerPrefs.SetInt("ARNavigation_DirectionCount", directions.Count);
@@ -866,6 +892,7 @@ public class PathfindingController : MonoBehaviour
         if (enableDebugLogs)
         {
             Debug.Log($"[PathfindingController] Route data saved for AR: {route.startNode.name} → {route.endNode.name}");
+            Debug.Log($"[PathfindingController] Saved {route.path.Count} path nodes");
             Debug.Log($"[PathfindingController] Saved {directions.Count} navigation directions");
         }
     }

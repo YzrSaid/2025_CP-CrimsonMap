@@ -13740,16 +13740,12 @@ MonoBehaviour:
   mapboxMap: {fileID: 1699060734}
   nodePrefab: {fileID: 5910253498655256837, guid: 1a4e31524136c5126a824a84ee0f9241, type: 3}
   edgePrefab: {fileID: 7818019151854478976, guid: ab76d48a9abd4a45f97f0336445c47f0, type: 3}
-  polygonPrefab: {fileID: 0}
   enableDebugLogs: 1
   nodeSize: 4.5
   heightOffset: 1
   edgeWidth: 1
-  edgeMaterial: {fileID: 2100000, guid: 107ca5e7bb5e26f46b0ce09f5fc2e817, type: 2}
-  enablePolygonBackgrounds: 1
-  polygonHeightOffset: 0.5
-  defaultPolygonColor: {r: 0.2, g: 0.8, b: 0.2, a: 0.3}
-  polygonMaterial: {fileID: 2100000, guid: 749b9069dc4742c5bfa5c74644049926, type: 2}
+  edgeColor: {r: 1, g: 0.4669811, b: 0.47793353, a: 1}
+  nodeColor: {r: 1, g: 0.47058824, b: 0.47843137, a: 1}
 --- !u!114 &1699060740
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13786,7 +13782,7 @@ MonoBehaviour:
   enableDebugLogs: 1
   pathWidth: 0.5
   pathHeightOffset: 1
-  pathwayColor: {r: 0.8, g: 0.6, b: 0.4, a: 0.9}
+  pathwayColor: {r: 0.49056602, g: 0.49056602, b: 0.49056602, a: 1}
 --- !u!114 &1699060743
 MonoBehaviour:
   m_ObjectHideFlags: 0
