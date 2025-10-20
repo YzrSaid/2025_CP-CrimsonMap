@@ -10,53 +10,48 @@ public class GPSManager : MonoBehaviour
     public static GPSManager Instance;
     public bool useMockLocationInEditor = true;
 
-    [Header("Mock GPS Settings (Editor Only)")]
-    private float mockLatitude = 6.91261f;   
-    private float mockLongitude = 122.06359f; 
+    [Header( "Mock GPS Settings (Editor Only)" )]
+    private float mockLatitude = 6.91261f;
+    private float mockLongitude = 122.06359f;
     private float mockHeading = 0f;
-    
-    [Header("QR Override Settings")]
+
+    [Header( "QR Override Settings" )]
     public bool useQROverride = false;
     private Vector2 qrOverrideLocation;
     private float qrOverrideHeading = 0f;
-    
-    [Header("GPS Smoothing")]
+
+    [Header( "GPS Smoothing" )]
     private List<Vector2> recentCoordinates = new List<Vector2>();
     private List<float> recentHeadings = new List<float>();
     private int maxHistorySize = 5;
 
     public void Start()
     {
-        StartCoroutine(StartLocationService());
+        StartCoroutine( StartLocationService() );
     }
 
     private void Awake()
     {
-        if (Instance == null)
-        {
+        if ( Instance == null ) {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
+            DontDestroyOnLoad( gameObject );
+        } else {
+            Destroy( gameObject );
         }
     }
 
     public IEnumerator StartLocationService()
     {
 #if UNITY_EDITOR
-        if (useMockLocationInEditor)
-        {
-            Debug.Log("Using mock GPS in Editor");
+        if ( useMockLocationInEditor ) {
+            Debug.Log( "Using mock GPS in Editor" );
             Input.compass.enabled = true;
             yield break;
         }
 #endif
 
-        if (!Input.location.isEnabledByUser)
-        {
-            Debug.LogError("Location service not enabled");
+        if ( !Input.location.isEnabledByUser ) {
+            Debug.LogError( "Location service not enabled" );
             yield break;
         }
 
@@ -64,91 +59,77 @@ public class GPSManager : MonoBehaviour
         Input.compass.enabled = true;
 
         int maxWait = 20;
-        while (Input.location.status == LocationServiceStatus.Initializing && maxWait > 0)
-        {
-            yield return new WaitForSeconds(1);
+        while ( Input.location.status == LocationServiceStatus.Initializing && maxWait > 0 ) {
+            yield return new WaitForSeconds( 1 );
             maxWait--;
         }
 
-        if (Input.location.status == LocationServiceStatus.Failed)
-        {
-            Debug.LogError("Unable to determine device location");
-        }
-        else
-        {
-            Debug.Log("GPS started: " +
-            Input.location.lastData.latitude + ", " + Input.location.lastData.longitude);
+        if ( Input.location.status == LocationServiceStatus.Failed ) {
+            Debug.LogError( "Unable to determine device location" );
+        } else {
+            Debug.Log( "GPS started: " +
+                       Input.location.lastData.latitude + ", " + Input.location.lastData.longitude );
         }
     }
 
     public Vector2 GetCoordinates()
     {
-        // QR override takes priority
-        if (useQROverride)
-        {
+        if ( useQROverride ) {
             return qrOverrideLocation;
         }
-        
+
 #if UNITY_EDITOR
-        if (useMockLocationInEditor)
-        {
-            return new Vector2(mockLatitude, mockLongitude);
+        if ( useMockLocationInEditor ) {
+            return new Vector2( mockLatitude, mockLongitude );
         }
 #endif
 
-        return new Vector2(Input.location.lastData.latitude, Input.location.lastData.longitude);
+        return new Vector2( Input.location.lastData.latitude, Input.location.lastData.longitude );
     }
 
     public float GetHeading()
     {
-        // QR override takes priority
-        if (useQROverride)
-        {
+        if ( useQROverride ) {
             return qrOverrideHeading;
         }
-        
+
 #if UNITY_EDITOR
-        if (useMockLocationInEditor)
-        {
-            if (Keyboard.current != null)
-            {
-                if (Keyboard.current.qKey.isPressed)
+        if ( useMockLocationInEditor ) {
+            if ( Keyboard.current != null ) {
+                if ( Keyboard.current.qKey.isPressed )
                     mockHeading -= 90f * Time.deltaTime;
-                if (Keyboard.current.eKey.isPressed)
+                if ( Keyboard.current.eKey.isPressed )
                     mockHeading += 90f * Time.deltaTime;
             }
-            
+
             mockHeading = mockHeading % 360f;
-            if (mockHeading < 0) mockHeading += 360f;
-            
+            if ( mockHeading < 0 ) mockHeading += 360f;
+
             return mockHeading;
         }
 #endif
 
         return Input.compass.magneticHeading;
     }
-    
-    // QR Override Methods
-    public void SetQRLocationOverride(Vector2 location, float heading = 0f)
+
+    public void SetQRLocationOverride( Vector2 location, float heading = 0f )
     {
         qrOverrideLocation = location;
         qrOverrideHeading = heading;
         useQROverride = true;
-        
-        Debug.Log($"QR Location override set: {location.x}, {location.y}, Heading: {heading}");
+
     }
-    
-    public void SetQRLocationOverride(float latitude, float longitude, float heading = 0f)
+
+    public void SetQRLocationOverride( float latitude, float longitude, float heading = 0f )
     {
-        SetQRLocationOverride(new Vector2(latitude, longitude), heading);
+        SetQRLocationOverride( new Vector2( latitude, longitude ), heading );
     }
-    
+
     public void ClearQRLocationOverride()
     {
         useQROverride = false;
-        Debug.Log("QR Location override cleared");
     }
-    
+
     public bool IsUsingQROverride()
     {
         return useQROverride;
@@ -157,58 +138,52 @@ public class GPSManager : MonoBehaviour
     public Vector2 GetSmoothedCoordinates()
     {
         Vector2 rawCoords = GetCoordinates();
-        
-        recentCoordinates.Add(rawCoords);
-        if (recentCoordinates.Count > maxHistorySize)
-            recentCoordinates.RemoveAt(0);
-        
+
+        recentCoordinates.Add( rawCoords );
+        if ( recentCoordinates.Count > maxHistorySize )
+            recentCoordinates.RemoveAt( 0 );
+
         Vector2 sum = Vector2.zero;
-        foreach (var coord in recentCoordinates)
+        foreach ( var coord in recentCoordinates )
             sum += coord;
-        
+
         return sum / recentCoordinates.Count;
     }
 
     public float GetSmoothedHeading()
     {
         float rawHeading = GetHeading();
-        
-        recentHeadings.Add(rawHeading);
-        if (recentHeadings.Count > maxHistorySize)
-            recentHeadings.RemoveAt(0);
-        
+
+        recentHeadings.Add( rawHeading );
+        if ( recentHeadings.Count > maxHistorySize )
+            recentHeadings.RemoveAt( 0 );
+
         float avgHeading = 0f;
-        if (recentHeadings.Count > 0)
-        {
+        if ( recentHeadings.Count > 0 ) {
             float sinSum = 0f, cosSum = 0f;
-            foreach (var heading in recentHeadings)
-            {
-                sinSum += Mathf.Sin(heading * Mathf.Deg2Rad);
-                cosSum += Mathf.Cos(heading * Mathf.Deg2Rad);
+            foreach ( var heading in recentHeadings ) {
+                sinSum += Mathf.Sin( heading * Mathf.Deg2Rad );
+                cosSum += Mathf.Cos( heading * Mathf.Deg2Rad );
             }
-            avgHeading = Mathf.Atan2(sinSum / recentHeadings.Count, cosSum / recentHeadings.Count) * Mathf.Rad2Deg;
-            if (avgHeading < 0) avgHeading += 360f;
+            avgHeading = Mathf.Atan2( sinSum / recentHeadings.Count, cosSum / recentHeadings.Count ) * Mathf.Rad2Deg;
+            if ( avgHeading < 0 ) avgHeading += 360f;
         }
-        
+
         return avgHeading;
     }
 
     void Update()
     {
 #if UNITY_EDITOR
-        if (useMockLocationInEditor && Keyboard.current != null && Keyboard.current.gKey.wasPressedThisFrame)
-        {
-            Debug.Log($"Mock GPS: {mockLatitude}, {mockLongitude}, Heading: {mockHeading:F1}°");
-            Debug.Log("Use Q/E keys to rotate the mock heading");
+        if ( useMockLocationInEditor && Keyboard.current != null && Keyboard.current.gKey.wasPressedThisFrame ) {
+            Debug.Log( $"Mock GPS: {mockLatitude}, {mockLongitude}, Heading: {mockHeading:F1}°" );
         }
-        
-        // QR override toggle for testing
-        if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
-        {
-            if (useQROverride)
+
+        if ( Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame ) {
+            if ( useQROverride )
                 ClearQRLocationOverride();
             else
-                SetQRLocationOverride(mockLatitude + 0.001f, mockLongitude + 0.001f, mockHeading + 45f);
+                SetQRLocationOverride( mockLatitude + 0.001f, mockLongitude + 0.001f, mockHeading + 45f );
         }
 #endif
     }

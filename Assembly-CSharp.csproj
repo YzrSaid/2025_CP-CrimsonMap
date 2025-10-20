@@ -245,6 +245,7 @@
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/TileJSON/TileJSON.cs" />
     <Compile Include="Assets/Mapbox/Unity/LayerProperties/LayerProperties.cs" />
     <Compile Include="Assets/Mapbox/Unity/Telemetry/TelemetryEditor.cs" />
+    <Compile Include="Assets/Scripts/App Managers/ARMapManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Filters/FilterBase.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/Cache/MemoryCache.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/TileJSON/TileJSONObjectVectorLayer.cs" />
@@ -324,6 +325,7 @@
     <Compile Include="Assets/Mapbox/Unity/DataContainers/TerrainColliderOptions.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/ISubLayerColorStyle.cs" />
     <Compile Include="Assets/MobileARTemplateAssets/Scripts/GoalManager.cs" />
+    <Compile Include="Assets/Scripts/ARSCene/DirectionGenerator.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/MapMatching/MapMatcher.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Factories/VectorTileFactory.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/AngleSmoothing/AngleSmoothingAbstractBase.cs" />
