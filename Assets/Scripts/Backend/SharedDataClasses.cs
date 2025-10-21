@@ -220,20 +220,32 @@ public class SaveData
     public bool onboardingComplete = false;
 }
 
+[Serializable]
+public enum TurnDirection
+{
+    Straight,
+    Left,
+    Right,
+    SlightLeft,
+    SlightRight,
+    Enter,
+    Arrive
+}
+
 // Helper class for JSON array parsing (Unity's JsonUtility doesn't handle arrays directly)
 public static class JsonHelper
 {
-    public static T[] FromJson<T>( string json )
+    public static T[] FromJson<T>(string json)
     {
-        Wrapper<T> wrapper = JsonUtility.FromJson<Wrapper<T>>( "{\"Items\":" + json + "}" );
+        Wrapper<T> wrapper = JsonUtility.FromJson<Wrapper<T>>("{\"Items\":" + json + "}");
         return wrapper.Items;
     }
 
-    public static string ToJson<T>( T[] array, bool prettyPrint = false )
+    public static string ToJson<T>(T[] array, bool prettyPrint = false)
     {
         Wrapper<T> wrapper = new Wrapper<T>();
         wrapper.Items = array;
-        return JsonUtility.ToJson( wrapper, prettyPrint );
+        return JsonUtility.ToJson(wrapper, prettyPrint);
     }
 
     [System.Serializable]

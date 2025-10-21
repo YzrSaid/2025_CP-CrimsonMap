@@ -163,6 +163,7 @@
     <Compile Include="Assets/Mapbox/Unity/Location/UnityLocationWrappers/MapboxLocationInfoMock.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/AngleSmoothing/AngleSmoothingNoOp.cs" />
     <Compile Include="Assets/MobileARTemplateAssets/Scripts/ARFeatheredPlaneMeshVisualizerCompanion.cs" />
+    <Compile Include="Assets/Scripts/ARSCene/DirectionDisplayManager.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Utils/Vector2d/RectD.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/FileSource.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/IAsyncRequestFactory.cs" />
@@ -259,6 +260,7 @@
     <Compile Include="Assets/Mapbox/Unity/DataContainers/ImageryRasterOptions.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/ISubLayerDarkStyle.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/Map.cs" />
+    <Compile Include="Assets/Scripts/ARSCene/ARNavigationMarkerSpawner.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/Map/MapDropdown.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/Logging/LocationLogAbstractBase.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/CameraBoundsTileProviderOptions.cs" />
