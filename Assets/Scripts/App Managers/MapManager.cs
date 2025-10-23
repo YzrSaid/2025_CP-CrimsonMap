@@ -65,7 +65,28 @@ public class MapManager : MonoBehaviour
 
         isInitialized = true;
 
+        LoadLastSelectedMap();
+    }
+
+    private void LoadLastSelectedMap()
+    {
+        string savedMapId = PlayerPrefs.GetString( "ARScene_MapId", "" );
+
+        if ( !string.IsNullOrEmpty( savedMapId ) ) {
+            // Try to find the saved map in available maps
+            MapInfo savedMap = availableMaps.Find( m => m.map_id == savedMapId );
+
+            if ( savedMap != null ) {
+                DebugLog( $"🔄 Loading last selected map: {savedMap.map_name} (ID: {savedMapId})" );
+                LoadMap( savedMap );
+                return;
+            } else {
+                DebugLog( $"⚠️ Saved map ID '{savedMapId}' not found in available maps" );
+            }
+        }
+
         if ( availableMaps.Count > 0 ) {
+            DebugLog( $"📍 Loading default map: {availableMaps[0].map_name}" );
             LoadMap( availableMaps[0] );
         }
     }
@@ -108,9 +129,24 @@ public class MapManager : MonoBehaviour
         currentCampusIds.Clear();
         currentCampusIds.AddRange( mapInfo.campus_included );
 
-        UpdateDropdownButtonText( mapInfo.map_name );
+        UpdateDropdownButtonText(mapInfo.map_name);
+        
+        SaveCurrentMapToPlayerPrefs();
 
         StartCoroutine( LoadMapCoroutine() );
+    }
+
+    private void SaveCurrentMapToPlayerPrefs()
+    {
+        if ( currentMap != null ) {
+            PlayerPrefs.SetString( "ARScene_MapId", currentMap.map_id );
+            PlayerPrefs.SetString( "ARScene_MapName", currentMap.map_name );
+
+            string campusIdsJson = string.Join( ",", currentCampusIds );
+            PlayerPrefs.SetString( "ARScene_CampusIds", campusIdsJson );
+
+            PlayerPrefs.Save();
+        }
     }
 
     IEnumerator LoadMapCoroutine()
@@ -248,23 +284,6 @@ public class MapManager : MonoBehaviour
         }
     }
 
-    void Update()
-    {
-        if ( Application.isEditor && enableDebugLogs && Keyboard.current != null ) {
-            if ( Keyboard.current.mKey.wasPressedThisFrame ) {
-                Debug.Log( $"=== MAP MANAGER STATUS ===" );
-                Debug.Log( $"Initialized: {isInitialized}" );
-                Debug.Log( $"Available maps: {availableMaps.Count}" );
-                Debug.Log( $"Current map: {currentMap?.map_name ?? "None"}" );
-                Debug.Log( $"Current campus IDs: {string.Join(", ", currentCampusIds)}" );
-                Debug.Log( $"Current map info: {GetCurrentMapInfo()}" );
-            }
-
-            if ( Keyboard.current.rKey.wasPressedThisFrame ) {
-                RefreshCurrentMap();
-            }
-        }
-    }
 
     void OnDestroy()
     {

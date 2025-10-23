@@ -319,7 +319,7 @@ MonoBehaviour:
   enableDebugLogs: 1
   pathWidth: 0.5
   pathHeightOffset: 1
-  pathwayColor: {r: 0.8, g: 0.6, b: 0.4, a: 0.9}
+  pathwayColor: {r: 0.62352943, g: 0.62352943, b: 0.62352943, a: 0.9}
 --- !u!114 &4371024
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -358,8 +358,8 @@ MonoBehaviour:
   nodeSize: 4.5
   heightOffset: 1
   edgeWidth: 1
-  edgeColor: {r: 1, g: 1, b: 1, a: 1}
-  nodeColor: {r: 1, g: 1, b: 1, a: 1}
+  edgeColor: {r: 1, g: 0.46666667, b: 0.47843137, a: 1}
+  nodeColor: {r: 1, g: 0.46666667, b: 0.47843137, a: 1}
 --- !u!1 &72989974
 GameObject:
   m_ObjectHideFlags: 0
@@ -7262,16 +7262,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2d160e1af4c27d6d99f2aa898b7169e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  arrowMarkerPrefab: {fileID: 2198270680791856338, guid: fb6e02e88a8c24c1aaf2e1d706a06d4f, type: 3}
+  circleMarkerPrefab: {fileID: 2395739616877220581, guid: 6af62504c90cc9efe909bd5b24ab2903, type: 3}
   nodeMarkerPrefab: {fileID: 2395739616877220581, guid: 9651b0f074c56f421b790ae228f60189, type: 3}
   destinationMarkerPrefab: {fileID: 2395739616877220581, guid: 9651b0f074c56f421b790ae228f60189, type: 3}
   arCamera: {fileID: 331264287}
   markerScale: 1.5
+  circleMarkerScale: 0.5
   markerHeightOffset: 0
-  arrowSpacing: 10
+  circleSpacing: 5
   nodeMarkerDistance: 3
-  arrowVisibilityDistance: 50
-  navigationArrowColor: {r: 0.74, g: 0.06, b: 0.18, a: 0.9}
+  circleVisibilityDistance: 50
+  pathCircleColor: {r: 0.74, g: 0.06, b: 0.18, a: 0.9}
   navigationNodeColor: {r: 0.74, g: 0.06, b: 0.18, a: 1}
   destinationColor: {r: 0.2, g: 0.8, b: 0.2, a: 1}
   enableDebugLogs: 1

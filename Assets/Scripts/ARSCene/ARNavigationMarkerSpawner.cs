@@ -6,7 +6,7 @@ using System.Linq;
 public class ARNavigationMarkerSpawner : MonoBehaviour
 {
     [Header( "AR Marker Prefabs" )]
-    public GameObject arrowMarkerPrefab;
+    public GameObject circleMarkerPrefab; // Changed from arrowMarkerPrefab
     public GameObject nodeMarkerPrefab;
     public GameObject destinationMarkerPrefab;
 
@@ -15,13 +15,14 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
 
     [Header( "Marker Settings" )]
     public float markerScale = 1.5f;
+    public float circleMarkerScale = 0.5f; // Smaller scale for path circles
     public float markerHeightOffset = 0f;
-    public float arrowSpacing = 10f; // meters between arrows
+    public float circleSpacing = 5f; // meters between circles (changed from arrowSpacing)
     public float nodeMarkerDistance = 3f; // show when within 3m of node
-    public float arrowVisibilityDistance = 50f;
+    public float circleVisibilityDistance = 50f;
 
     [Header( "Colors" )]
-    public Color navigationArrowColor = new Color( 0.74f, 0.06f, 0.18f, 0.9f );
+    public Color pathCircleColor = new Color( 0.74f, 0.06f, 0.18f, 0.9f ); // Changed from navigationArrowColor
     public Color navigationNodeColor = new Color( 0.74f, 0.06f, 0.18f, 1f );
     public Color destinationColor = new Color( 0.2f, 0.8f, 0.2f, 1f );
 
@@ -30,7 +31,7 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
 
     private List<Node> pathNodes = new List<Node>();
     private Dictionary<string, GameObject> spawnedNodeMarkers = new Dictionary<string, GameObject>();
-    private List<GameObject> spawnedArrowMarkers = new List<GameObject>();
+    private List<GameObject> spawnedCircleMarkers = new List<GameObject>(); // Changed from spawnedArrowMarkers
 
     private Vector2 userLocation;
     private DirectionDisplayManager directionManager;
@@ -144,7 +145,7 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
         userLocation = GPSManager.Instance.GetSmoothedCoordinates();
 
         UpdateNodeMarkers();
-        UpdateDirectionalArrows();
+        UpdatePathCircles(); // Changed from UpdateDirectionalArrows
     }
 
     private void UpdateNodeMarkers()
@@ -197,9 +198,9 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
         }
     }
 
-    private void UpdateDirectionalArrows()
+    private void UpdatePathCircles() // Changed from UpdateDirectionalArrows
     {
-        if ( arrowMarkerPrefab == null || directionManager == null )
+        if ( circleMarkerPrefab == null || directionManager == null )
             return;
 
         NavigationDirection currentDir = directionManager.GetCurrentDirection();
@@ -210,7 +211,7 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
         if ( currentIndex >= pathNodes.Count - 1 )
             return;
 
-        ClearArrowMarkers();
+        ClearCircleMarkers(); // Changed from ClearArrowMarkers
 
         Node currentNode = pathNodes[currentIndex];
         Node nextNode = pathNodes[currentIndex + 1];
@@ -220,53 +221,51 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
                                     new Vector2( nextNode.latitude, nextNode.longitude )
                                 );
 
-        int arrowCount = Mathf.CeilToInt( segmentDistance / arrowSpacing );
-        arrowCount = Mathf.Min( arrowCount, 10 );
+        int circleCount = Mathf.CeilToInt( segmentDistance / circleSpacing );
+        circleCount = Mathf.Min( circleCount, 20 ); // Allow more circles since they're smaller
 
-        for ( int i = 1; i <= arrowCount; i++ ) {
-            float t = i / ( float )( arrowCount + 1 );
+        for ( int i = 1; i <= circleCount; i++ ) {
+            float t = i / ( float )( circleCount + 1 );
 
             float lat = Mathf.Lerp( currentNode.latitude, nextNode.latitude, t );
             float lng = Mathf.Lerp( currentNode.longitude, nextNode.longitude, t );
 
             float distanceFromUser = CalculateDistance( userLocation, new Vector2( lat, lng ) );
 
-            if ( distanceFromUser <= arrowVisibilityDistance ) {
+            if ( distanceFromUser <= circleVisibilityDistance ) {
                 Vector3 worldPos = GPSToWorldPosition( lat, lng );
-                worldPos.y += markerHeightOffset + 0.5f;
+                worldPos.y += markerHeightOffset + 0.2f; // Slightly above ground
 
-                GameObject arrow = Instantiate( arrowMarkerPrefab, worldPos, Quaternion.identity );
-                arrow.transform.localScale = Vector3.one * markerScale;
+                GameObject circle = Instantiate( circleMarkerPrefab, worldPos, Quaternion.identity );
+                circle.transform.localScale = Vector3.one * circleMarkerScale; // Use smaller scale
 
-                Vector3 nextWorldPos = GPSToWorldPosition( nextNode.latitude, nextNode.longitude );
-                Vector3 direction = ( nextWorldPos - worldPos ).normalized;
-                arrow.transform.rotation = Quaternion.LookRotation( direction );
+                // No rotation needed for circles - they look the same from all angles!
 
-                Renderer[] renderers = arrow.GetComponentsInChildren<Renderer>();
+                Renderer[] renderers = circle.GetComponentsInChildren<Renderer>();
                 foreach ( var rend in renderers ) {
                     if ( rend.material != null )
-                        rend.material.color = navigationArrowColor;
+                        rend.material.color = pathCircleColor;
                 }
 
-                spawnedArrowMarkers.Add( arrow );
+                spawnedCircleMarkers.Add( circle );
             }
         }
 
-        DebugLog( $"🏹 Spawned {spawnedArrowMarkers.Count} arrow markers" );
+        DebugLog( $"🔴 Spawned {spawnedCircleMarkers.Count} circle markers" );
     }
 
-    private void ClearArrowMarkers()
+    private void ClearCircleMarkers() 
     {
-        foreach ( var arrow in spawnedArrowMarkers ) {
-            if ( arrow != null )
-                Destroy( arrow );
+        foreach ( var circle in spawnedCircleMarkers ) {
+            if ( circle != null )
+                Destroy( circle );
         }
-        spawnedArrowMarkers.Clear();
+        spawnedCircleMarkers.Clear();
     }
 
     private void ClearAllMarkers()
     {
-        ClearArrowMarkers();
+        ClearCircleMarkers();
 
         foreach ( var marker in spawnedNodeMarkers.Values ) {
             if ( marker != null )
