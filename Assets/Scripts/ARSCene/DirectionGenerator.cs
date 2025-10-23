@@ -6,8 +6,6 @@ public class DirectionGenerator : MonoBehaviour
     [Header("Settings")]
     public float minSegmentDistance = 5f;
     public float turnThresholdDegrees = 15f;
-    
-    // REMOVED: Local TurnDirection enum - using global one now
 
     public List<NavigationDirection> GenerateDirections(RouteData route)
     {
@@ -120,11 +118,11 @@ public class DirectionGenerator : MonoBehaviour
         }
         else if (headingDiff > 0)
         {
-            return TurnDirection.Right; // CHANGED: TurnRight → Right
+            return TurnDirection.Right;
         }
         else
         {
-            return TurnDirection.Left; // CHANGED: TurnLeft → Left
+            return TurnDirection.Left;
         }
     }
 
@@ -210,7 +208,7 @@ public class DirectionGenerator : MonoBehaviour
 [System.Serializable]
 public class NavigationDirection
 {
-    public TurnDirection turn; // CHANGED: Now uses global enum
+    public TurnDirection turn; 
     public string instruction;
     public Node destinationNode;
     public float distanceInMeters;

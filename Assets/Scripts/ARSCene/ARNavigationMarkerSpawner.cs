@@ -15,14 +15,14 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
 
     [Header( "Marker Settings" )]
     public float markerScale = 1.5f;
-    public float circleMarkerScale = 0.5f; // Smaller scale for path circles
+    public float circleMarkerScale = 0.5f; 
     public float markerHeightOffset = 0f;
-    public float circleSpacing = 5f; // meters between circles (changed from arrowSpacing)
-    public float nodeMarkerDistance = 3f; // show when within 3m of node
+    public float circleSpacing = 5f;
+    public float nodeMarkerDistance = 3f;
     public float circleVisibilityDistance = 50f;
 
     [Header( "Colors" )]
-    public Color pathCircleColor = new Color( 0.74f, 0.06f, 0.18f, 0.9f ); // Changed from navigationArrowColor
+    public Color pathCircleColor = new Color( 0.74f, 0.06f, 0.18f, 0.9f );
     public Color navigationNodeColor = new Color( 0.74f, 0.06f, 0.18f, 1f );
     public Color destinationColor = new Color( 0.2f, 0.8f, 0.2f, 1f );
 
@@ -31,7 +31,7 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
 
     private List<Node> pathNodes = new List<Node>();
     private Dictionary<string, GameObject> spawnedNodeMarkers = new Dictionary<string, GameObject>();
-    private List<GameObject> spawnedCircleMarkers = new List<GameObject>(); // Changed from spawnedArrowMarkers
+    private List<GameObject> spawnedCircleMarkers = new List<GameObject>(); 
 
     private Vector2 userLocation;
     private DirectionDisplayManager directionManager;
@@ -51,8 +51,6 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
         if ( isARNavigationMode ) {
             LoadPathNodesFromPlayerPrefs();
             StartCoroutine( InitializeNavigationMarkers() );
-        } else {
-            DebugLog( "🗺️ Direct AR Mode - Markers disabled" );
         }
     }
 
@@ -60,8 +58,6 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
     {
         string arMode = PlayerPrefs.GetString( "ARMode", "DirectAR" );
         isARNavigationMode = ( arMode == "Navigation" );
-
-        DebugLog( $"AR Mode: {arMode} | Navigation Markers: {isARNavigationMode}" );
     }
 
     private void LoadPathNodesFromPlayerPrefs()
@@ -69,7 +65,6 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
         int pathNodeCount = PlayerPrefs.GetInt( "ARNavigation_PathNodeCount", 0 );
 
         if ( pathNodeCount == 0 ) {
-            DebugLog( "⚠️ No path nodes found" );
             return;
         }
 
@@ -103,16 +98,12 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
                     if ( node != null )
                         pathNodes.Add( node );
                 }
-
-                DebugLog( $"✅ Loaded {pathNodes.Count} path nodes for navigation" );
                 loadComplete = true;
             } catch ( System.Exception e ) {
-                DebugLog( $"❌ Error loading nodes: {e.Message}" );
                 loadComplete = true;
             }
         },
         ( error ) => {
-            DebugLog( $"❌ Failed to load nodes file: {error}" );
             loadComplete = true;
         }
                                      ) );
@@ -125,11 +116,8 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
         yield return new WaitForSeconds( 1f );
 
         if ( pathNodes.Count < 2 ) {
-            DebugLog( "⚠️ Not enough path nodes to create markers" );
             yield break;
         }
-
-        DebugLog( $"🎯 Initializing navigation markers for {pathNodes.Count} nodes" );
 
         InvokeRepeating( nameof( UpdateNavigationMarkers ), 0.5f, 1f );
     }
@@ -181,12 +169,10 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
                     }
 
                     spawnedNodeMarkers[markerId] = marker;
-                    DebugLog( $"📍 Spawned node marker at {node.name}" );
                 }
             } else if ( !shouldShow && spawnedNodeMarkers.ContainsKey( markerId ) ) {
                 Destroy( spawnedNodeMarkers[markerId] );
                 spawnedNodeMarkers.Remove( markerId );
-                DebugLog( $"🗑️ Removed node marker from {node.name}" );
             }
         }
 
@@ -198,7 +184,7 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
         }
     }
 
-    private void UpdatePathCircles() // Changed from UpdateDirectionalArrows
+    private void UpdatePathCircles() 
     {
         if ( circleMarkerPrefab == null || directionManager == null )
             return;
@@ -222,7 +208,7 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
                                 );
 
         int circleCount = Mathf.CeilToInt( segmentDistance / circleSpacing );
-        circleCount = Mathf.Min( circleCount, 20 ); // Allow more circles since they're smaller
+        circleCount = Mathf.Min( circleCount, 20 ); 
 
         for ( int i = 1; i <= circleCount; i++ ) {
             float t = i / ( float )( circleCount + 1 );
@@ -234,12 +220,10 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
 
             if ( distanceFromUser <= circleVisibilityDistance ) {
                 Vector3 worldPos = GPSToWorldPosition( lat, lng );
-                worldPos.y += markerHeightOffset + 0.2f; // Slightly above ground
+                worldPos.y += markerHeightOffset + 0.2f; 
 
                 GameObject circle = Instantiate( circleMarkerPrefab, worldPos, Quaternion.identity );
-                circle.transform.localScale = Vector3.one * circleMarkerScale; // Use smaller scale
-
-                // No rotation needed for circles - they look the same from all angles!
+                circle.transform.localScale = Vector3.one * circleMarkerScale; 
 
                 Renderer[] renderers = circle.GetComponentsInChildren<Renderer>();
                 foreach ( var rend in renderers ) {
@@ -250,8 +234,6 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
                 spawnedCircleMarkers.Add( circle );
             }
         }
-
-        DebugLog( $"🔴 Spawned {spawnedCircleMarkers.Count} circle markers" );
     }
 
     private void ClearCircleMarkers() 
@@ -301,12 +283,6 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
         float c = 2 * Mathf.Atan2( Mathf.Sqrt( a ), Mathf.Sqrt( 1 - a ) );
 
         return 6371000 * c;
-    }
-
-    private void DebugLog( string message )
-    {
-        if ( enableDebugLogs )
-            Debug.Log( $"[ARNavMarkers] {message}" );
     }
 
     void OnDestroy()

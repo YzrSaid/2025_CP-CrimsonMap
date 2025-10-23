@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using UnityEngine.InputSystem; // NEW: Import for new Input System
+using UnityEngine.InputSystem; 
 using System.Collections;
 using System.Collections.Generic;
 
@@ -24,7 +24,7 @@ public class DirectionDisplayManager : MonoBehaviour
 
     [Header("Settings")]
     public bool enableKeyboardTesting = true;
-    public float autoProgressDistance = 5f; // meters to node before auto-progress
+    public float autoProgressDistance = 5f;
     public bool enableDebugLogs = true;
 
     private List<NavigationDirection> allDirections = new List<NavigationDirection>();
@@ -32,7 +32,6 @@ public class DirectionDisplayManager : MonoBehaviour
     private bool isNavigationActive = false;
     private bool debugPanelVisible = false;
 
-    // GPS tracking
     private Vector2 userLocation;
     private Node currentTargetNode;
     private float distanceToTarget = 0f;
@@ -49,7 +48,6 @@ public class DirectionDisplayManager : MonoBehaviour
         if (toggleDebugButton != null)
             toggleDebugButton.onClick.AddListener(ToggleDebugPanel);
 
-        // Hide all turn icons initially
         HideAllTurnIcons();
 
         LoadDirectionsFromPlayerPrefs();
@@ -64,15 +62,11 @@ public class DirectionDisplayManager : MonoBehaviour
     {
         if (!isNavigationActive)
             return;
-
-        // NEW: Keyboard testing using new Input System
         if (enableKeyboardTesting && Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
         {
-            DebugLog("⌨️ Space pressed - Moving to next direction");
             MoveToNextDirection();
         }
 
-        // GPS-based auto progression
         if (GPSManager.Instance != null)
         {
             userLocation = GPSManager.Instance.GetSmoothedCoordinates();
@@ -87,7 +81,6 @@ public class DirectionDisplayManager : MonoBehaviour
 
         if (directionCount == 0)
         {
-            DebugLog("⚠️ No directions found in PlayerPrefs");
             return;
         }
 
@@ -103,16 +96,13 @@ public class DirectionDisplayManager : MonoBehaviour
                 distanceInMeters = PlayerPrefs.GetFloat($"ARNavigation_Direction_{i}_Distance", 0f),
             };
 
-            // Load destination node name
             string destNodeName = PlayerPrefs.GetString($"ARNavigation_Direction_{i}_DestNode", "");
             
-            // Create a minimal node with just the name
             dir.destinationNode = new Node { name = destNodeName };
 
             allDirections.Add(dir);
         }
 
-        DebugLog($"✅ Loaded {allDirections.Count} directions from PlayerPrefs");
         UpdateDebugAllDirections();
     }
 
@@ -120,7 +110,6 @@ public class DirectionDisplayManager : MonoBehaviour
     {
         if (allDirections.Count == 0)
         {
-            DebugLog("❌ Cannot start navigation - no directions loaded");
             return;
         }
 
@@ -131,7 +120,6 @@ public class DirectionDisplayManager : MonoBehaviour
             directionPanel.SetActive(true);
 
         DisplayCurrentDirection();
-        DebugLog($"🧭 Navigation started with {allDirections.Count} directions");
     }
 
     private void DisplayCurrentDirection()
@@ -144,20 +132,15 @@ public class DirectionDisplayManager : MonoBehaviour
 
         NavigationDirection currentDir = allDirections[currentDirectionIndex];
 
-        // Update instruction text
         if (directionText != null)
             directionText.text = currentDir.instruction;
 
-        // Show appropriate turn icon
         ShowTurnIcon(currentDir.turn);
 
-        // Set target node for GPS tracking
         currentTargetNode = currentDir.destinationNode;
 
-        // Reset auto-progress flag
         hasAutoProgressed = false;
 
-        DebugLog($"📍 Displaying direction {currentDirectionIndex + 1}/{allDirections.Count}: {currentDir.instruction}");
     }
 
     private void HideAllTurnIcons()
@@ -170,10 +153,8 @@ public class DirectionDisplayManager : MonoBehaviour
 
     private void ShowTurnIcon(TurnDirection turn)
     {
-        // Hide all first
         HideAllTurnIcons();
 
-        // Show the appropriate one
         switch (turn)
         {
             case TurnDirection.Right:
@@ -181,7 +162,6 @@ public class DirectionDisplayManager : MonoBehaviour
                 if (turnRightImage != null)
                 {
                     turnRightImage.SetActive(true);
-                    DebugLog("➡️ Showing Turn Right icon");
                 }
                 break;
 
@@ -190,7 +170,6 @@ public class DirectionDisplayManager : MonoBehaviour
                 if (turnLeftImage != null)
                 {
                     turnLeftImage.SetActive(true);
-                    DebugLog("⬅️ Showing Turn Left icon");
                 }
                 break;
 
@@ -198,7 +177,6 @@ public class DirectionDisplayManager : MonoBehaviour
                 if (walkStraightImage != null)
                 {
                     walkStraightImage.SetActive(true);
-                    DebugLog("⬆️ Showing Walk Straight icon");
                 }
                 break;
 
@@ -207,7 +185,6 @@ public class DirectionDisplayManager : MonoBehaviour
                 if (enterImage != null)
                 {
                     enterImage.SetActive(true);
-                    DebugLog("🚪 Showing Enter icon");
                 }
                 break;
 
@@ -215,7 +192,6 @@ public class DirectionDisplayManager : MonoBehaviour
                 if (walkStraightImage != null)
                 {
                     walkStraightImage.SetActive(true);
-                    DebugLog("⬆️ Showing Walk Straight icon (default)");
                 }
                 break;
         }
@@ -234,8 +210,7 @@ public class DirectionDisplayManager : MonoBehaviour
 
         currentDirectionIndex++;
         DisplayCurrentDirection();
-        
-        // Update debug panel if visible
+    
         if (debugPanelVisible)
             UpdateDebugAllDirections();
     }
@@ -248,8 +223,7 @@ public class DirectionDisplayManager : MonoBehaviour
         Vector2 targetLocation = new Vector2(currentTargetNode.latitude, currentTargetNode.longitude);
         distanceToTarget = CalculateDistance(userLocation, targetLocation);
 
-        // Update debug log less frequently to avoid spam
-        if (Time.frameCount % 60 == 0) // Every 60 frames (~1 second at 60fps)
+        if (Time.frameCount % 60 == 0) 
         {
             DebugLog($"📏 Distance to target: {distanceToTarget:F1}m");
         }
@@ -275,7 +249,6 @@ public class DirectionDisplayManager : MonoBehaviour
         if (directionText != null)
             directionText.text = "🎉 You have arrived at your destination!";
 
-        // Show enter icon for completion
         HideAllTurnIcons();
         if (enterImage != null)
             enterImage.SetActive(true);
@@ -354,7 +327,7 @@ public class DirectionDisplayManager : MonoBehaviour
 
         float c = 2 * Mathf.Atan2(Mathf.Sqrt(a), Mathf.Sqrt(1 - a));
 
-        return 6371000 * c; // Earth radius in meters
+        return 6371000 * c; 
     }
 
     public void ResetNavigation()
