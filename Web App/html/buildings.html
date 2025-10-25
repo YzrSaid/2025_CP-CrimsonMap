@@ -245,7 +245,7 @@
             </div>
             <!-- Upload Image -->
             <div class="form-group">
-                <label>Upload Image</label>
+                <label>Upload Image (Upload new image)</label>
                 <div class="upload-box">
                     <input type="file" id="uploadImage" accept=".jpg,.jpeg,.png" hidden>
                     <label for="uploadImage" class="upload-label">
@@ -261,6 +261,37 @@
         </form>
     </div>
 </div>
+
+
+
+
+<!-- Edit Image Modal -->
+<div id="editImageModal" class="edit-modal">
+  <div class="edit-modal-content">
+    <h2>Edit Image (Blur Faces)</h2>
+    <canvas id="editCanvas"></canvas>
+
+    <div class="edit-controls">
+      <button id="undoBtn">Undo</button>
+      <button id="redoBtn">Redo</button>
+      <button id="saveEditedImageBtn" class="primary">Save</button>
+      <button id="cancelEditImageBtn">Cancel</button>
+      <label class="range">
+        <span>Blur:</span>
+        <input id="blurRange" type="range" min="0" max="40" value="12">
+        <span id="blurValue">12px</span>
+      </label>
+    </div>
+
+    <p class="instructions">Click and drag to draw rectangles over areas to blur. Draw multiple regions as needed.</p>
+  </div>
+</div>
+
+
+
+
+
+
 
 
 
@@ -432,17 +463,20 @@
                 <input type="email" id="editInfraEmail" placeholder="e.g. info@domain.com">
             </div>
             <!-- Upload Image -->
+            <!-- Upload Image -->
             <div class="form-group">
-                <label>Upload Image</label>
-                <div class="upload-box">
+                <label>Upload Image <em style="font-weight: 100;">(Click the image to change it)</em></label>
+                <div class="upload-box" id="editUploadBox">
                     <input type="file" id="editInfraImage" accept=".jpg,.jpeg,.png" hidden>
                     <label for="editInfraImage" class="upload-label">
                         <span class="plus-icon">+</span>
                         <p>(Accepted Formats: jpeg, png, jpg)</p>
                     </label>
+                    <!-- Move preview inside the box -->
+                    <img id="editInfraPreview" src="" alt="Preview" style="display:none; position:absolute; top:-8px; left:0; width:100%; height:100%; object-fit:cover; border-radius:8px;">
                 </div>
-                <img id="editInfraPreview" src="" alt="Preview" style="max-width:80px;max-height:80px;display:none;margin-top:8px;">
             </div>
+
             <div class="modal-actions">
                 <button type="submit" class="save-btn">Save</button>
                 <button type="button" class="cancel-btn" id="cancelEditInfraBtn">Cancel</button>
@@ -450,6 +484,39 @@
         </form>
     </div>
 </div>
+
+
+
+<!-- 🔴 Edit Infra Blur Editor Modal -->
+<div id="editInfraImageModal" class="edit-infra-image-modal">
+  <div class="edit-infra-modal-content">
+    <h2>Edit Infra Image (Blur)</h2>
+
+    <div class="edit-infra-canvas-container">
+      <canvas id="editInfraCanvas"></canvas>
+    </div>
+
+    <div class="edit-infra-controls">
+      <label>Blur Strength: <span id="editInfraBlurValue">15px</span></label>
+      <input type="range" id="editInfraBlurRange" min="5" max="50" value="15" />
+
+      <div class="edit-infra-buttons">
+        <button id="editInfraUndoBtn" class="edit-infra-btn">Undo</button>
+        <button id="editInfraRedoBtn" class="edit-infra-btn">Redo</button>
+        <button id="editInfraSaveBtn" class="edit-infra-btn save">Save</button>
+        <button id="editInfraCancelBtn" class="edit-infra-btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
 
 
 <!-- Edit Category Modal Overlay -->

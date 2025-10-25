@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Face Blur Demo — Auto + Manual</title>
+<style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f6f7fb; color:#111; padding:28px; }
+  .card { max-width:920px; margin:0 auto; background:#fff; border-radius:10px; padding:18px; box-shadow:0 6px 20px rgba(20,30,50,0.06); }
+  h1 { margin:0 0 8px; font-size:20px; }
+  p.lead { margin:0 0 18px; color:#555; }
+  .controls { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+  input[type=file] { display:inline-block; }
+  button { padding:8px 12px; border-radius:8px; border:1px solid #ddd; background:#fff; cursor:pointer; }
+  button.primary { background:#0b74ff; color:#fff; border-color:transparent; }
+  label.range { display:flex; gap:8px; align-items:center; }
+  #canvasWrap { display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap; }
+  .preview { border-radius:8px; overflow:hidden; background:#111; display:flex; align-items:center; justify-content:center; width:640px; max-width:100%; }
+  canvas { display:block; max-width:100%; height:auto; }
+  .info { font-size:13px; color:#666; margin-top:8px; }
+  .warning { color:#b24; font-weight:600; }
+  .manual-hint { font-size:13px; color:#444; margin-top:10px; }
+  .footer { margin-top:18px; font-size:13px; color:#666; }
+  .small { font-size:12px; color:#666; }
+  #manualModeTools { display:none; margin-top:10px; gap:8px; align-items:center; }
+  .btn-ghost { background:transparent; border:1px dashed #ccc; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Face Blur Demo</h1>
+    <p class="lead">Upload an image, click <strong>Detect & Blur</strong> and the browser will detect faces and blur them. Works best in Chromium browsers (Chrome, Edge). If face detection isn't supported you'll get a fallback manual blur tool.</p>
+
+    <div class="controls">
+      <input id="fileInput" type="file" accept="image/*">
+      <button id="detectBtn" class="primary" disabled>Detect &amp; Blur</button>
+      <button id="resetBtn">Reset</button>
+      <button id="downloadBtn">Download</button>
+
+      <label class="range">
+        <span class="small">Blur:</span>
+        <input id="blurRange" type="range" min="0" max="40" value="12" style="margin-left:6px;">
+        <span id="blurValue" class="small" style="min-width:36px; text-align:right;">12px</span>
+      </label>
+    </div>
+
+    <div id="canvasWrap">
+      <div class="preview" title="Result canvas">
+        <canvas id="mainCanvas"></canvas>
+      </div>
+
+      <div style="flex:1; min-width:220px;">
+        <div class="info">
+          <div><strong>Face Detection:</strong> <span id="supportText">checking...</span></div>
+          <div id="resultText" class="small"></div>
+        </div>
+
+        <div id="manualModeTools">
+          <div class="manual-hint">Draw rectangles on the image to blur (click + drag). Then click <strong>Apply Manual Blurs</strong>.</div>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button id="applyManual" class="primary">Apply Manual Blurs</button>
+            <button id="clearManual" class="btn-ghost">Clear Manual</button>
+          </div>
+        </div>
+
+        <div class="footer">
+          <div class="small">Notes: Canvas blur uses CSS canvas filter; older browsers may not support it. For automatic detection, the page uses the browser's <code>FaceDetector</code> API.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/*
+  Face Blur Demo
+  - Uses FaceDetector API when available
+  - If not available, enables manual rectangle drawing to blur regions
+*/
+
+const fileInput = document.getElementById('fileInput');
+const detectBtn = document.getElementById('detectBtn');
+const resetBtn = document.getElementById('resetBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const mainCanvas = document.getElementById('mainCanvas');
+const blurRange = document.getElementById('blurRange');
+const blurValue = document.getElementById('blurValue');
+const supportText = document.getElementById('supportText');
+const resultText = document.getElementById('resultText');
+const manualModeTools = document.getElementById('manualModeTools');
+const applyManual = document.getElementById('applyManual');
+const clearManual = document.getElementById('clearManual');
+
+let originalImage = new Image();
+let ctx = mainCanvas.getContext('2d');
+let currentRects = []; // rectangles to blur (from detection or manual)
+let manualRects = [];
+let drawing = false;
+let startX = 0, startY = 0;
+let faceDetector = null;
+let imgNaturalWidth = 0, imgNaturalHeight = 0;
+
+// Check FaceDetector support
+if ('FaceDetector' in window) {
+  try {
+    faceDetector = new FaceDetector({ fastMode: true, maxDetectedFaces: 10 });
+    supportText.textContent = 'Supported ✔ (using FaceDetector API)';
+  } catch (e) {
+    supportText.textContent = 'Supported but failed to initialize FaceDetector';
+  }
+} else {
+  supportText.innerHTML = 'Not supported ✖ — manual mode available';
+  manualModeTools.style.display = 'flex';
+}
+
+// Helpers
+function resetState() {
+  currentRects = [];
+  manualRects = [];
+  resultText.textContent = '';
+  clearOverlay();
+}
+
+// Load image chosen by user
+fileInput.addEventListener('change', async (ev) => {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  originalImage = new Image();
+  originalImage.onload = () => {
+    imgNaturalWidth = originalImage.naturalWidth;
+    imgNaturalHeight = originalImage.naturalHeight;
+    // set canvas size to image size (but we will scale visually using CSS)
+    mainCanvas.width = originalImage.naturalWidth;
+    mainCanvas.height = originalImage.naturalHeight;
+    // draw original
+    ctx.clearRect(0,0,mainCanvas.width, mainCanvas.height);
+    ctx.drawImage(originalImage, 0, 0);
+    resetState();
+    detectBtn.disabled = false;
+  };
+  originalImage.onerror = () => {
+    alert('Failed to load image.');
+  };
+  originalImage.src = url;
+});
+
+// draw helper to show manual rectangle in-progress
+function clearOverlay() {
+  // redraw original to clear overlays
+  if (!originalImage.src) return;
+  ctx.clearRect(0,0,mainCanvas.width, mainCanvas.height);
+  ctx.drawImage(originalImage, 0, 0);
+  // draw manual rectangles outlines for reference
+  ctx.save();
+  ctx.lineWidth = Math.max(2, Math.round(mainCanvas.width / 400));
+  ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+  for (const r of manualRects) {
+    ctx.strokeRect(r.x, r.y, r.w, r.h);
+  }
+  ctx.restore();
+}
+
+// draw a translucent box during dragging
+function drawTempRect(x, y, w, h) {
+  clearOverlay();
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,0,0,0.12)';
+  ctx.fillRect(x, y, w, h);
+  ctx.lineWidth = Math.max(2, Math.round(mainCanvas.width / 400));
+  ctx.strokeStyle = 'rgba(255,0,0,0.9)';
+  ctx.strokeRect(x, y, w, h);
+  ctx.restore();
+}
+
+// Mouse events for manual rectangle drawing on canvas (fallback)
+mainCanvas.addEventListener('mousedown', (e) => {
+  if (faceDetector) return; // automatic mode, don't allow manual drawing
+  if (!originalImage.src) return;
+  drawing = true;
+  const rect = mainCanvas.getBoundingClientRect();
+  startX = Math.round((e.clientX - rect.left) * (mainCanvas.width / rect.width));
+  startY = Math.round((e.clientY - rect.top) * (mainCanvas.height / rect.height));
+});
+mainCanvas.addEventListener('mousemove', (e) => {
+  if (!drawing) return;
+  const rect = mainCanvas.getBoundingClientRect();
+  const currX = Math.round((e.clientX - rect.left) * (mainCanvas.width / rect.width));
+  const currY = Math.round((e.clientY - rect.top) * (mainCanvas.height / rect.height));
+  const x = Math.min(startX, currX);
+  const y = Math.min(startY, currY);
+  const w = Math.abs(currX - startX);
+  const h = Math.abs(currY - startY);
+  drawTempRect(x, y, w, h);
+});
+window.addEventListener('mouseup', (e) => {
+  if (!drawing) return;
+  drawing = false;
+  const rect = mainCanvas.getBoundingClientRect();
+  const endX = Math.round((e.clientX - rect.left) * (mainCanvas.width / rect.width));
+  const endY = Math.round((e.clientY - rect.top) * (mainCanvas.height / rect.height));
+  const x = Math.min(startX, endX);
+  const y = Math.min(startY, endY);
+  const w = Math.abs(endX - startX);
+  const h = Math.abs(endY - startY);
+  if (w > 6 && h > 6) {
+    manualRects.push({ x, y, w, h });
+  }
+  clearOverlay();
+});
+
+// Apply manual blurs (fallback)
+applyManual.addEventListener('click', () => {
+  if (!manualRects.length) {
+    alert('Draw at least one rectangle first (click + drag on the image).');
+    return;
+  }
+  currentRects = manualRects.slice();
+  applyBlurs();
+});
+
+// Clear manual rectangles
+clearManual.addEventListener('click', () => {
+  manualRects = [];
+  currentRects = [];
+  clearOverlay();
+});
+
+// Detect & Blur
+detectBtn.addEventListener('click', async () => {
+  if (!originalImage.src) return;
+  resetState();
+  detectBtn.disabled = true;
+  resultText.textContent = 'Detecting faces…';
+  try {
+    if (faceDetector) {
+      // Use FaceDetector API
+      const faces = await faceDetector.detect(originalImage);
+      if (!faces || faces.length === 0) {
+        resultText.textContent = 'No faces detected automatically. Try manual mode below.';
+        // show manual mode tools
+        manualModeTools.style.display = 'flex';
+        detectBtn.disabled = false;
+        return;
+      }
+      // convert BoundingBox to our rect format
+      currentRects = faces.map(f => {
+        // face.boundingBox has x, y, width, height
+        return { x: Math.max(0, Math.round(f.boundingBox.x)),
+                 y: Math.max(0, Math.round(f.boundingBox.y)),
+                 w: Math.round(f.boundingBox.width),
+                 h: Math.round(f.boundingBox.height) };
+      });
+      resultText.textContent = `Detected ${currentRects.length} face(s). Applying blur…`;
+      applyBlurs();
+    } else {
+      // fallback if no FaceDetector
+      resultText.textContent = 'FaceDetector not available in this browser. Use manual mode (draw rectangles).';
+      manualModeTools.style.display = 'flex';
+    }
+  } catch (err) {
+    console.error(err);
+    resultText.textContent = 'Error during detection: ' + (err && err.message ? err.message : err);
+    manualModeTools.style.display = 'flex';
+  } finally {
+    detectBtn.disabled = false;
+  }
+});
+
+// Apply blur to all rectangles stored in currentRects
+function applyBlurs() {
+  if (!currentRects.length) {
+    resultText.textContent = 'No rectangles to blur.';
+    return;
+  }
+
+  // We'll create a temporary canvas to apply filters on a region-by-region basis
+  const temp = document.createElement('canvas');
+  const tctx = temp.getContext('2d');
+
+  // Start from original image
+  clearOverlay();
+
+  const blurPx = parseInt(blurRange.value, 10) || 12;
+
+  currentRects.forEach(rect => {
+    // clamp
+    const x = Math.max(0, Math.round(rect.x));
+    const y = Math.max(0, Math.round(rect.y));
+    const w = Math.max(1, Math.round(rect.w));
+    const h = Math.max(1, Math.round(rect.h));
+
+    // prepare temp canvas sized to the rect
+    temp.width = w;
+    temp.height = h;
+
+    // copy the region from main canvas (original image)
+    tctx.clearRect(0,0,w,h);
+    tctx.drawImage(mainCanvas, x, y, w, h, 0, 0, w, h);
+
+    // apply blur to the temp canvas using ctx.filter
+    tctx.save();
+    tctx.filter = `blur(${blurPx}px)`;
+    // draw the existing temp image onto itself with filter; this effectively blurs it
+    tctx.drawImage(temp, 0, 0);
+    tctx.restore();
+
+    // now draw the blurred region back onto the main canvas
+    ctx.drawImage(temp, 0, 0, w, h, x, y, w, h);
+
+    // Optional: smooth edge by overlaying a slightly smaller unblurred rectangle mask to reduce halo (not done here)
+  });
+
+  resultText.textContent = `Applied blur to ${currentRects.length} region(s).`;
+}
+
+// Reset to original
+resetBtn.addEventListener('click', () => {
+  if (!originalImage.src) return;
+  ctx.clearRect(0,0,mainCanvas.width, mainCanvas.height);
+  ctx.drawImage(originalImage, 0, 0);
+  resetState();
+});
+
+// Download resulting image
+downloadBtn.addEventListener('click', () => {
+  if (!originalImage.src) return alert('No image to download.');
+  const link = document.createElement('a');
+  link.download = 'face-blurred.png';
+  link.href = mainCanvas.toDataURL('image/png');
+  link.click();
+});
+
+// Update blur text display
+blurRange.addEventListener('input', () => {
+  blurValue.textContent = blurRange.value + 'px';
+});
+
+// Ensure canvas is redrawn when window resized so CSS scaling doesn't mess visuals
+window.addEventListener('resize', () => {
+  // redraw overlay outlines on resize
+  clearOverlay();
+});
+
+// Accessibility: keyboard shortcut "D" to detect
+window.addEventListener('keydown', (e) => {
+  if (e.key.toLowerCase() === 'd' && !detectBtn.disabled) {
+    detectBtn.click();
+  }
+});
+</script>
+</body>
+</html>

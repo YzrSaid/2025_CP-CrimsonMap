@@ -78,17 +78,26 @@ function formatDate(d) {
 async function renderActivityLogsTable() {
     const tbody = document.querySelector(".activity-table tbody");
     if (!tbody) return;
-    tbody.innerHTML = ""; // Clear table
+
+    // Show spinner row in the middle
+    tbody.innerHTML = `
+        <tr class="table-spinner">
+            <td colspan="5">
+                <div class="spinner"></div>
+            </td>
+        </tr>
+    `;
 
     try {
         let logs;
         if (navigator.onLine) {
-            console.log("🌐 Online → Firestore");
             logs = await loadFromFirestore();
         } else {
-            console.log("📂 Offline → JSON fallback");
             logs = await loadFromJson();
         }
+
+        // Clear spinner
+        tbody.innerHTML = "";
 
         let counter = 1;
         logs.forEach(data => {
@@ -102,10 +111,28 @@ async function renderActivityLogsTable() {
             `;
             tbody.appendChild(tr);
         });
+
+        // Show message if no logs
+        if (logs.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align:center; padding:20px;">No activity logs found.</td>
+                </tr>
+            `;
+        }
+
     } catch (err) {
         console.error("Error loading activity logs: ", err);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" style="text-align:center; padding:20px; color:red;">
+                    Failed to load activity logs.
+                </td>
+            </tr>
+        `;
     }
 }
+
 
 // ======================= AUTO SWITCH (ONLINE/OFFLINE) ===========================
 window.addEventListener("online", renderActivityLogsTable);

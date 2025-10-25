@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Face Blur & Firestore Upload (Base64)</title>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: #f4f7fa;
+    }
+    h1 { color: #333; }
+    img {
+      max-width: 400px;
+      margin: 10px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      border: none;
+      background-color: #0066ff;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    #status {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Auto Face Blur & Firestore Upload</h1>
+
+  <input type="file" accept="image/*" id="imageInput" disabled><br>
+  <button id="uploadBtn" disabled>Upload to Firestore</button>
+
+  <div>
+    <h3>Original</h3>
+    <img id="originalImage" alt="Original Image">
+  </div>
+  <div>
+    <h3>Blurred (Stored Version)</h3>
+    <img id="blurredImage" alt="Blurred Image">
+  </div>
+  <div id="status">⏳ Initializing...</div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { firebaseConfig } from "/firebaseConfig.js";
+
+    // ✅ Initialize Firebase and Firestore
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const input = document.getElementById("imageInput");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const originalImg = document.getElementById("originalImage");
+    const blurredImg = document.getElementById("blurredImage");
+    const status = document.getElementById("status");
+
+    let blurredBase64 = null;
+
+    // ✅ Wait for models
+    async function loadModels() {
+      try {
+        status.textContent = "⏳ Loading face detection models...";
+        await faceapi.nets.tinyFaceDetector.loadFromUri("./models");
+        input.disabled = false;
+        status.textContent = "✅ Models loaded. You can select an image now.";
+      } catch (err) {
+        console.error(err);
+        status.textContent = "❌ Failed to load models. Check console.";
+      }
+    }
+    await loadModels();
+
+    // ✅ When file selected
+    input.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      status.textContent = "Processing image...";
+      const imgURL = URL.createObjectURL(file);
+      originalImg.src = imgURL;
+
+      const img = await faceapi.bufferToImage(file);
+      const detections = await faceapi.detectAllFaces(img, new faceapi.TinyFaceDetectorOptions());
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      // ✅ Blur faces
+      detections.forEach(det => {
+        const { x, y, width, height } = det.box;
+        ctx.filter = "blur(20px)";
+        ctx.fillRect(x, y, width, height);
+        ctx.filter = "none";
+      });
+
+      blurredBase64 = canvas.toDataURL("image/jpeg", 0.95);
+      blurredImg.src = blurredBase64;
+
+      uploadBtn.disabled = false;
+      status.textContent = "✅ Image processed. Ready to upload.";
+    });
+
+    // ✅ Upload to Firestore
+    uploadBtn.addEventListener("click", async () => {
+      if (!blurredBase64) return alert("Please process an image first.");
+      uploadBtn.disabled = true;
+      status.textContent = "⏳ Uploading to Firestore...";
+
+      try {
+        await addDoc(collection(db, "sampleimage"), {
+          uploadedAt: serverTimestamp(),
+          base64Image: blurredBase64
+        });
+
+        status.textContent = "✅ Uploaded successfully! Fetching from Firestore...";
+
+        // Fetch latest uploaded image
+        const snapshot = await getDocs(collection(db, "sampleimage"));
+        const docs = snapshot.docs.map(doc => doc.data());
+        const lastImage = docs[docs.length - 1];
+        blurredImg.src = lastImage.base64Image;
+
+        status.textContent = "✅ Image stored and displayed from Firestore!";
+      } catch (err) {
+        console.error(err);
+        status.textContent = "❌ Upload failed. Check console.";
+      }
+    });
+  </script>
+</body>
+</html>

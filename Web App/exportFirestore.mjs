@@ -26,7 +26,9 @@ const collections = [
   "MapVersions", // this one has nested data
   "Maps",
   "Nodes",
-  "Rooms"
+  "Rooms",
+  "StaticDataVersions",
+  "Users"
 ];
 
 // ======================= FETCH TOP-LEVEL COLLECTION ===========================

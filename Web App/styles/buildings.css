@@ -535,6 +535,36 @@ h3 {
   padding: 10px 30px;
   border-radius: 5px;
   cursor: pointer;
+  transition: background 0.3s;
+}
+
+.save-btn:disabled {
+  background: #f87171; /* lighter crimson */
+  cursor: not-allowed;
+}
+
+/* Spinner and Saving Text Styling */
+.save-btn .spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 3px solid rgba(220, 20, 60, 0.25);
+    border-top: 3px solid #DC143C;
+    border-radius: 50%;
+    animation: spinTable 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px; /* spacing between spinner and text */
+}
+
+.save-btn .saving-text {
+    vertical-align: middle;
+    font-weight: 500;
+}
+
+
+@keyframes spinTable {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .cancel-btn {
@@ -548,16 +578,24 @@ h3 {
 
 /* ===== Upload Image Styles ===== */
 .upload-box {
+  position: relative;
+  width: 100%;
+  max-width: 500px; /* you can change this size */
+  aspect-ratio: 4 / 3; /* keeps the box in 4:3 ratio */
   border: 2px dashed #bbb;
   border-radius: 8px;
   text-align: center;
-  padding: 30px;
   cursor: pointer;
-  transition: border 0.3s ease;
+  transition: border 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
 }
 
 .upload-box:hover {
   border-color: #333;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .upload-label {
@@ -568,17 +606,17 @@ h3 {
 }
 
 .plus-icon {
-  font-size: 28px;
+  font-size: 32px; /* Slightly bigger icon */
   font-weight: bold;
   background: #000;
   color: #fff;
   border-radius: 50%;
-  padding: 8px 14px;
-  margin-bottom: 8px;
+  padding: 10px 16px;
+  margin-bottom: 10px;
 }
 
 .upload-label p {
-  font-size: 12px;
+  font-size: 13px;
   color: #777;
 }
 
@@ -759,4 +797,293 @@ h3 {
     border-radius: 50%;
     border: 2px solid #eee;
     vertical-align: middle;
+}
+
+
+
+
+
+.edit-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  justify-content: center; align-items: center;
+  overflow: auto;
+  padding: 20px;
+}
+
+.edit-modal-content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 95%;
+  width: 800px;
+  max-height: 90%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+#editCanvas {
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  cursor: crosshair;
+  max-width: 100%;
+  height: auto;
+}
+
+.edit-controls, .edit-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.edit-controls button, .edit-actions button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  background-color: #007BFF;
+  color: white;
+  cursor: pointer;
+}
+.edit-controls button:hover, .edit-actions button:hover { background-color: #0056b3; }
+
+.range {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.instructions {
+  font-size: 13px;
+  color: #555;
+  margin-top: 10px;
+  text-align: center;
+}
+    
+
+
+/* 🩶 Edit Infra Blur Editor — Clean Professional Theme */
+.edit-infra-image-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2500;
+  background: rgba(240, 240, 240, 0.8);
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(3px);
+}
+
+.edit-infra-modal-content {
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 24px;
+  color: #333;
+  width: 800px;
+  max-width: 95%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.edit-infra-modal-content h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-align: center;
+  color: #222;
+}
+
+.edit-infra-canvas-container {
+  background: #f8f8f8;
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  border: 1px solid #e5e5e5;
+}
+
+#editInfraCanvas {
+  max-width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  cursor: crosshair;
+  background: white;
+}
+
+.edit-infra-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.edit-infra-controls label {
+  font-size: 0.95rem;
+  color: #444;
+}
+
+#editInfraBlurRange {
+  width: 60%;
+  accent-color: crimson;
+  cursor: pointer;
+}
+
+.edit-infra-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.edit-infra-btn {
+  background: crimson;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  font-weight: 500;
+}
+
+.edit-infra-btn:hover {
+  background: #d2193a;
+  transform: translateY(-1px);
+}
+
+.edit-infra-btn:active {
+  transform: scale(0.98);
+}
+
+.edit-infra-btn.cancel {
+  background: #ccc;
+  color: #333;
+}
+
+.edit-infra-btn.cancel:hover {
+  background: #bdbdbd;
+}
+
+.edit-infra-btn.save {
+  background: crimson;
+}
+
+.edit-infra-btn.save:hover {
+  background: #d2193a;
+}
+
+
+
+
+
+/* ===============================
+   🔄 Table Loader (Crimson)
+   =============================== */
+.table-loader {
+  text-align: center;
+  padding: 2rem;
+}
+
+.table-loader .spinner {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(220, 20, 60, 0.25);
+  border-top: 3px solid #DC143C;
+  border-radius: 50%;
+  animation: spinTable 0.8s linear infinite;
+}
+
+@keyframes spinTable {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+
+
+/* ===============================
+   🔄 Table Loader (Crimson)
+   =============================== */
+.table-loader {
+  text-align: center;
+  padding: 2rem;
+}
+
+.table-loader .spinner {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(220, 20, 60, 0.25);
+  border-top: 3px solid #DC143C;
+  border-radius: 50%;
+  animation: spinTable 0.8s linear infinite;
+}
+
+@keyframes spinTable {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(220, 20, 60, 0.25);
+  border-top: 3px solid #DC143C;
+  border-radius: 50%;
+  animation: spinTable 0.8s linear infinite;
+}
+
+@keyframes spinTable {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+
+
+
+
+
+
+
+
+
+
+/* ----------------------------
+   🔄 Loading Spinner + Deleting Text
+   ---------------------------- */
+.save-btn.loading {
+    background: #dc5c5c !important; /* lighter crimson when loading */
+    cursor: not-allowed;
+}
+
+
+button.loading .spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(220, 20, 60, 0.25);
+    border-top: 3px solid #DC143C;
+    border-radius: 50%;
+    animation: spinButton 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px; /* space between spinner and text */
+}
+
+button.loading .loading-text {
+    vertical-align: middle;
+}
+
+@keyframes spinButton {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }

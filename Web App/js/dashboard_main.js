@@ -11,6 +11,9 @@
 
 async function updateDashboardStats() {
   try {
+    // 🌀 Start loading animation
+    StatLoader.start(".stats .card .info h2");
+
     let categories = [];
     let indoorInfras = [];
     let buildingsCount = 0;
@@ -19,7 +22,6 @@ async function updateDashboardStats() {
     let currentVersion = "—";
 
     if (navigator.onLine) {
-      // 🔹 Online: Firestore
       const [categoriesSnap, indoorSnap, mapVersionsSnap] = await Promise.all([
         getDocs(collection(db, "Categories")),
         getDocs(collection(db, "IndoorInfrastructure")),
@@ -29,7 +31,6 @@ async function updateDashboardStats() {
       categories = categoriesSnap.docs.map(d => d.data());
       indoorInfras = indoorSnap.docs.map(d => d.data());
 
-      // 🗺️ Find the active map based on its own current_active_map
       const mapVersions = mapVersionsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       const activeMap = mapVersions.find(m => m.current_active_map && m.current_version);
 
@@ -38,7 +39,6 @@ async function updateDashboardStats() {
         const activeVersion = activeMap.current_version;
         currentVersion = activeVersion || "—";
 
-        // ✅ Fetch nodes from that specific version inside the subcollection
         if (mapId && activeVersion) {
           const versionRef = doc(db, "MapVersions", mapId, "versions", activeVersion);
           const versionSnap = await getDoc(versionRef);
@@ -52,12 +52,10 @@ async function updateDashboardStats() {
         }
       }
 
-      // ✅ Counts for other collections
       categoriesCount = categories.filter(c => !c.is_deleted).length;
       roomsCount = indoorInfras.filter(r => !r.is_deleted).length;
 
     } else {
-      // 🔹 Offline: JSON
       const [categoriesRes, indoorRes, mapsRes] = await Promise.all([
         fetch("../assets/firestore/Categories.json"),
         fetch("../assets/firestore/IndoorInfrastructure.json"),
@@ -68,7 +66,6 @@ async function updateDashboardStats() {
       indoorInfras = await indoorRes.json();
       const mapVersions = await mapsRes.json();
 
-      // 🗺️ Get active map and its version
       const activeMap = mapVersions.find(m => m.current_active_map && m.current_version);
 
       if (activeMap) {
@@ -89,25 +86,22 @@ async function updateDashboardStats() {
       roomsCount = indoorInfras.filter(r => !r.is_deleted).length;
     }
 
-    // 🔹 Update the dashboard HTML
-    const statsCards = document.querySelectorAll(".stats .card .info h2");
-    if (statsCards.length >= 4) {
-      statsCards[0].textContent = buildingsCount;   // Buildings (Infrastructure)
-      statsCards[1].textContent = categoriesCount;  // Categories
-      statsCards[2].textContent = currentVersion;   // ✅ Correct Current Version
-      statsCards[3].textContent = roomsCount;       // IndoorInfrastructure
-    }
+    // ✅ Stop loading and update stats
+    StatLoader.stop(".stats .card .info h2", {
+      buildings: buildingsCount,
+      categories: categoriesCount,
+      version: currentVersion,
+      rooms: roomsCount
+    });
 
     console.log(
       `🏢 Buildings: ${buildingsCount} | 🗂️ Categories: ${categoriesCount} | 🏷️ Version: ${currentVersion} | 🏠 Rooms: ${roomsCount}`
     );
-
   } catch (err) {
     console.error("Error updating dashboard stats:", err);
   }
 }
 
-// Call on page load
 document.addEventListener("DOMContentLoaded", updateDashboardStats);
 window.addEventListener("online", updateDashboardStats);
 window.addEventListener("offline", updateDashboardStats);
@@ -118,70 +112,68 @@ window.addEventListener("offline", updateDashboardStats);
 
 
 
-// ----------- Load Recent Activity Table -----------
 async function renderRecentActivity() {
-    const tbody = document.querySelector(".recent-activity .activity-table tbody");
-    if (!tbody) return;
-    tbody.innerHTML = ""; // Clear table
+  const tbody = document.querySelector(".recent-activity .activity-table tbody");
+  if (!tbody) return;
 
-    try {
-        let logs;
+  // 🔹 Show loading spinner inside the table
+  showUniversalLoader(tbody, "table");
 
-        if (navigator.onLine) {
-            // Online: fetch from Firestore
-            const q = query(collection(db, "ActivityLogs"), orderBy("timestamp", "desc"));
-            const querySnapshot = await getDocs(q);
-            logs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            console.log("🌐 Online → Firestore");
-        } else {
-            // Offline: fetch from JSON
-            logs = await fetch("../assets/firestore/ActivityLogs.json").then(res => res.json());
-            // Sort descending by timestamp
-            logs.sort((a, b) => {
-                const aTime = a.timestamp?.seconds ?? a.timestamp?._seconds ?? 0;
-                const bTime = b.timestamp?.seconds ?? b.timestamp?._seconds ?? 0;
-                return bTime - aTime;
-            });
-            console.log("📂 Offline → JSON fallback");
-        }
+  try {
+    let logs;
 
-        let counter = 1;
-        logs.forEach(data => {
-            // Format timestamp
-            let formattedDate = "-";
-            if (data.timestamp) {
-                if (typeof data.timestamp.toDate === "function") {
-                    // Firestore Timestamp
-                    formattedDate = formatDate(data.timestamp.toDate());
-                } else if (data.timestamp.seconds !== undefined) {
-                    // JSON export format
-                    const d = new Date(data.timestamp.seconds * 1000 + Math.floor(data.timestamp.nanoseconds / 1e6));
-                    formattedDate = formatDate(d);
-                } else if (data.timestamp._seconds !== undefined) {
-                    const d = new Date(data.timestamp._seconds * 1000 + Math.floor((data.timestamp._nanoseconds || 0) / 1e6));
-                    formattedDate = formatDate(d);
-                }
-            }
-
-            // Combine activity + item
-            const activityText = data.item 
-                ? `${data.activity || "-"} <i>${data.item}</i>` 
-                : data.activity || "-";
-
-            // Create table row
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${counter++}</td>
-                <td>${activityText}</td>
-                <td>${formattedDate}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-    } catch (err) {
-        console.error("Error loading recent activity:", err);
+    if (navigator.onLine) {
+      const q = query(collection(db, "ActivityLogs"), orderBy("timestamp", "desc"));
+      const querySnapshot = await getDocs(q);
+      logs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      console.log("🌐 Online → Firestore");
+    } else {
+      logs = await fetch("../assets/firestore/ActivityLogs.json").then(res => res.json());
+      logs.sort((a, b) => {
+        const aTime = a.timestamp?.seconds ?? a.timestamp?._seconds ?? 0;
+        const bTime = b.timestamp?.seconds ?? b.timestamp?._seconds ?? 0;
+        return bTime - aTime;
+      });
+      console.log("📂 Offline → JSON fallback");
     }
+
+    // 🔹 Once data is ready, remove loader
+    hideUniversalLoader(tbody);
+
+    let counter = 1;
+    logs.forEach(data => {
+      let formattedDate = "-";
+      if (data.timestamp) {
+        if (typeof data.timestamp.toDate === "function") {
+          formattedDate = formatDate(data.timestamp.toDate());
+        } else if (data.timestamp.seconds !== undefined) {
+          const d = new Date(data.timestamp.seconds * 1000 + Math.floor(data.timestamp.nanoseconds / 1e6));
+          formattedDate = formatDate(d);
+        } else if (data.timestamp._seconds !== undefined) {
+          const d = new Date(data.timestamp._seconds * 1000 + Math.floor((data.timestamp._nanoseconds || 0) / 1e6));
+          formattedDate = formatDate(d);
+        }
+      }
+
+      const activityText = data.item
+        ? `${data.activity || "-"} <i>${data.item}</i>`
+        : data.activity || "-";
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${counter++}</td>
+        <td>${activityText}</td>
+        <td>${formattedDate}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  } catch (err) {
+    console.error("Error loading recent activity:", err);
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:red;">Failed to load activity</td></tr>`;
+  }
 }
+
 
 // Helper function to format Date objects
 function formatDate(d) {
@@ -211,60 +203,68 @@ document.addEventListener("DOMContentLoaded", renderRecentActivity);
 
 
 async function populateMaps() {
-    const mapSelect = document.getElementById("mapSelect");
-    const campusSelect = document.getElementById("campusSelect");
-    const versionSelect = document.getElementById("versionSelect");
+  const mapSelect = document.getElementById("mapSelect");
+  const campusSelect = document.getElementById("campusSelect");
+  const versionSelect = document.getElementById("versionSelect");
 
-    mapSelect.innerHTML = '<option value="">Select Map</option>';
-    campusSelect.innerHTML = '<option value="">Select Campus</option>';
-    versionSelect.innerHTML = '<option value="">Select Version</option>';
+  // Reset dropdowns
+  mapSelect.innerHTML = '<option value="">Select Map</option>';
+  campusSelect.innerHTML = '<option value="">Select Campus</option>';
+  versionSelect.innerHTML = '<option value="">Select Version</option>';
 
-    try {
-        let maps;
+  // 🟥 Show loading spinners
+  showDropdownLoader("mapSelect");
+  showDropdownLoader("campusSelect");
+  showDropdownLoader("versionSelect");
 
-        if (navigator.onLine) {
-            // Online: fetch from Firestore
-            const mapsSnap = await getDocs(collection(db, "MapVersions"));
-            maps = mapsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            console.log("🌐 Online → Firestore: MapVersions");
-        } else {
-            // Offline: fetch from JSON
-            maps = await fetch("../assets/firestore/MapVersions.json").then(res => res.json());
-            console.log("📂 Offline → JSON fallback: MapVersions");
-        }
+  try {
+    let maps;
 
-        // Populate map dropdown
-        maps.forEach(mapData => {
-            const mapId = mapData.id;
-            const option = document.createElement("option");
-            option.value = mapId;
-            option.textContent = `${mapData.map_name} (${mapId})`;
-            mapSelect.appendChild(option);
-        });
-
-        if (maps.length > 0) {
-            // Select the current active map by default
-            const currentMap = maps.find(m => m.current_active_map === m.id) || maps[0];
-            mapSelect.value = currentMap.id;
-
-            await populateCampuses(currentMap.id, true, maps);
-            await populateVersions(currentMap.id, true, maps);
-            await loadMap(currentMap.id); // Load initial map view
-        }
-
-        // When Map changes (view only)
-        mapSelect.addEventListener("change", async () => {
-            const selectedMapId = mapSelect.value;
-            if (!selectedMapId) return;
-            await populateCampuses(selectedMapId, false, maps);
-            await populateVersions(selectedMapId, false, maps);
-            await loadMap(selectedMapId); // Load map view for selected map
-        });
-
-    } catch (err) {
-        console.error("Error loading maps:", err);
+    if (navigator.onLine) {
+      const mapsSnap = await getDocs(collection(db, "MapVersions"));
+      maps = mapsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      console.log("🌐 Online → Firestore: MapVersions");
+    } else {
+      maps = await fetch("../assets/firestore/MapVersions.json").then(res => res.json());
+      console.log("📂 Offline → JSON fallback: MapVersions");
     }
+
+    // Populate map dropdown
+    maps.forEach(mapData => {
+      const mapId = mapData.id;
+      const option = document.createElement("option");
+      option.value = mapId;
+      option.textContent = `${mapData.map_name} (${mapId})`;
+      mapSelect.appendChild(option);
+    });
+
+    if (maps.length > 0) {
+      const currentMap = maps.find(m => m.current_active_map === m.id) || maps[0];
+      mapSelect.value = currentMap.id;
+
+      await populateCampuses(currentMap.id, true, maps);
+      await populateVersions(currentMap.id, true, maps);
+      await loadMap(currentMap.id);
+    }
+
+    mapSelect.addEventListener("change", async () => {
+      const selectedMapId = mapSelect.value;
+      if (!selectedMapId) return;
+      await populateCampuses(selectedMapId, false, maps);
+      await populateVersions(selectedMapId, false, maps);
+      await loadMap(selectedMapId);
+    });
+
+  } catch (err) {
+    console.error("Error loading maps:", err);
+  } finally {
+    // 🟩 Hide loading spinners
+    hideDropdownLoader("mapSelect");
+    hideDropdownLoader("campusSelect");
+    hideDropdownLoader("versionSelect");
+  }
 }
+
 
 
 async function populateCampuses(mapId, selectCurrent = true, mapsData = null) {
@@ -382,8 +382,75 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-async function loadMap(mapId = null, campusId = null, versionId = null) {
+// -------- Map instances & toggle state (new) --------
+let mapOverviewInstance = null;
+let mapFullInstance = null;
+let showAllCampuses = false;
+let currentLoadedMapId = null;
+
+// Toggle handler (id="customToggle") — update view when toggled
+const customToggleEl = document.getElementById("customToggle");
+if (customToggleEl) {
+  customToggleEl.addEventListener("change", (e) => {
+    showAllCampuses = !!e.target.checked;
+    console.log(showAllCampuses ? "🟢 Showing ALL campuses" : "🔴 Showing active campus only");
+    if (currentLoadedMapId) loadMap(currentLoadedMapId); // reload
+  });
+}
+
+// Helper: destroy overview map safely
+function destroyOverviewMap() {
+  const container = document.getElementById("map-overview");
+  if (!container) return;
   try {
+    if (mapOverviewInstance) {
+      mapOverviewInstance.off();
+      mapOverviewInstance.remove();
+    }
+  } catch (err) {
+    console.warn("Map cleanup warning (overview):", err);
+  }
+  mapOverviewInstance = null;
+  if (container._leaflet_id) delete container._leaflet_id;
+  container.innerHTML = "";
+}
+
+// Helper: destroy full/modal map safely
+function destroyFullMap() {
+  const container = document.getElementById("map-full");
+  if (!container) return;
+  try {
+    if (mapFullInstance) {
+      mapFullInstance.off();
+      mapFullInstance.remove();
+    }
+  } catch (err) {
+    console.warn("Map cleanup warning (full):", err);
+  }
+  mapFullInstance = null;
+  if (container._leaflet_id) delete container._leaflet_id;
+  container.innerHTML = "";
+}
+
+// Helper: compute campus center (special-case CAMP-02)
+function computeCampusCenter(nodes, campusId) {
+  if (campusId === "CAMP-02") return [6.9130, 122.0630];
+  if (!nodes || nodes.length === 0) return [6.9130, 122.0630];
+  const valid = nodes.filter(n => n.latitude && n.longitude);
+  if (!valid.length) return [6.9130, 122.0630];
+  const avgLat = valid.reduce((s, n) => s + Number(n.latitude), 0) / valid.length;
+  const avgLng = valid.reduce((s, n) => s + Number(n.longitude), 0) / valid.length;
+  return [avgLat, avgLng];
+}
+
+// -------- Revised loadMap (replaces previous implementation) --------
+async function loadMap(mapId = null, campusId = null, versionId = null) {
+  const containerId = "map-overview";
+  showMapLoader(containerId);
+  try {
+    currentLoadedMapId = mapId; // remember for toggle reloads
+
+    // --- Fetch map/version/nodes/edges (same behavior online/offline as before) ---
     let mapData = null;
     let versionData = null;
     let nodes = [];
@@ -391,81 +458,71 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
     let infraMap = {}, campusMap = {};
 
     if (navigator.onLine) {
-      // 🔹 Online: Firestore
+      // Online path (unchanged, but ensures mapId selection)
       const mapVersionsRef = collection(db, "MapVersions");
       const mapsSnapshot = await getDocs(mapVersionsRef);
       if (mapsSnapshot.empty) {
         console.error("No MapVersions found");
+        hideMapLoader(containerId);
         return;
       }
 
-      // Use provided mapId or fallback to first
       let mapDoc = mapId ? mapsSnapshot.docs.find(d => d.id === mapId) : null;
       if (!mapDoc) mapDoc = mapsSnapshot.docs[0];
 
       mapData = mapDoc.data();
       mapId = mapDoc.id;
 
-      // ✅ Ensure correct campus is shown on startup
       if (!campusId) {
         campusId = mapData.current_active_campus;
-        console.log(`🌍 Defaulting to active campus: ${campusId}`);
       }
 
       const currentVersion = versionId || mapData.current_version || "v1.0.0";
-
-      // Get the version document
       const versionRef = doc(db, "MapVersions", mapId, "versions", currentVersion);
       const versionSnap = await getDoc(versionRef);
       if (!versionSnap.exists()) {
         console.error("Version not found:", currentVersion);
+        hideMapLoader(containerId);
         return;
       }
 
       versionData = versionSnap.data();
-      nodes = versionData.nodes || [];
-      edges = versionData.edges || [];
+      nodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
+      edges = Array.isArray(versionData.edges) ? versionData.edges : [];
 
-      // Fetch Infra + Campus names
       const [infraSnap, campusSnap] = await Promise.all([
         getDocs(collection(db, "Infrastructure")),
         getDocs(collection(db, "Campus"))
       ]);
-      infraSnap.forEach(doc => infraMap[doc.data().infra_id] = doc.data().name);
-      campusSnap.forEach(doc => campusMap[doc.data().campus_id] = doc.data().campus_name);
+      infraSnap.forEach(d => infraMap[d.data().infra_id] = d.data().name);
+      campusSnap.forEach(d => campusMap[d.data().campus_id] = d.data().campus_name);
 
     } else {
-      // 🔹 Offline: JSON
+      // Offline fallback (unchanged)
       const res = await fetch("../assets/firestore/MapVersions.json");
       const mapsJson = await res.json();
-
-      // Find the map
       mapData = mapsJson.find(m => m.map_id === mapId) || mapsJson[0];
       if (!mapData) {
         console.error("No maps found in JSON");
+        hideMapLoader(containerId);
         return;
       }
       mapId = mapData.map_id;
 
-      // ✅ Ensure correct campus is shown on startup (offline mode)
       if (!campusId) {
         campusId = mapData.current_active_campus;
-        console.log(`🌍 Defaulting to active campus (offline): ${campusId}`);
       }
 
       const currentVersion = versionId || mapData.current_version || (mapData.versions?.[0]?.id || "v1.0.0");
-
       versionData = mapData.versions.find(v => v.id === currentVersion);
       if (!versionData) {
         console.error("Version not found in JSON:", currentVersion);
+        hideMapLoader(containerId);
         return;
       }
 
-      nodes = versionData.nodes || [];
-      edges = versionData.edges || [];
-      console.log("📂 Offline → Map and version loaded from JSON");
-
-      // Fetch Infra + Campus names from JSON
+      nodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
+      edges = Array.isArray(versionData.edges) ? versionData.edges : [];
       const [infraRes, campusRes] = await Promise.all([
         fetch("../assets/firestore/Infrastructure.json"),
         fetch("../assets/firestore/Campus.json")
@@ -476,79 +533,45 @@ async function loadMap(mapId = null, campusId = null, versionId = null) {
       campusJson.forEach(c => campusMap[c.campus_id] = c.campus_name);
     }
 
-    // 🔹 Filter nodes & edges by campus
-// 🔹 Filter nodes & edges by campus (case-insensitive + fallback)
-if (campusId) {
-  const normalizedCampusId = campusId.trim().toLowerCase();
+    // --- Filter nodes/edges according to toggle and campusId ---
+    if (showAllCampuses && Array.isArray(mapData.campus_included)) {
+      // show nodes belonging to any included campus
+      nodes = nodes.filter(n => !n.is_deleted && n.campus_id && mapData.campus_included.includes(n.campus_id));
+    } else {
+      // only show nodes for selected campus; if node has no campus, assign
+      if (!campusId) {
+        console.warn("No campusId specified — showing all nodes.");
+      } else {
+        nodes = nodes.filter(n => {
+          if (n.is_deleted) return false;
+          if (!n.campus_id) n.campus_id = campusId;
+          return String(n.campus_id).trim() === String(campusId).trim();
+        });
+      }
+    }
 
-  nodes = nodes.filter(n => 
-    n.campus_id && n.campus_id.trim().toLowerCase() === normalizedCampusId
-  );
+    const validNodeIds = new Set(nodes.map(n => n.node_id));
+    edges = edges.filter(e => !e.is_deleted && validNodeIds.has(e.from_node) && validNodeIds.has(e.to_node));
 
-  const nodeIds = new Set(nodes.map(n => n.node_id));
-  edges = edges.filter(e => nodeIds.has(e.from_node) && nodeIds.has(e.to_node));
-
-  console.log(`🎓 Showing ${nodes.length} nodes for campus: ${campusId}`);
-} else {
-  console.warn("⚠️ No campusId specified — showing all nodes.");
-}
-
-console.log("🔍 Campus nodes preview:", campusId, nodes);
-console.log("🔍 Unique node types:", [...new Set(nodes.map(n => n.type))]);
-
-
-    // Attach readable names
+    // attach readable names
     nodes.forEach(d => {
       d.infraName = d.related_infra_id ? (infraMap[d.related_infra_id] || d.related_infra_id) : "-";
       d.campusName = d.campus_id ? (campusMap[d.campus_id] || d.campus_id) : "-";
     });
 
-    // 🔹 Convert Lat/Lng to X/Y
-    const origin = { lat: 6.913341, lng: 122.063693 };
-    function latLngToXY(lat, lng, origin) {
-      const R = 6371000;
-      const dLat = (lat - origin.lat) * Math.PI / 180;
-      const dLng = (lng - origin.lng) * Math.PI / 180;
-      const x = dLng * Math.cos(origin.lat * Math.PI / 180) * R;
-      const y = dLat * R;
-      return { x, y };
-    }
-    nodes.filter(n => n.type === "infrastructure")
-         .forEach(b => b.cartesian = latLngToXY(b.latitude, b.longitude, origin));
+    // convert lat/lng to numbers if strings
+    nodes.forEach(n => {
+      if (n.latitude !== undefined) n.latitude = Number(n.latitude);
+      if (n.longitude !== undefined) n.longitude = Number(n.longitude);
+    });
 
-    // 🔹 Render map (Overview)
-    const mapContainer = document.getElementById("map-overview");
+    // --- Clean up previous overview map safely ---
+    destroyOverviewMap();
 
-    // 🧹 Properly destroy previous Leaflet instance before creating a new one
-    if (mapContainer._leaflet_map_instance) {
-      mapContainer._leaflet_map_instance.remove();
-      mapContainer._leaflet_map_instance = null;
-    }
+    // --- Compute center (supports CAMP-02 fixed center) ---
+    const [centerLat, centerLng] = computeCampusCenter(nodes, campusId);
 
-    // 🧩 Also clear any leftover content
-    mapContainer.innerHTML = "";
-
-
-    // 🧭 Dynamically compute the campus center
-    let centerLat = 6.9130;
-    let centerLng = 122.0630;
-
-    if (nodes.length > 0) {
-      // Get only nodes that have valid coordinates
-      const validNodes = nodes.filter(n => n.latitude && n.longitude);
-
-      if (validNodes.length > 0) {
-        const sumLat = validNodes.reduce((acc, n) => acc + n.latitude, 0);
-        const sumLng = validNodes.reduce((acc, n) => acc + n.longitude, 0);
-        centerLat = sumLat / validNodes.length;
-        centerLng = sumLng / validNodes.length;
-        console.log(`📍 Auto-centered map at campus midpoint: ${centerLat}, ${centerLng}`);
-      } else {
-        console.warn("⚠️ No valid coordinates found for nodes, using default center.");
-      }
-    }
-
-    // 🗺️ Create map centered on campus
+    // --- Create overview map ---
     const map = L.map("map-overview", {
       center: [centerLat, centerLng],
       zoom: 18,
@@ -560,77 +583,79 @@ console.log("🔍 Unique node types:", [...new Set(nodes.map(n => n.type))]);
       keyboard: false
     });
 
-
-    // 💾 Store this map instance for cleanup next time
-    mapContainer._leaflet_map_instance = map;
-
+    mapOverviewInstance = map;
+    const mapContainer = document.getElementById("map-overview");
+    if (mapContainer) mapContainer._leaflet_map_instance = map;
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors"
     }).addTo(map);
 
+    // render (reuse existing renderDataOnMap signature)
     renderDataOnMap(map, nodes, false, edges);
 
-    // 🔹 Modal logic (final safe version)
+    // --- Modal open handler (overwrite to avoid multiple listeners) ---
     const modal = document.getElementById("mapModal");
     const closeBtn = document.getElementById("closeModal");
     const mapContainerFull = document.getElementById("map-full");
-    let mapFull = null; // store reference
 
-    function destroyFullMap() {
-      if (mapFull) {
-        try {
-          mapFull.off();
-          mapFull.remove();
-        } catch (e) {
-          console.warn("Map cleanup warning:", e);
-        }
-        mapFull = null;
-      }
-
-      // 🧹 Reset Leaflet internal reference to avoid "reused container" bug
-      if (mapContainerFull._leaflet_id) {
-        delete mapContainerFull._leaflet_id;
-      }
-
-      mapContainerFull.innerHTML = "";
-    }
-
-    mapContainer.addEventListener("click", () => {
+    mapContainer.onclick = () => {
       modal.style.display = "block";
-      setTimeout(() => {
-        destroyFullMap(); // ensure no residual map
 
-        // 🧭 Use same computed campus center for modal map
-        mapFull = L.map("map-full", {
-          center: [centerLat, centerLng],
-          zoom: 18,
-          zoomControl: true
+      setTimeout(() => {
+        // destroy any existing full map safely
+        destroyFullMap();
+
+        // create full map with same center/zoom as overview
+        const currentCenter = map.getCenter();
+        const currentZoom = map.getZoom();
+
+        mapFullInstance = L.map("map-full", {
+          center: currentCenter,
+          zoom: currentZoom,
+          zoomControl: true,
+          dragging: true,
+          scrollWheelZoom: true,
+          doubleClickZoom: true,
+          boxZoom: true,
+          keyboard: true
         });
+
+        // ensure Leaflet internal id cleared (defensive)
+        if (mapContainerFull._leaflet_id) delete mapContainerFull._leaflet_id;
 
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution: "© OpenStreetMap contributors"
-        }).addTo(mapFull);
+        }).addTo(mapFullInstance);
 
-        renderDataOnMap(mapFull, nodes, true, edges);
+        // render interactive (enableClick = true)
+        renderDataOnMap(mapFullInstance, nodes, true, edges);
 
-        // 🧩 Optional: ensure map tiles load properly after modal animation
-        setTimeout(() => mapFull.invalidateSize(), 300);
+        // fix tiles after modal open
+        setTimeout(() => {
+          try { mapFullInstance.invalidateSize(); } catch (e) { /* ignore */ }
+        }, 300);
       }, 200);
-    });
+    };
 
-
-    closeBtn.addEventListener("click", () => {
+    // Modal close handlers (idempotent)
+    closeBtn.onclick = () => {
       modal.style.display = "none";
-      destroyFullMap(); // fully clean map when closing
-    });
-
+      destroyFullMap();
+    };
+    window.onclick = (e) => {
+      if (e.target === modal) {
+        modal.style.display = "none";
+        destroyFullMap();
+      }
+    };
 
   } catch (err) {
     console.error("Error loading map data:", err);
+  } finally {
+    hideMapLoader(containerId);
   }
 }
-
 
 
 
@@ -779,7 +804,7 @@ function renderDataOnMap(map, data, enableClick = false, edges = []) {
     data.forEach(node => {
       if (node.node_id && node.latitude && node.longitude) {
         nodeMap.set(node.node_id, {
-          coords: [node.latitude, node.longitude],
+          coords: [Number(node.latitude), Number(node.longitude)],
           type: node.type,
           campus_id: node.campus_id
         });
@@ -791,15 +816,22 @@ function renderDataOnMap(map, data, enableClick = false, edges = []) {
       const from = nodeMap.get(edge.from_node);
       const to = nodeMap.get(edge.to_node);
 
-      // 🚫 Skip edges if barrier or cross-campus
+      // 🚫 Skip if missing endpoints or if either endpoint is a barrier
       if (!from || !to || from.type === "barrier" || to.type === "barrier") return;
-      if (from.campus_id !== to.campus_id) return;
 
-      const line = L.polyline([from.coords, to.coords], {
-        color: "orange", // ✅ same color for all campuses
+      const isCrossCampus = String(from.campus_id) !== String(to.campus_id);
+
+      // If not showing all campuses, skip cross-campus edges
+      if (isCrossCampus && !showAllCampuses) return;
+
+      // Style: dashed for cross-campus to make them visually distinct
+      const lineStyle = {
+        color: isCrossCampus ? "orange" : "orange",
         weight: 3,
-        opacity: 0.8
-      }).addTo(map);
+        opacity: 0.9,
+      };
+
+      const line = L.polyline([from.coords, to.coords], lineStyle).addTo(map);
 
       if (enableClick) {
         line.on("click", () => {

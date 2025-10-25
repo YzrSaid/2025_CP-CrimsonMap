@@ -86,44 +86,46 @@
                 <div class="stats">
                     <div class="card">
                         <div class="icon-box">
-                            <i class="fas fa-building"></i>
+                        <i class="fas fa-building"></i>
                         </div>
                         <div class="info">
-                            <h2>0</h2>
-                            <p>Buildings</p>
+                        <h2 data-stat="buildings">0</h2>
+                        <p>Buildings</p>
                         </div>
                     </div>
 
                     <div class="card">
                         <div class="icon-box">
-                            <i class="fas fa-layer-group"></i>
+                        <i class="fas fa-layer-group"></i>
                         </div>
                         <div class="info">
-                            <h2>0</h2>
-                            <p>Categories</p>
+                        <h2 data-stat="categories">0</h2>
+                        <p>Categories</p>
                         </div>
                     </div>
 
                     <div class="card">
                         <div class="icon-box">
-                            <i class="fas fa-sync-alt"></i>
+                        <i class="fas fa-sync-alt"></i>
                         </div>
                         <div class="info">
-                            <h2>v1.0.0</h2>
-                            <p>Current Map</p>
+                        <h2 data-stat="version">v1.0.0</h2>
+                        <p>Current Map</p>
                         </div>
                     </div>
 
                     <div class="card">
                         <div class="icon-box">
-                            <i class="fas fa-door-open"></i>
+                        <i class="fas fa-door-open"></i>
                         </div>
                         <div class="info">
-                            <h2>0</h2>
-                            <p>Rooms & Offices</p>
+                        <h2 data-stat="rooms">0</h2>
+                        <p>Rooms & Offices</p>
                         </div>
                     </div>
                 </div>
+
+                
 
                 <div class="recent-activity">
                     <h3>Recent Activity</h3>
@@ -172,25 +174,30 @@
                             <span class="toggle-label">Show All Campuses</span>
                             </div>
 
-                            <div class="sorting">
+                            <div class="sorting select-loading">
                                 <select id="mapSelect" style="padding: 5px 10px; border-radius: 5px;">
                                     <option value="">Select Map</option>
                                 </select>
                             </div>
-                            <div class="campusdropd">
+
+                            <div class="campusdropd select-loading">
                                 <select id="campusSelect" style="padding: 5px 10px; border-radius: 5px;">
                                     <option value="">Select Campus</option>
                                 </select>
                             </div>
-                            <div class="versions">
+
+                            <div class="versions select-loading">
                                 <select id="versionSelect" style="padding: 5px 10px; border-radius: 5px;">
                                     <option value="">Select Version</option>
                                 </select>
                             </div>
+
                         </div>
                     </div>
                     
-                    <div id="map-overview"></div>
+                        <div id="map-overview"></div>
+
+
                 </div>
             </div>
             <!-- Map Overview -->
@@ -211,6 +218,7 @@
 <script src="/vendor/leaflet/leaflet.js"></script>
 <script type="module" src="/js/welcome.js"></script>
 <script type="module" src="/js/time.js"></script>
+<script src="/js/global-loader.js"></script>
 
 
 </body>

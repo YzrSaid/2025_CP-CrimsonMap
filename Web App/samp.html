@@ -1,46 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Delete All Edges</title>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collectionGroup, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { firebaseConfig } from "../firebaseConfig.js";
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    async function clearAllEdges() {
-      const logs = document.getElementById("logs");
-      logs.textContent = "⚠️ Starting to remove all edges...\n";
-
-      try {
-        const querySnap = await getDocs(collectionGroup(db, "versions"));
-        let count = 0;
-
-        for (const versionDoc of querySnap.docs) {
-          const versionRef = versionDoc.ref;
-          await updateDoc(versionRef, { edges: [] });
-          logs.textContent += `🗑️ Cleared edges for ${versionRef.path}\n`;
-          count++;
-        }
-
-        logs.textContent += `\n✅ Done! Removed edges from ${count} version documents.`;
-      } catch (err) {
-        logs.textContent += `\n❌ Error: ${err.message}`;
-        console.error(err);
-      }
-    }
-
-    window.runClear = clearAllEdges;
-  </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Room Cartesian Plane with Floors</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  canvas {
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+  }
+  .label {
+    position: absolute;
+    font-size: 12px;
+    color: crimson;
+    transform: translate(-50%, -50%);
+  }
+</style>
 </head>
-<body style="font-family: Arial; padding: 20px;">
-  <h2>Delete All Edges</h2>
-  <p>This will permanently remove all <code>edges</code> data from every map version in your Firestore.</p>
-  <p><b>Make sure you have a backup (like your MapVersions.json) before running!</b></p>
-  <button onclick="runClear()" style="padding: 10px 20px; font-size: 16px; background:red; color:white; font-weight:bold;">Delete All Edges</button>
-  <pre id="logs" style="margin-top:20px; background:#111; color:#0f0; padding:10px; height:400px; overflow-y:scroll;"></pre>
+<body>
+
+<canvas id="roomCanvas" width="1000" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById('roomCanvas');
+const ctx = canvas.getContext('2d');
+
+// Room coordinates with z-axis
+const rooms = [
+  // Floor 1 (z = 0)
+  { name: "Social work", x: -9.1134, y: 3.2258, z: 0 },
+  { name: "Comdev", x: -9.1134, y: 3.2258, z: 0 },
+  { name: "Entrance (Social Work)", x: -16.7334, y: 3.2258, z: 0 },
+  { name: "BSCD Department", x: -4.8514, y: 3.2258, z: 0 },
+  { name: "Stairs", x: 0, y: 3.2258, z: 0 },
+  { name: "Islamic", x: 4.6482, y: 3.2258, z: 0 },
+  { name: "Cais 24", x: 7.4066, y: 3.2258, z: 0 },
+  { name: "CFES", x: 16.5428, y: 3.2258, z: 0 },
+
+  // Floor 2 (z = 3)
+  { name: "Floor 2 Stairs", x: 1.5850, y: 3.2614, z: 3 },
+  { name: "Fire Exit", x: 1.5850, y: 3.2614, z: 3 },
+  { name: "Dean’s Office", x: -2.9261, y: 6.6144, z: 3 },
+  { name: "CFES Room 1", x: -4.8514, y: 3.2614, z: 3 },
+  { name: "CFES Room 2", x: -13.2594, y: 3.2614, z: 3 },
+  { name: "Islamic Faculty", x: 7.0104, y: 3.2614, z: 3 },
+  { name: "Cais 23", x: 15.2920, y: 3.2614, z: 3 },
+  { name: "Cais 22", x: 23.1648, y: 3.2614, z: 3 },
+  { name: "Cais 21", x: 31.2147, y: 3.2614, z: 3 },
+  { name: "Stairs for Cais", x: 33.7157, y: 3.2614, z: 0 }
+];
+
+// Canvas origin and scale
+const originX = canvas.width / 2;
+const originY = canvas.height / 2;
+const scale = 10; // pixels per meter
+
+// Draw axes
+ctx.strokeStyle = "#000";
+ctx.lineWidth = 1;
+
+// X axis
+ctx.beginPath();
+ctx.moveTo(0, originY);
+ctx.lineTo(canvas.width, originY);
+ctx.stroke();
+
+// Y axis
+ctx.beginPath();
+ctx.moveTo(originX, 0);
+ctx.lineTo(originX, canvas.height);
+ctx.stroke();
+
+// Draw rooms
+rooms.forEach(room => {
+  const x = originX + room.x * scale;
+  // Offset y based on floor (z)
+  const y = originY - room.y * scale - room.z * scale; // z moves floor up
+  ctx.fillStyle = room.z === 0 ? "crimson" : "blue"; // floor 1 red, floor 2 blue
+  ctx.beginPath();
+  ctx.arc(x, y, 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = room.z === 0 ? "crimson" : "blue";
+  ctx.font = "12px Arial";
+  ctx.fillText(room.name, x + 8, y - 8);
+});
+</script>
+
 </body>
 </html>

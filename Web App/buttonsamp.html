@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Universal Loading System</title>
+<style>
+  /* 🧩 Base reset */
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  body {
+    padding: 40px;
+    background: #f4f4f4;
+  }
+
+  /* 🌀 Spinner styles (reusable everywhere) */
+  .spinner {
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid #fff;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* 🔘 Universal loading button */
+  .loading-btn {
+    background-color: crimson;
+    color: white;
+    font-size: 1rem;
+    padding: 10px 24px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.2s ease;
+    min-width: 110px;
+  }
+
+  .loading-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .loading-btn .btn-text {
+    transition: opacity 0.2s ease;
+  }
+
+  .loading-btn.loading .btn-text {
+    opacity: 0;
+  }
+
+  .loading-btn.loading::after {
+    content: "";
+    position: absolute;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid #fff;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 0.8s linear infinite;
+  }
+
+  /* 🧭 Loading overlay (full screen) */
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .loading-overlay.active {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .loading-overlay .spinner {
+    width: 60px;
+    height: 60px;
+    border: 6px solid rgba(255,255,255,0.3);
+    border-top: 6px solid #fff;
+  }
+
+  /* 🗺️ Map or container loading */
+  .map-container {
+    width: 100%;
+    height: 200px;
+    background: #ddd;
+    border-radius: 6px;
+    margin-top: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .container-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255,255,255,0.7);
+  }
+
+  /* 🖋️ Icon button */
+  .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .icon-btn.loading::before {
+    content: "";
+    position: absolute;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-top: 2px solid black;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    animation: spin 0.8s linear infinite;
+  }
+
+  .icon-btn.loading svg {
+    visibility: hidden;
+  }
+</style>
+</head>
+<body>
+
+<h2>🧭 Universal Loading System</h2>
+
+<!-- Button -->
+<button class="loading-btn"><span class="btn-text">Save</span></button>
+
+<!-- Icon Buttons -->
+<button class="icon-btn" id="editBtn" title="Edit">
+  ✏️
+</button>
+
+<button class="icon-btn" id="deleteBtn" title="Delete">
+  🗑️
+</button>
+
+<!-- Map Container -->
+<div class="map-container" id="mapContainer">
+  <div class="map-content">🗺️ Map Data Here</div>
+</div>
+
+<!-- Overlay Loader -->
+<div class="loading-overlay" id="overlayLoader">
+  <div class="spinner"></div>
+</div>
+
+<script>
+/* 🌐 Universal Loader Utility */
+class Loader {
+  static start(el) {
+    if (el.classList.contains("loading-btn")) {
+      el.classList.add("loading");
+      el.disabled = true;
+    } else if (el.classList.contains("icon-btn")) {
+      el.classList.add("loading");
+      el.disabled = true;
+    } else if (el.classList.contains("map-container")) {
+      const overlay = document.createElement("div");
+      overlay.classList.add("container-loading");
+      overlay.innerHTML = '<div class="spinner"></div>';
+      el.appendChild(overlay);
+    }
+  }
+
+  static stop(el) {
+    if (el.classList.contains("loading-btn")) {
+      el.classList.remove("loading");
+      el.disabled = false;
+    } else if (el.classList.contains("icon-btn")) {
+      el.classList.remove("loading");
+      el.disabled = false;
+    } else if (el.classList.contains("map-container")) {
+      const overlay = el.querySelector(".container-loading");
+      if (overlay) overlay.remove();
+    }
+  }
+
+  static showOverlay() {
+    document.getElementById("overlayLoader").classList.add("active");
+  }
+
+  static hideOverlay() {
+    document.getElementById("overlayLoader").classList.remove("active");
+  }
+}
+
+/* 🧠 Demo: simulate usage */
+document.querySelector(".loading-btn").addEventListener("click", (e) => {
+  Loader.start(e.currentTarget);
+  setTimeout(() => Loader.stop(e.currentTarget), 2000);
+});
+
+document.getElementById("editBtn").addEventListener("click", (e) => {
+  Loader.start(e.currentTarget);
+  setTimeout(() => Loader.stop(e.currentTarget), 1500);
+});
+
+document.getElementById("deleteBtn").addEventListener("click", (e) => {
+  Loader.start(e.currentTarget);
+  setTimeout(() => Loader.stop(e.currentTarget), 1500);
+});
+
+document.getElementById("mapContainer").addEventListener("click", (e) => {
+  Loader.start(e.currentTarget);
+  setTimeout(() => Loader.stop(e.currentTarget), 2500);
+});
+
+/* Example of full-page loading */
+setTimeout(() => {
+  Loader.showOverlay();
+  setTimeout(() => Loader.hideOverlay(), 3000);
+}, 1000);
+</script>
+
+</body>
+</html>

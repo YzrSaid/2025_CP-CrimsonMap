@@ -29,111 +29,160 @@ window.hideCategoryModal = hideCategoryModal;
 let categoriesTableData = [];
 
 async function renderCategoriesTable() {
-    const tbody = document.getElementById("categoriesTableBody");
-    if (!tbody) return;
-    tbody.innerHTML = "";
+  const tbody = document.getElementById("categoriesTableBody");
+  if (!tbody) return;
 
-    try {
-        let categories = [];
-        let infrastructures = [];
+  // 🌀 Show loader before fetching
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="5" class="table-loader">
+        <div class="spinner"></div>
+      </td>
+    </tr>
+  `;
 
-        // ===== Load Categories =====
-        if (navigator.onLine) {
-            const catSnap = await getDocs(collection(db, "Categories"));
-            categories = catSnap.docs
-                .map(doc => ({ id: doc.id, ...doc.data() }))
-                .filter(data => !data.is_deleted);
+  try {
+    let categories = [];
+    let infrastructures = [];
 
-            // Also fetch infrastructures
-            const infraSnap = await getDocs(collection(db, "Infrastructure"));
-            infrastructures = infraSnap.docs
-                .map(doc => doc.data())
-                .filter(data => !data.is_deleted);
-        } else {
-            // Offline fallback (optional)
-            const catRes = await fetch("../assets/firestore/Categories.json");
-            const catData = await catRes.json();
-            categories = catData.filter(data => !data.is_deleted);
+    // ===== Load Categories =====
+    if (navigator.onLine) {
+      const catSnap = await getDocs(collection(db, "Categories"));
+      categories = catSnap.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(data => !data.is_deleted);
 
-            const infraRes = await fetch("../assets/firestore/Infrastructure.json");
-            const infraData = await infraRes.json();
-            infrastructures = infraData.filter(data => !data.is_deleted);
-        }
-
-        // ===== Count infrastructures per category =====
-        const infraCountMap = {};
-        infrastructures.forEach(infra => {
-            if (infra.category_id) {
-                infraCountMap[infra.category_id] = (infraCountMap[infra.category_id] || 0) + 1;
-            }
-        });
-
-        // ===== Attach building counts to categories =====
-        categories.forEach(cat => {
-            cat.buildings = infraCountMap[cat.category_id] || 0;
-        });
-
-        // ===== Sort by createdAt =====
-        categories.sort((a, b) => {
-            const timeA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-            const timeB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-            return timeA - timeB;
-        });
-
-        // Save globally for searching/filtering
-        categoriesTableData = categories;
-
-        // Render
-        renderCategoriesTableRows(categoriesTableData);
-
-    } catch (err) {
-        console.error("Error loading categories: ", err);
+      // Also fetch infrastructures
+      const infraSnap = await getDocs(collection(db, "Infrastructure"));
+      infrastructures = infraSnap.docs
+        .map(doc => doc.data())
+        .filter(data => !data.is_deleted);
+    } else {
+      // ===== Offline fallback =====
+      const [catRes, infraRes] = await Promise.all([
+        fetch("../assets/firestore/Categories.json"),
+        fetch("../assets/firestore/Infrastructure.json"),
+      ]);
+      const [catData, infraData] = await Promise.all([
+        catRes.json(),
+        infraRes.json(),
+      ]);
+      categories = catData.filter(data => !data.is_deleted);
+      infrastructures = infraData.filter(data => !data.is_deleted);
     }
-}
 
+    // ===== Count infrastructures per category =====
+    const infraCountMap = {};
+    infrastructures.forEach(infra => {
+      if (infra.category_id) {
+        infraCountMap[infra.category_id] =
+          (infraCountMap[infra.category_id] || 0) + 1;
+      }
+    });
+
+    // ===== Attach building counts to categories =====
+    categories.forEach(cat => {
+      cat.buildings = infraCountMap[cat.category_id] || 0;
+    });
+
+    // ===== Sort by createdAt =====
+    categories.sort((a, b) => {
+      const timeA = a.createdAt?.seconds
+        ? a.createdAt.seconds * 1000
+        : a.createdAt?.toMillis
+        ? a.createdAt.toMillis()
+        : 0;
+      const timeB = b.createdAt?.seconds
+        ? b.createdAt.seconds * 1000
+        : b.createdAt?.toMillis
+        ? b.createdAt.toMillis()
+        : 0;
+      return timeA - timeB;
+    });
+
+    // Save globally for filtering/searching
+    categoriesTableData = categories;
+
+    // Render data
+    renderCategoriesTableRows(categoriesTableData);
+  } catch (err) {
+    console.error("❌ Error loading categories:", err);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align:center; color:#DC143C;">
+          ⚠️ Failed to load categories
+        </td>
+      </tr>
+    `;
+  }
+}
 
 function renderCategoriesTableRows(data) {
-    const tbody = document.getElementById("categoriesTableBody");
-    if (!tbody) return;
-    tbody.innerHTML = "";
+  const tbody = document.getElementById("categoriesTableBody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
 
-    data.forEach((data, index) => {
-        const tr = document.createElement("tr");
-        tr.dataset.id = data.id;
-        tr.innerHTML = `
-            <td>${index + 1}</td>
-            <td>${data.name}</td>
-            <td>
-                <span class="category-color" style="background:${data.color || '#b41c1c'}"></span>
-                <span style="margin-left:8px;">${data.color || '#b41c1c'}</span>
-            </td>
-            <td>${data.buildings}</td>
-            <td class="actions">
-                <button class="edit"><i class="fas fa-edit"></i></button>
-                <button class="delete"><i class="fas fa-trash"></i></button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
+  if (!data.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align:center; color:#999;">
+          No categories found.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  data.forEach((data, index) => {
+    const tr = document.createElement("tr");
+    tr.dataset.id = data.id;
+    tr.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${data.name}</td>
+      <td>
+        <span class="category-color" style="background:#e5e7eb; color:#111827; padding:4px 8px; border-radius:6px;">
+          ${data.label || "—"}
+        </span>
+      </td>
+      <td>${data.buildings}</td>
+      <td class="actions">
+        <button class="edit"><i class="fas fa-edit"></i></button>
+        <button class="delete"><i class="fas fa-trash"></i></button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
-
-
-
 
 // Call on page load
 document.addEventListener("DOMContentLoaded", renderCategoriesTable);
 
 
 
-// ----------- Add Category Handler -----------
+
+// ----------- Add Category Handler with Loading Spinner + Saving Text -----------
 document.getElementById('categoryForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    const submitBtn = e.target.querySelector(".save-btn");
+    if (!submitBtn) return;
+
+    const originalBtnHTML = submitBtn.innerHTML;
+
+    // 🟢 Show spinner + "Saving..." text + disable button
+    submitBtn.innerHTML = `
+        <div class="spinner"></div>
+        <span class="loading-text">Saving...</span>
+    `;
+    submitBtn.disabled = true;
 
     const name = document.getElementById('categoryName').value.trim();
     const color = document.getElementById('categoryColor').value;
 
     if (!name || !color) {
         alert("Please fill in all required fields.");
+        submitBtn.innerHTML = originalBtnHTML;
+        submitBtn.disabled = false;
         return;
     }
 
@@ -169,21 +218,29 @@ document.getElementById('categoryForm')?.addEventListener('submit', async (e) =>
             description: `Added category "${name}" with color "${color}".`
         });
 
-        alert("Category saved!");
-
-        // ✅ Update StaticDataVersions/GlobalInfo after saving or updating a node
+        // ✅ Update StaticDataVersions/GlobalInfo
         const staticDataRef = doc(db, "StaticDataVersions", "GlobalInfo");
         await updateDoc(staticDataRef, {
             categories_updated: true,
         });
+
         document.getElementById('categoryForm').reset();
         hideCategoryModal();
         renderCategoriesTable();
         populateCategoryDropdownForInfra();
+
+        alert("Category saved!");
     } catch (err) {
+        console.error("Error adding category:", err);
         alert("Error adding category: " + err);
+    } finally {
+        // 🔄 Restore original button
+        submitBtn.innerHTML = originalBtnHTML;
+        submitBtn.disabled = false;
     }
 });
+
+
 
 // ----------- Populate Category Dropdown for Infrastructure -----------
 async function populateCategoryDropdownForInfra() {
@@ -239,35 +296,221 @@ async function generateNextInfraId() {
     document.getElementById("infraId").value = nextId;
 }
 
-// ----------- Add Infrastructure Handler -----------
+// ---------- Upload & Open Edit Modal ----------
+const uploadInput = document.getElementById("uploadImage");
+const uploadBox = document.querySelector(".upload-box");
+
+const editImageModal = document.getElementById("editImageModal");
+const editCanvas = document.getElementById("editCanvas");
+const ctx = editCanvas.getContext("2d");
+
+const undoBtn = document.getElementById("undoBtn");
+const redoBtn = document.getElementById("redoBtn");
+const saveEditedImageBtn = document.getElementById("saveEditedImageBtn");
+const cancelEditImageBtn = document.getElementById("cancelEditImageBtn");
+const blurRange = document.getElementById("blurRange");
+const blurValue = document.getElementById("blurValue");
+
+let originalImage = new Image();
+let manualRects = [];
+let appliedBlurs = [];
+let undoStack = [];
+let redoStack = [];
+let drawing = false;
+let startX = 0, startY = 0;
+
+const MAX_DIMENSION = 1024; // resize image to max 1024px width/height to stay under Firestore limit
+
+// ---------- Open image ----------
+function openEditImageModal(file) {
+    const url = URL.createObjectURL(file);
+    originalImage = new Image();
+    originalImage.onload = () => {
+        const scale = Math.min(1, MAX_DIMENSION / Math.max(originalImage.naturalWidth, originalImage.naturalHeight));
+        editCanvas.width = Math.round(originalImage.naturalWidth * scale);
+        editCanvas.height = Math.round(originalImage.naturalHeight * scale);
+        ctx.drawImage(originalImage, 0, 0, editCanvas.width, editCanvas.height);
+        manualRects = [];
+        appliedBlurs = [];
+        undoStack = [];
+        redoStack = [];
+        saveState();
+        editImageModal.style.display = "flex";
+    };
+    originalImage.src = url;
+}
+
+uploadInput.addEventListener("change", () => {
+    const file = uploadInput.files[0];
+    if (!file) return;
+    openEditImageModal(file);
+});
+
+// ---------- State management ----------
+function saveState() {
+    undoStack.push(ctx.getImageData(0, 0, editCanvas.width, editCanvas.height));
+    redoStack = [];
+}
+function restoreState(state) { ctx.putImageData(state, 0, 0); }
+
+// ---------- Draw overlay ----------
+function drawOverlay() {
+    clearCanvas();
+    ctx.drawImage(originalImage, 0, 0, editCanvas.width, editCanvas.height);
+    appliedBlurs.forEach(r => blurRegion(r.x, r.y, r.w, r.h, r.blur));
+    ctx.save();
+    ctx.lineWidth = Math.max(2, Math.round(editCanvas.width / 400));
+    ctx.strokeStyle = 'rgba(255,0,0,0.8)';
+    manualRects.forEach(r => ctx.strokeRect(r.x, r.y, r.w, r.h));
+    ctx.restore();
+}
+
+// ---------- Apply blur ----------
+function blurRegion(x, y, w, h, blurPx) {
+    const temp = document.createElement('canvas');
+    temp.width = w; temp.height = h;
+    const tctx = temp.getContext('2d');
+    tctx.drawImage(editCanvas, x, y, w, h, 0, 0, w, h);
+    tctx.filter = `blur(${blurPx}px)`;
+    tctx.drawImage(temp, 0, 0);
+    ctx.drawImage(temp, 0, 0, w, h, x, y, w, h);
+}
+
+// ---------- Mouse Events ----------
+editCanvas.addEventListener('mousedown', e => {
+    drawing = true;
+    const rect = editCanvas.getBoundingClientRect();
+    startX = Math.round((e.clientX - rect.left) * (editCanvas.width / rect.width));
+    startY = Math.round((e.clientY - rect.top) * (editCanvas.height / rect.height));
+});
+editCanvas.addEventListener('mousemove', e => {
+    if (!drawing) return;
+    const rect = editCanvas.getBoundingClientRect();
+    const currX = Math.round((e.clientX - rect.left) * (editCanvas.width / rect.width));
+    const currY = Math.round((e.clientY - rect.top) * (editCanvas.height / rect.height));
+    const x = Math.min(startX, currX);
+    const y = Math.min(startY, currY);
+    const w = Math.abs(currX - startX);
+    const h = Math.abs(currY - startY);
+    manualRects = [{ x, y, w, h }];
+    drawOverlay();
+});
+window.addEventListener('mouseup', () => {
+    if (!drawing) return;
+    drawing = false;
+    if (manualRects.length) {
+        const r = manualRects[0];
+        const blurPx = parseInt(blurRange.value, 10);
+        appliedBlurs.push({ ...r, blur: blurPx });
+        manualRects = [];
+        saveState();
+        drawOverlay();
+    }
+});
+
+// ---------- Undo / Redo ----------
+undoBtn.addEventListener('click', () => {
+    if (undoStack.length > 1) {
+        redoStack.push(undoStack.pop());
+        restoreState(undoStack[undoStack.length - 1]);
+        appliedBlurs.pop();
+    }
+});
+redoBtn.addEventListener('click', () => {
+    while (redoStack.length > 0) {
+        const redoData = redoStack.pop();
+        restoreState(redoData);
+    }
+    appliedBlurs = [];
+});
+
+// ---------- Save ----------
+saveEditedImageBtn.addEventListener('click', () => {
+    appliedBlurs.forEach(r => blurRegion(r.x, r.y, r.w, r.h, r.blur));
+    manualRects = [];
+    drawOverlay();
+
+    // Resize before saving to reduce Base64 size
+    const tempCanvas = document.createElement('canvas');
+    const MAX_SAVE_DIM = 1024;
+    let scale = Math.min(1, MAX_SAVE_DIM / Math.max(editCanvas.width, editCanvas.height));
+    tempCanvas.width = Math.round(editCanvas.width * scale);
+    tempCanvas.height = Math.round(editCanvas.height * scale);
+    const tctx = tempCanvas.getContext('2d');
+    tctx.drawImage(editCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+
+    const base64 = tempCanvas.toDataURL('image/jpeg', 0.8); // compress 80%
+    let existingImg = uploadBox.querySelector('img');
+    if (!existingImg) {
+        existingImg = document.createElement('img');
+        uploadBox.appendChild(existingImg);
+    }
+    existingImg.src = base64;
+    existingImg.style.width = '100%';
+    existingImg.style.height = '100%';
+    existingImg.style.objectFit = 'cover';
+    existingImg.style.position = 'absolute';
+    existingImg.style.top = '0';
+    existingImg.style.left = '0';
+    uploadBox.querySelector('.upload-label').style.display = 'none';
+    editImageModal.style.display = 'none';
+});
+
+// ---------- Cancel ----------
+cancelEditImageBtn.addEventListener('click', () => { editImageModal.style.display = 'none'; });
+
+// ---------- Blur range display ----------
+blurRange.addEventListener('input', () => { blurValue.textContent = blurRange.value + 'px'; });
+
+// ---------- Helpers ----------
+function clearCanvas() { ctx.clearRect(0, 0, editCanvas.width, editCanvas.height); }
+function dataURLtoFile(dataurl, filename) {
+    const arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]); let n = bstr.length; const u8arr = new Uint8Array(n);
+    while (n--) { u8arr[n] = bstr.charCodeAt(n); }
+    return new File([u8arr], filename, { type: mime });
+}
+
+// ---------- Keyboard shortcuts ----------
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'z') undoBtn.click();
+    if (e.ctrlKey && e.key === 'y') redoBtn.click();
+});
+
 document.querySelector("#addInfraModal form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const name = document.querySelector('#addInfraModal input[placeholder="e.g. Main Library"]').value.trim();
-    const infraId = document.getElementById("infraId").value.trim();
+    const submitBtn = e.target.querySelector(".save-btn");
+    if (!submitBtn) return;
 
-    const categorySelect = document.querySelector('#addInfraModal select');
-    const categoryId = categorySelect.value;
-    const categoryName = categorySelect.selectedOptions[0]?.dataset.name || categoryId; // ✅ category name
+    // 🌀 Save original button content
+    const originalBtnHTML = submitBtn.innerHTML;
 
-        const phone = "09123456789";
-    const email = "sample@gmail.com";
-
-    let imageUrl = "";
-    const imageFile = document.getElementById('uploadImage').files[0];
-    if (imageFile) {
-        imageUrl = await convertFileToBase64(imageFile);
-    }
-
-    if (!name || !infraId || !categoryId) {
-        alert("Please fill in all required fields.");
-        return;
-    }
-
-    
+    // 🟢 Show spinner + "Saving..." text + disable button
+    submitBtn.innerHTML = `
+        <div class="spinner"></div>
+        <span class="loading-text">Saving...</span>
+    `;
+    submitBtn.disabled = true;
 
     try {
-        // Save infrastructure
+        const name = document.querySelector('#addInfraModal input[placeholder="e.g. Main Library"]').value.trim();
+        const infraId = document.getElementById("infraId").value.trim();
+        const categorySelect = document.querySelector('#addInfraModal select');
+        const categoryId = categorySelect.value;
+        const categoryName = categorySelect.selectedOptions[0]?.dataset.name || categoryId;
+
+        const phone = "09123456789";
+        const email = "sample@gmail.com";
+
+        const existingImg = uploadBox.querySelector("img");
+        let imageUrl = existingImg?.src || "";
+
+        if (!name || !infraId || !categoryId) {
+            alert("Please fill in all required fields.");
+            return;
+        }
+
         await addDoc(collection(db, "Infrastructure"), {
             infra_id: infraId,
             name: name,
@@ -279,7 +522,6 @@ document.querySelector("#addInfraModal form")?.addEventListener("submit", async 
             createdAt: new Date()
         });
 
-        // ✅ Save activity log with category NAME (not id)
         await addDoc(collection(db, "ActivityLogs"), {
             timestamp: new Date(),
             activity: "Added Infrastructure",
@@ -287,16 +529,39 @@ document.querySelector("#addInfraModal form")?.addEventListener("submit", async 
             description: `Added infrastructure "${name}" under category "${categoryName}".`
         });
 
-        alert("Infrastructure saved successfully!");
         e.target.reset();
         hideInfraModal();
         renderInfraTable();
 
+        const label = uploadBox.querySelector(".upload-label");
+        label.style.display = "flex";
+        const existingImg2 = uploadBox.querySelector("img");
+        if (existingImg2) existingImg2.remove();
+
     } catch (err) {
         console.error("Error adding infrastructure:", err);
         alert("Error saving infrastructure.");
+    } finally {
+        // 🔄 Restore original button
+        submitBtn.innerHTML = originalBtnHTML;
+        submitBtn.disabled = false;
     }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -309,7 +574,13 @@ let infraTableData = []; // Store loaded infra for filtering
 async function renderInfraTable() {
     const tbody = document.querySelector(".infra-table tbody");
     if (!tbody) return;
-    tbody.innerHTML = "";
+    tbody.innerHTML = `
+        <tr class="table-loader-row">
+            <td colspan="6" class="table-loader">
+                <div class="spinner"></div>
+            </td>
+        </tr>
+    `;
 
     try {
         let infras = [];
@@ -352,6 +623,9 @@ async function renderInfraTable() {
         renderInfraTableRows(infraTableData);
     } catch (err) {
         console.error("Error loading infrastructure: ", err);
+        tbody.innerHTML = `
+            <tr><td colspan="6" style="text-align:center; color:#DC143C;">⚠️ Failed to load data</td></tr>
+        `;
     }
 }
 
@@ -502,9 +776,20 @@ async function populateInfraDropdownForRooms() {
 
 
 
-// ----------- Add Indoor Infrastructure Handler -----------
 document.querySelector("#addRoomModal form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+
+    const submitBtn = e.target.querySelector(".save-btn");
+    if (!submitBtn) return;
+
+    const originalBtnHTML = submitBtn.innerHTML;
+
+    // 🟢 Show spinner + "Saving..." text + disable button
+    submitBtn.innerHTML = `
+        <div class="spinner"></div>
+        <span class="loading-text">Saving...</span>
+    `;
+    submitBtn.disabled = true;
 
     // Indoor Infrastructure Name
     const name = document.querySelector('#addRoomModal input[placeholder="e.g. Lecture Room 1"]')?.value.trim();
@@ -523,11 +808,13 @@ document.querySelector("#addRoomModal form")?.addEventListener("submit", async (
     // Validation
     if (!name || !roomId || !infraId || !indoorType) {
         alert("Please fill in all required fields.");
+        submitBtn.innerHTML = originalBtnHTML;
+        submitBtn.disabled = false;
         return;
     }
 
     try {
-        // ✅ Save into IndoorInfrastructure collection
+        // Save into IndoorInfrastructure collection
         await addDoc(collection(db, "IndoorInfrastructure"), {
             room_id: roomId,
             name: name,
@@ -545,8 +832,6 @@ document.querySelector("#addRoomModal form")?.addEventListener("submit", async (
             description: `Added "${name}" under infrastructure "${infraName}" (Type: ${indoorType}).`
         });
 
-        alert("Indoor Infrastructure saved successfully!");
-
         // ✅ Clear form fields
         e.target.reset();
         document.querySelector('#addRoomModal input[name="room_id"]').value = "";
@@ -554,11 +839,18 @@ document.querySelector("#addRoomModal form")?.addEventListener("submit", async (
         // ✅ Hide modal + refresh table
         hideRoomModal();
         renderRoomsTable();
+
     } catch (err) {
         console.error("Error adding infrastructure:", err);
         alert("Error saving infrastructure.");
+    } finally {
+        // 🔄 Restore button
+        submitBtn.innerHTML = originalBtnHTML;
+        submitBtn.disabled = false;
     }
 });
+
+
 
 
 
@@ -566,81 +858,109 @@ let roomsTableData = [];
 
 // ----------- Load Indoor Infrastructure Table (ignore deleted) -----------
 async function renderRoomsTable() {
-    const tbody = document.querySelector(".rooms-table tbody");
-    if (!tbody) return;
-    tbody.innerHTML = "";
+  const tbody = document.querySelector(".rooms-table tbody");
+  if (!tbody) return;
 
-    try {
-        // Load Indoor Infrastructure
-        const indoorSnap = await getDocs(collection(db, "IndoorInfrastructure"));
-        const rooms = indoorSnap.docs
-            .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(r => !r.is_deleted);
+  // 🌀 STEP 1: Show loader before anything else
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="5" class="table-loader">
+        <div class="spinner"></div>
+      </td>
+    </tr>
+  `;
 
-        // Load Infrastructure
-        const infraSnap = await getDocs(collection(db, "Infrastructure"));
-        const infrastructures = infraSnap.docs
-            .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(i => !i.is_deleted);
+  try {
+    // Load Indoor Infrastructure
+    const indoorSnap = await getDocs(collection(db, "IndoorInfrastructure"));
+    const rooms = indoorSnap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(r => !r.is_deleted);
 
-        // Build infra map
-        const infraMap = {};
-        infrastructures.forEach(infra => {
-            const key = infra.infra_id?.trim() || infra.id;
-            if (!infraMap[key]) {
-                infraMap[key] = `${infra.name} (${infra.infra_id || infra.id})`;
-            }
-        });
+    // Load Infrastructure
+    const infraSnap = await getDocs(collection(db, "Infrastructure"));
+    const infrastructures = infraSnap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(i => !i.is_deleted);
 
-        // Store for filtering/searching
-        roomsTableData = rooms.map(room => {
-            const infraKey = room.infra_id?.trim() || room.infrastructure_id?.trim() || "";
-            return {
-                ...room,
-                infraName: infraMap[infraKey] || `⚠️ Missing infra for ${infraKey}`
-            };
-        });
+    // Build infra map
+    const infraMap = {};
+    infrastructures.forEach(infra => {
+      const key = infra.infra_id?.trim() || infra.id;
+      if (!infraMap[key]) {
+        infraMap[key] = `${infra.name} (${infra.infra_id || infra.id})`;
+      }
+    });
 
-        // Sort by createdAt
-        roomsTableData.sort((a, b) => {
-            const timeA = a.createdAt?.seconds
-                ? a.createdAt.seconds * 1000
-                : a.createdAt?.toMillis
-                ? a.createdAt.toMillis()
-                : 0;
-            const timeB = b.createdAt?.seconds
-                ? b.createdAt.seconds * 1000
-                : b.createdAt?.toMillis
-                ? b.createdAt.toMillis()
-                : 0;
-            return timeA - timeB;
-        });
+    // Store for filtering/searching
+    roomsTableData = rooms.map(room => {
+      const infraKey =
+        room.infra_id?.trim() || room.infrastructure_id?.trim() || "";
+      return {
+        ...room,
+        infraName: infraMap[infraKey] || `⚠️ Missing infra for ${infraKey}`,
+      };
+    });
 
-        renderRoomsTableRows(roomsTableData);
+    // Sort by createdAt
+    roomsTableData.sort((a, b) => {
+      const timeA = a.createdAt?.seconds
+        ? a.createdAt.seconds * 1000
+        : a.createdAt?.toMillis
+        ? a.createdAt.toMillis()
+        : 0;
+      const timeB = b.createdAt?.seconds
+        ? b.createdAt.seconds * 1000
+        : b.createdAt?.toMillis
+        ? b.createdAt.toMillis()
+        : 0;
+      return timeA - timeB;
+    });
 
-    } catch (err) {
-        console.error("❌ Error loading Indoor Infrastructure: ", err);
-    }
+    // STEP 2: Render table rows after data loads
+    renderRoomsTableRows(roomsTableData);
+  } catch (err) {
+    console.error("❌ Error loading Indoor Infrastructure: ", err);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align:center; color:crimson;">
+          ❌ Failed to load data
+        </td>
+      </tr>
+    `;
+  }
 }
 
 function renderRoomsTableRows(data) {
-    const tbody = document.querySelector(".rooms-table tbody");
-    if (!tbody) return;
-    tbody.innerHTML = "";
-    data.forEach(room => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${room.room_id}</td>
-            <td>${room.name}</td>
-            <td>${room.infraName}</td>
-            <td>${room.indoor_type || ""}</td>
-            <td class="actions">
-                <button class="edit"><i class="fas fa-edit"></i></button>
-                <button class="delete"><i class="fas fa-trash"></i></button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
+  const tbody = document.querySelector(".rooms-table tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  if (!data.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align:center; color:#999;">
+          No rooms found.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  data.forEach(room => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${room.room_id}</td>
+      <td>${room.name}</td>
+      <td>${room.infraName}</td>
+      <td>${room.indoor_type || ""}</td>
+      <td class="actions">
+        <button class="edit"><i class="fas fa-edit"></i></button>
+        <button class="delete"><i class="fas fa-trash"></i></button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
 // Call on page load
@@ -652,19 +972,26 @@ document.addEventListener("DOMContentLoaded", renderRoomsTable);
 
 
 
-// ----------- Edit Room Modal Open Handler -----------
+// ----------- Edit Room Modal Open Handler with Loading Icon -----------
 document.querySelector(".rooms-table").addEventListener("click", async (e) => {
-    if (
-        !(e.target.classList.contains("fa-edit") ||
-          (e.target.closest("button") && e.target.closest("button").classList.contains("edit")))
-    ) return;
+    const button = e.target.closest("button.edit");
+    const icon = e.target.closest("i.fa-edit");
+
+    if (!button && !icon) return;
 
     const row = e.target.closest("tr");
     if (!row) return;
 
-    // Get room_id from the first cell
     const roomId = row.querySelector("td")?.textContent?.trim();
     if (!roomId) return;
+
+    // 🌀 Replace icon with spinner
+    const originalIconHTML = icon?.outerHTML || button?.innerHTML;
+    if (icon) {
+        icon.outerHTML = `<div class="spinner"></div>`;
+    } else if (button) {
+        button.innerHTML = `<div class="spinner"></div>`;
+    }
 
     try {
         // Fetch room data from IndoorInfrastructure
@@ -679,26 +1006,26 @@ document.querySelector(".rooms-table").addEventListener("click", async (e) => {
         const docSnap = snap.docs[0];
         const roomData = docSnap.data();
 
-        // Populate infrastructure dropdown and set value
+        // Populate dropdowns and set values
         await populateEditRoomInfraDropdown(roomData.infra_id);
         document.getElementById("editRoomInfra").value = roomData.infra_id ?? "";
-
-        // Populate indoor type dropdown and set value
         document.getElementById("editRoomType").value = roomData.indoor_type ?? "";
-
-        // Prefill fields
         document.getElementById("editRoomId").value = roomData.room_id ?? "";
         document.getElementById("editRoomName").value = roomData.name ?? "";
-
-        // Store docId for update
         document.getElementById("editRoomForm").dataset.docId = docSnap.id;
 
         // Show modal
         document.getElementById("editRoomModal").style.display = "flex";
     } catch (err) {
         console.error("Error opening edit room modal:", err);
+        alert("Failed to load room data.");
+    } finally {
+        // 🔄 Restore original icon
+        if (icon) icon.outerHTML = originalIconHTML;
+        if (button) button.innerHTML = originalIconHTML;
     }
 });
+
 
 // ----------- Populate Infrastructure Dropdown for Edit Room Modal -----------
 async function populateEditRoomInfraDropdown(selectedId) {
@@ -727,10 +1054,13 @@ async function populateEditRoomInfraDropdown(selectedId) {
 
 
 
-// ----------- Save Edited Room -----------
+// ----------- Save Edited Room with Loading Button -----------
 document.getElementById("editRoomForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const docId = e.target.dataset.docId;
+    const form = e.target;
+    const saveBtn = form.querySelector(".save-btn");
+
+    const docId = form.dataset.docId;
     if (!docId) {
         alert("No document ID found for update.");
         return;
@@ -746,6 +1076,13 @@ document.getElementById("editRoomForm").addEventListener("submit", async (e) => 
         return;
     }
 
+    // 🌀 Show loading on the button
+    const originalBtnHTML = saveBtn.innerHTML;
+    saveBtn.innerHTML = `<div class="spinner"></div> Saving...`;
+    saveBtn.disabled = true;
+    saveBtn.style.opacity = 0.7;
+    saveBtn.style.cursor = "not-allowed";
+
     try {
         await updateDoc(doc(db, "IndoorInfrastructure", docId), {
             name: name,
@@ -755,13 +1092,21 @@ document.getElementById("editRoomForm").addEventListener("submit", async (e) => 
             updatedAt: new Date()
         });
 
-        alert("Indoor Infrastructure updated!");
+        form.reset();
         document.getElementById("editRoomModal").style.display = "none";
         renderRoomsTable();
     } catch (err) {
         alert("Error updating indoor infrastructure: " + err);
+        console.error(err);
+    } finally {
+        // 🔄 Restore button
+        saveBtn.innerHTML = originalBtnHTML;
+        saveBtn.disabled = false;
+        saveBtn.style.opacity = 1;
+        saveBtn.style.cursor = "pointer";
     }
 });
+
 
 
 document.getElementById("cancelEditRoomBtn").addEventListener("click", () => {
@@ -856,11 +1201,21 @@ async function populateCampusIncludedSelect() {
 
 
 
-
-
-// ----------- Add Map Handler (Sequential Doc ID) -----------
+// ----------- Add Map Handler with Loading Spinner + Saving Text -----------
 document.querySelector("#addMapModal form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+
+    const submitBtn = e.target.querySelector(".save-btn");
+    if (!submitBtn) return;
+
+    const originalBtnHTML = submitBtn.innerHTML;
+
+    // 🟢 Show spinner + "Saving..." text + disable button
+    submitBtn.innerHTML = `
+        <div class="spinner"></div>
+        <span class="loading-text">Saving...</span>
+    `;
+    submitBtn.disabled = true;
 
     const mapName = document.getElementById("mapName").value.trim();
     const campusDropdown = document.getElementById("campusDropdown");
@@ -868,11 +1223,13 @@ document.querySelector("#addMapModal form")?.addEventListener("submit", async (e
 
     if (!mapName) {
         alert("Please enter a map name.");
+        submitBtn.innerHTML = originalBtnHTML;
+        submitBtn.disabled = false;
         return;
     }
 
     try {
-        // ✅ Generate the next document ID in format MAP-01
+        // Generate next document ID
         const mapsSnap = await getDocs(collection(db, "MapVersions"));
         const existingDocNumbers = mapsSnap.docs
             .map(doc => doc.id)
@@ -880,9 +1237,9 @@ document.querySelector("#addMapModal form")?.addEventListener("submit", async (e
             .map(id => parseInt(id.slice(4), 10))
             .filter(num => !isNaN(num));
         const nextNum = existingDocNumbers.length > 0 ? Math.max(...existingDocNumbers) + 1 : 1;
-        const newDocId = `MAP-${nextNum.toString().padStart(2, "0")}`; // MAP-01, MAP-02, etc.
+        const newDocId = `MAP-${nextNum.toString().padStart(2, "0")}`;
 
-        // ✅ Create the new document with that ID
+        // Create the new document
         const mapRef = doc(db, "MapVersions", newDocId);
         await setDoc(mapRef, {
             map_id: newDocId,
@@ -892,13 +1249,21 @@ document.querySelector("#addMapModal form")?.addEventListener("submit", async (e
             current_version: "v1.0.0"
         });
 
-        // ✅ Create the initial version document
+        // Initial version
         await setDoc(doc(db, "MapVersions", newDocId, "versions", "v1.0.0"), {
             nodes: [],
             edges: []
         });
 
-        // ✅ Log Activity
+        // Add simplified record
+        await addDoc(collection(db, "Maps"), {
+            map_id: newDocId,
+            map_name: mapName,
+            campus_included: campusIncluded,
+            createdAt: new Date()
+        });
+
+        // Activity Log
         await addDoc(collection(db, "ActivityLogs"), {
             timestamp: new Date(),
             activity: "Added Map",
@@ -906,7 +1271,6 @@ document.querySelector("#addMapModal form")?.addEventListener("submit", async (e
             description: `Created map "${mapName}" with version v1.0.0 and campuses: ${campusIncluded.join(", ") || "none"}.`
         });
 
-        alert(`Map created successfully with document ID: ${newDocId} and version v1.0.0!`);
         e.target.reset();
 
         // Reset dropdown UI
@@ -916,9 +1280,16 @@ document.querySelector("#addMapModal form")?.addEventListener("submit", async (e
         hideMapModal();
         renderMapsTable();
     } catch (err) {
+        console.error("Error creating map:", err);
         alert("Error creating map: " + err.message);
+    } finally {
+        // 🔄 Restore button
+        submitBtn.innerHTML = originalBtnHTML;
+        submitBtn.disabled = false;
     }
 });
+
+
 
 
 
@@ -993,89 +1364,113 @@ let mapsTableData = [];
 
 // ----------- Load Maps Table (with current_version) -----------
 async function renderMapsTable() {
-    const tbody = document.querySelector(".maps-table tbody");
-    if (!tbody) return;
-    tbody.innerHTML = "";
+  const tbody = document.querySelector(".maps-table tbody");
+  if (!tbody) return;
 
-    try {
-        let maps = [];
-        let campuses = [];
+  // 🌀 Show table loader before fetching
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="5" class="table-loader">
+        <div class="spinner"></div>
+      </td>
+    </tr>
+  `;
 
-        if (navigator.onLine) {
-            const mapsSnap = await getDocs(collection(db, "MapVersions"));
-            maps = mapsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(m => !m.is_deleted);
+  try {
+    let maps = [];
+    let campuses = [];
 
-            const campusSnap = await getDocs(collection(db, "Campus"));
-            campuses = campusSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        } else {
-            const [mapsRes, campusRes] = await Promise.all([
-                fetch("../assets/firestore/MapVersions.json"),
-                fetch("../assets/firestore/Campus.json")
-            ]);
-            maps = (await mapsRes.json()).filter(m => !m.is_deleted);
-            campuses = await campusRes.json();
-        }
+    if (navigator.onLine) {
+      const mapsSnap = await getDocs(collection(db, "MapVersions"));
+      maps = mapsSnap.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(m => !m.is_deleted);
 
-        // Sort maps by createdAt
-        maps.sort((a, b) => {
-            const tA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt?.toMillis?.() || 0;
-            const tB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt?.toMillis?.() || 0;
-            return tA - tB;
-        });
-
-        // Build campus lookup
-        const campusMap = {};
-        campuses.forEach(c => campusMap[c.campus_id || c.id] = c.campus_name);
-
-        // Store for search/filter
-        mapsTableData = maps.map(data => ({
-            ...data,
-            campusNames: Array.isArray(data.campus_included) && data.campus_included.length > 0
-                ? data.campus_included.map(id => campusMap[id] || id).join(", ")
-                : "—"
-        }));
-
-        mapsTableData.forEach(data => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${data.map_id || "—"}</td>
-                <td>${data.map_name || "—"}</td>
-                <td>${data.current_version || (data.versions && data.versions[0]?.id) || "—"}</td>
-                <td>${data.campusNames}</td>
-                <td class="actions">
-                    <button class="edit" data-id="${data.id}"><i class="fas fa-edit"></i></button>
-                    <button class="delete" data-id="${data.id}"><i class="fas fa-trash"></i></button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-        setupMapDeleteHandlers();
-    } catch (err) {
-        console.error("Error loading maps: ", err);
+      const campusSnap = await getDocs(collection(db, "Campus"));
+      campuses = campusSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } else {
+      const [mapsRes, campusRes] = await Promise.all([
+        fetch("../assets/firestore/MapVersions.json"),
+        fetch("../assets/firestore/Campus.json"),
+      ]);
+      maps = (await mapsRes.json()).filter(m => !m.is_deleted);
+      campuses = await campusRes.json();
     }
-}
 
-
-function renderMapsTableRows(data) {
-    const tbody = document.querySelector(".maps-table tbody");
-    if (!tbody) return;
-    tbody.innerHTML = "";
-    data.forEach(data => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${data.map_id || "—"}</td>
-            <td>${data.map_name || "—"}</td>
-            <td>${data.current_version || (data.versions && data.versions[0]?.id) || "—"}</td>
-            <td>${data.campusNames}</td>
-            <td class="actions">
-                <button class="edit" data-id="${data.id}"><i class="fas fa-edit"></i></button>
-                <button class="delete" data-id="${data.id}"><i class="fas fa-trash"></i></button>
-            </td>
-        `;
-        tbody.appendChild(tr);
+    // ===== Sort maps by createdAt =====
+    maps.sort((a, b) => {
+      const tA = a.createdAt?.seconds
+        ? a.createdAt.seconds * 1000
+        : a.createdAt?.toMillis?.() || 0;
+      const tB = b.createdAt?.seconds
+        ? b.createdAt.seconds * 1000
+        : b.createdAt?.toMillis?.() || 0;
+      return tA - tB;
     });
+
+    // ===== Build campus lookup =====
+    const campusMap = {};
+    campuses.forEach(c => (campusMap[c.campus_id || c.id] = c.campus_name));
+
+    // ===== Store for search/filter =====
+    mapsTableData = maps.map(data => ({
+      ...data,
+      campusNames:
+        Array.isArray(data.campus_included) && data.campus_included.length > 0
+          ? data.campus_included.map(id => campusMap[id] || id).join(", ")
+          : "—",
+    }));
+
+    renderMapsTableRows(mapsTableData);
+    setupMapDeleteHandlers();
+  } catch (err) {
+    console.error("❌ Error loading maps:", err);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align:center; color:#DC143C;">
+          ⚠️ Failed to load map data
+        </td>
+      </tr>
+    `;
+  }
 }
+
+// ----------- Render Rows -----------
+function renderMapsTableRows(data) {
+  const tbody = document.querySelector(".maps-table tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  if (!data.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align:center; color:#999;">
+          No maps found.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  data.forEach(data => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${data.map_id || "—"}</td>
+      <td>${data.map_name || "—"}</td>
+      <td>${data.current_version || (data.versions && data.versions[0]?.id) || "—"}</td>
+      <td>${data.campusNames}</td>
+      <td class="actions">
+        <button class="edit" data-id="${data.id}"><i class="fas fa-edit"></i></button>
+        <button class="delete" data-id="${data.id}"><i class="fas fa-trash"></i></button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Call on page load
+document.addEventListener("DOMContentLoaded", renderMapsTable);
+
 
 
 
@@ -1130,9 +1525,22 @@ async function populateMapSelect() {
     });
 }
 
-// ----------- Add Campus Handler -----------
+// ----------- Add Campus Handler with Loading Spinner + Saving Text -----------
 document.querySelector("#addCampusModal form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+
+    const submitBtn = e.target.querySelector(".save-btn");
+    if (!submitBtn) return;
+
+    const originalBtnHTML = submitBtn.innerHTML;
+
+    // 🟢 Show spinner + "Saving..." text + disable button
+    submitBtn.innerHTML = `
+        <div class="spinner"></div>
+        <span class="loading-text">Saving...</span>
+    `;
+    submitBtn.disabled = true;
+
     const campusId = document.getElementById("campusId").value.trim();
     const campusName = document.getElementById("campusName").value.trim();
     const mapSelect = document.getElementById("mapSelect");
@@ -1141,6 +1549,8 @@ document.querySelector("#addCampusModal form")?.addEventListener("submit", async
 
     if (!campusId || !campusName || !mapId) {
         alert("Please fill in all required fields.");
+        submitBtn.innerHTML = originalBtnHTML;
+        submitBtn.disabled = false;
         return;
     }
 
@@ -1161,19 +1571,24 @@ document.querySelector("#addCampusModal form")?.addEventListener("submit", async
             description: `Added campus "${campusName}" under map "${mapName}".`
         });
 
-        alert("Campus saved!");
-        // ✅ Update StaticDataVersions/GlobalInfo after saving or updating a node
+        // ✅ Update StaticDataVersions/GlobalInfo after saving
         const staticDataRef = doc(db, "StaticDataVersions", "GlobalInfo");
-        await updateDoc(staticDataRef, {
-            campus_updated: true,
-        });
+        await updateDoc(staticDataRef, { campus_updated: true });
+
         e.target.reset();
         hideCampusModal();
         renderCampusTable();
     } catch (err) {
+        console.error("Error saving campus:", err);
         alert("Error saving campus: " + err);
+    } finally {
+        // 🔄 Restore button
+        submitBtn.innerHTML = originalBtnHTML;
+        submitBtn.disabled = false;
     }
 });
+
+
 
 
 
@@ -1181,73 +1596,111 @@ let campusTableData = [];
 
 // ----------- Load Campus Table -----------
 async function renderCampusTable() {
-    const tbody = document.querySelector(".campus-table tbody");
-    if (!tbody) return;
-    tbody.innerHTML = "";
+  const tbody = document.querySelector(".campus-table tbody");
+  if (!tbody) return;
 
-    try {
-        let campuses = [];
-        let maps = [];
+  // 🌀 Show table loader before fetching
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="4" class="table-loader">
+        <div class="spinner"></div>
+      </td>
+    </tr>
+  `;
 
-        if (navigator.onLine) {
-            const campusSnap = await getDocs(collection(db, "Campus"));
-            campuses = campusSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(c => !c.is_deleted);
+  try {
+    let campuses = [];
+    let maps = [];
 
-            const mapsSnap = await getDocs(collection(db, "MapVersions"));
-            maps = mapsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(m => !m.is_deleted);
-        } else {
-            const [campusRes, mapsRes] = await Promise.all([
-                fetch("../assets/firestore/Campus.json"),
-                fetch("../assets/firestore/MapVersions.json")
-            ]);
-            campuses = (await campusRes.json()).filter(c => !c.is_deleted);
-            maps = (await mapsRes.json()).filter(m => !m.is_deleted);
-        }
+    if (navigator.onLine) {
+      const campusSnap = await getDocs(collection(db, "Campus"));
+      campuses = campusSnap.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(c => !c.is_deleted);
 
-        // Sort campuses by createdAt
-        campuses.sort((a, b) => {
-            const tA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt?.toMillis?.() || 0;
-            const tB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt?.toMillis?.() || 0;
-            return tA - tB;
-        });
-
-        // Build map lookup
-        const mapMap = {};
-        maps.forEach(m => mapMap[m.map_id || m.id] = m.map_name);
-
-        // Store for search/filter
-        campusTableData = campuses.map(data => ({
-            ...data,
-            mapName: mapMap[data.map_id] || data.map_id || "—"
-        }));
-
-        renderCampusTableRows(campusTableData);
-
-        setupCampusDeleteHandlers();
-    } catch (err) {
-        console.error("Error loading campuses: ", err);
+      const mapsSnap = await getDocs(collection(db, "MapVersions"));
+      maps = mapsSnap.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(m => !m.is_deleted);
+    } else {
+      const [campusRes, mapsRes] = await Promise.all([
+        fetch("../assets/firestore/Campus.json"),
+        fetch("../assets/firestore/MapVersions.json"),
+      ]);
+      campuses = (await campusRes.json()).filter(c => !c.is_deleted);
+      maps = (await mapsRes.json()).filter(m => !m.is_deleted);
     }
-}
 
-
-function renderCampusTableRows(data) {
-    const tbody = document.querySelector(".campus-table tbody");
-    if (!tbody) return;
-    tbody.innerHTML = "";
-    data.forEach(data => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${data.campus_id}</td>
-            <td>${data.campus_name}</td>
-            <td>${data.mapName}</td>
-            <td class="actions">
-                <button class="edit"><i class="fas fa-edit"></i></button>
-                <button class="delete" data-id="${data.id}"><i class="fas fa-trash"></i></button>
-            </td>
-        `;
-        tbody.appendChild(tr);
+    // ===== Sort campuses by createdAt =====
+    campuses.sort((a, b) => {
+      const tA = a.createdAt?.seconds
+        ? a.createdAt.seconds * 1000
+        : a.createdAt?.toMillis?.() || 0;
+      const tB = b.createdAt?.seconds
+        ? b.createdAt.seconds * 1000
+        : b.createdAt?.toMillis?.() || 0;
+      return tA - tB;
     });
+
+    // ===== Build map lookup =====
+    const mapMap = {};
+    maps.forEach(m => (mapMap[m.map_id || m.id] = m.map_name));
+
+    // ===== Store for search/filter =====
+    campusTableData = campuses.map(data => ({
+      ...data,
+      mapName: mapMap[data.map_id] || data.map_id || "—",
+    }));
+
+    renderCampusTableRows(campusTableData);
+    setupCampusDeleteHandlers();
+  } catch (err) {
+    console.error("❌ Error loading campuses:", err);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" style="text-align:center; color:#DC143C;">
+          ⚠️ Failed to load campus data
+        </td>
+      </tr>
+    `;
+  }
 }
+
+// ----------- Render Rows -----------
+function renderCampusTableRows(data) {
+  const tbody = document.querySelector(".campus-table tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  if (!data.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" style="text-align:center; color:#999;">
+          No campuses found.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  data.forEach(data => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${data.campus_id || "—"}</td>
+      <td>${data.campus_name || "—"}</td>
+      <td>${data.mapName}</td>
+      <td class="actions">
+        <button class="edit"><i class="fas fa-edit"></i></button>
+        <button class="delete" data-id="${data.id}"><i class="fas fa-trash"></i></button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Call on page load
+document.addEventListener("DOMContentLoaded", renderCampusTable);
+
 
 
 
@@ -1256,16 +1709,26 @@ function renderCampusTableRows(data) {
 
 // ======================= EDIT CATEGORY SECTION =========================
 
-// ----------- Open Edit Category Modal on Table Click -----------
+// ----------- Open Edit Category Modal on Table Click (with Loading Icon) -----------
 document.querySelector("#categoriesTableBody").addEventListener("click", async (e) => {
-    if (!(e.target.classList.contains("fa-edit") || (e.target.closest("button")?.classList.contains("edit")))) 
-        return;
+    const button = e.target.closest("button.edit");
+    const icon = e.target.closest("i.fa-edit");
+
+    if (!button && !icon) return;
 
     const row = e.target.closest("tr");
     if (!row) return;
 
     const docId = row.dataset.id; // ✅ direct from row
     if (!docId) return;
+
+    // 🌀 Replace icon with spinner
+    const originalIconHTML = icon?.outerHTML || button?.innerHTML;
+    if (icon) {
+        icon.outerHTML = `<div class="spinner"></div>`;
+    } else if (button) {
+        button.innerHTML = `<div class="spinner"></div>`;
+    }
 
     try {
         const docRef = doc(db, "Categories", docId);
@@ -1276,30 +1739,31 @@ document.querySelector("#categoriesTableBody").addEventListener("click", async (
 
         // Prefill form fields
         document.getElementById("editCategoryName").value = data.name ?? "";
-        document.getElementById("editCategoryColor").value = data.color ?? "#000000"; // <-- fix: prefill color
+        document.getElementById("editCategoryColor").value = data.color ?? "#000000";
 
         // Store docId in form for update
         document.getElementById("editCategoryForm").dataset.docId = docId;
-
-        // ✅ Update StaticDataVersions/GlobalInfo after saving or updating a node
-        const staticDataRef = doc(db, "StaticDataVersions", "GlobalInfo");
-        await updateDoc(staticDataRef, {
-            categories_updated: true,
-        });
 
         // Show modal
         document.getElementById("editCategoryModal").style.display = "flex";
     } catch (err) {
         console.error("Error opening edit category modal:", err);
+    } finally {
+        // 🔄 Restore original icon
+        if (icon) icon.outerHTML = originalIconHTML;
+        if (button) button.innerHTML = originalIconHTML;
     }
 });
 
 
-// ----------- Save Edited Category -----------
+
+// ----------- Save Edited Category with Loading Button -----------
 document.getElementById("editCategoryForm").addEventListener("submit", async (e) => {
     e.preventDefault();
+    const form = e.target;
+    const saveBtn = form.querySelector(".save-btn");
 
-    const docId = e.target.dataset.docId;
+    const docId = form.dataset.docId;
     if (!docId) {
         alert("No document ID found for update.");
         return;
@@ -1313,6 +1777,13 @@ document.getElementById("editCategoryForm").addEventListener("submit", async (e)
         return;
     }
 
+    // 🌀 Show loading spinner and "Saving..." text
+    const originalBtnHTML = saveBtn.innerHTML;
+    saveBtn.innerHTML = `<div class="spinner"></div><span class="saving-text">Saving...</span>`;
+    saveBtn.disabled = true;
+    saveBtn.style.opacity = 0.7;
+    saveBtn.style.cursor = "not-allowed";
+
     try {
         await updateDoc(doc(db, "Categories", docId), {
             name: name,
@@ -1320,12 +1791,20 @@ document.getElementById("editCategoryForm").addEventListener("submit", async (e)
             updatedAt: new Date()
         });
 
-        alert("Category updated!");
+
+        form.reset();
         document.getElementById("editCategoryModal").style.display = "none";
         renderCategoriesTable();
         populateCategoryDropdownForInfra();
     } catch (err) {
         alert("Error updating category: " + err);
+        console.error(err);
+    } finally {
+        // 🔄 Restore button
+        saveBtn.innerHTML = originalBtnHTML;
+        saveBtn.disabled = false;
+        saveBtn.style.opacity = 1;
+        saveBtn.style.cursor = "pointer";
     }
 });
 
@@ -1358,12 +1837,26 @@ document.getElementById("editCategoryModal").addEventListener("click", (e) => {
 
 // ======================= EDIT MAP SECTION =========================
 
-// ----------- Open Edit Map Modal -----------
+// ----------- Open Edit Map Modal (with Loading Icon) -----------
 document.querySelector(".maps-table tbody").addEventListener("click", async (e) => {
-    if (!e.target.closest("button.edit")) return;
+    const button = e.target.closest("button.edit");
+    const icon = e.target.closest("i.fa-edit");
 
-    const mapId = e.target.closest("button.edit").dataset.id;
+    if (!button && !icon) return;
+
+    const row = e.target.closest("tr");
+    if (!row) return;
+
+    const mapId = button?.dataset.id || row.dataset.id;
     if (!mapId) return;
+
+    // 🌀 Replace icon with spinner
+    const originalIconHTML = icon?.outerHTML || button?.innerHTML;
+    if (icon) {
+        icon.outerHTML = `<div class="spinner"></div>`;
+    } else if (button) {
+        button.innerHTML = `<div class="spinner"></div>`;
+    }
 
     try {
         const docRef = doc(db, "MapVersions", mapId);
@@ -1385,8 +1878,13 @@ document.querySelector(".maps-table tbody").addEventListener("click", async (e) 
         document.getElementById("editMapModal").style.display = "flex";
     } catch (err) {
         console.error("Error opening edit map modal:", err);
+    } finally {
+        // 🔄 Restore original icon
+        if (icon) icon.outerHTML = originalIconHTML;
+        if (button) button.innerHTML = originalIconHTML;
     }
 });
+
 
 // ----------- Populate Campus Dropdown for Edit Modal (same as your Add Map dropdown) -----------
 async function populateEditCampusDropdown(selectedCampuses = []) {
@@ -1448,11 +1946,13 @@ async function populateEditCampusDropdown(selectedCampuses = []) {
 }
 
 
-// ----------- Save Edited Map -----------
+// ----------- Save Edited Map with Loading Button -----------
 document.getElementById("editMapForm").addEventListener("submit", async (e) => {
     e.preventDefault();
+    const form = e.target;
+    const saveBtn = form.querySelector(".save-btn");
 
-    const docId = e.target.dataset.docId;
+    const docId = form.dataset.docId;
     if (!docId) return alert("No Map ID found for update.");
 
     const mapName = document.getElementById("editMapName").value.trim();
@@ -1460,6 +1960,13 @@ document.getElementById("editMapForm").addEventListener("submit", async (e) => {
     const campusIncluded = campusDropdown.getSelectedValues() || [];
 
     if (!mapName) return alert("Please enter a map name.");
+
+    // 🌀 Show loading spinner and "Saving..." text
+    const originalBtnHTML = saveBtn.innerHTML;
+    saveBtn.innerHTML = `<div class="spinner"></div><span class="saving-text">Saving...</span>`;
+    saveBtn.disabled = true;
+    saveBtn.style.opacity = 0.7;
+    saveBtn.style.cursor = "not-allowed";
 
     try {
         await updateDoc(doc(db, "MapVersions", docId), {
@@ -1469,12 +1976,21 @@ document.getElementById("editMapForm").addEventListener("submit", async (e) => {
         });
 
         alert("Map updated successfully!");
+        form.reset();
         document.getElementById("editMapModal").style.display = "none";
         renderMapsTable();
     } catch (err) {
         alert("Error updating map: " + err.message);
+        console.error(err);
+    } finally {
+        // 🔄 Restore button
+        saveBtn.innerHTML = originalBtnHTML;
+        saveBtn.disabled = false;
+        saveBtn.style.opacity = 1;
+        saveBtn.style.cursor = "pointer";
     }
 });
+
 
 // ----------- Cancel Button -----------
 document.getElementById("cancelEditMapBtn").addEventListener("click", () => {
@@ -1491,15 +2007,26 @@ document.getElementById("editMapModal").addEventListener("click", (e) => {
 
 
 
-// ----------- Open Edit Campus Modal -----------
+// ----------- Open Edit Campus Modal (with Loading Icon) -----------
 document.querySelector(".campus-table tbody").addEventListener("click", async (e) => {
-    if (!e.target.closest("button.edit")) return;
+    const button = e.target.closest("button.edit");
+    const icon = e.target.closest("i.fa-edit");
+
+    if (!button && !icon) return;
 
     const row = e.target.closest("tr");
     if (!row) return;
 
     const campusId = row.querySelector("td")?.textContent?.trim();
     if (!campusId) return;
+
+    // 🌀 Replace icon with spinner
+    const originalIconHTML = icon?.outerHTML || button?.innerHTML;
+    if (icon) {
+        icon.outerHTML = `<div class="spinner"></div>`;
+    } else if (button) {
+        button.innerHTML = `<div class="spinner"></div>`;
+    }
 
     try {
         const q = query(collection(db, "Campus"), where("campus_id", "==", campusId));
@@ -1518,6 +2045,7 @@ document.querySelector(".campus-table tbody").addEventListener("click", async (e
 
         // Store docId for updating
         document.getElementById("editCampusForm").dataset.docId = docSnap.id;
+
         // ✅ Update StaticDataVersions/GlobalInfo after saving or updating a node
         const staticDataRef = doc(db, "StaticDataVersions", "GlobalInfo");
         await updateDoc(staticDataRef, {
@@ -1528,8 +2056,13 @@ document.querySelector(".campus-table tbody").addEventListener("click", async (e
         document.getElementById("editCampusModal").style.display = "flex";
     } catch (err) {
         console.error("Error opening edit campus modal:", err);
+    } finally {
+        // 🔄 Restore original icon
+        if (icon) icon.outerHTML = originalIconHTML;
+        if (button) button.innerHTML = originalIconHTML;
     }
 });
+
 
 // ----------- Populate Map Dropdown for Edit Modal -----------
 async function populateEditMapSelect(selectedMapId = "") {
@@ -1553,10 +2086,13 @@ async function populateEditMapSelect(selectedMapId = "") {
     });
 }
 
-// ----------- Save Edited Campus -----------
+// ----------- Save Edited Campus with Loading Button -----------
 document.getElementById("editCampusForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const docId = e.target.dataset.docId;
+    const form = e.target;
+    const saveBtn = form.querySelector(".save-btn");
+
+    const docId = form.dataset.docId;
     if (!docId) return alert("No document ID found for update.");
 
     const campusName = document.getElementById("editCampusName").value.trim();
@@ -1564,7 +2100,17 @@ document.getElementById("editCampusForm").addEventListener("submit", async (e) =
     const mapId = mapSelect.value;
     const mapName = mapSelect.options[mapSelect.selectedIndex]?.dataset.mapName || "";
 
-    if (!campusName || !mapId) return alert("Please fill in all required fields.");
+    if (!campusName || !mapId) {
+        alert("Please fill in all required fields.");
+        return;
+    }
+
+    // 🌀 Show loading spinner and "Saving..." text
+    const originalBtnHTML = saveBtn.innerHTML;
+    saveBtn.innerHTML = `<div class="spinner"></div><span class="saving-text">Saving...</span>`;
+    saveBtn.disabled = true;
+    saveBtn.style.opacity = 0.7;
+    saveBtn.style.cursor = "not-allowed";
 
     try {
         await updateDoc(doc(db, "Campus", docId), {
@@ -1573,7 +2119,7 @@ document.getElementById("editCampusForm").addEventListener("submit", async (e) =
             updatedAt: new Date()
         });
 
-        // Optional: log activity
+        // Log activity
         await addDoc(collection(db, "ActivityLogs"), {
             timestamp: new Date(),
             activity: "Edited Campus",
@@ -1582,12 +2128,21 @@ document.getElementById("editCampusForm").addEventListener("submit", async (e) =
         });
 
         alert("Campus updated successfully!");
+        form.reset();
         document.getElementById("editCampusModal").style.display = "none";
         renderCampusTable();
     } catch (err) {
         alert("Error updating campus: " + err.message);
+        console.error(err);
+    } finally {
+        // 🔄 Restore button
+        saveBtn.innerHTML = originalBtnHTML;
+        saveBtn.disabled = false;
+        saveBtn.style.opacity = 1;
+        saveBtn.style.cursor = "pointer";
     }
 });
+
 
 // ----------- Cancel Button -----------
 document.getElementById("cancelEditCampusBtn").addEventListener("click", () => {
@@ -1726,66 +2281,527 @@ cancelCampusBtn.addEventListener('click', hideCampusModal);
 
 
 
+
+
+
+
+
+
+
+
+
+
+async function convertFileToBase64(file, maxWidth = 800, maxHeight = 800) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth || height > maxHeight) {
+          if (width / height > maxWidth / maxHeight) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.8));
+      };
+      img.src = e.target.result;
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+
+
 // ======================= EDIT INFRASTRUCTURE SECTION =========================
 
-// ----------- Edit Infrastructure Modal Open Handler -----------
-document.querySelector(".infra-table").addEventListener("click", async (e) => {
-    // Only respond to edit icon/button clicks
-    if (
-        !(e.target.classList.contains("fa-edit") ||
-          (e.target.closest("button") && e.target.closest("button").classList.contains("edit")))
-    ) return;
+// ---------------- Edit Infra Image Upload + Blur Editor ----------------
 
-    const row = e.target.closest("tr");
-    if (!row) return;
+// Get elements
+const editUploadInput = document.getElementById("editInfraImage");
+const editUploadBox = document.getElementById("editUploadBox");
+const editPreview = document.getElementById("editInfraPreview");
 
-    // Get infra_id from the first cell
-    const infraId = row.querySelector("td")?.textContent?.trim();
-    if (!infraId) return;
+// ====== Blur Editor Elements ======
+const editInfraBlurModal = document.getElementById("editInfraImageModal");
+const editInfraBlurCanvas = document.getElementById("editInfraCanvas");
 
-    try {
-        // Fetch infrastructure data from Firestore
-        const infraQ = query(collection(db, "Infrastructure"), where("infra_id", "==", infraId));
-        const snap = await getDocs(infraQ);
+const editInfraCtx = editInfraBlurCanvas.getContext("2d");
 
-        if (snap.empty) {
-            alert("Infrastructure not found in Firestore");
-            return;
-        }
+const editInfraUndoBtn = document.getElementById("editInfraUndoBtn");
+const editInfraRedoBtn = document.getElementById("editInfraRedoBtn");
+const editInfraSaveBtn = document.getElementById("editInfraSaveBtn");
+const editInfraCancelBtn = document.getElementById("editInfraCancelBtn");
+const editInfraBlurRange = document.getElementById("editInfraBlurRange");
+const editInfraBlurValue = document.getElementById("editInfraBlurValue");
 
-        const docSnap = snap.docs[0];
-        const infraData = docSnap.data();
+let editInfraOriginalImage = new Image();
+let editInfraManualRects = [];
+let editInfraAppliedBlurs = [];
+let editInfraUndoStack = [];
+let editInfraRedoStack = [];
+let editInfraDrawing = false;
+let editInfraStartX = 0,
+    editInfraStartY = 0;
 
-        // Populate category dropdown and set value
-        await populateEditInfraCategoryDropdown(infraData.category_id);
-        document.getElementById("editInfraCategory").value = infraData.category_id ?? "";
+const EDIT_INFRA_MAX_DIM = 1024;
 
-        // Prefill fields
-        document.getElementById("editInfraId").value = infraData.infra_id ?? "";
-        document.getElementById("editInfraName").value = infraData.name ?? "";
-        document.getElementById("editInfraPhone").value = infraData.phone ?? "";
-        document.getElementById("editInfraEmail").value = infraData.email ?? "";
+// ====== Open Blur Editor ======
+function openEditInfraBlurModal(file) {
+    const url = URL.createObjectURL(file);
+    editInfraOriginalImage = new Image();
+    editInfraOriginalImage.onload = () => {
+        const scale = Math.min(
+            1,
+            EDIT_INFRA_MAX_DIM /
+                Math.max(
+                    editInfraOriginalImage.naturalWidth,
+                    editInfraOriginalImage.naturalHeight
+                )
+        );
+        editInfraBlurCanvas.width = Math.round(
+            editInfraOriginalImage.naturalWidth * scale
+        );
+        editInfraBlurCanvas.height = Math.round(
+            editInfraOriginalImage.naturalHeight * scale
+        );
+        editInfraCtx.drawImage(
+            editInfraOriginalImage,
+            0,
+            0,
+            editInfraBlurCanvas.width,
+            editInfraBlurCanvas.height
+        );
+        editInfraManualRects = [];
+        editInfraAppliedBlurs = [];
+        editInfraUndoStack = [];
+        editInfraRedoStack = [];
+        saveEditInfraState();
+        editInfraBlurModal.style.display = "flex";
+    };
+    editInfraOriginalImage.src = url;
+}
 
-        // Image preview
-        const preview = document.getElementById("editInfraPreview");
-        if (infraData.image_url) {
-            preview.src = infraData.image_url;
-            preview.style.display = "block";
-        } else {
-            preview.src = "";
-            preview.style.display = "none";
-        }
+// ====== State Management ======
+function saveEditInfraState() {
+    editInfraUndoStack.push(
+        editInfraCtx.getImageData(
+            0,
+            0,
+            editInfraBlurCanvas.width,
+            editInfraBlurCanvas.height
+        )
+    );
+    editInfraRedoStack = [];
+}
+function restoreEditInfraState(state) {
+    editInfraCtx.putImageData(state, 0, 0);
+}
 
-        // Store docId for update
-        document.getElementById("editInfraForm").dataset.docId = docSnap.id;
+// ====== Draw Overlay ======
+function drawEditInfraOverlay() {
+    clearEditInfraCanvas();
+    editInfraCtx.drawImage(
+        editInfraOriginalImage,
+        0,
+        0,
+        editInfraBlurCanvas.width,
+        editInfraBlurCanvas.height
+    );
+    editInfraAppliedBlurs.forEach((r) =>
+        blurEditInfraRegion(r.x, r.y, r.w, r.h, r.blur)
+    );
+    editInfraCtx.save();
+    editInfraCtx.lineWidth = Math.max(
+        2,
+        Math.round(editInfraBlurCanvas.width / 400)
+    );
+    editInfraCtx.strokeStyle = "rgba(255,0,0,0.8)";
+    editInfraManualRects.forEach((r) =>
+        editInfraCtx.strokeRect(r.x, r.y, r.w, r.h)
+    );
+    editInfraCtx.restore();
+}
 
-        // Show modal
-        document.getElementById("editInfraModal").style.display = "flex";
+function blurEditInfraRegion(x, y, w, h, blurPx) {
+  if (!editInfraBlurCanvas || !editInfraCtx) return;
 
-    } catch (err) {
-        console.error("Error opening edit modal:", err);
+  // Clamp rectangle
+  x = Math.max(0, x);
+  y = Math.max(0, y);
+  w = Math.max(1, w);
+  h = Math.max(1, h);
+
+  // Temporary canvas just for this rectangle
+  const temp = document.createElement("canvas");
+  const tctx = temp.getContext("2d");
+
+  temp.width = w;
+  temp.height = h;
+
+  // Copy region from main canvas
+  tctx.clearRect(0, 0, w, h);
+  tctx.drawImage(editInfraBlurCanvas, x, y, w, h, 0, 0, w, h);
+
+  // Apply blur to that isolated region
+  tctx.save();
+  tctx.filter = `blur(${blurPx}px)`;
+  tctx.drawImage(temp, 0, 0);
+  tctx.restore();
+
+  // Paste blurred region back to main canvas
+  editInfraCtx.drawImage(temp, 0, 0, w, h, x, y, w, h);
+}
+
+
+
+
+
+// ====== Mouse Events ======
+editInfraBlurCanvas.addEventListener("mousedown", (e) => {
+    editInfraDrawing = true;
+    const rect = editInfraBlurCanvas.getBoundingClientRect();
+    editInfraStartX = Math.round(
+        (e.clientX - rect.left) *
+            (editInfraBlurCanvas.width / rect.width)
+    );
+    editInfraStartY = Math.round(
+        (e.clientY - rect.top) *
+            (editInfraBlurCanvas.height / rect.height)
+    );
+});
+editInfraBlurCanvas.addEventListener("mousemove", (e) => {
+    if (!editInfraDrawing) return;
+    const rect = editInfraBlurCanvas.getBoundingClientRect();
+    const currX = Math.round(
+        (e.clientX - rect.left) *
+            (editInfraBlurCanvas.width / rect.width)
+    );
+    const currY = Math.round(
+        (e.clientY - rect.top) *
+            (editInfraBlurCanvas.height / rect.height)
+    );
+    const x = Math.min(editInfraStartX, currX);
+    const y = Math.min(editInfraStartY, currY);
+    const w = Math.abs(currX - editInfraStartX);
+    const h = Math.abs(currY - editInfraStartY);
+    editInfraManualRects = [{ x, y, w, h }];
+    drawEditInfraOverlay();
+});
+window.addEventListener("mouseup", () => {
+    if (!editInfraDrawing) return;
+    editInfraDrawing = false;
+    if (editInfraManualRects.length) {
+        const r = editInfraManualRects[0];
+        const blurPx = parseInt(editInfraBlurRange.value, 10);
+        editInfraAppliedBlurs.push({ ...r, blur: blurPx });
+        editInfraManualRects = [];
+        saveEditInfraState();
+        drawEditInfraOverlay();
     }
 });
+
+// ====== Undo / Redo ======
+editInfraUndoBtn.addEventListener("click", () => {
+    if (editInfraUndoStack.length > 1) {
+        editInfraRedoStack.push(editInfraUndoStack.pop());
+        restoreEditInfraState(
+            editInfraUndoStack[editInfraUndoStack.length - 1]
+        );
+        editInfraAppliedBlurs.pop();
+    }
+});
+editInfraRedoBtn.addEventListener("click", () => {
+    while (editInfraRedoStack.length > 0) {
+        const redoData = editInfraRedoStack.pop();
+        restoreEditInfraState(redoData);
+    }
+    editInfraAppliedBlurs = [];
+});
+
+editInfraSaveBtn.addEventListener("click", () => {
+  // apply all blur regions directly
+  editInfraAppliedBlurs.forEach((r) =>
+    blurEditInfraRegion(r.x, r.y, r.w, r.h, r.blur)
+  );
+  editInfraManualRects = [];
+
+  // export the final blurred result
+  const tempCanvas = document.createElement("canvas");
+  const MAX_SAVE_DIM = 1024;
+  const scale = Math.min(
+    1,
+    MAX_SAVE_DIM / Math.max(editInfraBlurCanvas.width, editInfraBlurCanvas.height)
+  );
+  tempCanvas.width = Math.round(editInfraBlurCanvas.width * scale);
+  tempCanvas.height = Math.round(editInfraBlurCanvas.height * scale);
+  const tctx = tempCanvas.getContext("2d");
+  tctx.drawImage(editInfraBlurCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+
+  const base64 = tempCanvas.toDataURL("image/jpeg", 0.8);
+  editPreview.src = base64;
+  editPreview.style.display = "block";
+  editInfraBlurModal.style.display = "none";
+  const label = editUploadBox.querySelector(".upload-label");
+  label.style.display = "none";
+  // clear the file input so it doesn’t re-upload the original
+  editUploadInput.value = "";
+});
+
+
+// ====== Cancel ======
+editInfraCancelBtn.addEventListener("click", () => {
+    editInfraBlurModal.style.display = "none";
+});
+
+// ====== Blur Range ======
+editInfraBlurRange.addEventListener("input", () => {
+    editInfraBlurValue.textContent = editInfraBlurRange.value + "px";
+});
+
+// ====== Helpers ======
+function clearEditInfraCanvas() {
+    editInfraCtx.clearRect(
+        0,
+        0,
+        editInfraBlurCanvas.width,
+        editInfraBlurCanvas.height
+    );
+}
+
+// ====== Trigger Blur Modal After Upload ======
+editPreview.addEventListener("click", () => {
+    editUploadInput.click();
+});
+editUploadInput.addEventListener("change", () => {
+    const file = editUploadInput.files[0];
+    if (!file) return;
+    openEditInfraBlurModal(file);
+});
+
+// =============================================================
+// Existing edit infra modal logic (unchanged)
+// =============================================================
+
+// ...existing code...
+    // Populate modal when editing
+    document
+      .querySelector(".infra-table")
+      .addEventListener("click", async (e) => {
+        const button = e.target.closest("button.edit");
+        const icon = e.target.closest("i.fa-edit");
+
+        if (!button && !icon) return;
+
+        const row = e.target.closest("tr");
+        if (!row) return;
+
+        const infraId = row.querySelector("td")?.textContent?.trim();
+        if (!infraId) return;
+
+        // 🌀 Replace icon with spinner
+        const originalIconHTML = icon?.outerHTML || button?.innerHTML;
+        if (icon) {
+          icon.outerHTML = `<div class="spinner"></div>`;
+        } else if (button) {
+          button.innerHTML = `<div class="spinner"></div>`;
+        }
+
+        try {
+          const infraQ = query(
+            collection(db, "Infrastructure"),
+            where("infra_id", "==", infraId)
+          );
+          const snap = await getDocs(infraQ);
+
+          if (snap.empty) {
+            alert("Infrastructure not found in Firestore");
+            return;
+          }
+
+          const docSnap = snap.docs[0];
+          const infraData = docSnap.data();
+
+          await populateEditInfraCategoryDropdown(infraData.category_id);
+          document.getElementById("editInfraCategory").value =
+            infraData.category_id ?? "";
+
+          document.getElementById("editInfraId").value =
+            infraData.infra_id ?? "";
+          document.getElementById("editInfraName").value =
+            infraData.name ?? "";
+          document.getElementById("editInfraPhone").value =
+            infraData.phone ?? "";
+          document.getElementById("editInfraEmail").value =
+            infraData.email ?? "";
+
+          // Show existing image inside upload box
+          if (infraData.image_url) {
+            editPreview.src = infraData.image_url;
+            editPreview.style.display = "block";
+            editUploadBox.querySelector(".upload-label").style.display = "none";
+          } else {
+            editPreview.src = "";
+            editPreview.style.display = "none";
+            editUploadBox.querySelector(".upload-label").style.display = "flex";
+          }
+
+          document.getElementById("editInfraForm").dataset.docId = docSnap.id;
+
+          // Reset the edit modal save button to a known good state (prevents leftover spinner)
+          const editSaveBtn = document.querySelector("#editInfraForm .save-btn");
+          if (editSaveBtn) {
+            // If your UI uses an icon inside the button replace the string below with proper HTML
+            editSaveBtn.innerHTML = "Save";
+            editSaveBtn.disabled = false;
+            editSaveBtn.style.opacity = 1;
+            editSaveBtn.style.cursor = "pointer";
+          }
+
+          document.getElementById("editInfraModal").style.display = "flex";
+        } catch (err) {
+          console.error("Error opening edit modal:", err);
+        } finally {
+          // 🔄 Restore original icon
+          if (icon) icon.outerHTML = originalIconHTML;
+          if (button) button.innerHTML = originalIconHTML;
+        }
+      });
+
+
+
+document
+  .getElementById("editInfraForm")
+  .addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const submitBtn = e.target.querySelector(".save-btn");
+    if (!submitBtn) return;
+
+    // Save original button HTML
+    const originalBtnHTML = submitBtn.innerHTML;
+
+    // 🟢 Show spinner + disable button
+    submitBtn.innerHTML = `<div class="spinner"></div>`;
+    submitBtn.disabled = true;
+
+    const docId = e.target.dataset.docId;
+    if (!docId) {
+      alert("No infrastructure selected");
+      // restore button
+      submitBtn.innerHTML = originalBtnHTML;
+      submitBtn.disabled = false;
+      return;
+    }
+
+    const name = document.getElementById("editInfraName").value.trim();
+    const categoryId = document.getElementById("editInfraCategory").value;
+    const phone = document.getElementById("editInfraPhone").value.trim();
+    const email = document.getElementById("editInfraEmail").value.trim();
+
+    let imageUrl = editPreview.src || "";
+
+    try {
+      // Use preview if it's a data URL (blurred/compressed)
+      if (!(imageUrl && imageUrl.startsWith("data:"))) {
+        const file = editUploadInput.files[0];
+        if (file) {
+          imageUrl = await convertFileToBase64(file);
+        }
+        // else keep existing URL (already in imageUrl)
+      }
+
+      await updateDoc(doc(db, "Infrastructure", docId), {
+        name,
+        category_id: categoryId,
+        phone,
+        email,
+        image_url: imageUrl,
+      });
+
+      document.getElementById("editInfraModal").style.display = "none";
+      editPreview.src = "";
+      editPreview.style.display = "none";
+      editUploadBox.querySelector(".upload-label").style.display = "flex";
+      editUploadInput.value = "";
+
+      renderInfraTable();
+    } catch (err) {
+      console.error("Error saving infrastructure:", err);
+    } finally {
+      // ✅ Ensure the edit modal save button is reset (no leftover spinner)
+      try {
+        // restore the submit button to original content/state
+        if (submitBtn) {
+          submitBtn.innerHTML = originalBtnHTML;
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = 1;
+          submitBtn.style.cursor = "pointer";
+        }
+      } catch (ex) {
+        // defensive: ignore if something unexpected happens
+        console.warn("Failed to restore edit save button:", ex);
+      }
+
+      // Avoid referencing undeclared variables (icon/button may not exist in this scope)
+      if (typeof icon !== "undefined" && icon && typeof originalIconHTML !== "undefined") {
+        try { icon.outerHTML = originalIconHTML; } catch (e) { /* ignore */ }
+      }
+      if (typeof button !== "undefined" && button && typeof originalIconHTML !== "undefined") {
+        try { button.innerHTML = originalIconHTML; } catch (e) { /* ignore */ }
+      }
+    }
+  });
+// ...existing code...
+
+// Cancel
+document
+    .getElementById("cancelEditInfraBtn")
+    .addEventListener("click", () => {
+        document.getElementById("editInfraModal").style.display = "none";
+        editPreview.src = "";
+        editPreview.style.display = "none";
+        editUploadBox.querySelector(".upload-label").style.display = "flex";
+        editUploadInput.value = "";
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ----------- Populate Category Dropdown for Edit Modal -----------
 async function populateEditInfraCategoryDropdown(selectedId) {
@@ -1807,14 +2823,23 @@ async function populateEditInfraCategoryDropdown(selectedId) {
     if (selectedId) select.value = selectedId;
 }
 
-// ----------- Save Edited Infrastructure -----------
+// ----------- Save Edited Infrastructure (with Loading Button) -----------
 document.getElementById("editInfraForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const docId = e.target.dataset.docId;
+    const form = e.target;
+    const docId = form.dataset.docId;
     if (!docId) {
         alert("No document ID found for update.");
         return;
     }
+
+    const saveBtn = form.querySelector(".save-btn");
+    const originalBtnHTML = saveBtn.innerHTML;
+
+    // 🌀 Show loading in button
+    saveBtn.innerHTML = `<div class="spinner"></div> Saving...`;
+    saveBtn.disabled = true;
+    saveBtn.style.opacity = 0.7;
 
     const name = document.getElementById("editInfraName").value.trim();
     const categoryId = document.getElementById("editInfraCategory").value;
@@ -1830,26 +2855,35 @@ document.getElementById("editInfraForm").addEventListener("submit", async (e) =>
 
     if (!name || !categoryId) {
         alert("Please fill in all required fields.");
+        saveBtn.innerHTML = originalBtnHTML;
+        saveBtn.disabled = false;
+        saveBtn.style.opacity = 1;
         return;
     }
 
     try {
         await updateDoc(doc(db, "Infrastructure", docId), {
-            name: name,
+            name,
             category_id: categoryId,
-            phone: phone,
-            email: email,
+            phone,
+            email,
             image_url: imageUrl,
             updatedAt: new Date()
         });
 
-        alert("Infrastructure updated!");
         document.getElementById("editInfraModal").style.display = "none";
         renderInfraTable();
     } catch (err) {
         alert("Error updating infrastructure: " + err);
+        console.error(err);
+    } finally {
+        // 🔄 Restore button state
+        saveBtn.innerHTML = originalBtnHTML;
+        saveBtn.disabled = false;
+        saveBtn.style.opacity = 1;
     }
 });
+
 
 // ----------- Cancel Button for Edit Modal -----------
 document.getElementById("cancelEditInfraBtn").addEventListener("click", () => {
@@ -1881,18 +2915,24 @@ document.getElementById("editInfraModal").addEventListener("click", (e) => {
 
 let infraToDelete = null; // Will hold {docId, name} for deletion
 
-// Open delete modal when clicking the delete icon
+// Open delete modal when clicking the delete icon (with loading spinner)
 document.querySelector(".infra-table").addEventListener("click", async (e) => {
-    if (
-        !(e.target.classList.contains("fa-trash") ||
-          (e.target.closest("button") && e.target.closest("button").classList.contains("delete")))
-    ) return;
+    const button = e.target.closest("button.delete");
+    const icon = e.target.closest("i.fa-trash");
+
+    if (!button && !icon) return;
 
     const row = e.target.closest("tr");
     if (!row) return;
 
     const infraId = row.querySelector("td")?.textContent?.trim();
     const infraName = row.children[1]?.textContent?.trim() || "";
+    if (!infraId) return;
+
+    // 🌀 Replace icon with spinner
+    const originalHTML = icon?.outerHTML || button?.innerHTML;
+    if (icon) icon.outerHTML = `<div class="spinner"></div>`;
+    if (button && !icon) button.innerHTML = `<div class="spinner"></div>`;
 
     try {
         const infraQ = query(collection(db, "Infrastructure"), where("infra_id", "==", infraId));
@@ -1914,21 +2954,54 @@ document.querySelector(".infra-table").addEventListener("click", async (e) => {
         document.getElementById("deleteInfraModal").style.display = "flex";
     } catch (err) {
         console.error("Error preparing delete modal:", err);
+    } finally {
+        // 🔄 Restore original icon after modal is rendered
+        requestAnimationFrame(() => {
+            if (icon) icon.outerHTML = originalHTML;
+            if (button && !icon) button.innerHTML = originalHTML;
+        });
     }
 });
 
+
+
 // Confirm deletion
-document.getElementById("confirmDeleteInfraBtn").addEventListener("click", async () => {
+document.getElementById("confirmDeleteInfraBtn").addEventListener("click", async (e) => {
     if (!infraToDelete) return;
+
+    const btn = e.target;
+    // 🌀 Store original button text
+    const originalHTML = btn.innerHTML;
+
+    // Add loading class to make button lighter
+    btn.classList.add("loading");
+
+    // Show spinner + text
+    btn.innerHTML = `
+        <div class="spinner"></div>
+        <span class="loading-text">Deleting...</span>
+    `;
+    btn.disabled = true;
+
     try {
-        await deleteDoc(doc(db, "Infrastructure", infraToDelete.docId)); // <-- deleteDoc instead of updateDoc
+        // Actual deletion from Firestore
+        await deleteDoc(doc(db, "Infrastructure", infraToDelete.docId));
+
+        // Close modal & refresh table
         document.getElementById("deleteInfraModal").style.display = "none";
         infraToDelete = null;
-        renderInfraTable(); // refresh table after deletion
+        renderInfraTable();
     } catch (err) {
         alert("Error deleting infrastructure: " + err);
+        console.error(err);
+    } finally {
+        // 🔄 Restore original button state
+        btn.classList.remove("loading");
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
     }
 });
+
 
 // Cancel deletion
 document.getElementById("cancelDeleteInfraBtn").addEventListener("click", () => {
@@ -1951,18 +3024,25 @@ document.getElementById("deleteInfraModal").addEventListener("click", (e) => {
 
 let roomToDelete = null; // Will store {docId, name}
 
-// Open delete modal when clicking the delete icon
+// Open delete modal when clicking the delete icon (with loading spinner)
 document.querySelector(".rooms-table").addEventListener("click", async (e) => {
-    if (!(e.target.classList.contains("fa-trash") ||
-          (e.target.closest("button") && e.target.closest("button").classList.contains("delete")))) return;
+    const button = e.target.closest("button.delete");
+    const icon = e.target.closest("i.fa-trash");
+
+    if (!button && !icon) return;
 
     const row = e.target.closest("tr");
     if (!row) return;
 
     const roomId = row.querySelector("td")?.textContent?.trim();
     const roomName = row.children[1]?.textContent?.trim() || "";
+    if (!roomId) return;
 
-    // Find Firestore docId for this room
+    // 🌀 Replace icon/button with spinner
+    const originalHTML = icon?.outerHTML || button?.innerHTML;
+    if (icon) icon.outerHTML = `<div class="spinner"></div>`;
+    if (button && !icon) button.innerHTML = `<div class="spinner"></div>`;
+
     try {
         const roomQ = query(collection(db, "IndoorInfrastructure"), where("room_id", "==", roomId));
         const snap = await getDocs(roomQ);
@@ -1983,12 +3063,28 @@ document.querySelector(".rooms-table").addEventListener("click", async (e) => {
         document.getElementById("deleteRoomModal").style.display = "flex";
     } catch (err) {
         console.error("Error preparing delete modal:", err);
+    } finally {
+        // 🔄 Restore original icon/button after modal opens
+        requestAnimationFrame(() => {
+            if (icon) icon.outerHTML = originalHTML;
+            if (button && !icon) button.innerHTML = originalHTML;
+        });
     }
 });
 
-// Confirm deletion
-document.getElementById("confirmDeleteRoomBtn").addEventListener("click", async () => {
+// Confirm deletion with spinner + deleting text
+document.getElementById("confirmDeleteRoomBtn").addEventListener("click", async (e) => {
     if (!roomToDelete) return;
+
+    const btn = e.target;
+    const originalHTML = btn.innerHTML;
+
+    // Show loading + text
+    btn.innerHTML = `
+        <div class="spinner"></div>
+        <span class="loading-text">Deleting...</span>
+    `;
+    btn.disabled = true;
 
     try {
         await updateDoc(doc(db, "IndoorInfrastructure", roomToDelete.docId), {
@@ -2001,8 +3097,14 @@ document.getElementById("confirmDeleteRoomBtn").addEventListener("click", async 
         renderRoomsTable();
     } catch (err) {
         alert("Error deleting room: " + err);
+        console.error(err);
+    } finally {
+        // Restore button
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
     }
 });
+
 
 // Cancel deletion
 document.getElementById("cancelDeleteRoomBtn").addEventListener("click", () => {
@@ -2027,17 +3129,23 @@ document.getElementById("deleteRoomModal").addEventListener("click", (e) => {
 // ----------- Delete Category Modal Logic -----------
 let categoryToDelete = null; // Will store {docId, name}
 
-// Open delete modal when clicking the delete icon
+// Open delete modal when clicking the delete icon (with spinner)
 document.querySelector(".categories-table").addEventListener("click", async (e) => {
-    if (!(e.target.classList.contains("fa-trash") ||
-          (e.target.closest("button") && e.target.closest("button").classList.contains("delete")))) return;
+    const button = e.target.closest("button.delete");
+    const icon = e.target.closest("i.fa-trash");
+
+    if (!button && !icon) return;
 
     const row = e.target.closest("tr");
     if (!row) return;
 
     const categoryName = row.children[1]?.textContent?.trim() || "";
 
-    // Find Firestore docId for this category
+    // 🌀 Replace icon/button with spinner
+    const originalHTML = icon?.outerHTML || button?.innerHTML;
+    if (icon) icon.outerHTML = `<div class="spinner"></div>`;
+    if (button && !icon) button.innerHTML = `<div class="spinner"></div>`;
+
     try {
         const catQ = query(collection(db, "Categories"), where("name", "==", categoryName));
         const snap = await getDocs(catQ);
@@ -2058,14 +3166,28 @@ document.querySelector(".categories-table").addEventListener("click", async (e) 
         document.getElementById("deleteCategoryModal").style.display = "flex";
     } catch (err) {
         console.error("Error preparing delete modal:", err);
+    } finally {
+        // 🔄 Restore original icon/button after modal opens
+        requestAnimationFrame(() => {
+            if (icon) icon.outerHTML = originalHTML;
+            if (button && !icon) button.innerHTML = originalHTML;
+        });
     }
 });
 
-
-
-// Confirm deletion
-document.getElementById("confirmDeleteCategoryBtn").addEventListener("click", async () => {
+// Confirm deletion with spinner + deleting text
+document.getElementById("confirmDeleteCategoryBtn").addEventListener("click", async (e) => {
     if (!categoryToDelete) return;
+
+    const btn = e.target;
+    const originalHTML = btn.innerHTML;
+
+    // Show loading + text
+    btn.innerHTML = `
+        <div class="spinner"></div>
+        <span class="loading-text">Deleting...</span>
+    `;
+    btn.disabled = true;
 
     try {
         await updateDoc(doc(db, "Categories", categoryToDelete.docId), {
@@ -2078,8 +3200,14 @@ document.getElementById("confirmDeleteCategoryBtn").addEventListener("click", as
         renderCategoriesTable();
     } catch (err) {
         alert("Error deleting category: " + err);
+        console.error(err);
+    } finally {
+        // Restore button
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
     }
 });
+
 
 // Cancel deletion
 document.getElementById("cancelDeleteCategoryBtn").addEventListener("click", () => {
@@ -2101,40 +3229,77 @@ document.getElementById("deleteCategoryModal").addEventListener("click", (e) => 
 
 let mapToDelete = null;
 
-// ----------- Map Delete Modal Logic -----------
+// ----------- Map Delete Modal Logic with spinner -----------
 function setupMapDeleteHandlers() {
     const tbody = document.querySelector(".maps-table tbody");
     if (!tbody) return;
 
     tbody.querySelectorAll(".delete").forEach(btn => {
-        btn.addEventListener("click", async () => {
+        btn.addEventListener("click", async (e) => {
             const tr = btn.closest("tr");
             const mapName = tr.children[1]?.textContent || "";
             const docId = btn.dataset.id;
 
-            mapToDelete = { docId, name: mapName };
-            document.getElementById("deleteMapPrompt").textContent =
-                `Are you sure you want to delete "${mapName}"?`;
-            document.getElementById("deleteMapModal").style.display = "flex";
+            // 🌀 Replace button with spinner
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `<div class="spinner"></div>`;
+            btn.disabled = true;
+
+            try {
+                mapToDelete = { docId, name: mapName };
+                document.getElementById("deleteMapPrompt").textContent =
+                    `Are you sure you want to delete "${mapName}"?`;
+                document.getElementById("deleteMapModal").style.display = "flex";
+            } catch (err) {
+                console.error("Error preparing delete modal:", err);
+            } finally {
+                // Restore button after modal opens
+                requestAnimationFrame(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                });
+            }
         });
     });
 }
 
-// ----------- Confirm Map Deletion -----------
-document.getElementById("confirmDeleteMapBtn").addEventListener("click", async () => {
+// ----------- Confirm Map Deletion with spinner + deleting text -----------
+document.getElementById("confirmDeleteMapBtn").addEventListener("click", async (e) => {
     if (!mapToDelete) return;
+
+    const btn = e.target;
+    const originalHTML = btn.innerHTML;
+
+    // Show loading + text
+    btn.innerHTML = `
+        <div class="spinner"></div>
+        <span class="loading-text">Deleting...</span>
+    `;
+    btn.disabled = true;
+
     try {
-        await updateDoc(doc(db, "MapVersions", mapToDelete.docId), {
-            is_deleted: true,
-            deletedAt: new Date()
-        });
+        // ✅ Hard delete the document
+        await deleteDoc(doc(db, "MapVersions", mapToDelete.docId));
+
+        // Optional: soft delete (commented out)
+        // await updateDoc(doc(db, "MapVersions", mapToDelete.docId), {
+        //     is_deleted: true,
+        //     deletedAt: new Date()
+        // });
+
         document.getElementById("deleteMapModal").style.display = "none";
         mapToDelete = null;
         renderMapsTable();
     } catch (err) {
         alert("Error deleting map: " + err);
+        console.error(err);
+    } finally {
+        // Restore button
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
     }
 });
+
 
 // ----------- Cancel Map Deletion -----------
 document.getElementById("cancelDeleteMapBtn").addEventListener("click", () => {
@@ -2155,40 +3320,81 @@ document.getElementById("deleteMapModal").addEventListener("click", (e) => {
 
 let campusToDelete = null;
 
-// ----------- Campus Delete Modal Logic -----------
+// ----------- Campus Delete Modal Logic with spinner -----------
 function setupCampusDeleteHandlers() {
     const tbody = document.querySelector(".campus-table tbody");
     if (!tbody) return;
 
     tbody.querySelectorAll(".delete").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const tr = btn.closest("tr");
-            const campusName = tr.children[1]?.textContent || "";
-            const docId = btn.dataset.id;
+        btn.addEventListener("click", (e) => {
+            const row = btn.closest("tr");
+            if (!row) return;
 
-            campusToDelete = { docId, name: campusName };
-            document.getElementById("deleteCampusPrompt").textContent =
-                `Are you sure you want to delete "${campusName}"?`;
-            document.getElementById("deleteCampusModal").style.display = "flex";
+            const campusName = row.children[1]?.textContent || "";
+            const docId = btn.dataset.id;
+            if (!docId) return;
+
+            // 🌀 Replace button with spinner
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `<div class="spinner"></div>`;
+            btn.disabled = true;
+
+            try {
+                campusToDelete = { docId, name: campusName };
+                document.getElementById("deleteCampusPrompt").textContent =
+                    `Are you sure you want to delete "${campusName}"?`;
+                document.getElementById("deleteCampusModal").style.display = "flex";
+            } catch (err) {
+                console.error("Error preparing delete modal:", err);
+            } finally {
+                // Restore button after modal opens
+                requestAnimationFrame(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                });
+            }
         });
     });
 }
 
-// ----------- Confirm Campus Deletion -----------
-document.getElementById("confirmDeleteCampusBtn").addEventListener("click", async () => {
+// ----------- Confirm Campus Deletion with spinner + deleting text -----------
+document.getElementById("confirmDeleteCampusBtn").addEventListener("click", async (e) => {
     if (!campusToDelete) return;
+
+    const btn = e.target;
+    const originalHTML = btn.innerHTML;
+
+    // Show loading + text
+    btn.innerHTML = `
+        <div class="spinner"></div>
+        <span class="loading-text">Deleting...</span>
+    `;
+    btn.disabled = true;
+
     try {
-        await updateDoc(doc(db, "Campus", campusToDelete.docId), {
-            is_deleted: true,
-            deletedAt: new Date()
-        });
+        // ✅ Hard delete the document
+        await deleteDoc(doc(db, "Campus", campusToDelete.docId));
+
+        // Optional: soft delete (commented out)
+        // await updateDoc(doc(db, "Campus", campusToDelete.docId), {
+        //     is_deleted: true,
+        //     deletedAt: new Date()
+        // });
+
         document.getElementById("deleteCampusModal").style.display = "none";
         campusToDelete = null;
         renderCampusTable();
     } catch (err) {
         alert("Error deleting campus: " + err);
+        console.error(err);
+    } finally {
+        // Restore button
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
     }
 });
+
+
 
 // ----------- Cancel Campus Deletion -----------
 document.getElementById("cancelDeleteCampusBtn").addEventListener("click", () => {
@@ -2203,6 +3409,32 @@ document.getElementById("deleteCampusModal").addEventListener("click", (e) => {
         campusToDelete = null;
     }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

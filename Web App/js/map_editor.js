@@ -186,11 +186,20 @@ async function populateCampusDropdown(selectId = "campusDropdown") {
 
 
 
-// ----------- Load Nodes Table from Current Active Map/Campus/Version -----------
+// ----------- Load Nodes Table with Spinner -----------
 async function renderNodesTable() {
     const tbody = document.querySelector(".nodetbl tbody");
     if (!tbody) return;
-    tbody.innerHTML = "";
+
+    // 🔄 Show loading row with spinner
+    tbody.innerHTML = `
+        <tr class="loading-row">
+            <td colspan="9" style="text-align:center; padding:20px;">
+                <div class="spinner"></div>
+                <span class="loading-text">Loading nodes...</span>
+            </td>
+        </tr>
+    `;
 
     try {
         let nodes = [];
@@ -204,22 +213,20 @@ async function renderNodesTable() {
             const [infraSnap, roomSnap, indoorSnap, campusSnap, mapVersionsSnap] = await Promise.all([
                 getDocs(collection(db, "Infrastructure")),
                 getDocs(collection(db, "Rooms")),
-                getDocs(collection(db, "IndoorInfrastructure")), // <-- fetch indoor infra
+                getDocs(collection(db, "IndoorInfrastructure")),
                 getDocs(collection(db, "Campus")),
                 getDocs(collection(db, "MapVersions"))
             ]);
 
             infra = infraSnap.docs.map(d => d.data());
             rooms = roomSnap.docs.map(d => d.data());
-            indoorInfras = indoorSnap.docs.map(d => d.data()); // store indoor infra
+            indoorInfras = indoorSnap.docs.map(d => d.data());
             campuses = campusSnap.docs.map(d => d.data());
 
-            // Collect nodes from current versions
             for (const mapDoc of mapVersionsSnap.docs) {
                 const mapData = mapDoc.data();
                 const currentCampus = mapData.current_active_campus;
                 const currentVersion = mapData.current_version;
-
                 if (!currentCampus || !currentVersion) continue;
 
                 const versionRef = doc(db, "MapVersions", mapDoc.id, "versions", currentVersion);
@@ -230,14 +237,13 @@ async function renderNodesTable() {
                 const mapNodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
                 nodes.push(...mapNodes.filter(n => !n.is_deleted && n.campus_id === currentCampus));
             }
-
         } else {
-            // 🔹 Offline: JSON fallback
+            // 🔹 Offline fallback
             const [nodesRes, infraRes, roomsRes, indoorRes, campusesRes] = await Promise.all([
                 fetch("../assets/firestore/MapVersions.json"),
                 fetch("../assets/firestore/Infrastructure.json"),
                 fetch("../assets/firestore/Rooms.json"),
-                fetch("../assets/firestore/IndoorInfrastructure.json"), // <-- offline indoor infra
+                fetch("../assets/firestore/IndoorInfrastructure.json"),
                 fetch("../assets/firestore/Campus.json")
             ]);
 
@@ -247,7 +253,6 @@ async function renderNodesTable() {
             indoorInfras = (await indoorRes.json()).filter(r => !r.is_deleted);
             campuses = (await campusesRes.json()).filter(c => !c.is_deleted);
 
-            // Collect nodes from current versions
             for (const mapData of mapVersions) {
                 const currentCampus = mapData.current_active_campus;
                 const currentVersion = mapData.current_version;
@@ -259,49 +264,32 @@ async function renderNodesTable() {
                 const mapNodes = Array.isArray(version.nodes) ? version.nodes : [];
                 nodes.push(...mapNodes.filter(n => !n.is_deleted && n.campus_id === currentCampus));
             }
-
-            console.log("📂 Offline → Nodes, Infra, Rooms, IndoorInfra, Campuses loaded from JSON");
         }
 
         // 🔹 Build lookup maps
         const infraMap = Object.fromEntries(infra.map(i => [i.infra_id, i.name]));
         const roomMap = Object.fromEntries(rooms.map(r => [r.room_id, r.name]));
-        const indoorInfraMap = Object.fromEntries(indoorInfras.map(r => [r.room_id, r.name])); // <-- indoor infra lookup
+        const indoorInfraMap = Object.fromEntries(indoorInfras.map(r => [r.room_id, r.name]));
         const campusMap = Object.fromEntries(campuses.map(c => [c.campus_id, c.campus_name]));
 
-        // 🔹 Sort nodes by created_at
-        nodes.sort((a, b) => {
-            if (!a.created_at || !b.created_at) return 0;
-            return (a.created_at.seconds || 0) - (b.created_at.seconds || 0);
-        });
+        // 🔹 Sort nodes
+        nodes.sort((a, b) => (a.created_at?.seconds || 0) - (b.created_at?.seconds || 0));
 
-        // 🔹 Render nodes
+        // 🔹 Clear loading row and render nodes
+        tbody.innerHTML = "";
         nodes.forEach(data => {
             const coords = (data.latitude && data.longitude) ? `${data.latitude}, ${data.longitude}` : "-";
             const infraName = data.related_infra_id ? (infraMap[data.related_infra_id] || data.related_infra_id) : "-";
-            
-            // ✅ First check IndoorInfra, then fallback to Rooms
+
             let roomName = "-";
-            if (data.related_room_id) {
-                roomName = indoorInfraMap[data.related_room_id] || roomMap[data.related_room_id] || data.related_room_id;
-            }
+            if (data.related_room_id) roomName = indoorInfraMap[data.related_room_id] || roomMap[data.related_room_id] || data.related_room_id;
 
             const campusName = data.campus_id ? (campusMap[data.campus_id] || data.campus_id) : "-";
 
-                // ✅ Fix 0 values for indoor data too
             let indoorOutdoor = "Outdoor";
             if (data.indoor) {
-                indoorOutdoor = `Indoor (Floor: ${
-                    data.indoor.floor !== undefined ? data.indoor.floor : "-"
-                }, X: ${
-                    data.indoor.x !== undefined ? data.indoor.x : "-"
-                }, Y: ${
-                    data.indoor.y !== undefined ? data.indoor.y : "-"
-                })`;
+                indoorOutdoor = `Indoor (Floor: ${data.indoor.floor ?? "-"}, X: ${data.indoor.x ?? "-"}, Y: ${data.indoor.y ?? "-"})`;
             }
-
-
-            
 
             const type = data.type ? data.type.charAt(0).toUpperCase() + data.type.slice(1) : "-";
 
@@ -312,7 +300,7 @@ async function renderNodesTable() {
                 <td>${type}</td>
                 <td>${coords}</td>
                 <td>${infraName}</td>
-                <td>${roomName}</td>   <!-- ✅ Now shows indoor infra name -->
+                <td>${roomName}</td>
                 <td>${indoorOutdoor}</td>
                 <td>${campusName}</td>
                 <td class="actions">
@@ -323,12 +311,13 @@ async function renderNodesTable() {
             tbody.appendChild(tr);
         });
 
-        setupNodeDeleteHandlers(); // ✅ Keep delete modal functionality
-
+        setupNodeDeleteHandlers();
     } catch (err) {
         console.error("Error loading nodes:", err);
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:red;">Error loading nodes</td></tr>`;
     }
 }
+
 
 
 
@@ -483,25 +472,32 @@ async function populateIndoorInfraDropdown(selectId = "relatedIndoorInfra") {
     if (!select) return;
     select.innerHTML = `<option value="">Select Indoor Infra</option>`;
 
-    const q = query(collection(db, "IndoorInfrastructure"));
-    const snapshot = await getDocs(q);
+    try {
+        const q = query(collection(db, "IndoorInfrastructure"));
+        const snapshot = await getDocs(q);
 
-    snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        if (data.room_id && data.name) {
+        // Collect into array then sort by name A-Z
+        const indoorList = [];
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            if (data.room_id && data.name) {
+                indoorList.push({ id: data.room_id, name: data.name });
+            }
+        });
+
+        indoorList.sort((a, b) => a.name.localeCompare(b.name));
+
+        // Append sorted options
+        indoorList.forEach(item => {
             const option = document.createElement("option");
-
-            // ✅ Use room_id field as value
-            option.value = data.room_id;
-
-            // ✅ Display name
-            option.textContent = data.name;
-
+            option.value = item.id;
+            option.textContent = item.name;
             select.appendChild(option);
-        }
-    });
+        });
+    } catch (err) {
+        console.error("Error loading indoor infrastructure into dropdown:", err);
+    }
 }
-
 
 
 
@@ -606,7 +602,7 @@ document.getElementById("nodeForm").addEventListener("submit", async (e) => {
     let indoor = null;
 
     if (typeValue === "indoorInfra") {
-        type = "indoor";
+        type = "indoorinfra";
         indoor = {
             floor: stringOrNull(document.getElementById("floor").value),
             x: parseNumberOrNull(document.getElementById("xCoord").value),
@@ -720,58 +716,93 @@ async function saveNode(option) {
         }
 
         if (option === "overwrite") {
-            // Find if node with same node_id already exists
             const updatedNodes = oldNodes.filter(n => n.node_id !== pendingNodeData.node_id);
-
-            // Add the new/updated node
             updatedNodes.push(pendingNodeData);
 
-            // Update the nodes array
-            await updateDoc(versionRef, {
-                nodes: updatedNodes
-            });
+            await updateDoc(versionRef, { nodes: updatedNodes });
 
             alert(`Node ${pendingNodeData.node_id} added/updated in current version ${currentVersion}`);
-        }
-
+        } 
         else if (option === "newVersion") {
-            // --- Compute new version string ---
             let [major, minor, patch] = currentVersion.slice(1).split(".").map(Number);
-            if (patch < 99) {
-                patch += 1;
-            } else {
-                patch = 0;
-                minor += 1;
-            }
+            if (patch < 99) patch += 1;
+            else { patch = 0; minor += 1; }
+
             const newVersion = `v${major}.${minor}.${patch}`;
+            const migratedNodes = oldNodes.map(n => ({ ...n }));
+            migratedNodes.push({ ...pendingNodeData });
+            const migratedEdges = oldEdges.map(e => ({ ...e }));
 
-            // --- Migrate all old nodes & edges + add new node to new version ---
-            const migratedNodes = oldNodes.map(n => ({ ...n }));  // deep copy
-            migratedNodes.push({ ...pendingNodeData });           // add new node
-
-            const migratedEdges = oldEdges.map(e => ({ ...e }));  // deep copy edges
-
-            // --- Save to new version document ---
             await setDoc(doc(db, "MapVersions", mapDocId, "versions", newVersion), {
                 nodes: migratedNodes,
                 edges: migratedEdges
             });
 
-            // --- Update current_version of map ---
             await updateDoc(doc(db, "MapVersions", mapDocId), { 
                 current_version: newVersion,
-                current_version_update: true, // ✅ mark version update flag
+                current_version_update: true,
             });
 
-
-            alert(`New version created: ${newVersion} with migrated nodes and edges`);
+            alert(`New version created: ${newVersion}`);
         }
 
-        // ✅ Update StaticDataVersions/GlobalInfo after saving a node
+        // ✅ Update StaticDataVersions/GlobalInfo
         const staticDataRef = doc(db, "StaticDataVersions", "GlobalInfo");
-        await updateDoc(staticDataRef, {
-            infrastructure_updated: true,
-        });
+        await updateDoc(staticDataRef, { infrastructure_updated: true });
+
+        // ✅ NEW FEATURE: Calculate and save map center (all campuses combined)
+        const allCampuses = mapData.campus_included || [];
+
+        let allNodes = [];
+        for (const campId of allCampuses) {
+            const versionQuery = query(
+                collection(db, "MapVersions", mapDocId, "versions")
+            );
+            const versionDocs = await getDocs(versionQuery);
+            
+            versionDocs.forEach(vDoc => {
+                const vData = vDoc.data();
+                const campusNodes = (vData.nodes || []).filter(n => n.campus_id === campId);
+                allNodes.push(...campusNodes);
+            });
+        }
+
+        // Compute geographic center from all nodes
+        const getGeographicCenter = (nodes) => {
+            if (!nodes.length) return [6.9130, 122.0630];
+            let x = 0, y = 0, z = 0;
+            nodes.forEach(n => {
+                if (!n.latitude || !n.longitude) return;
+                const latRad = parseFloat(n.latitude) * Math.PI / 180;
+                const lonRad = parseFloat(n.longitude) * Math.PI / 180;
+                x += Math.cos(latRad) * Math.cos(lonRad);
+                y += Math.cos(latRad) * Math.sin(lonRad);
+                z += Math.sin(latRad);
+            });
+            const total = nodes.length;
+            x /= total; y /= total; z /= total;
+            const lon = Math.atan2(y, x);
+            const hyp = Math.sqrt(x * x + y * y);
+            const lat = Math.atan2(z, hyp);
+            return [lat * 180 / Math.PI, lon * 180 / Math.PI];
+        };
+
+        const [centerLat, centerLng] = getGeographicCenter(allNodes);
+
+        // ✅ Update the Maps collection with the new center
+        const mapsCollection = collection(db, "Maps");
+        const mapsQueryRef = query(mapsCollection, where("map_id", "==", mapDocId));
+        const mapsDocs = await getDocs(mapsQueryRef);
+
+        if (!mapsDocs.empty) {
+            const mapRef = mapsDocs.docs[0].ref;
+            await updateDoc(mapRef, {
+                center_lat: centerLat,
+                center_lng: centerLng,
+                updatedAt: new Date()
+            });
+            console.log(`Map center updated for ${mapDocId}:`, centerLat, centerLng);
+        }
 
         // --- Reset UI ---
         document.getElementById("nodeForm").reset();
@@ -789,6 +820,156 @@ async function saveNode(option) {
 
 
 
+async function handleIndoorInfraSelection({
+  selectId = "relatedIndoorInfra",
+  nameInputId = "nodeName",
+  relatedInfraSelectId = "relatedInfra",
+  campusSelectId = "campusDropdown"
+} = {}) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  select.addEventListener("change", async () => {
+    const roomId = select.value;
+    if (!roomId) return;
+
+    // helper to set input value only when user hasn't typed a custom value
+    const nameInput = document.getElementById(nameInputId);
+    const setNameIfAllowed = (val) => {
+      if (!nameInput) return;
+      // If empty OR previously auto-filled, overwrite. If user edited, don't overwrite.
+      const wasAuto = nameInput.dataset.autofilled === "true";
+      if (!nameInput.value || wasAuto) {
+        nameInput.value = val || "";
+        nameInput.dataset.autofilled = val ? "true" : "false";
+      }
+      // Clear autofill flag when user types
+      if (!nameInput._autofillListenerAdded) {
+        nameInput.addEventListener("input", () => {
+          if (nameInput.dataset.autofilled === "true") nameInput.dataset.autofilled = "false";
+        });
+        nameInput._autofillListenerAdded = true;
+      }
+    };
+
+    const relatedInfraSelect = document.getElementById(relatedInfraSelectId);
+    const campusSelect = document.getElementById(campusSelectId);
+
+    try {
+      // Try online Firestore first
+      if (navigator.onLine) {
+        // Find indoor infra doc by room_id
+        const q = query(collection(db, "IndoorInfrastructure"), where("room_id", "==", roomId));
+        const snap = await getDocs(q);
+        let indoorDocData = null;
+        if (!snap.empty) {
+          indoorDocData = snap.docs[0].data();
+        } else {
+          // fallback: try Rooms collection (some setups store rooms there)
+          const rq = query(collection(db, "Rooms"), where("room_id", "==", roomId));
+          const rSnap = await getDocs(rq);
+          if (!rSnap.empty) indoorDocData = rSnap.docs[0].data();
+        }
+
+        if (indoorDocData) {
+          // Prefill name
+          setNameIfAllowed(indoorDocData.name || indoorDocData.room_name || "");
+
+          // Prefill related infrastructure dropdown if infra_id exists
+          if (indoorDocData.infra_id && relatedInfraSelect) {
+            // if option exists, set directly; otherwise, try to populate first then set
+            const optExists = Array.from(relatedInfraSelect.options).some(o => o.value === indoorDocData.infra_id);
+            if (optExists) {
+              relatedInfraSelect.value = indoorDocData.infra_id;
+            } else {
+              // try to populate infra dropdown then set (best-effort)
+              try { await populateInfraDropdown(relatedInfraSelectId); relatedInfraSelect.value = indoorDocData.infra_id; } catch (e) { /* ignore */ }
+            }
+          }
+
+          // Attempt to find campus via Rooms or Infrastructure (best-effort)
+          let campusId = null;
+
+          // 1) Check Rooms doc for campus_id
+          try {
+            const roomsQ = query(collection(db, "Rooms"), where("room_id", "==", roomId));
+            const roomsSnap = await getDocs(roomsQ);
+            if (!roomsSnap.empty) {
+              const r = roomsSnap.docs[0].data();
+              if (r.campus_id) campusId = r.campus_id;
+            }
+          } catch (e) { /* ignore */ }
+
+          // 2) If not found, check IndoorInfrastructure doc for campus_id
+          if (!campusId && indoorDocData.campus_id) campusId = indoorDocData.campus_id;
+
+          // 3) If still not found, look up the Infrastructure doc for a campus reference
+          if (!campusId && indoorDocData.infra_id) {
+            try {
+              const infraQ = query(collection(db, "Infrastructure"), where("infra_id", "==", indoorDocData.infra_id));
+              const infraSnap = await getDocs(infraQ);
+              if (!infraSnap.empty) {
+                const infraData = infraSnap.docs[0].data();
+                if (infraData.campus_id) campusId = infraData.campus_id;
+              }
+            } catch (e) { /* ignore */ }
+          }
+
+          // Set campus dropdown if we found one
+          if (campusId && campusSelect) {
+            // ensure option exists; if not, try to populate then set
+            const optExists = Array.from(campusSelect.options).some(o => o.value === campusId);
+            if (optExists) campusSelect.value = campusId;
+            else {
+              try { await populateCampusDropdown(campusSelectId); campusSelect.value = campusId; } catch (e) { /* ignore */ }
+            }
+          }
+        }
+      } else {
+        // OFFLINE — use local JSON fallback
+        const [indoorRes, roomsRes, infraRes] = await Promise.all([
+          fetch("../assets/firestore/IndoorInfrastructure.json").then(r => r.json()),
+          fetch("../assets/firestore/Rooms.json").then(r => r.json()),
+          fetch("../assets/firestore/Infrastructure.json").then(r => r.json())
+        ]);
+
+        const indoorDoc = (indoorRes || []).find(x => x.room_id === roomId) || (roomsRes || []).find(x => x.room_id === roomId);
+        if (!indoorDoc) return;
+
+        setNameIfAllowed(indoorDoc.name || indoorDoc.room_name || "");
+
+        if (indoorDoc.infra_id && relatedInfraSelect) {
+          const optExists = Array.from(relatedInfraSelect.options).some(o => o.value === indoorDoc.infra_id);
+          if (optExists) relatedInfraSelect.value = indoorDoc.infra_id;
+        }
+
+        // try to find campus via rooms or infra JSON
+        let campusId = (roomsRes || []).find(r => r.room_id === roomId)?.campus_id;
+        if (!campusId && indoorDoc.infra_id) campusId = (infraRes || []).find(i => i.infra_id === indoorDoc.infra_id)?.campus_id;
+        if (campusId && campusSelect) {
+          const optExists = Array.from(campusSelect.options).some(o => o.value === campusId);
+          if (optExists) campusSelect.value = campusId;
+        }
+      }
+    } catch (err) {
+      console.error("Error prefilling from indoor infra selection:", err);
+    }
+  });
+}
+
+// Attach to add + edit selects (if present)
+handleIndoorInfraSelection({
+  selectId: "relatedIndoorInfra",
+  nameInputId: "nodeName",
+  relatedInfraSelectId: "relatedInfra",
+  campusSelectId: "campusDropdown"
+});
+handleIndoorInfraSelection({
+  selectId: "editRelatedIndoorInfra",
+  nameInputId: "editNodeName",
+  relatedInfraSelectId: "editRelatedInfra",
+  campusSelectId: "editCampusDropdown"
+});
 
 
 
@@ -1395,11 +1576,19 @@ async function saveEdge(option) {
 
 
 
-// ----------- Load Edges Table (filtered by current active campus) -----------
 async function renderEdgesTable() {
     const tbody = document.querySelector(".edgetbl tbody");
     if (!tbody) return;
-    tbody.innerHTML = "";
+
+    // Clear table and show loading spinner
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="6" style="text-align:center;">
+                <div class="spinner"></div>
+                <span class="loading-text">Loading edges...</span>
+            </td>
+        </tr>
+    `;
 
     try {
         let edges = [];
@@ -1422,56 +1611,41 @@ async function renderEdgesTable() {
             const allNodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
             const allEdges = Array.isArray(versionData.edges) ? versionData.edges : [];
 
-            // 🧠 Build a map: node_id → campus_id
             const nodeCampusMap = {};
             allNodes.forEach(n => {
-                if (n.node_id && n.campus_id) {
-                    nodeCampusMap[n.node_id] = n.campus_id;
-                }
+                if (n.node_id && n.campus_id) nodeCampusMap[n.node_id] = n.campus_id;
             });
 
-            // 🧩 Filter edges
             const filteredEdges = allEdges.filter(e => {
                 if (e.is_deleted) return false;
-
                 const fromCampus = nodeCampusMap[e.from_node];
                 const toCampus = nodeCampusMap[e.to_node];
-
-                // Show if either end belongs to the current active campus
                 return fromCampus === currentCampus || toCampus === currentCampus;
             });
 
             edges.push(...filteredEdges);
         }
 
-        // 🔹 Sort edges by created_at
-        edges.sort((a, b) => {
-            const aSec = a?.created_at?.seconds || 0;
-            const bSec = b?.created_at?.seconds || 0;
-            return aSec - bSec;
-        });
+        // Sort edges by created_at
+        edges.sort((a, b) => (a?.created_at?.seconds || 0) - (b?.created_at?.seconds || 0));
 
-        // 🔹 Render edges
+        // Clear spinner row
+        tbody.innerHTML = "";
+
+        // Render edges
         edges.forEach(data => {
             const formatText = (value) => {
                 if (!value) return "-";
-                return value
-                    .toString()
-                    .split("_")
-                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(" ");
+                return value.toString().split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
             };
-
-            const formattedPathType = formatText(data.path_type);
-            const formattedElevation = formatText(data.elevations);
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${data.edge_id}</td>
                 <td>${data.from_node} → ${data.to_node}</td>
                 <td>${data.distance || "-"}</td>
-                <td>${formattedPathType}</td>
-                <td>${formattedElevation}</td>
+                <td>${formatText(data.path_type)}</td>
+                <td>${formatText(data.elevations)}</td>
                 <td class="actions">
                     <i class="fas fa-edit"></i>
                     <i class="fas fa-trash" data-id="${data.edge_id}"></i>
@@ -1480,10 +1654,12 @@ async function renderEdgesTable() {
             tbody.appendChild(tr);
         });
 
-        setupEdgeDeleteHandlers(); // ✅ Maintain delete/edit actions
+        setupEdgeDeleteHandlers();
         console.log(`✅ Rendered ${edges.length} edges for the current active campus`);
+
     } catch (err) {
         console.error("Error loading edges:", err);
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:red;">Failed to load edges</td></tr>`;
     }
 }
 
@@ -2936,6 +3112,9 @@ function renderDataOnMap(map, data, enableClick = false) {
   const nodes = Array.isArray(data.nodes) ? data.nodes : [];
   const edges = Array.isArray(data.edges) ? data.edges : [];
 
+  // collect node marker references so we can ensure they render above edges
+  const nodeMarkers = [];
+
   // --- Barriers (grouped per campus) ---
   const barrierNodes = nodes.filter(d => d.type === "barrier");
 
@@ -2987,29 +3166,12 @@ function renderDataOnMap(map, data, enableClick = false) {
           fillOpacity: 0.9
         }).addTo(map);
 
+        // keep track so it can be brought to front after edges draw
+        nodeMarkers.push(cornerMarker);
+
         cornerMarker.on("click", () => showDetails(node));
       });
     }
-  });
-
-  // --- Infrastructure (Buildings) ---
-  nodes.filter(d => d.type === "infrastructure").forEach(building => {
-    const marker = L.circleMarker([building.latitude, building.longitude], {
-      radius: 6,
-      color: "red",
-      fillColor: "pink",
-      fillOpacity: 0.7
-    }).addTo(map);
-
-    if (enableClick) {
-      marker.on("click", () => showDetails(building));
-    }
-  });
-
-  // --- Rooms ---
-  nodes.filter(d => d.type === "room").forEach(room => {
-    const marker = L.marker([room.latitude, room.longitude]).addTo(map);
-    if (enableClick) marker.on("click", () => showDetails(room));
   });
 
   // ======================================================
@@ -3033,10 +3195,12 @@ function renderDataOnMap(map, data, enableClick = false) {
     // 🚫 Skip if either endpoint is missing or a barrier
     if (!from || !to || from.type === "barrier" || to.type === "barrier") return;
 
+    // place edges on map early — markers will be brought above afterwards
     const line = L.polyline([from.coords, to.coords], {
       color: "orange",
       weight: 3,
-      opacity: 0.8
+      opacity: 0.8,
+      interactive: true
     }).addTo(map);
 
     if (enableClick) {
@@ -3052,6 +3216,34 @@ function renderDataOnMap(map, data, enableClick = false) {
     }
   });
 
+  // --- Infrastructure (Buildings) ---
+  nodes.filter(d => d.type === "infrastructure").forEach(building => {
+    const marker = L.circleMarker([building.latitude, building.longitude], {
+      radius: 6,
+      color: "red",
+      fillColor: "pink",
+      fillOpacity: 0.7
+    }).addTo(map);
+
+    // ensure marker is above edges
+    nodeMarkers.push(marker);
+
+    if (enableClick) {
+      marker.on("click", () => showDetails(building));
+    }
+  });
+
+  // --- Rooms ---
+  nodes.filter(d => d.type === "room").forEach(room => {
+    const marker = L.marker([room.latitude, room.longitude], { riseOnHover: true }).addTo(map);
+
+    // marker supports z-index offset to keep above polylines
+    if (typeof marker.setZIndexOffset === "function") marker.setZIndexOffset(1000);
+    nodeMarkers.push(marker);
+
+    if (enableClick) marker.on("click", () => showDetails(room));
+  });
+
   // --- Outdoor Nodes (like pathways, landmarks, etc.) ---
   nodes.filter(d => d.type === "outdoor").forEach(outdoor => {
     const marker = L.circleMarker([outdoor.latitude, outdoor.longitude], {
@@ -3060,6 +3252,8 @@ function renderDataOnMap(map, data, enableClick = false) {
       fillColor: "pink",
       fillOpacity: 0.8
     }).addTo(map);
+
+    nodeMarkers.push(marker);
     if (enableClick) marker.on("click", () => showDetails(outdoor));
   });
 
@@ -3072,7 +3266,16 @@ function renderDataOnMap(map, data, enableClick = false) {
       fillOpacity: 1.0
     }).addTo(map);
 
+    nodeMarkers.push(marker);
     if (enableClick) marker.on("click", () => showDetails(intermediate));
+  });
+
+  // Bring all node markers to front so they sit above polylines and receive clicks
+  nodeMarkers.forEach(m => {
+    try {
+      if (typeof m.bringToFront === "function") m.bringToFront();
+      if (typeof m.setZIndexOffset === "function") m.setZIndexOffset(1000);
+    } catch (e) { /* ignore */ }
   });
 }
 
@@ -3092,175 +3295,726 @@ function renderDataOnMap(map, data, enableClick = false) {
 
 
 
-// ---- Sidebar details ----
 async function showDetails(node) {
   const sidebar = document.querySelector(".map-sidebar");
-// Format created_at nicely
-let createdAtFormatted = "-";
-if (node.created_at) {
-  if (typeof node.created_at.toDate === "function") {
-    // Firestore Timestamp
-    const d = node.created_at.toDate();
-    createdAtFormatted = d.toLocaleString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  } else if (node.created_at.seconds) {
-    // Plain object {seconds, nanoseconds}
-    const d = new Date(node.created_at.seconds * 1000);
-    createdAtFormatted = d.toLocaleString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  } else {
-    // Fallback → already a string or something else
-    createdAtFormatted = String(node.created_at);
-  }
-}
 
-
-  // Build base details UI
+  // QUICK LOADING STATE (prevents empty flash while we fetch)
   sidebar.innerHTML = `
-    <div class="header-row"><h2>📌 Node Details</h2> <button class="edit-btn">Edit</button></div>
-    <div class="details-item"><span>Node ID:</span> ${node.node_id || "-"}</div>
-    <div class="details-item"><span>Name:</span> ${node.name || "-"}</div>
-    <div class="details-item"><span>Type:</span> ${node.type || "-"}</div>
-    <div class="details-item"><span>Latitude:</span> ${node.latitude || "-"}</div>
-    <div class="details-item"><span>Longitude:</span> ${node.longitude || "-"}</div>
-    <div class="details-item"><span>Infrastructure:</span> ${node.infraName || "-"}</div>
-    <div class="details-item"><span>Room:</span> ${node.roomName || "-"}</div>
-    ${
-      node.indoor
-        ? `
-      <h3>🏢 Indoor Info</h3>
-      <div class="details-subitem"><span>Floor:</span> ${node.indoor.floor}</div>
-      <div class="details-subitem"><span>X:</span> ${node.indoor.x}</div>
-      <div class="details-subitem"><span>Y:</span> ${node.indoor.y}</div>
-    `
-        : ""
-    }
-    <div class="details-item"><span>Active:</span> ${node.is_active ? "✅ Yes" : "❌ No"}</div>
-    <div class="details-item"><span>Campus:</span> ${node.campusName || "-"}</div>
-    <div class="details-item"><span>Created At:</span> ${createdAtFormatted}</div>
-    <div class="qr-section" style="margin-top:15px; text-align:center;"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+      <div style="width:48px;height:48px;border:5px solid rgba(0,0,0,0.08);border-top-color:#DC143C;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+      <div style="margin-top:12px;color:#666;font-weight:600">Loading details...</div>
+    </div>
   `;
 
-  // Load QR info if exists
+  // --- Fetch related infrastructure info (image / email / phone) ---
+  let imageUrl = null;
+  let infraEmail = "-";
+  let infraPhone = "-";
+  try {
+    if (node.related_infra_id) {
+      const q = query(collection(db, "Infrastructure"), where("infra_id", "==", node.related_infra_id));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const infra = snap.docs[0].data();
+        imageUrl = infra.image_url || null;
+        infraEmail = infra.email || infraEmail;
+        infraPhone = infra.phone || infraPhone;
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to load infrastructure info for sidebar:", err);
+  }
+
+  // --- Small inline SVG placeholder so UI stays consistent when there's no image ---
+  const placeholderSVG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600">
+       <rect width="100%" height="100%" fill="#f6f6f8"/>
+       <g fill="#d1d3d8" font-family="Inter, Arial, Helvetica, sans-serif" font-size="26" text-anchor="middle">
+         <text x="50%" y="50%" dy="0">No image available</text>
+       </g>
+     </svg>`
+  );
+
+  const imgSrc = imageUrl || placeholderSVG;
+
+  // --- Format created_at similar to existing behavior ---
+  let createdAtFormatted = "-";
+  if (node.created_at) {
+    try {
+      if (typeof node.created_at.toDate === "function") {
+        const d = node.created_at.toDate();
+        createdAtFormatted = d.toLocaleString();
+      } else if (node.created_at.seconds) {
+        const d = new Date(node.created_at.seconds * 1000);
+        createdAtFormatted = d.toLocaleString();
+      } else {
+        createdAtFormatted = String(node.created_at);
+      }
+    } catch (ex) {
+      createdAtFormatted = String(node.created_at);
+    }
+  }
+
+  // --- Coordinates string (Longitude, Latitude) as requested ---
+  const coordText = (node.longitude !== undefined && node.latitude !== undefined && node.longitude !== null && node.latitude !== null)
+    ? `${Number(node.longitude).toFixed(6)}, ${Number(node.latitude).toFixed(6)}`
+    : "-";
+
+  // --- Active status ---
+  const statusHtml = node.is_active
+    ? `<span class="status-pill status-active" style="display:inline-flex;align-items:center;gap:6px;background:#e8f7ef;color:#0a7a4a;padding:6px 10px;border-radius:999px;font-weight:600;"><i class="fas fa-check-circle"></i> Active</span>`
+    : `<span class="status-pill status-inactive" style="display:inline-flex;align-items:center;gap:6px;background:#fff3f3;color:#a33;padding:6px 10px;border-radius:999px;font-weight:600;"><i class="fas fa-times-circle"></i> Inactive</span>`;
+
+  // --- Build sidebar UI (image -> name -> divider -> coordinates, status, createdAt -> divider -> contact) ---
+  sidebar.innerHTML = `
+    <div style="padding:12px; display:flex;flex-direction:column;gap:10px;">
+      <div style="width:100%;display:flex;justify-content:center;">
+        <div style="width:100%;max-width:320px;border-radius:8px;overflow:hidden;box-shadow:0 6px 18px rgba(9,30,66,0.08);position:relative;">
+          <img id="sidebar-infra-image" src="${imgSrc}" alt="${(node.name||'Image').replace(/"/g,'')}" style="width:100%;height:220px;object-fit:cover;display:block;background:#f6f6f8" />
+          <!-- show rooms link overlay -->
+          <a class="show-rooms-link" href="#" style="position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,0.95);padding:6px 10px;border-radius:6px;color:#0f1720;font-weight:600;text-decoration:none;box-shadow:0 2px 6px rgba(2,6,23,0.12);display:inline-flex;align-items:center;gap:8px;">
+            <i class="fas fa-th-large" style="color:#374151"></i>
+            Show Rooms
+          </a>
+        </div>
+      </div>
+
+      <div style="text-align:center;padding:4px 8px;">
+        <h3 style="margin:6px 0;font-size:18px;font-weight:700;color:#111">${node.name || "-"}</h3>
+        <div style="color:#57606a;font-size:13px;">${node.node_id ? node.node_id : ""}</div>
+      </div>
+
+      <div style="height:1px;background:linear-gradient(90deg,#afafaf,#afafaf);margin:6px 0;border-radius:2px;"></div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;padding:0 6px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <i class="fas fa-map-marker-alt" style="color:#DC143C;width:20px;text-align:center"></i>
+          <div style="flex:1">
+            <div style="font-size:12px;color:#69717a;font-weight:600">Coordinates</div>
+            <div style="font-size:14px;color:#0f1720">${coordText}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;">
+          <i class="fas fa-info-circle" style="color:#2b7a78;width:20px;text-align:center"></i>
+          <div style="flex:1">
+            <div style="font-size:12px;color:#69717a;font-weight:600">Status</div>
+            <div style="font-size:14px">${statusHtml}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;">
+          <i class="fas fa-calendar-alt" style="color:#667085;width:20px;text-align:center"></i>
+          <div style="flex:1">
+            <div style="font-size:12px;color:#69717a;font-weight:600">Created</div>
+            <div style="font-size:14px;color:#0f1720;">${createdAtFormatted}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:linear-gradient(90deg,#afafaf,#afafaf);margin:10px 0;border-radius:2px;"></div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;padding:0 6px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <i class="fas fa-envelope" style="color:#475569;width:20px;text-align:center"></i>
+          <div style="flex:1">
+            <div style="font-size:12px;color:#69717a;font-weight:600">Email</div>
+            <div style="font-size:14px;color:#0f1720;word-break:break-word">${infraEmail || "-"}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;">
+          <i class="fas fa-phone" style="color:#475569;width:20px;text-align:center"></i>
+          <div style="flex:1">
+            <div style="font-size:12px;color:#69717a;font-weight:600">Phone</div>
+            <div style="font-size:14px;color:#0f1720">${infraPhone || "-"}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="qr-section" style="padding-top:12px;display:flex;justify-content:center;"></div>
+    </div>
+  `;
+
+  // attach show rooms handler (only visible when infra has related_infra_id)
+  const showLink = document.querySelector(".map-sidebar .show-rooms-link");
+  if (showLink) {
+    showLink.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      // Only open if we have a related_infra_id
+      const infraId = node.related_infra_id || null;
+      if (!infraId) {
+        alert("No related infrastructure recorded for this node.");
+        return;
+      }
+      openRoomsModal({ infra_id: infraId, infra_node: node });
+    });
+  }
+
+  // re-use existing QR rendering logic
   await renderQrSection(node);
 }
 
 
 
 
-// ---- Render QR Section ----
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const ROOM_ICON_SVGS = {
+  // door / room (Material-style simplified)
+  room: `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 24 24" fill="#000000"><g fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M5 2h11a3 3 0 0 1 3 3v14a1 1 0 0 1-1 1h-3"/><path d="m5 2l7.588 1.518A3 3 0 0 1 15 6.459V20.78a1 1 0 0 1-1.196.98l-7.196-1.438A2 2 0 0 1 5 18.36V2Zm7 10v2"/></g></svg>`,
+  // stairs
+  stairs: `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 24 24" fill="#000000"><g fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M2 16h10v4H2zm2-4h10v4H4zm2-4h10v4H6zm2-4h10v4H8z"/><path d="M12 20h10V4h-4"/></g></svg>`,
+  // exit (door open arrow)
+  fire_exit: `<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><path fill="#000000" d="M4 3L3 5h1v3H3V6H2v1H0V6h1l1-3H1L0 4V2h4l1-1l-1-1l-1 1l2 2h1v1H5m2-3H6L5 0h3v8H7"/></svg>`
+};
+
+const _roomIconCache = {}; // kind -> HTMLImageElement
+
+function svgToDataUrl(svg) {
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
+function loadIconImage(kind) {
+  return new Promise((resolve) => {
+    const key = kind || 'room';
+    if (_roomIconCache[key] !== undefined) return resolve(_roomIconCache[key]);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { _roomIconCache[key] = img; resolve(img); };
+    img.onerror = () => { _roomIconCache[key] = null; resolve(null); };
+    img.src = svgToDataUrl(ROOM_ICON_SVGS[key] || ROOM_ICON_SVGS.room);
+  });
+}
+
+let _roomIconsLoadedPromise = null;
+function ensureRoomIconsLoaded() {
+  if (_roomIconsLoadedPromise) return _roomIconsLoadedPromise;
+  _roomIconsLoadedPromise = Promise.all([
+    loadIconImage('room'),
+    loadIconImage('stairs'),
+    loadIconImage('fire_exit')
+  ]).then(() => true).catch(() => true);
+  return _roomIconsLoadedPromise;
+}
+
+async function openRoomsModal({ infra_id, infra_node = null } = {}) {
+  document.querySelectorAll(".rooms-modal, .rooms-modal-backdrop").forEach(n => n.remove());
+  await ensureRoomIconsLoaded();
+
+  // try to fetch infra name for header
+  let infraName = infra_id;
+  try {
+    const q = query(collection(db, "Infrastructure"), where("infra_id", "==", infra_id));
+    const snap = await getDocs(q);
+    if (!snap.empty) infraName = snap.docs[0].data().name || infra_id;
+  } catch (e) {
+    console.warn("Could not fetch infra name for rooms modal:", e);
+  }
+
+  const backdrop = document.createElement("div");
+  backdrop.className = "rooms-modal-backdrop";
+  backdrop.style = "position:fixed;inset:0;background:rgba(6,18,31,0.45);z-index:10000;display:flex;align-items:center;justify-content:center;";
+  document.body.appendChild(backdrop);
+
+  const modal = document.createElement("div");
+  modal.className = "rooms-modal";
+  modal.style = "background:#fff;border-radius:12px;padding:18px;width:920px;max-width:96%;max-height:86vh;overflow:hidden;box-shadow:0 18px 50px rgba(2,6,23,0.35);display:flex;flex-direction:column;gap:14px;font-family:Inter,Arial,Helvetica,sans-serif;position:relative;";
+  modal.innerHTML = `
+    <style>
+      @keyframes spinCone { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:6px;border-bottom:1px solid #eef2f7;">
+      <div style="display:flex;flex-direction:column;">
+        <div style="font-weight:700;color:#0f1720;font-size:16px">Rooms — ${escapeHtml(infraName)}</div>
+        <div id="rooms-floor-label" style="color:#6b7280;font-size:13px;margin-top:4px;">Floor • —</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button id="rooms-floor-prev" aria-label="Up (higher floor)" title="Up (higher floor)" style="border:none;background:#fff;border-radius:8px;padding:8px;cursor:pointer;box-shadow:0 2px 6px rgba(2,6,23,0.06)"><i class="fas fa-arrow-up" style="color:#374151"></i></button>
+        <button id="rooms-floor-next" aria-label="Down (lower floor)" title="Down (lower floor)" style="border:none;background:#fff;border-radius:8px;padding:8px;cursor:pointer;box-shadow:0 2px 6px rgba(2,6,23,0.06)"><i class="fas fa-arrow-down" style="color:#374151"></i></button>
+        <button id="close-rooms-modal" title="Close" style="border:none;background:transparent;color:#556070;padding:6px;cursor:pointer;font-size:18px;"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;flex:1;min-height:380px;">
+      <div style="flex:1;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;padding-top:6px;">
+        <canvas id="rooms-canvas" width="820" height="520" style="background:linear-gradient(180deg,#fcfdff,#fbfcfd);border:1px solid #eef2f7;border-radius:8px;"></canvas>
+        <div id="rooms-legend" style="font-size:13px;color:#556070;width:100%;display:flex;justify-content:center;"></div>
+      </div>
+    </div>
+
+    <!-- Crimson loader overlay (circular spinner, crimson) -->
+    <div id="rooms-loading-overlay" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.88);z-index:40;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+        <!-- circular spinner (crimson) -->
+        <div style="width:48px;height:48px;border-radius:50%;border:5px solid rgba(0,0,0,0.08);border-top-color:#DC143C;box-sizing:border-box;animation:spinCone 0.9s linear infinite;"></div>
+        <!-- loading text in black -->
+        <div style="color:#000000;font-weight:600">Loading rooms…</div>
+      </div>
+    </div>
+  `;
+  backdrop.appendChild(modal);
+
+  modal.querySelector("#close-rooms-modal").addEventListener("click", () => closeRoomsModal());
+  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeRoomsModal(); });
+
+  const loadingOverlay = modal.querySelector("#rooms-loading-overlay");
+  if (loadingOverlay) loadingOverlay.style.display = "flex";
+
+  // collect indoor room nodes that belong to this infrastructure
+  let roomNodes = [];
+  try {
+    const mapsSnap = await getDocs(collection(db, "MapVersions"));
+    for (const mapDoc of mapsSnap.docs) {
+      const mapData = mapDoc.data();
+      const currentVersion = mapData.current_version;
+      if (!currentVersion) continue;
+      const versionRef = doc(db, "MapVersions", mapDoc.id, "versions", currentVersion);
+      const versionSnap = await getDoc(versionRef);
+      if (!versionSnap.exists()) continue;
+      const versionNodes = Array.isArray(versionSnap.data().nodes) ? versionSnap.data().nodes : [];
+      versionNodes.forEach(n => {
+        const isIndoor = !!(n.indoor && (n.indoor.x !== undefined || n.indoor.y !== undefined || n.indoor.floor !== undefined));
+        const matchesInfra = n.related_infra_id && infra_id && String(n.related_infra_id) === String(infra_id);
+        if (isIndoor && matchesInfra) roomNodes.push(Object.assign({}, n));
+      });
+    }
+  } catch (err) {
+    console.error("Error loading room nodes for Show Rooms modal:", err);
+  }
+
+  if (!roomNodes.length) {
+    // hide loader only after we've shown the "no rooms" state and drawn canvas
+    if (loadingOverlay) loadingOverlay.style.display = "none";
+    modal.querySelector("#rooms-legend").textContent = "No room nodes found for this infrastructure.";
+    renderRoomsFloor(modal, [], null, infra_node);
+    return;
+  }
+
+  // load IndoorInfrastructure entries for mapping indoor_type + name
+  const indoorMap = {};
+  try {
+    const indoorSnap = await getDocs(collection(db, "IndoorInfrastructure"));
+    indoorSnap.forEach(d => {
+      const data = d.data();
+      if (data.room_id) indoorMap[String(data.room_id)] = { indoor_type: data.indoor_type || data.type || "", name: data.name || data.room_name || "", infra_id: data.infra_id || null };
+    });
+  } catch (e) {
+    console.warn("Failed to load IndoorInfrastructure map:", e);
+  }
+
+  // also load Infrastructure names map (for room infra names)
+  const infraMap = {};
+  try {
+    const infraSnap = await getDocs(collection(db, "Infrastructure"));
+    infraSnap.forEach(d => {
+      const data = d.data();
+      if (data.infra_id) infraMap[String(data.infra_id)] = data.name || data.infra_id;
+    });
+  } catch (e) {
+    console.warn("Failed to load Infrastructure map:", e);
+  }
+
+  // enrich roomNodes with kind and display name
+  roomNodes = roomNodes.map(n => {
+    const relatedRoomId = String(n.related_room_id || n.room_id || "");
+    const indoorDoc = indoorMap[relatedRoomId] || {};
+    const kind = (indoorDoc.indoor_type || n.indoor?.type || n.type || "").toString().toLowerCase();
+    const roomName = indoorDoc.name || n.name || n.room_name || relatedRoomId || "Room";
+    const roomInfraName = indoorDoc.infra_id ? (infraMap[String(indoorDoc.infra_id)] || indoorDoc.infra_id) : (infraMap[String(n.related_infra_id)] || n.related_infra_id || "");
+    return Object.assign({}, n, { resolved_kind: kind, resolved_room_name: roomName, resolved_infra_name: roomInfraName });
+  });
+
+  // floors list
+  const floors = Array.from(new Set(roomNodes.map(r => (r.indoor?.floor ?? "0").toString()))).filter(Boolean);
+  floors.sort((a,b) => {
+    const na = Number(a), nb = Number(b);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    return a.localeCompare(b);
+  });
+
+  let currentFloorIndex = 0;
+  const setFloorIndex = (i) => {
+    currentFloorIndex = Math.max(0, Math.min(floors.length - 1, i));
+    const floor = floors[currentFloorIndex];
+    modal.querySelector("#rooms-floor-label").textContent = `Floor ${floor}`;
+    // Up arrow (prev) -> higher floor; Down arrow (next) -> lower floor
+    modal.querySelector("#rooms-floor-prev").disabled = (currentFloorIndex === floors.length - 1);
+    modal.querySelector("#rooms-floor-next").disabled = (currentFloorIndex === 0);
+    const roomsForFloor = roomNodes.filter(r => String(r.indoor?.floor ?? "0") === String(floor));
+    renderRoomsFloor(modal, roomsForFloor, floor, infra_node);
+  };
+
+  modal.querySelector("#rooms-floor-prev").addEventListener("click", () => setFloorIndex(currentFloorIndex + 1));
+  modal.querySelector("#rooms-floor-next").addEventListener("click", () => setFloorIndex(currentFloorIndex - 1));
+
+  // initial render (keep loader visible until rendering completes)
+  setFloorIndex(0);
+
+  // hide loader now that rooms are rendered
+  if (loadingOverlay) loadingOverlay.style.display = "none";
+}
+
+function renderRoomsFloor(modal, rooms, floorLabel, infra_node = null) {
+  const canvas = modal.querySelector("#rooms-canvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width;
+  const H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // subtle background
+  ctx.fillStyle = "#fbfcfd";
+  ctx.fillRect(0,0,W,H);
+
+  const pad = 36;
+  const drawW = W - pad*2;
+  const drawH = H - pad*2;
+
+  const infraOriginX = infra_node?.indoor?.x ? Number(infra_node.indoor.x) : 0;
+  const infraOriginY = infra_node?.indoor?.y ? Number(infra_node.indoor.y) : 0;
+
+  const points = rooms.map(r => {
+    const rx = (r.indoor?.x !== undefined && r.indoor?.x !== null) ? Number(r.indoor.x) - infraOriginX : 0;
+    const ry = (r.indoor?.y !== undefined && r.indoor?.y !== null) ? Number(r.indoor.y) - infraOriginY : 0;
+    // prefer resolved_kind/resolved_room_name if present
+    const kind = (r.resolved_kind || r.indoor?.type || r.indoor_type || r.type || "").toString().toLowerCase();
+    const name = r.resolved_room_name || r.name || r.room_name || (r.related_room_id || r.room_id) || "?";
+    const infraName = r.resolved_infra_name || r.related_infra_id || "";
+    return { raw: r, id: r.node_id || r.related_room_id || r.room_id || "?", name, infraName, x: rx, y: ry, kind };
+  });
+
+  // include origin
+  const xs = points.map(p => p.x).concat([0]);
+  const ys = points.map(p => p.y).concat([0]);
+
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+
+  const rangeX = (maxX - minX) || 1;
+  const rangeY = (maxY - minY) || 1;
+
+  const scale = Math.min(drawW / rangeX, drawH / rangeY) * 0.9;
+  const offsetX = pad + (drawW - (rangeX * scale)) / 2;
+  const offsetY = pad + (drawH - (rangeY * scale)) / 2;
+
+  const worldToCanvas = (x, y) => {
+    const cx = offsetX + (x - minX) * scale;
+    const cy = offsetY + (maxY - y) * scale;
+    return [cx, cy];
+  };
+
+  // faint gridlines
+  ctx.strokeStyle = "rgba(14,39,75,0.045)";
+  ctx.lineWidth = 1;
+  const gridPx = 40;
+  for (let gx = pad; gx <= W - pad; gx += gridPx) {
+    ctx.beginPath();
+    ctx.moveTo(gx, pad);
+    ctx.lineTo(gx, H - pad);
+    ctx.stroke();
+  }
+  for (let gy = pad; gy <= H - pad; gy += gridPx) {
+    ctx.beginPath();
+    ctx.moveTo(pad, gy);
+    ctx.lineTo(W - pad, gy);
+    ctx.stroke();
+  }
+
+  // axes
+  const [originCx, originCy] = worldToCanvas(0, 0);
+  ctx.strokeStyle = "#e6eef6";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(originCx, pad); ctx.lineTo(originCx, H - pad); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pad, originCy); ctx.lineTo(W - pad, originCy); ctx.stroke();
+
+  // origin marker
+  ctx.fillStyle = "#0f1720";
+  ctx.beginPath(); ctx.arc(originCx, originCy, 4, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = "#6b7280";
+  ctx.font = "12px Inter, Arial, sans-serif";
+  ctx.fillText("0,0", originCx + 8, originCy - 10);
+
+  // render points with icons and labels
+  points.forEach(p => {
+    const [cx, cy] = worldToCanvas(p.x, p.y);
+
+    const iconSize = Math.max(18, Math.min(40, Math.round(18 + Math.abs(p.x || 0) * 0.01)));
+    // draw icon (uses preloaded SVG images)
+    drawIconImage(ctx, cx, cy, p.kind, iconSize);
+
+    // label above icon: room name (bold) + infra name (subtle) below it (or below name if space)
+    const nameText = p.name || p.id;
+    const infraText = p.infraName || "";
+
+    ctx.font = "13px Inter, Arial, sans-serif";
+    const nameMetrics = ctx.measureText(nameText);
+    const nameW = nameMetrics.width;
+
+    ctx.font = "11px Inter, Arial, sans-serif";
+    const infraMetrics = ctx.measureText(infraText);
+    const infraW = infraMetrics.width;
+
+    const tw = Math.max(nameW, infraW) + 16;
+    const th = infraText ? 36 : 22;
+
+    let tx = cx - tw / 2;
+    let ty = cy - (iconSize / 2) - 10 - th;
+
+    tx = Math.max(pad - 6, Math.min(W - pad - tw + 6, tx));
+    if (ty < 6) ty = cy + (iconSize / 2) + 8;
+
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    roundRect(ctx, tx, ty, tw, th, 6, true, false);
+
+    // draw name
+    ctx.fillStyle = "#0f1720";
+    ctx.font = "13px Inter, Arial, sans-serif";
+    ctx.fillText(nameText, tx + 8, ty + 16);
+
+    if (infraText) {
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "11px Inter, Arial, sans-serif";
+      ctx.fillText(infraText, tx + 8, ty + 30);
+    }
+  });
+
+  // legend
+  const legend = modal.querySelector("#rooms-legend");
+  if (legend) {
+    legend.innerHTML = `<div style="display:flex;gap:18px;align-items:center;color:#556070;">
+      <div style="display:flex;align-items:center;gap:8px;"><img src="${svgToDataUrl(ROOM_ICON_SVGS.room)}" style="width:18px;height:18px;object-fit:contain;border-radius:3px;"/> Room</div>
+      <div style="display:flex;align-items:center;gap:8px;"><img src="${svgToDataUrl(ROOM_ICON_SVGS.stairs)}" style="width:18px;height:18px;object-fit:contain;border-radius:3px;"/> Stairs</div>
+      <div style="display:flex;align-items:center;gap:8px;"><img src="${svgToDataUrl(ROOM_ICON_SVGS.fire_exit)}" style="width:18px;height:18px;object-fit:contain;border-radius:3px;"/> Exit</div>
+      <div style="margin-left:8px;color:#8b949e;font-size:12px;">${points.length} room(s) — Floor ${floorLabel ?? "-"}</div>
+    </div>`;
+  }
+}
+
+function drawIconImage(ctx, cx, cy, kind = "", size = 18) {
+  const k = (kind || "").toLowerCase();
+  const key = (k.includes("stair") || k.includes("stairs")) ? "stairs" : (k.includes("fire") || k.includes("exit") ? "fire_exit" : "room");
+  const img = _roomIconCache[key];
+
+  if (img && img.width) {
+    // draw centered and keep aspect
+    const targetW = size;
+    const targetH = Math.round(img.height / img.width * targetW);
+    ctx.drawImage(img, cx - targetW/2, cy - targetH/2, targetW, targetH);
+    return;
+  }
+
+  // fallback small colored circle
+  ctx.save();
+  ctx.beginPath();
+  ctx.fillStyle = key === "stairs" ? "#B45309" : (key === "fire_exit" ? "#DC2626" : "#2563EB");
+  ctx.arc(cx, cy, 6, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+// small helper: escape simple HTML used in modal header
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str).replace(/&/g, "&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// rounded rect helper
+function roundRect(ctx, x, y, w, h, r, fill, stroke) {
+  if (typeof r === 'undefined') r = 5;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = ctx.fillStyle || "#fff"; ctx.fill(); }
+  if (stroke) ctx.stroke();
+}
+
+function closeRoomsModal() {
+  document.querySelectorAll(".rooms-modal, .rooms-modal-backdrop").forEach(n => n.remove());
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function renderQrSection(node) {
   const qrSection = document.querySelector(".map-sidebar .qr-section");
-  qrSection.innerHTML = "<em>Checking QR...</em>";
+  if (!qrSection) return;
 
-  // Always use CRIMSON_ prefix for node_id
+  // compact loader
+  qrSection.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px;">
+    <div style="width:36px;height:36px;border:4px solid rgba(0,0,0,0.08);border-top-color:#007bff;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+    <div style="color:#556070;font-size:13px;">Checking QR...</div>
+  </div>`;
+
   const crimsonNodeId = `CRIMSON_${node.node_id}`;
-
   const qrRef = doc(db, "NodeQRCodes", crimsonNodeId);
   const qrSnap = await getDoc(qrRef);
-
   const hasQR = qrSnap.exists();
-  const qrData = hasQR ? qrSnap.data() : null;
+  const lastGenerated = hasQR
+    ? (qrSnap.data().last_generated
+        ? (new Date(qrSnap.data().last_generated.seconds ? qrSnap.data().last_generated.seconds * 1000 : qrSnap.data().last_generated).toLocaleString())
+        : "-")
+    : "-";
 
+  // build clean professional QR card WITHOUT an auto-displayed QR container.
+  // QR will only appear in the modal when user clicks Generate or View.
   qrSection.innerHTML = `
-    <div class="details-item">
-      <span>QR Code for ${crimsonNodeId}</span>
-      ${hasQR ? "<br><small style='color:green'>This node already has a QR</small>" : ""}
-    </div>
-    <div class="qr-actions" style="display:flex; justify-content:center; gap:10px; margin-top:10px;">
-      <button class="generate-qr-btn">📷 Generate QR</button>
-      ${hasQR ? `<button class="view-qr-btn">👁 View</button>` : ""}
+    <div style="width:100%;max-width:300px;border-radius:8px;padding:12px;background:#fff;border:1px solid #eef2f7;box-shadow:0 6px 18px rgba(9,30,66,0.04);text-align:center;">
+      <div style="font-size:13px;color:#394152;font-weight:700;margin-bottom:8px;">QR Code</div>
+
+
+
+      <div style="margin-top:4px;color:#6b7280;font-size:12px;">${crimsonNodeId}<br><small>Last: ${lastGenerated}</small></div>
+
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
+        <button class="btn-generate-qr" style="background:#007bff;color:#fff;border:none;padding:8px 10px;border-radius:6px;cursor:pointer;font-weight:600;">
+          <i class="fas fa-qrcode" style="margin-right:6px"></i> Generate
+        </button>
+        ${hasQR ? `<button class="btn-view-qr" style="background:#fff;border:1px solid #d1d5db;padding:8px 10px;border-radius:6px;cursor:pointer;font-weight:600;"><i class="fas fa-eye" style="margin-right:6px"></i> View</button>` : ''}
+      </div>
     </div>
   `;
 
-  // View QR if exists → regenerate dynamically, do not save
-  if (hasQR) {
-    qrSection.querySelector(".view-qr-btn").addEventListener("click", async () => {
-      try {
-        const qrDiv = document.createElement("div");
-        new QRCode(qrDiv, {
-          text: crimsonNodeId, // regenerate QR data
-          width: 512,
-          height: 512,
-          correctLevel: QRCode.CorrectLevel.H
-        });
-
-        await new Promise(res => setTimeout(res, 100));
-        const canvas = qrDiv.querySelector("canvas");
-        const dataUrl = canvas.toDataURL("image/png");
-
-        openQrModal(dataUrl, crimsonNodeId, canvas);
-      } catch (err) {
-        console.error(err);
-      }
-    });
-  }
-
-  // Generate QR button → saves minimal info (node_id, last_generated)
-  qrSection.querySelector(".generate-qr-btn").addEventListener("click", async () => {
+  // handlers (QR rendering only when user clicks)
+  const genBtn = qrSection.querySelector(".btn-generate-qr");
+  genBtn.addEventListener("click", async () => {
     try {
       const qrDiv = document.createElement("div");
-      const qr = new QRCode(qrDiv, {
+      new QRCode(qrDiv, {
         text: crimsonNodeId,
         width: 512,
         height: 512,
         correctLevel: QRCode.CorrectLevel.H
       });
-
-      await new Promise(res => setTimeout(res, 100));
-      const canvas = qrDiv.querySelector("canvas");
+      await new Promise(res => setTimeout(res, 80)); // allow render
+      const canvas = qrDiv.querySelector("canvas") || qrDiv.querySelector("img");
       const dataUrl = canvas.toDataURL("image/png");
 
+      // show modal with the generated QR (only shown on click)
       openQrModal(dataUrl, crimsonNodeId, canvas);
 
-      // Save minimal info to Firestore
+      // save minimal info to Firestore
       await setDoc(qrRef, {
         node_id: crimsonNodeId,
         last_generated: new Date(),
         node_name: node.name || "-"
       }, { merge: true });
 
+      // refresh section (still will NOT auto-display QR)
       await renderQrSection(node);
     } catch (err) {
-      console.error(err);
+      console.error("QR generate error:", err);
+      alert("Failed to generate QR");
     }
   });
+
+  const viewBtn = qrSection.querySelector(".btn-view-qr");
+  if (viewBtn) {
+    viewBtn.addEventListener("click", async () => {
+      try {
+        const qrDiv = document.createElement("div");
+        new QRCode(qrDiv, {
+          text: crimsonNodeId,
+          width: 512,
+          height: 512,
+          correctLevel: QRCode.CorrectLevel.H
+        });
+        await new Promise(res => setTimeout(res, 80));
+        const canvas = qrDiv.querySelector("canvas") || qrDiv.querySelector("img");
+        const dataUrl = canvas.toDataURL("image/png");
+        openQrModal(dataUrl, crimsonNodeId, canvas);
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  }
 }
 
+// ...existing code...
 function openQrModal(qrDataUrl, nodeId, canvas = null) {
+  // remove existing modal if any
+  const existing = document.querySelector(".qr-modal");
+  if (existing) existing.remove();
+
   const modal = document.createElement("div");
   modal.className = "qr-modal";
+  modal.style.position = "fixed";
+  modal.style.inset = "0";
+  modal.style.zIndex = "9999";
+  modal.style.display = "flex";
+  modal.style.alignItems = "center";
+  modal.style.justifyContent = "center";
+  modal.style.background = "rgba(6,18,31,0.45)";
+
   modal.innerHTML = `
-    <div class="qr-modal-overlay"></div>
-    <div class="qr-modal-content">
-      <span class="qr-modal-close">&times;</span>
-      <h3>QR Code for ${nodeId}</h3>
-      <img src="${qrDataUrl}" id="modal-qr"/>
-      <div class="qr-buttons">
-        <button id="download-qr-btn">⬇️ Download PNG</button>
-        <button id="print-qr-btn">🖨 Print</button>
-        <button id="pdf-qr-btn">📄 Export PDF</button>
+    <div style="background:#fff;border-radius:10px;padding:18px;min-width:320px;max-width:720px;width:92%;box-shadow:0 10px 40px rgba(2,6,23,0.35);display:flex;flex-direction:column;gap:12px;align-items:center;">
+      <div style="width:100%;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-weight:700;color:#0f1720">${nodeId}</div>
+        <button class="qr-close" style="background:transparent;border:none;font-size:20px;cursor:pointer;color:#556070;"><i class="fas fa-times"></i></button>
+      </div>
+
+      <div style="background:#fafafa;padding:12px;border-radius:8px;">
+        <img src="${qrDataUrl}" alt="${nodeId}" style="width:320px;height:320px;object-fit:contain;display:block;"/>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:center;width:100%;">
+        <button id="download-qr-btn" style="background:#007bff;color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700;"><i class="fas fa-download" style="margin-right:8px"></i> Download PNG</button>
+        <button id="print-qr-btn" style="background:#fff;border:1px solid #d1d5db;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700;color:#111;"><i class="fas fa-print" style="margin-right:8px"></i> Print</button>
+        <button id="pdf-qr-btn" style="background:#111;color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700;"><i class="fas fa-file-pdf" style="margin-right:8px"></i> Export PDF</button>
       </div>
     </div>
   `;
 
   document.body.appendChild(modal);
 
-  // Close events
-  modal.querySelector(".qr-modal-close").addEventListener("click", () => modal.remove());
-  modal.querySelector(".qr-modal-overlay").addEventListener("click", () => modal.remove());
+  modal.querySelector(".qr-close").addEventListener("click", () => modal.remove());
+  modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
 
-  // Download PNG
   modal.querySelector("#download-qr-btn").addEventListener("click", () => {
     const a = document.createElement("a");
     a.href = qrDataUrl;
@@ -3268,7 +4022,6 @@ function openQrModal(qrDataUrl, nodeId, canvas = null) {
     a.click();
   });
 
-  // Print QR
   modal.querySelector("#print-qr-btn").addEventListener("click", () => {
     const w = window.open("");
     w.document.write(`<img src="${qrDataUrl}" style="width:512px;height:512px;">`);
@@ -3278,16 +4031,29 @@ function openQrModal(qrDataUrl, nodeId, canvas = null) {
     w.close();
   });
 
-  // Export PDF
   modal.querySelector("#pdf-qr-btn").addEventListener("click", () => {
     if (!canvas) return alert("Cannot export PDF because QR canvas not available.");
-    const imgData = canvas.toDataURL("image/png");
+    const imgData = (canvas.tagName === "CANVAS") ? canvas.toDataURL("image/png") : canvas.src;
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF();
-    pdf.addImage(imgData, "PNG", 20, 20, 170, 170);
+    const pdf = new jsPDF({ unit: "px", format: "a4" });
+    // center 300x300 at top
+    pdf.addImage(imgData, "PNG", 60, 60, 420, 420);
     pdf.save(`${nodeId}_qr.pdf`);
   });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
