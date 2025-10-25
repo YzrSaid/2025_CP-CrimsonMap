@@ -310,6 +310,7 @@
     <Compile Include="Assets/Mapbox/Examples/3_POIPlacement/POIPlacementScriptExample.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/RetinaRasterTile.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/VectorTile.cs" />
+    <Compile Include="Assets/Scripts/ARSCene/ARSceneQRRecalibration.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Components/VertexDebugger.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Data/KdTree/MinHeap.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Components/TextureSelector.cs" />

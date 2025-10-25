@@ -9,10 +9,29 @@
     "id": "3xwjdI85vwotZyjkEamg"
   },
   {
+    "map_name": "12345",
+    "map_id": "MAP-03",
+    "createdAt": {},
+    "campus_included": [
+      "CAMP-01"
+    ],
+    "id": "7OxrrIRcjxMFONWabK4v"
+  },
+  {
+    "map_name": "asdsa",
+    "map_id": "MAP-03",
+    "createdAt": {},
+    "campus_included": [
+      "CAMP-01",
+      "CAMP-02"
+    ],
+    "id": "Z4rR036DUbTZsGeIJpJW"
+  },
+  {
     "updatedAt": {},
     "map_name": "WMSU MAP",
-    "center_lng": 122.06196777241074,
-    "center_lat": 6.9130470133819069,
+    "center_lng": 122.06384560985325,
+    "center_lat": 6.9131236013213586,
     "map_id": "MAP-01",
     "createdAt": {},
     "campus_included": [

@@ -12,6 +12,16 @@
     "id": "3hFzZT9hQhuSYv6hyK7A"
   },
   {
+    "name": "123",
+    "is_deleted": true,
+    "deletedAt": {},
+    "createdAt": {},
+    "color": "#b41c1c",
+    "category_id": "CAT-10",
+    "buildings": 0,
+    "id": "DAXMb84LE3hqVjxV1RG8"
+  },
+  {
     "label": "U",
     "updatedAt": {},
     "is_deleted": false,

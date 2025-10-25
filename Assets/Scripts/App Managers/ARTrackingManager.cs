@@ -12,11 +12,11 @@ using Unity.XR.CoreUtils;
 /// AR-based infrastructure marker manager using AR Camera tracking instead of GPS
 /// Uses X,Y coordinate system relative to a reference point (QR scan location)
 /// FIXED: Ground plane detection for proper marker placement
+/// FIXED: Direct AR mode waits for QR scan before starting
 /// </summary>
 public class ARTrackingManager : MonoBehaviour
 {
     [Header("AR Exit Settings")]
-    [SerializeField] private Button backToMainButton;
     [SerializeField] private string mainSceneName = "MainAppScene";
     private bool isExitingAR = false;
 
@@ -25,6 +25,7 @@ public class ARTrackingManager : MonoBehaviour
     public XROrigin xrOrigin;
     public ARRaycastManager arRaycastManager; 
     public ARPlaneManager arPlaneManager;
+    public ARCameraManager arCameraManager;
     public float maxVisibleDistance = 500f;
     public float markerScale = 0.3f;
     public float minMarkerDistance = 2f;
@@ -37,8 +38,6 @@ public class ARTrackingManager : MonoBehaviour
     public float forwardDotThreshold = 0.3f;
 
     [Header("AR Tracking Quality")]
-    public ARSession arSession;
-    public ARCameraManager arCameraManager;
     private TrackingState lastTrackingState = TrackingState.None;
     [Tooltip("Only update markers when tracking is good")]
     public bool requireGoodTracking = true;
@@ -53,7 +52,7 @@ public class ARTrackingManager : MonoBehaviour
     public Vector2 referenceNodeXY = Vector2.zero;
     private Vector3 referenceWorldPosition;
     private bool referencePointSet = false;
-    private float groundPlaneY = 0f; // Store detected ground height
+    private float groundPlaneY = 0f;
 
     [Header("Tracking Smoothing")]
     public float positionSmoothingFactor = 0.3f;
@@ -74,8 +73,9 @@ public class ARTrackingManager : MonoBehaviour
     [Header("Feature Flags")]
     private ARFeatureMode currentFeatureMode = ARFeatureMode.DirectAR;
     private enum ARFeatureMode { DirectAR, ARNavigation }
+    
+    private bool isTrackingStarted = false; // NEW: Track if marker updates have started
 
-    // For AR Raycasting
     private List<ARRaycastHit> arRaycastHits = new List<ARRaycastHit>();
 
     void Start()
@@ -84,8 +84,6 @@ public class ARTrackingManager : MonoBehaviour
             arCamera = Camera.main;
         if (xrOrigin == null)
             xrOrigin = FindObjectOfType<XROrigin>();
-        if (arSession == null)
-            arSession = FindObjectOfType<ARSession>();
         if (arCameraManager == null)
             arCameraManager = FindObjectOfType<ARCameraManager>();
         if (arRaycastManager == null)
@@ -95,7 +93,6 @@ public class ARTrackingManager : MonoBehaviour
 
         UpdateLoadingUI("Initializing AR Tracking...");
 
-        SetupBackButton();
         DetermineARFeatureMode();
 
         StartCoroutine(InitializeARScene());
@@ -114,25 +111,6 @@ public class ARTrackingManager : MonoBehaviour
         {
             currentFeatureMode = ARFeatureMode.DirectAR;
             Debug.Log("[ARTrackingManager] 🗺️ DIRECT AR MODE - Using AR Camera tracking");
-        }
-    }
-
-    private void SetupBackButton()
-    {
-        if (backToMainButton == null)
-        {
-            GameObject backBtn = GameObject.Find("BackButton") ??
-                                 GameObject.Find("Back Button") ??
-                                 GameObject.Find("ExitARButton");
-            if (backBtn != null)
-                backToMainButton = backBtn.GetComponent<Button>();
-        }
-
-        if (backToMainButton != null)
-        {
-            backToMainButton.onClick.RemoveAllListeners();
-            backToMainButton.onClick.AddListener(ExitARScene);
-            Debug.Log("✅ AR exit button connected");
         }
     }
 
@@ -164,24 +142,48 @@ public class ARTrackingManager : MonoBehaviour
         UpdateLoadingUI("Detecting ground plane...");
         yield return StartCoroutine(WaitForGroundPlane());
 
-        UpdateLoadingUI("Setting reference point...");
-        SetReferencePoint(referenceNodeXY);
-
         UpdateLoadingUI("Loading map data...");
         string currentMapId = GetCurrentMapId();
         yield return StartCoroutine(LoadCurrentMapData(currentMapId));
 
-        UpdateLoadingUI("Starting AR tracking...");
-        InvokeRepeating(nameof(UpdateUserPositionAndMarkers), 0.5f, 0.15f);
-
-        HideLoadingUI();
+        // IN DIRECT AR MODE: Don't set reference point or start tracking yet
+        if (currentFeatureMode == ARFeatureMode.DirectAR)
+        {
+            UpdateLoadingUI("Ready - Scan QR code to begin");
+            Debug.Log("🔒 Direct AR: Waiting for QR scan before starting tracking");
+            HideLoadingUI();
+        }
+        else
+        {
+            // Navigation mode: Set default reference point and start immediately
+            UpdateLoadingUI("Setting reference point...");
+            SetReferencePoint(referenceNodeXY);
+            
+            UpdateLoadingUI("Starting AR tracking...");
+            StartMarkerTracking();
+            
+            HideLoadingUI();
+        }
 
         Debug.Log($"✅ AR Tracking initialized - Nodes: {currentNodes.Count}, Infra: {currentInfrastructures.Count}");
     }
 
     /// <summary>
-    /// Wait for AR to detect at least one ground plane
+    /// Start the marker tracking loop (called after QR scan in Direct AR mode)
     /// </summary>
+    private void StartMarkerTracking()
+    {
+        if (isTrackingStarted)
+        {
+            Debug.LogWarning("⚠️ Marker tracking already started");
+            return;
+        }
+
+        isTrackingStarted = true;
+        InvokeRepeating(nameof(UpdateUserPositionAndMarkers), 0.5f, 0.15f);
+        Debug.Log("✅ Marker tracking started");
+    }
+
     private IEnumerator WaitForGroundPlane()
     {
         float timeout = 5f;
@@ -191,7 +193,6 @@ public class ARTrackingManager : MonoBehaviour
         {
             if (arPlaneManager != null && arPlaneManager.trackables.count > 0)
             {
-                // Found a plane! Get its Y position
                 foreach (var plane in arPlaneManager.trackables)
                 {
                     if (plane.alignment == PlaneAlignment.HorizontalUp)
@@ -207,7 +208,6 @@ public class ARTrackingManager : MonoBehaviour
             yield return new WaitForSeconds(0.5f);
         }
 
-        // Fallback: Use camera position minus typical user height
         groundPlaneY = arCamera.transform.position.y - 1.6f;
         Debug.LogWarning($"⚠️ No ground plane detected, using estimated ground: Y={groundPlaneY:F2}");
     }
@@ -218,16 +218,38 @@ public class ARTrackingManager : MonoBehaviour
         referenceWorldPosition = arCamera.transform.position;
         lastARCameraPosition = referenceWorldPosition;
         smoothedARPosition = referenceWorldPosition;
+        
+        positionHistory.Clear();
+        
         referencePointSet = true;
+        userXY = referenceNodeXY;
 
         Debug.Log($"🎯 Reference point set at X:{nodeXY.x:F2}, Y:{nodeXY.y:F2}");
         Debug.Log($"🎯 Unity world position: {referenceWorldPosition}");
+        Debug.Log($"🎯 User XY updated to: X:{userXY.x:F2}, Y:{userXY.y:F2}");
     }
 
+    /// <summary>
+    /// PUBLIC METHOD: Called by ARSceneQRRecalibration when QR is scanned
+    /// Updates the reference point to the scanned node's X,Y coordinates
+    /// </summary>
     public void OnQRCodeScanned(Node scannedNode)
     {
-        SetReferencePoint(new Vector2(scannedNode.x_coordinate, scannedNode.y_coordinate));
         Debug.Log($"📷 QR Scanned: {scannedNode.name} at X:{scannedNode.x_coordinate:F2}, Y:{scannedNode.y_coordinate:F2}");
+        
+        SetReferencePoint(new Vector2(scannedNode.x_coordinate, scannedNode.y_coordinate));
+        
+        // If this is Direct AR mode and tracking hasn't started yet, start it now
+        if (currentFeatureMode == ARFeatureMode.DirectAR && !isTrackingStarted)
+        {
+            StartMarkerTracking();
+            Debug.Log("✅ Direct AR Mode: Tracking started after first QR scan");
+        }
+        
+        UpdateTrackingStatusUI();
+        UpdateDebugInfo();
+        
+        Debug.Log($"✅ Position recalibrated! User is now at X:{userXY.x:F2}, Y:{userXY.y:F2}");
     }
 
     private string GetCurrentMapId()
@@ -347,7 +369,6 @@ public class ARTrackingManager : MonoBehaviour
 
         Vector3 currentARPosition = arCamera.transform.position;
 
-        // CHECK AR TRACKING QUALITY
         if (requireGoodTracking && arCamera != null)
         {
             bool isTracking = Vector3.Distance(currentARPosition, lastARCameraPosition) > 0.0001f 
@@ -404,7 +425,6 @@ public class ARTrackingManager : MonoBehaviour
 
             Vector3 newWorldPos = XYToWorldPosition(anchor.nodeX, anchor.nodeY);
             
-            // FIXED: Use detected ground plane
             newWorldPos = GetGroundPosition(newWorldPos);
 
             anchor.markerGameObject.transform.position = Vector3.Lerp(
@@ -450,6 +470,7 @@ public class ARTrackingManager : MonoBehaviour
         {
             markerAnchors.Remove(nodeId);
         }
+        
         int created = 0;
 
         var nodesGroupedByInfra = currentNodes
@@ -534,19 +555,17 @@ public class ARTrackingManager : MonoBehaviour
         float distance = CalculateDistanceXY(userXY, new Vector2(node.x_coordinate, node.y_coordinate));
         Debug.Log($"✅ Created marker: {infra.name} at X:{node.x_coordinate:F1}, Y:{node.y_coordinate:F1}, Distance: {distance:F1}m");
     }
+    
     private Vector3 GetGroundPosition(Vector3 targetWorldPos)
     {
         if (arRaycastManager == null || arCamera == null)
         {
-            // Fallback: Use detected ground plane or camera-relative height
             targetWorldPos.y = groundPlaneY + markerHeightOffset;
             return targetWorldPos;
         }
 
-        // Convert world position to screen space for raycasting
         Vector3 screenPoint = arCamera.WorldToScreenPoint(targetWorldPos);
         
-        // Make sure it's in front of camera
         if (screenPoint.z < 0)
         {
             targetWorldPos.y = groundPlaneY + markerHeightOffset;
@@ -556,13 +575,11 @@ public class ARTrackingManager : MonoBehaviour
         arRaycastHits.Clear();
         if (arRaycastManager.Raycast(screenPoint, arRaycastHits, TrackableType.PlaneWithinPolygon))
         {
-            // Found a plane! Use its position
             Vector3 groundPos = arRaycastHits[0].pose.position;
             groundPos.y += markerHeightOffset;
             return groundPos;
         }
 
-        // Fallback: Use stored ground plane Y
         targetWorldPos.y = groundPlaneY + markerHeightOffset;
         return targetWorldPos;
     }
