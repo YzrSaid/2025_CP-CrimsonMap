@@ -1,5 +1,12 @@
 using UnityEngine;
 
+/// <summary>
+/// AR UI Manager - Handles UI visibility for 4 AR combinations:
+/// 1. Direct AR + GPS → Show all UI immediately
+/// 2. Direct AR + Offline → Hide all, show QR scan required panel
+/// 3. AR Navigation + GPS → Show navigation UI immediately
+/// 4. AR Navigation + Offline → Show navigation UI immediately
+/// </summary>
 public class ARUIManager : MonoBehaviour
 {
     [Header("UI Elements - Direct AR Mode")]
@@ -11,53 +18,69 @@ public class ARUIManager : MonoBehaviour
     [Tooltip("UI elements shown ONLY in Navigation mode")]
     public GameObject directionPanel;
 
-    [Header("QR Scan Required Panel (Direct AR)")]
-    [Tooltip("Panel shown in Direct AR before QR scan")]
+    [Header("QR Scan Required Panel (Direct AR + Offline ONLY)")]
+    [Tooltip("Panel shown ONLY in Direct AR + Offline before first QR scan")]
     public GameObject scanQRRequiredPanel;
-    public GameObject qrScanButton; // The scan QR button in ARSceneQRRecalibration
+    public GameObject qrScanButton;
 
-    [Header("TopPanel")]
-    public GameObject topPanel; 
+    [Header("Shared UI Elements")]
+    public GameObject topPanel;
 
     [Header("Settings")]
     public bool enableDebugLogs = true;
 
     private enum ARMode { DirectAR, Navigation }
-    private ARMode currentMode = ARMode.DirectAR;
-    private bool hasScannedQRInDirectAR = false;
+    private enum LocalizationMode { GPS, Offline }
+    
+    private ARMode currentARMode = ARMode.DirectAR;
+    private LocalizationMode currentLocalizationMode = LocalizationMode.GPS;
+    private bool hasScannedQRInDirectAROffline = false;
 
     void Start()
     {
-        DetermineARMode();
-        ConfigureUIForMode();
+        DetermineModes();
+        ConfigureUIForModes();
     }
 
-    private void DetermineARMode()
+    private void DetermineModes()
     {
+        // Determine AR Mode
         string arModeString = PlayerPrefs.GetString("ARMode", "DirectAR");
+        currentARMode = arModeString == "Navigation" ? ARMode.Navigation : ARMode.DirectAR;
 
-        if (arModeString == "Navigation")
-        {
-            currentMode = ARMode.Navigation;
-            if (enableDebugLogs)
-                Debug.Log("[ARUIManager] Mode: AR Navigation");
-        }
-        else
-        {
-            currentMode = ARMode.DirectAR;
-            if (enableDebugLogs)
-                Debug.Log("[ARUIManager] Mode: Direct AR (Offline)");
-        }
+        // Determine Localization Mode
+        string localizationModeString = PlayerPrefs.GetString("LocalizationMode", "GPS");
+        currentLocalizationMode = localizationModeString == "Offline" ? LocalizationMode.Offline : LocalizationMode.GPS;
+
+        if (enableDebugLogs)
+            Debug.Log($"[ARUIManager] AR Mode: {currentARMode}, Localization: {currentLocalizationMode}");
     }
 
-    private void ConfigureUIForMode()
+    private void ConfigureUIForModes()
     {
-        if (currentMode == ARMode.DirectAR)
+        // ════════════════════════════════════════════════════════════
+        // MODE 1: Direct AR + GPS
+        // ════════════════════════════════════════════════════════════
+        if (currentARMode == ARMode.DirectAR && currentLocalizationMode == LocalizationMode.GPS)
         {
-            // Direct AR Mode: Hide everything, show "Scan QR Required" panel
-            if (!hasScannedQRInDirectAR)
+            // Show Direct AR UI immediately (no QR scan required for GPS mode)
+            SetUIElementActive(mapPanel, true);
+            SetUIElementActive(stopDirectARButton, true);
+            SetUIElementActive(directionPanel, false);
+            SetUIElementActive(scanQRRequiredPanel, false);
+            SetUIElementActive(topPanel, true);
+
+            if (enableDebugLogs)
+                Debug.Log("✅ Direct AR + GPS: UI shown immediately");
+        }
+        // ════════════════════════════════════════════════════════════
+        // MODE 2: Direct AR + Offline (X,Y)
+        // ════════════════════════════════════════════════════════════
+        else if (currentARMode == ARMode.DirectAR && currentLocalizationMode == LocalizationMode.Offline)
+        {
+            if (!hasScannedQRInDirectAROffline)
             {
-                // HIDE ALL UI - User must scan QR first
+                // HIDE ALL UI - User must scan QR first in Offline mode
                 SetUIElementActive(mapPanel, false);
                 SetUIElementActive(stopDirectARButton, false);
                 SetUIElementActive(directionPanel, false);
@@ -68,7 +91,7 @@ public class ARUIManager : MonoBehaviour
                 SetUIElementActive(qrScanButton, true);
 
                 if (enableDebugLogs)
-                    Debug.Log("🔒 Direct AR: Waiting for QR scan to begin...");
+                    Debug.Log("🔒 Direct AR + Offline: Waiting for QR scan to begin...");
             }
             else
             {
@@ -76,28 +99,49 @@ public class ARUIManager : MonoBehaviour
                 ShowDirectARUI();
             }
         }
-        else
+        // ════════════════════════════════════════════════════════════
+        // MODE 3: AR Navigation + GPS
+        // ════════════════════════════════════════════════════════════
+        else if (currentARMode == ARMode.Navigation && currentLocalizationMode == LocalizationMode.GPS)
         {
-            // Navigation Mode: Show map, show directions, hide stop button
+            // Show Navigation UI immediately
             SetUIElementActive(mapPanel, true);
             SetUIElementActive(directionPanel, true);
             SetUIElementActive(stopDirectARButton, false);
             SetUIElementActive(scanQRRequiredPanel, false);
+            SetUIElementActive(topPanel, true);
 
             if (enableDebugLogs)
-                Debug.Log("🧭 Navigation Mode UI configured");
+                Debug.Log("🧭 AR Navigation + GPS: UI shown immediately");
+        }
+        // ════════════════════════════════════════════════════════════
+        // MODE 4: AR Navigation + Offline (X,Y)
+        // ════════════════════════════════════════════════════════════
+        else if (currentARMode == ARMode.Navigation && currentLocalizationMode == LocalizationMode.Offline)
+        {
+            // Show Navigation UI immediately (Navigation mode doesn't require QR scan in Offline)
+            SetUIElementActive(mapPanel, true);
+            SetUIElementActive(directionPanel, true);
+            SetUIElementActive(stopDirectARButton, false);
+            SetUIElementActive(scanQRRequiredPanel, false);
+            SetUIElementActive(topPanel, true);
+
+            if (enableDebugLogs)
+                Debug.Log("🧭 AR Navigation + Offline: UI shown immediately");
         }
     }
 
     /// <summary>
     /// PUBLIC METHOD: Called by ARSceneQRRecalibration after user confirms QR scan
-    /// Unlocks Direct AR mode and shows the UI
+    /// Unlocks Direct AR + Offline mode and shows the UI
     /// </summary>
     public void OnQRScannedAndConfirmed()
     {
-        if (currentMode == ARMode.DirectAR && !hasScannedQRInDirectAR)
+        if (currentARMode == ARMode.DirectAR && 
+            currentLocalizationMode == LocalizationMode.Offline && 
+            !hasScannedQRInDirectAROffline)
         {
-            hasScannedQRInDirectAR = true;
+            hasScannedQRInDirectAROffline = true;
 
             // Hide QR required panel
             SetUIElementActive(scanQRRequiredPanel, false);
@@ -106,7 +150,19 @@ public class ARUIManager : MonoBehaviour
             ShowDirectARUI();
 
             if (enableDebugLogs)
-                Debug.Log("✅ QR Scanned! Direct AR UI unlocked");
+                Debug.Log("✅ QR Scanned! Direct AR + Offline UI unlocked");
+        }
+        else if (currentARMode == ARMode.DirectAR && currentLocalizationMode == LocalizationMode.GPS)
+        {
+            // GPS mode: QR scan is just for recalibration, don't need to unlock UI
+            if (enableDebugLogs)
+                Debug.Log("✅ QR Scanned in Direct AR + GPS (recalibration)");
+        }
+        else if (currentARMode == ARMode.Navigation)
+        {
+            // Navigation mode: QR scan is just for recalibration
+            if (enableDebugLogs)
+                Debug.Log("✅ QR Scanned in Navigation mode (recalibration)");
         }
     }
 
@@ -135,11 +191,11 @@ public class ARUIManager : MonoBehaviour
 
     public void SwitchToDirectARMode()
     {
-        currentMode = ARMode.DirectAR;
-        hasScannedQRInDirectAR = false; // Reset QR scan requirement
+        currentARMode = ARMode.DirectAR;
+        hasScannedQRInDirectAROffline = false; // Reset QR scan requirement
         PlayerPrefs.SetString("ARMode", "DirectAR");
         PlayerPrefs.Save();
-        ConfigureUIForMode();
+        ConfigureUIForModes();
 
         if (enableDebugLogs)
             Debug.Log("Switched to Direct AR Mode");
@@ -147,27 +203,59 @@ public class ARUIManager : MonoBehaviour
 
     public void SwitchToNavigationMode()
     {
-        currentMode = ARMode.Navigation;
+        currentARMode = ARMode.Navigation;
         PlayerPrefs.SetString("ARMode", "Navigation");
         PlayerPrefs.Save();
-        ConfigureUIForMode();
+        ConfigureUIForModes();
 
         if (enableDebugLogs)
             Debug.Log("Switched to Navigation Mode");
     }
 
+    public void SwitchToGPSMode()
+    {
+        currentLocalizationMode = LocalizationMode.GPS;
+        PlayerPrefs.SetString("LocalizationMode", "GPS");
+        PlayerPrefs.Save();
+        ConfigureUIForModes();
+
+        if (enableDebugLogs)
+            Debug.Log("Switched to GPS Localization");
+    }
+
+    public void SwitchToOfflineMode()
+    {
+        currentLocalizationMode = LocalizationMode.Offline;
+        PlayerPrefs.SetString("LocalizationMode", "Offline");
+        PlayerPrefs.Save();
+        ConfigureUIForModes();
+
+        if (enableDebugLogs)
+            Debug.Log("Switched to Offline Localization");
+    }
+
     public bool IsNavigationMode()
     {
-        return currentMode == ARMode.Navigation;
+        return currentARMode == ARMode.Navigation;
     }
 
     public bool IsDirectARMode()
     {
-        return currentMode == ARMode.DirectAR;
+        return currentARMode == ARMode.DirectAR;
+    }
+
+    public bool IsGPSMode()
+    {
+        return currentLocalizationMode == LocalizationMode.GPS;
+    }
+
+    public bool IsOfflineMode()
+    {
+        return currentLocalizationMode == LocalizationMode.Offline;
     }
 
     public bool HasScannedQR()
     {
-        return hasScannedQRInDirectAR;
+        return hasScannedQRInDirectAROffline;
     }
 }

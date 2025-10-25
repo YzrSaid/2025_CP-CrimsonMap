@@ -8,12 +8,6 @@ using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 using Unity.XR.CoreUtils;
 
-/// <summary>
-/// AR-based infrastructure marker manager using AR Camera tracking instead of GPS
-/// Uses X,Y coordinate system relative to a reference point (QR scan location)
-/// FIXED: Ground plane detection for proper marker placement
-/// FIXED: Direct AR mode waits for QR scan before starting
-/// </summary>
 public class ARTrackingManager : MonoBehaviour
 {
     [Header("AR Exit Settings")]
@@ -23,23 +17,20 @@ public class ARTrackingManager : MonoBehaviour
     [Header("AR Settings")]
     public GameObject buildingMarkerPrefab;
     public XROrigin xrOrigin;
-    public ARRaycastManager arRaycastManager; 
+    public ARRaycastManager arRaycastManager;
     public ARPlaneManager arPlaneManager;
     public ARCameraManager arCameraManager;
     public float maxVisibleDistance = 500f;
     public float markerScale = 0.3f;
     public float minMarkerDistance = 2f;
-    public float markerHeightOffset = 0.1f; 
+    public float markerHeightOffset = 0.1f;
 
     [Header("Occlusion & Visibility Settings")]
-    [Tooltip("Only show markers within this angle from camera forward")]
     public float fieldOfViewAngle = 90f;
-    [Tooltip("Minimum dot product to consider marker 'in front'")]
     public float forwardDotThreshold = 0.3f;
 
     [Header("AR Tracking Quality")]
     private TrackingState lastTrackingState = TrackingState.None;
-    [Tooltip("Only update markers when tracking is good")]
     public bool requireGoodTracking = true;
 
     [Header("UI References")]
@@ -48,7 +39,6 @@ public class ARTrackingManager : MonoBehaviour
     public TextMeshProUGUI loadingText;
 
     [Header("Reference Point Settings (QR Scan Location)")]
-    [Tooltip("For testing - the node where user starts (0,0 reference point)")]
     public Vector2 referenceNodeXY = Vector2.zero;
     private Vector3 referenceWorldPosition;
     private bool referencePointSet = false;
@@ -74,7 +64,7 @@ public class ARTrackingManager : MonoBehaviour
     private ARFeatureMode currentFeatureMode = ARFeatureMode.DirectAR;
     private enum ARFeatureMode { DirectAR, ARNavigation }
     
-    private bool isTrackingStarted = false; // NEW: Track if marker updates have started
+    private bool isTrackingStarted = false;
 
     private List<ARRaycastHit> arRaycastHits = new List<ARRaycastHit>();
 
@@ -105,12 +95,10 @@ public class ARTrackingManager : MonoBehaviour
         if (arMode == "Navigation")
         {
             currentFeatureMode = ARFeatureMode.ARNavigation;
-            Debug.Log("[ARTrackingManager] 🧭 AR NAVIGATION MODE");
         }
         else
         {
             currentFeatureMode = ARFeatureMode.DirectAR;
-            Debug.Log("[ARTrackingManager] 🗺️ DIRECT AR MODE - Using AR Camera tracking");
         }
     }
 
@@ -118,7 +106,6 @@ public class ARTrackingManager : MonoBehaviour
     {
         if (isExitingAR) return;
 
-        Debug.Log("Exiting AR scene...");
         isExitingAR = true;
 
         ClearMarkers();
@@ -146,16 +133,13 @@ public class ARTrackingManager : MonoBehaviour
         string currentMapId = GetCurrentMapId();
         yield return StartCoroutine(LoadCurrentMapData(currentMapId));
 
-        // IN DIRECT AR MODE: Don't set reference point or start tracking yet
         if (currentFeatureMode == ARFeatureMode.DirectAR)
         {
             UpdateLoadingUI("Ready - Scan QR code to begin");
-            Debug.Log("🔒 Direct AR: Waiting for QR scan before starting tracking");
             HideLoadingUI();
         }
         else
         {
-            // Navigation mode: Set default reference point and start immediately
             UpdateLoadingUI("Setting reference point...");
             SetReferencePoint(referenceNodeXY);
             
@@ -164,24 +148,17 @@ public class ARTrackingManager : MonoBehaviour
             
             HideLoadingUI();
         }
-
-        Debug.Log($"✅ AR Tracking initialized - Nodes: {currentNodes.Count}, Infra: {currentInfrastructures.Count}");
     }
 
-    /// <summary>
-    /// Start the marker tracking loop (called after QR scan in Direct AR mode)
-    /// </summary>
     private void StartMarkerTracking()
     {
         if (isTrackingStarted)
         {
-            Debug.LogWarning("⚠️ Marker tracking already started");
             return;
         }
 
         isTrackingStarted = true;
         InvokeRepeating(nameof(UpdateUserPositionAndMarkers), 0.5f, 0.15f);
-        Debug.Log("✅ Marker tracking started");
     }
 
     private IEnumerator WaitForGroundPlane()
@@ -198,7 +175,6 @@ public class ARTrackingManager : MonoBehaviour
                     if (plane.alignment == PlaneAlignment.HorizontalUp)
                     {
                         groundPlaneY = plane.transform.position.y;
-                        Debug.Log($"✅ Ground plane detected at Y: {groundPlaneY:F2}");
                         yield break;
                     }
                 }
@@ -209,7 +185,6 @@ public class ARTrackingManager : MonoBehaviour
         }
 
         groundPlaneY = arCamera.transform.position.y - 1.6f;
-        Debug.LogWarning($"⚠️ No ground plane detected, using estimated ground: Y={groundPlaneY:F2}");
     }
 
     private void SetReferencePoint(Vector2 nodeXY)
@@ -223,33 +198,19 @@ public class ARTrackingManager : MonoBehaviour
         
         referencePointSet = true;
         userXY = referenceNodeXY;
-
-        Debug.Log($"🎯 Reference point set at X:{nodeXY.x:F2}, Y:{nodeXY.y:F2}");
-        Debug.Log($"🎯 Unity world position: {referenceWorldPosition}");
-        Debug.Log($"🎯 User XY updated to: X:{userXY.x:F2}, Y:{userXY.y:F2}");
     }
 
-    /// <summary>
-    /// PUBLIC METHOD: Called by ARSceneQRRecalibration when QR is scanned
-    /// Updates the reference point to the scanned node's X,Y coordinates
-    /// </summary>
     public void OnQRCodeScanned(Node scannedNode)
     {
-        Debug.Log($"📷 QR Scanned: {scannedNode.name} at X:{scannedNode.x_coordinate:F2}, Y:{scannedNode.y_coordinate:F2}");
-        
         SetReferencePoint(new Vector2(scannedNode.x_coordinate, scannedNode.y_coordinate));
         
-        // If this is Direct AR mode and tracking hasn't started yet, start it now
         if (currentFeatureMode == ARFeatureMode.DirectAR && !isTrackingStarted)
         {
             StartMarkerTracking();
-            Debug.Log("✅ Direct AR Mode: Tracking started after first QR scan");
         }
         
         UpdateTrackingStatusUI();
         UpdateDebugInfo();
-        
-        Debug.Log($"✅ Position recalibrated! User is now at X:{userXY.x:F2}, Y:{userXY.y:F2}");
     }
 
     private string GetCurrentMapId()
@@ -264,7 +225,6 @@ public class ARTrackingManager : MonoBehaviour
             return PlayerPrefs.GetString("CurrentMapId");
         }
 
-        Debug.LogWarning("[ARTrackingManager] Using default MAP-01");
         return "MAP-01";
     }
 
@@ -278,7 +238,6 @@ public class ARTrackingManager : MonoBehaviour
         yield return StartCoroutine(LoadNodesData(currentMapId, (success) =>
         {
             nodesLoaded = success;
-            Debug.Log($"📦 Nodes: {currentNodes.Count} loaded");
         }));
 
         UpdateLoadingUI("Loading infrastructure data...");
@@ -286,17 +245,7 @@ public class ARTrackingManager : MonoBehaviour
         yield return StartCoroutine(LoadInfrastructureData((success) =>
         {
             infraLoaded = success;
-            Debug.Log($"🏢 Infrastructure: {currentInfrastructures.Count} loaded");
         }));
-
-        if (nodesLoaded && infraLoaded)
-        {
-            Debug.Log($"✅ DATA LOADED - Nodes: {currentNodes.Count}, Infra: {currentInfrastructures.Count}");
-        }
-        else
-        {
-            Debug.LogError($"❌ Load failed - Nodes: {nodesLoaded}, Infra: {infraLoaded}");
-        }
     }
 
     IEnumerator LoadNodesData(string mapId, System.Action<bool> onComplete)
@@ -312,18 +261,15 @@ public class ARTrackingManager : MonoBehaviour
                 {
                     Node[] nodes = JsonHelper.FromJson<Node>(jsonData);
                     currentNodes = nodes.Where(n => n.type == "infrastructure" && n.is_active).ToList();
-                    Debug.Log($"✅ Found {currentNodes.Count} active infrastructure nodes");
                     loadSuccess = true;
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError($"❌ Error parsing nodes: {e.Message}");
                     loadSuccess = false;
                 }
             },
             (error) =>
             {
-                Debug.LogError($"❌ Failed to load nodes: {error}");
                 loadSuccess = false;
             }
         ));
@@ -344,18 +290,15 @@ public class ARTrackingManager : MonoBehaviour
                 {
                     Infrastructure[] infrastructures = JsonHelper.FromJson<Infrastructure>(jsonData);
                     currentInfrastructures = infrastructures.Where(i => !i.is_deleted).ToList();
-                    Debug.Log($"✅ Found {currentInfrastructures.Count} active infrastructures");
                     loadSuccess = true;
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError($"❌ Error loading infrastructure: {e.Message}");
                     loadSuccess = false;
                 }
             },
             (error) =>
             {
-                Debug.LogError($"❌ Failed to load infrastructure: {error}");
                 loadSuccess = false;
             }
         ));
@@ -376,7 +319,6 @@ public class ARTrackingManager : MonoBehaviour
             
             if (!isTracking && lastARCameraPosition != Vector3.zero)
             {
-                Debug.LogWarning($"⚠️ AR Tracking poor - Camera not moving");
                 lastTrackingState = TrackingState.Limited;
                 UpdateTrackingStatusUI();
                 return;
@@ -497,11 +439,6 @@ public class ARTrackingManager : MonoBehaviour
                 created++;
             }
         }
-
-        if (created > 0)
-        {
-            Debug.Log($"📊 Created {created} new markers. Total: {markerAnchors.Count}");
-        }
     }
 
     bool ShouldShowMarker(Node node)
@@ -520,7 +457,6 @@ public class ARTrackingManager : MonoBehaviour
     {
         if (buildingMarkerPrefab == null)
         {
-            Debug.LogError("❌ Building marker prefab not assigned!");
             return;
         }
 
@@ -528,7 +464,6 @@ public class ARTrackingManager : MonoBehaviour
 
         if (infra == null)
         {
-            Debug.LogWarning($"❌ No infrastructure for node {node.node_id}");
             return;
         }
 
@@ -551,9 +486,6 @@ public class ARTrackingManager : MonoBehaviour
         };
 
         markerAnchors[node.node_id] = anchor;
-
-        float distance = CalculateDistanceXY(userXY, new Vector2(node.x_coordinate, node.y_coordinate));
-        Debug.Log($"✅ Created marker: {infra.name} at X:{node.x_coordinate:F1}, Y:{node.y_coordinate:F1}, Distance: {distance:F1}m");
     }
     
     private Vector3 GetGroundPosition(Vector3 targetWorldPos)
@@ -665,7 +597,6 @@ public class ARTrackingManager : MonoBehaviour
             loadingText.text = message;
             loadingText.gameObject.SetActive(true);
         }
-        Debug.Log($"[Loading] {message}");
     }
 
     void HideLoadingUI()
@@ -684,7 +615,6 @@ public class ARTrackingManager : MonoBehaviour
                 Destroy(kvp.Value.markerGameObject);
         }
         markerAnchors.Clear();
-        Debug.Log("🗑️ All markers cleared");
     }
 
     void OnDestroy()

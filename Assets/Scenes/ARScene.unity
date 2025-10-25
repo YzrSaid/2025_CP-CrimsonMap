@@ -535,7 +535,7 @@ GameObject:
   - component: {fileID: 118935711}
   - component: {fileID: 118935710}
   m_Layer: 5
-  m_Name: Panel
+  m_Name: TopPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9107,7 +9107,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5dd2c550737c5d5b48e3952472a7922a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  backToMainButton: {fileID: 0}
   mainSceneName: MainAppScene
   buildingMarkerPrefab: {fileID: 2395739616877220581, guid: 9651b0f074c56f421b790ae228f60189, type: 3}
   xrOrigin: {fileID: 331264286}
@@ -9144,6 +9143,7 @@ MonoBehaviour:
   directionPanel: {fileID: 841933934}
   scanQRRequiredPanel: {fileID: 1401616102}
   qrScanButton: {fileID: 2016327568}
+  topPanel: {fileID: 118935708}
   enableDebugLogs: 1
 --- !u!114 &1709089051
 MonoBehaviour:
