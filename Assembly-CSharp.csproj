@@ -239,6 +239,7 @@
     <Compile Include="Assets/Scripts/Main App Scripts/PolygonImage.cs" />
     <Compile Include="Assets/Mapbox/Core/probe-extractor-cs/ProbeExtractor.cs" />
     <Compile Include="Assets/Scripts/Effects/BreathingIconEffect.cs" />
+    <Compile Include="Assets/Scripts/ARSCene/UnifiedARManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/Map/TileProviders/QuadTreeTileProvider.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/Spawners/BarrierSpawner.cs" />
     <Compile Include="Assets/Mapbox/Unity/Utilities/AndroidSettings.cs" />
@@ -254,6 +255,7 @@
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/TileJSON/TileJSONObjectVectorLayer.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/MapScalingOptions.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Geocoding/Response/Geometry.cs" />
+    <Compile Include="Assets/Scripts/ARSCene/ARLocalizationModeSelector.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/ClassicRetinaRasterTile.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Directions/RoutingProfile.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/ReverseGeocodeUserInput.cs" />
@@ -466,6 +468,7 @@
     <Compile Include="Assets/Mapbox/Examples/Scripts/TrafficUvAnimator.cs" />
     <Compile Include="Assets/Settings/Project Configuration/SceneTemplate_RotateCube.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/RawPngRasterTile.cs" />
+    <Compile Include="Assets/Scripts/ARSCene/UnifiedARNavigationMarker.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/PanelToggler.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/CategoryDropdown.cs" />
     <Compile Include="Assets/Scripts/Onboarding Screens Script/PageIndicator.cs" />

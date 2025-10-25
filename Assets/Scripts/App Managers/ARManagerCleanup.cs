@@ -17,6 +17,8 @@ public class ARManagerCleanup : MonoBehaviour
     [Header("READQRCODE Button (Optional)")]
     [SerializeField] private Button readQRCodeButton;
 
+    public GameObject localizationPanel;
+
     private static bool hadJSONManager = false;
     private static bool hadFirestoreManager = false;
     private static bool hadMapboxManager = false;
@@ -44,14 +46,20 @@ public class ARManagerCleanup : MonoBehaviour
     {
         PlayerPrefs.SetString("ARMode", "DirectAR");
         PlayerPrefs.Save();
-        StartCoroutine(CleanupAndLoadAR());
+        if (localizationPanel != null)
+        {
+            localizationPanel.SetActive(true);
+        }
     }
 
     public void LoadARNavigation()
     {
         PlayerPrefs.SetString("ARMode", "Navigation");
         PlayerPrefs.Save();
-        StartCoroutine(CleanupAndLoadAR());
+        if (localizationPanel != null)
+        {
+            localizationPanel.SetActive(true);
+        }
     }
 
     public void LoadReadQRCode()
@@ -59,7 +67,7 @@ public class ARManagerCleanup : MonoBehaviour
         StartCoroutine(CleanupAndLoadAR());
     }
 
-    private IEnumerator CleanupAndLoadAR()
+    public IEnumerator CleanupAndLoadAR()
     {
         RecordManagerStates();
         DestroyNonEssentialManagers();

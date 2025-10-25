@@ -14,16 +14,16 @@ using System.Collections.Generic;
 using System.Linq;
 
 /// <summary>
-/// QR Scanner for AR Scene - Allows users to recalibrate their position during AR navigation
-/// Scans QR codes and updates the ARTrackingManager reference point dynamically
+/// QR Scanner for AR Scene - Works with UnifiedARManager
+/// Supports both GPS and Offline (X,Y) localization modes
+/// GPS mode: Gets latitude/longitude from scanned node
+/// Offline mode: Gets x_coordinate/y_coordinate from scanned node
 /// </summary>
 public class ARSceneQRRecalibration : MonoBehaviour
 {
-    ARUIManager uiManager;
-
     [Header("AR References")]
     public ARCameraManager arCameraManager;
-    public ARTrackingManager arTrackingManager;
+    public UnifiedARManager unifiedARManager; // UPDATED: Now uses UnifiedARManager
     public ARUIManager arUIManager;
 
     [Header("UI References")]
@@ -49,11 +49,11 @@ public class ARSceneQRRecalibration : MonoBehaviour
 
     [Header("Test Mode (Editor Only)")]
     public bool enableTestMode = false;
-    public string testNodeId = "node_001";
+    public string testNodeId = "ND-001";
 
     private bool isScanning = false; // Scanner initialized and ready
     private bool isScanningActive = false; // Currently looking for QR codes
-    private bool isFirstScan = true; // Track if this is the first QR scan in Direct AR mode
+    private bool isFirstScan = true; // Track if this is the first QR scan in Direct AR + Offline mode
     private string scannedNodeId;
     private Node scannedNodeInfo;
     private List<string> availableMapIds = new List<string>();
@@ -75,8 +75,8 @@ public class ARSceneQRRecalibration : MonoBehaviour
         if (arCameraManager == null)
             arCameraManager = FindObjectOfType<ARCameraManager>();
 
-        if (arTrackingManager == null)
-            arTrackingManager = FindObjectOfType<ARTrackingManager>();
+        if (unifiedARManager == null)
+            unifiedARManager = FindObjectOfType<UnifiedARManager>();
 
         if (arUIManager == null)
             arUIManager = FindObjectOfType<ARUIManager>();
@@ -109,7 +109,6 @@ public class ARSceneQRRecalibration : MonoBehaviour
                 btn.onClick.AddListener(ToggleScanMode);
         }
 
-
         StartCoroutine(InitializeScanner());
     }
 
@@ -120,6 +119,7 @@ public class ARSceneQRRecalibration : MonoBehaviour
         if (enableTestMode && Keyboard.current != null && Keyboard.current.tKey.wasPressedThisFrame)
         {
             string simulatedQRData = qrSignature + qrDelimiter + testNodeId;
+            Debug.Log($"🧪 Test Mode: Simulating QR scan with {simulatedQRData}");
             OnQRCodeScanned(simulatedQRData);
         }
 #endif
@@ -136,8 +136,11 @@ public class ARSceneQRRecalibration : MonoBehaviour
         }
         else
         {
-            uiManager = FindAnyObjectByType<ARUIManager>();
-            uiManager.scanQRRequiredPanel.SetActive(false);
+            // Hide the "Scan Required" panel if it exists
+            if (arUIManager != null && arUIManager.scanQRRequiredPanel != null)
+            {
+                arUIManager.scanQRRequiredPanel.SetActive(false);
+            }
             StartScanning();
         }
     }
@@ -147,9 +150,6 @@ public class ARSceneQRRecalibration : MonoBehaviour
     /// </summary>
     public void StartScanning()
     {
-        // REMOVED the check - allow scanning even if not fully initialized
-        // The frame processing will handle the isScanning check
-
         isScanningActive = true;
 
         // Show QR frame
@@ -438,12 +438,27 @@ public class ARSceneQRRecalibration : MonoBehaviour
             canvasGroup.DOFade(1, 0.5f).SetEase(Ease.OutQuad);
         }
 
-        if (confirmationText != null)
+        // Get current mode to show appropriate confirmation text
+        string localizationMode = PlayerPrefs.GetString("LocalizationMode", "GPS");
+        string coordinateInfo = "";
+
+        if (localizationMode == "GPS")
         {
-            confirmationText.text = $"Recalibrate your position to:\n\n<b>{scannedNodeInfo.name}</b>\n\nYour current AR position will be updated to match this location.";
+            coordinateInfo = $"GPS: {scannedNodeInfo.latitude:F6}, {scannedNodeInfo.longitude:F6}";
+        }
+        else
+        {
+            coordinateInfo = $"X,Y: {scannedNodeInfo.x_coordinate:F2}, {scannedNodeInfo.y_coordinate:F2}";
         }
 
-        Debug.Log($"📍 QR Scanned: {scannedNodeInfo.name} at X:{scannedNodeInfo.x_coordinate:F2}, Y:{scannedNodeInfo.y_coordinate:F2}");
+        if (confirmationText != null)
+        {
+            confirmationText.text = $"Recalibrate your position to:\n\n<b>{scannedNodeInfo.name}</b>\n\n{coordinateInfo}\n\nYour current position will be updated to match this location.";
+        }
+
+        Debug.Log($"📍 QR Scanned: {scannedNodeInfo.name}");
+        Debug.Log($"   GPS: Lat {scannedNodeInfo.latitude:F6}, Lng {scannedNodeInfo.longitude:F6}");
+        Debug.Log($"   X,Y: X {scannedNodeInfo.x_coordinate:F2}, Y {scannedNodeInfo.y_coordinate:F2}");
     }
 
     void ShowError(string errorMessage)
@@ -467,25 +482,38 @@ public class ARSceneQRRecalibration : MonoBehaviour
 
     void OnConfirmRecalibration()
     {
-        if (arTrackingManager == null)
+        if (unifiedARManager == null)
         {
-            Debug.LogError("❌ ARTrackingManager not found! Cannot recalibrate.");
+            Debug.LogError("❌ UnifiedARManager not found! Cannot recalibrate.");
             OnCancelRecalibration();
             return;
         }
 
-        // Call the ARTrackingManager's QR scanned method to update reference point
-        arTrackingManager.OnQRCodeScanned(scannedNodeInfo);
+        // Call UnifiedARManager's QR scanned method
+        // It will handle both GPS and Offline modes internally
+        unifiedARManager.OnQRCodeScanned(scannedNodeInfo);
 
-        Debug.Log($"✅ Position recalibrated to: {scannedNodeInfo.name}");
-        Debug.Log($"✅ New reference point: X:{scannedNodeInfo.x_coordinate:F2}, Y:{scannedNodeInfo.y_coordinate:F2}");
+        string localizationMode = PlayerPrefs.GetString("LocalizationMode", "GPS");
+        
+        if (localizationMode == "GPS")
+        {
+            Debug.Log($"✅ GPS recalibrated to: {scannedNodeInfo.name}");
+            Debug.Log($"✅ New GPS: Lat {scannedNodeInfo.latitude:F6}, Lng {scannedNodeInfo.longitude:F6}");
+        }
+        else
+        {
+            Debug.Log($"✅ Position recalibrated to: {scannedNodeInfo.name}");
+            Debug.Log($"✅ New reference point: X:{scannedNodeInfo.x_coordinate:F2}, Y:{scannedNodeInfo.y_coordinate:F2}");
+        }
 
-        // If this is the first scan in Direct AR mode, notify ARUIManager
-        if (isFirstScan && arUIManager != null)
+        // Check if this is the first scan in Direct AR + Offline mode
+        string arMode = PlayerPrefs.GetString("ARMode", "DirectAR");
+        
+        if (isFirstScan && arMode == "DirectAR" && localizationMode == "Offline" && arUIManager != null)
         {
             arUIManager.OnQRScannedAndConfirmed();
             isFirstScan = false;
-            Debug.Log("🔓 Direct AR Mode unlocked - UI now visible");
+            Debug.Log("🔓 Direct AR + Offline Mode unlocked - UI now visible");
         }
 
         // Hide confirmation panel

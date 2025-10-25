@@ -8970,10 +8970,10 @@ GameObject:
   - component: {fileID: 1709089045}
   - component: {fileID: 1709089046}
   - component: {fileID: 1709089048}
-  - component: {fileID: 1709089047}
-  - component: {fileID: 1709089049}
   - component: {fileID: 1709089050}
   - component: {fileID: 1709089051}
+  - component: {fileID: 1709089053}
+  - component: {fileID: 1709089052}
   m_Layer: 0
   m_Name: ARSceneManager
   m_TagString: Untagged
@@ -9043,34 +9043,6 @@ MonoBehaviour:
   navigationNodeColor: {r: 0.74, g: 0.06, b: 0.18, a: 1}
   navigationNodeSize: 4
   enableDebugLogs: 1
---- !u!114 &1709089047
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1709089041}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b2d160e1af4c27d6d99f2aa898b7169e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  circleMarkerPrefab: {fileID: 2395739616877220581, guid: 6af62504c90cc9efe909bd5b24ab2903, type: 3}
-  nodeMarkerPrefab: {fileID: 2395739616877220581, guid: 9651b0f074c56f421b790ae228f60189, type: 3}
-  destinationMarkerPrefab: {fileID: 2395739616877220581, guid: 9651b0f074c56f421b790ae228f60189, type: 3}
-  arCamera: {fileID: 331264287}
-  arRaycastManager: {fileID: 331264289}
-  arPlaneManager: {fileID: 331264290}
-  markerScale: 1.5
-  circleMarkerScale: 0.5
-  markerHeightOffset: 0
-  circleSpacing: 5
-  nodeMarkerDistance: 3
-  circleVisibilityDistance: 50
-  pathCircleColor: {r: 0.74, g: 0.06, b: 0.18, a: 0.9}
-  navigationNodeColor: {r: 0.74, g: 0.06, b: 0.18, a: 1}
-  destinationColor: {r: 0.2, g: 0.8, b: 0.2, a: 1}
-  enableDebugLogs: 1
 --- !u!114 &1709089048
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9095,37 +9067,6 @@ MonoBehaviour:
   enableKeyboardTesting: 1
   autoProgressDistance: 5
   enableDebugLogs: 1
---- !u!114 &1709089049
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1709089041}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5dd2c550737c5d5b48e3952472a7922a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mainSceneName: MainAppScene
-  buildingMarkerPrefab: {fileID: 2395739616877220581, guid: 9651b0f074c56f421b790ae228f60189, type: 3}
-  xrOrigin: {fileID: 331264286}
-  arRaycastManager: {fileID: 331264289}
-  arPlaneManager: {fileID: 331264290}
-  arCameraManager: {fileID: 331264288}
-  maxVisibleDistance: 500
-  markerScale: 1
-  minMarkerDistance: 2
-  markerHeightOffset: 1.5
-  fieldOfViewAngle: 90
-  forwardDotThreshold: 0.3
-  requireGoodTracking: 1
-  trackingStatusText: {fileID: 1101261013}
-  debugText: {fileID: 1474220225}
-  loadingText: {fileID: 1603285690}
-  referenceNodeXY: {x: 0, y: 0}
-  positionSmoothingFactor: 0.3
-  positionHistorySize: 5
 --- !u!114 &1709089050
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9158,7 +9099,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   arCameraManager: {fileID: 331264288}
-  arTrackingManager: {fileID: 1709089049}
+  unifiedARManager: {fileID: 1709089053}
   arUIManager: {fileID: 1709089050}
   scanTriggerButton: {fileID: 1310964802}
   scanTriggerButton2: {fileID: 2016327568}
@@ -9175,6 +9116,70 @@ MonoBehaviour:
   frameSkip: 2
   enableTestMode: 1
   testNodeId: ND-045
+--- !u!114 &1709089052
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1709089041}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ced095ad4585e14899ed01660c23eea1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  circleMarkerPrefab: {fileID: 2395739616877220581, guid: 6af62504c90cc9efe909bd5b24ab2903, type: 3}
+  nodeMarkerPrefab: {fileID: 2395739616877220581, guid: 9651b0f074c56f421b790ae228f60189, type: 3}
+  destinationMarkerPrefab: {fileID: 2395739616877220581, guid: 9651b0f074c56f421b790ae228f60189, type: 3}
+  arCamera: {fileID: 331264287}
+  arRaycastManager: {fileID: 331264289}
+  arPlaneManager: {fileID: 331264290}
+  unifiedARManager: {fileID: 1709089053}
+  markerScale: 1.5
+  circleMarkerScale: 0.5
+  markerHeightOffset: 0.05
+  circleSpacing: 5
+  nodeMarkerDistance: 3
+  circleVisibilityDistance: 50
+  pathCircleColor: {r: 0.74, g: 0.06, b: 0.18, a: 0.9}
+  navigationNodeColor: {r: 0.74, g: 0.06, b: 0.18, a: 1}
+  destinationColor: {r: 0.2, g: 0.8, b: 0.2, a: 1}
+  enableDebugLogs: 1
+--- !u!114 &1709089053
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1709089041}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b2b63e94a774ad74bad93c297aa1d1f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  backToMainButton: {fileID: 0}
+  mainSceneName: MainAppScene
+  buildingMarkerPrefab: {fileID: 2395739616877220581, guid: 9651b0f074c56f421b790ae228f60189, type: 3}
+  xrOrigin: {fileID: 331264286}
+  arRaycastManager: {fileID: 331264289}
+  arPlaneManager: {fileID: 331264290}
+  arCameraManager: {fileID: 331264288}
+  arCamera: {fileID: 331264287}
+  maxVisibleDistance: 500
+  markerScale: 0.3
+  minMarkerDistance: 2
+  markerHeightOffset: 0.1
+  fieldOfViewAngle: 90
+  forwardDotThreshold: 0.3
+  requireGoodTracking: 1
+  trackingStatusText: {fileID: 1101261013}
+  debugText: {fileID: 1603285690}
+  loadingText: {fileID: 1474220225}
+  gpsHistorySize: 5
+  positionUpdateThreshold: 1
+  positionSmoothingFactor: 0.3
+  referenceNodeXY: {x: 0, y: 0}
+  positionHistorySize: 5
 --- !u!1 &1710405585
 GameObject:
   m_ObjectHideFlags: 0

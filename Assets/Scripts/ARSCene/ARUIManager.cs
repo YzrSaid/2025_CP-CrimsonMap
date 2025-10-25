@@ -45,11 +45,11 @@ public class ARUIManager : MonoBehaviour
     private void DetermineModes()
     {
         // Determine AR Mode
-        string arModeString = PlayerPrefs.GetString("ARMode", "DirectAR");
+        string arModeString = PlayerPrefs.GetString("ARMode");
         currentARMode = arModeString == "Navigation" ? ARMode.Navigation : ARMode.DirectAR;
 
         // Determine Localization Mode
-        string localizationModeString = PlayerPrefs.GetString("LocalizationMode", "GPS");
+        string localizationModeString = PlayerPrefs.GetString("LocalizationMode");
         currentLocalizationMode = localizationModeString == "Offline" ? LocalizationMode.Offline : LocalizationMode.GPS;
 
         if (enableDebugLogs)

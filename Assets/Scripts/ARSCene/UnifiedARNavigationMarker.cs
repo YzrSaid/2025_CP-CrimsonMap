@@ -5,10 +5,6 @@ using System.Linq;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 
-/// <summary>
-/// Unified AR Navigation Marker Spawner
-/// Handles AR Navigation mode for both GPS and Offline (X,Y) localization
-/// </summary>
 public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
 {
     [Header("AR Marker Prefabs")]
@@ -20,7 +16,7 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
     public Camera arCamera;
     public ARRaycastManager arRaycastManager;
     public ARPlaneManager arPlaneManager;
-    public UnifiedARManager unifiedARManager; // Reference to get current mode
+    public UnifiedARManager unifiedARManager;
 
     [Header("Marker Settings")]
     public float markerScale = 1.5f;
@@ -42,15 +38,13 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
     private Dictionary<string, GameObject> spawnedNodeMarkers = new Dictionary<string, GameObject>();
     private List<GameObject> spawnedCircleMarkers = new List<GameObject>();
 
-    private Vector2 userLocation; // GPS: lat/lng, Offline: x/y
+    private Vector2 userLocation;
     private DirectionDisplayManager directionManager;
     private bool isARNavigationMode = false;
 
-    // Mode tracking
     private enum LocalizationMode { GPS, Offline }
     private LocalizationMode currentLocalizationMode = LocalizationMode.GPS;
 
-    // Offline mode specific
     private Vector2 userXY;
     private float groundPlaneY = 0f;
 
@@ -90,9 +84,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
 
         string localizationModeString = PlayerPrefs.GetString("LocalizationMode", "GPS");
         currentLocalizationMode = localizationModeString == "Offline" ? LocalizationMode.Offline : LocalizationMode.GPS;
-
-        if (enableDebugLogs)
-            Debug.Log($"[NavSpawner] AR Mode: {arMode}, Localization: {localizationModeString}");
     }
 
     private void LoadPathNodesFromPlayerPrefs()
@@ -101,8 +92,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
 
         if (pathNodeCount == 0)
         {
-            if (enableDebugLogs)
-                Debug.LogWarning("[NavSpawner] No path nodes found in PlayerPrefs");
             return;
         }
 
@@ -115,9 +104,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
             if (!string.IsNullOrEmpty(nodeId))
                 pathNodeIds.Add(nodeId);
         }
-
-        if (enableDebugLogs)
-            Debug.Log($"[NavSpawner] Loading {pathNodeIds.Count} path nodes");
 
         StartCoroutine(LoadNodesData(pathNodeIds));
     }
@@ -144,20 +130,15 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
                             pathNodes.Add(node);
                     }
 
-                    if (enableDebugLogs)
-                        Debug.Log($"[NavSpawner] ✅ Loaded {pathNodes.Count} path nodes");
-
                     loadComplete = true;
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError($"[NavSpawner] ❌ Error loading nodes: {e.Message}");
                     loadComplete = true;
                 }
             },
             (error) =>
             {
-                Debug.LogError($"[NavSpawner] ❌ Failed to load {fileName}: {error}");
                 loadComplete = true;
             }
         ));
@@ -171,20 +152,15 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
 
         if (pathNodes.Count < 2)
         {
-            Debug.LogWarning("[NavSpawner] Not enough path nodes for navigation");
             yield break;
         }
 
-        // If offline mode, wait for ground plane detection
         if (currentLocalizationMode == LocalizationMode.Offline)
         {
             yield return StartCoroutine(WaitForGroundPlane());
         }
 
         InvokeRepeating(nameof(UpdateNavigationMarkers), 0.5f, 1f);
-
-        if (enableDebugLogs)
-            Debug.Log("[NavSpawner] ✅ Navigation marker system started");
     }
 
     private IEnumerator WaitForGroundPlane()
@@ -201,7 +177,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
                     if (plane.alignment == PlaneAlignment.HorizontalUp)
                     {
                         groundPlaneY = plane.transform.position.y;
-                        Debug.Log($"[NavSpawner] ✅ Ground plane detected at Y: {groundPlaneY:F2}");
                         yield break;
                     }
                 }
@@ -212,7 +187,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         }
 
         groundPlaneY = arCamera.transform.position.y - 1.6f;
-        Debug.LogWarning($"[NavSpawner] ⚠️ No ground plane, using estimated: Y={groundPlaneY:F2}");
     }
 
     private void UpdateNavigationMarkers()
@@ -220,7 +194,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         if (!isARNavigationMode || pathNodes.Count == 0)
             return;
 
-        // Update user location based on mode
         if (currentLocalizationMode == LocalizationMode.GPS)
         {
             if (GPSManager.Instance == null)
@@ -233,15 +206,8 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         }
         else
         {
-            // Offline mode: Get position from UnifiedARManager
             if (unifiedARManager != null)
             {
-                // UnifiedARManager calculates userXY, we need to access it
-                // For now, we'll calculate it ourselves based on AR camera movement
-                // In a real implementation, you'd expose userXY from UnifiedARManager
-                
-                // Placeholder: This would need to be properly synced with UnifiedARManager
-                // For now, we'll use a simple approach
                 userXY = GetCurrentUserXY();
                 userLocation = userXY;
             }
@@ -251,15 +217,8 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         UpdatePathCircles();
     }
 
-    /// <summary>
-    /// Get current user X,Y position from UnifiedARManager
-    /// In production, you'd expose this properly from UnifiedARManager
-    /// </summary>
     private Vector2 GetCurrentUserXY()
     {
-        // This is a simplified version
-        // In production, UnifiedARManager should expose its userXY property
-        // For now, return a placeholder
         return userXY;
     }
 
@@ -320,9 +279,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
                     }
 
                     spawnedNodeMarkers[markerId] = marker;
-
-                    if (enableDebugLogs)
-                        Debug.Log($"[NavSpawner] ✅ Created node marker: {node.name}");
                 }
             }
             else if (!shouldShow && spawnedNodeMarkers.ContainsKey(markerId))
@@ -332,7 +288,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
             }
         }
 
-        // Make markers face camera
         foreach (var marker in spawnedNodeMarkers.Values)
         {
             if (marker != null && arCamera != null)
@@ -493,9 +448,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         spawnedNodeMarkers.Clear();
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // GPS MODE UTILITIES
-    // ═══════════════════════════════════════════════════════════════
     private Vector3 GPSToWorldPosition(float latitude, float longitude)
     {
         Vector2 userCoords = userLocation;
@@ -525,12 +477,8 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         return 6371000 * c;
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // OFFLINE MODE (X,Y) UTILITIES
-    // ═══════════════════════════════════════════════════════════════
     private Vector3 XYToWorldPosition(float nodeX, float nodeY)
     {
-        // This needs to match UnifiedARManager's calculation
         float deltaX = nodeX - userXY.x;
         float deltaY = nodeY - userXY.y;
 
@@ -546,9 +494,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         return Vector2.Distance(point1, point2);
     }
 
-    /// <summary>
-    /// PUBLIC: Called by UnifiedARManager to update user XY in offline mode
-    /// </summary>
     public void UpdateUserXY(Vector2 newUserXY)
     {
         userXY = newUserXY;
