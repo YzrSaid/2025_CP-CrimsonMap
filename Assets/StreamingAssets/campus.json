@@ -14,6 +14,8 @@
     "id": "RlcqVPExr5Q8lpWjc3HF"
   },
   {
+    "is_deleted": true,
+    "deletedAt": {},
     "map_id": "MAP-01",
     "createdAt": {},
     "campus_name": "Campus Ni Aldrin",

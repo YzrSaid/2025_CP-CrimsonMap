@@ -10,9 +10,15 @@ public class GPSManager : MonoBehaviour
     public static GPSManager Instance;
     public bool useMockLocationInEditor = true;
 
-    [Header( "Mock GPS Settings (Editor Only)" )]
+    [Header("Mock GPS Settings (Editor Only)")]
+    // Bahay ni Aldrin
+    // private float mockLatitude = 6.91463f;
+    // private float mockLongitude = 122.11927f;
+    
+    // School
     private float mockLatitude = 6.91261f;
     private float mockLongitude = 122.06359f;
+
     private float mockHeading = 0f;
 
     [Header( "QR Override Settings" )]

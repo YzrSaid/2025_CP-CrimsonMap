@@ -5,7 +5,7 @@ public class ARUIManager : MonoBehaviour
     [Header( "UI Elements - Direct AR Mode" )]
     [Tooltip( "UI elements shown ONLY in Direct AR mode" )]
     public GameObject mapPanel;
-    public GameObject stopNavigationButton;
+    public GameObject stopDirectARButton;
 
     [Header( "UI Elements - Navigation Mode" )]
     [Tooltip( "UI elements shown ONLY in Navigation mode" )]
@@ -19,6 +19,7 @@ public class ARUIManager : MonoBehaviour
 
     void Start()
     {
+        stopDirectARButton.SetActive(false);
         DetermineARMode();
 
         ConfigureUIForMode();
@@ -26,7 +27,7 @@ public class ARUIManager : MonoBehaviour
 
     private void DetermineARMode()
     {
-        string arModeString = PlayerPrefs.GetString( "ARMode", "DirectAR" );
+        string arModeString = PlayerPrefs.GetString( "ARMode");
 
         if ( arModeString == "Navigation" ) {
             currentMode = ARMode.Navigation;
@@ -37,18 +38,20 @@ public class ARUIManager : MonoBehaviour
 
     private void ConfigureUIForMode()
     {
-        if ( currentMode == ARMode.DirectAR ) {
+        if (currentMode == ARMode.DirectAR)
+        {
             // Direct AR Mode: Show map, show stop button, hide directions
-            SetUIElementActive( mapPanel, true );
-            SetUIElementActive( stopNavigationButton, true );
+            SetUIElementActive(mapPanel, true);
+            SetUIElementActive(stopDirectARButton, true);
             SetUIElementActive(directionPanel, false);
-            
-        } else {
+
+        }
+        else
+        {
             // Navigation Mode: Show map, show directions, hide stop button
-            SetUIElementActive( mapPanel, true );
-            SetUIElementActive( directionPanel, true );
-            SetUIElementActive(stopNavigationButton, false);
-            
+            SetUIElementActive(mapPanel, true);
+            SetUIElementActive(directionPanel, true);
+            SetUIElementActive(stopDirectARButton, false);
         }
     }
 
@@ -56,11 +59,9 @@ public class ARUIManager : MonoBehaviour
     {
         if ( uiElement != null ) {
             uiElement.SetActive( active );
-            DebugLog( $"  • {uiElement.name}: {( active ? "SHOWN" : "HIDDEN" )}" );
         }
     }
 
-    // Public method to manually switch modes (if needed)
     public void SwitchToDirectARMode()
     {
         currentMode = ARMode.DirectAR;
@@ -69,7 +70,6 @@ public class ARUIManager : MonoBehaviour
         ConfigureUIForMode();
     }
 
-    // Public method to manually switch modes (if needed)
     public void SwitchToNavigationMode()
     {
         currentMode = ARMode.Navigation;

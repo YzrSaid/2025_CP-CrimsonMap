@@ -686,7 +686,7 @@ public class GlobalManager : MonoBehaviour
 
         yield return new WaitForSeconds(0.2f);
 
-        ARInfrastructureManager arManager = FindObjectOfType<ARInfrastructureManager>();
+        ARTrackingManager arManager = FindObjectOfType<ARTrackingManager>();
         if (arManager != null)
         {
             Destroy(arManager.gameObject);

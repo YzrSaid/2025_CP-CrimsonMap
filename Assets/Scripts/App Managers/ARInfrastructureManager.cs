@@ -41,10 +41,7 @@ public class ARInfrastructureManager : MonoBehaviour
     private Vector2 userLocation;
     private Vector2 lastStableLocation;
     private Queue<Vector2> gpsLocationHistory = new Queue<Vector2>();
-
-    [Header( "Loading States" )]
-    private bool isDataLoaded = false;
-    private bool isInitializing = true;
+    private bool gpsInitialized = false;
 
     [Header( "Feature Flags" )]
     private ARFeatureMode currentFeatureMode = ARFeatureMode.None;
@@ -63,10 +60,8 @@ public class ARInfrastructureManager : MonoBehaviour
         StartCoroutine( InitializeARScene() );
     }
 
-
     private void DetermineARFeatureMode()
     {
-        // Check what mode was set when transitioning to AR
         string arMode = PlayerPrefs.GetString( "ARMode", "DirectAR" );
 
         if ( arMode == "Navigation" ) {
@@ -77,6 +72,7 @@ public class ARInfrastructureManager : MonoBehaviour
             Debug.Log( "[ARInfrastructureManager] 🗺️ DIRECT AR MODE - Free exploration of all buildings" );
         }
     }
+
     private void SetupBackButton()
     {
         if ( backToMainButton == null ) {
@@ -220,38 +216,31 @@ public class ARInfrastructureManager : MonoBehaviour
 
         UpdateLoadingUI( "Loading map data..." );
 
-        // Get current map dynamically
         string currentMapId = GetCurrentMapId();
-
         yield return StartCoroutine( LoadCurrentMapData( currentMapId ) );
 
-        if ( isDataLoaded ) {
-            UpdateLoadingUI( "Data loaded, starting AR tracking..." );
-            InvokeRepeating( nameof( UpdateMarkers ), 2f, 1f );
-            isInitializing = false;
-            HideLoadingUI();
-        } else {
-            UpdateLoadingUI( "Failed to load data. Check console for errors." );
-        }
+        UpdateLoadingUI( "Starting AR tracking..." );
+        InvokeRepeating( nameof( UpdateMarkers ), 2f, 1f );
+
+        HideLoadingUI();
+
+        Debug.Log( $"✅ AR Scene initialized - Nodes: {currentNodes.Count}, Infra: {currentInfrastructures.Count}" );
     }
 
     private string GetCurrentMapId()
     {
-        // Try to get from MapManager first
         if ( MapManager.Instance != null && MapManager.Instance.GetCurrentMap() != null ) {
             string mapId = MapManager.Instance.GetCurrentMap().map_id;
             Debug.Log( $"[ARInfrastructureManager] Got map ID from MapManager: {mapId}" );
             return mapId;
         }
 
-        // Fallback to PlayerPrefs if set
         if ( PlayerPrefs.HasKey( "CurrentMapId" ) ) {
             string mapId = PlayerPrefs.GetString( "CurrentMapId" );
             Debug.Log( $"[ARInfrastructureManager] Got map ID from PlayerPrefs: {mapId}" );
             return mapId;
         }
 
-        // Default fallback
         Debug.LogWarning( "[ARInfrastructureManager] Could not determine current map, using default MAP-01" );
         return "MAP-01";
     }
@@ -265,18 +254,30 @@ public class ARInfrastructureManager : MonoBehaviour
 
         yield return StartCoroutine( LoadNodesData( currentMapId, ( success ) => {
             nodesLoaded = success;
+            Debug.Log( $"📦 Nodes Load Result: {success}, Count: {currentNodes.Count}" );
+
+            if ( success ) {
+                foreach ( var node in currentNodes ) {
+                    Debug.Log( $"  Node: {node.node_id}, Lat: {node.latitude:F6}, Lon: {node.longitude:F6}, InfraID: {node.related_infra_id}" );
+                }
+            }
         } ) );
 
         UpdateLoadingUI( "Loading infrastructure data..." );
 
         yield return StartCoroutine( LoadInfrastructureData( ( success ) => {
             infraLoaded = success;
+            Debug.Log( $"🏢 Infrastructure Load Result: {success}, Count: {currentInfrastructures.Count}" );
+
+            if ( success ) {
+                foreach ( var infra in currentInfrastructures ) {
+                    Debug.Log( $"  Infra: {infra.infra_id}, Name: {infra.name}" );
+                }
+            }
         } ) );
 
-        isDataLoaded = nodesLoaded && infraLoaded;
-
-        if ( isDataLoaded ) {
-
+        if ( nodesLoaded && infraLoaded ) {
+            Debug.Log( $"✅ DATA LOADED SUCCESSFULLY - Nodes: {currentNodes.Count}, Infra: {currentInfrastructures.Count}" );
             if ( debugText != null )
                 debugText.text = $"Loaded: {currentNodes.Count} nodes, {currentInfrastructures.Count} infra";
         } else {
@@ -340,20 +341,30 @@ public class ARInfrastructureManager : MonoBehaviour
 
     void UpdateMarkers()
     {
-        if ( isExitingAR || isInitializing || !isDataLoaded )
+        if ( isExitingAR ) {
+            Debug.LogWarning( "UpdateMarkers BLOCKED - Exiting AR" );
             return;
+        }
 
         Vector2 rawGpsLocation = GPSManager.Instance.GetSmoothedCoordinates();
 
-        // Apply GPS stabilization
+        // Check if GPS is valid
+        if ( rawGpsLocation.magnitude < 0.0001f ) {
+            Debug.LogWarning( $"❌ Invalid GPS location: {rawGpsLocation}" );
+            return;
+        }
+
+        // Apply GPS stabilization with anchoring
         userLocation = StabilizeGPSLocation( rawGpsLocation );
+
+        Debug.Log( $"📍 Raw GPS: {rawGpsLocation.x:F6}, {rawGpsLocation.y:F6} -> Stabilized: {userLocation.x:F6}, {userLocation.y:F6}" );
 
         UpdateGPSStrengthUI();
 
-        // Update existing marker positions with smoothing
+        // Update existing anchored marker positions smoothly
         UpdateAnchoredMarkerPositions();
 
-        // Check if we need to create new markers
+        // Add/remove markers based on range
         ReconcileVisibleMarkers();
 
         UpdateDebugInfo();
@@ -361,6 +372,15 @@ public class ARInfrastructureManager : MonoBehaviour
 
     private Vector2 StabilizeGPSLocation( Vector2 rawLocation )
     {
+        // Initialize on first valid GPS reading
+        if ( !gpsInitialized && rawLocation.magnitude > 0.0001f ) {
+            lastStableLocation = rawLocation;
+            gpsLocationHistory.Enqueue( rawLocation );
+            gpsInitialized = true;
+            Debug.Log( $"🎯 GPS Stabilization initialized with: {rawLocation}" );
+            return lastStableLocation;
+        }
+
         // Add to history
         gpsLocationHistory.Enqueue( rawLocation );
         if ( gpsLocationHistory.Count > gpsHistorySize ) {
@@ -374,12 +394,13 @@ public class ARInfrastructureManager : MonoBehaviour
         }
         averagedLocation /= gpsLocationHistory.Count;
 
-        // Check if this is a significant movement (more than threshold)
+        // Check if this is a significant movement
         float distanceFromLast = Vector2.Distance( averagedLocation, lastStableLocation );
 
-        if ( distanceFromLast >= positionUpdateThreshold || lastStableLocation == Vector2.zero ) {
+        if ( distanceFromLast >= positionUpdateThreshold ) {
             // Smooth transition to new location
             lastStableLocation = Vector2.Lerp( lastStableLocation, averagedLocation, positionSmoothingFactor );
+            Debug.Log( $"📍 GPS moved {distanceFromLast:F2}m, updating to: {lastStableLocation}" );
         }
 
         return lastStableLocation;
@@ -394,11 +415,11 @@ public class ARInfrastructureManager : MonoBehaviour
                 continue;
             }
 
-            // Recalculate world position but don't teleport - smoothly update
+            // Recalculate world position based on stabilized user location
             Vector3 newWorldPos = GPSToWorldPosition( anchor.nodeLatitude, anchor.nodeLongitude );
             newWorldPos.y += markerHeightOffset;
 
-            // Smooth position update
+            // Smooth position update to prevent jitter
             anchor.markerGameObject.transform.position = Vector3.Lerp(
                         anchor.markerGameObject.transform.position,
                         newWorldPos,
@@ -409,6 +430,11 @@ public class ARInfrastructureManager : MonoBehaviour
 
     private void ReconcileVisibleMarkers()
     {
+        if ( currentNodes == null || currentNodes.Count == 0 ) {
+            Debug.LogWarning( "❌ No nodes available!" );
+            return;
+        }
+
         // Remove markers that are now out of range
         List<string> nodesToRemove = new List<string>();
 
@@ -421,18 +447,37 @@ public class ARInfrastructureManager : MonoBehaviour
                     Destroy( anchor.markerGameObject );
                 }
                 nodesToRemove.Add( kvp.Key );
+                Debug.Log( $"🗑️ Removing marker for node {node.node_id} - out of range" );
             }
         }
 
         foreach ( string nodeId in nodesToRemove ) {
             markerAnchors.Remove( nodeId );
+            activeMarkers.RemoveAll( m => m == null );
         }
 
         // Create markers for nodes now in range but not yet spawned
+        int created = 0;
+        int alreadyExists = 0;
+        int shouldNotShow = 0;
+
         foreach ( Node node in currentNodes ) {
-            if ( ShouldShowMarker( node ) && !markerAnchors.ContainsKey( node.node_id ) ) {
-                CreateMarkerForNode( node );
+            if ( markerAnchors.ContainsKey( node.node_id ) ) {
+                alreadyExists++;
+                continue;
             }
+
+            if ( ShouldShowMarker( node ) ) {
+                CreateMarkerForNode( node );
+                created++;
+            } else {
+                shouldNotShow++;
+            }
+        }
+
+        if ( created > 0 || nodesToRemove.Count > 0 ) {
+            Debug.Log( $"📊 Marker Update: Created {created}, Removed {nodesToRemove.Count}, Existing {alreadyExists}, OutOfRange {shouldNotShow}" );
+            Debug.Log( $"📊 Total active markers: {markerAnchors.Count}" );
         }
     }
 
@@ -453,12 +498,11 @@ public class ARInfrastructureManager : MonoBehaviour
     void UpdateDebugInfo()
     {
         if ( debugText != null ) {
-            string dataStatus = isDataLoaded ? "✅" : "❌";
             string modeText = currentFeatureMode == ARFeatureMode.DirectAR ? "🗺️ Direct AR" : "🧭 AR Navigation";
 
-            debugText.text = $"{dataStatus} {modeText}\n" +
+            debugText.text = $"{modeText}\n" +
                              $"User: {userLocation.x:F5}, {userLocation.y:F5}\n" +
-                             $"Anchored: {markerAnchors.Count} | History: {gpsLocationHistory.Count}";
+                             $"Active Markers: {markerAnchors.Count} | History: {gpsLocationHistory.Count}";
         }
     }
 
@@ -468,6 +512,7 @@ public class ARInfrastructureManager : MonoBehaviour
             loadingText.text = message;
             loadingText.gameObject.SetActive( true );
         }
+        Debug.Log( $"[Loading] {message}" );
     }
 
     void HideLoadingUI()
@@ -486,24 +531,33 @@ public class ARInfrastructureManager : MonoBehaviour
         }
         markerAnchors.Clear();
         activeMarkers.Clear();
+        Debug.Log( "🗑️ All markers cleared" );
     }
 
     bool ShouldShowMarker( Node node )
     {
         float distance = CalculateDistance( userLocation, new Vector2( node.latitude, node.longitude ) );
-        bool inRange = distance <= maxVisibleDistance && distance >= minMarkerDistance;
-        return inRange;
+
+        // In Direct AR mode, ignore minimum distance - show everything in max range
+        if ( currentFeatureMode == ARFeatureMode.DirectAR ) {
+            return distance <= maxVisibleDistance;
+        }
+
+        // In Navigation mode, use min/max range
+        return distance <= maxVisibleDistance && distance >= minMarkerDistance;
     }
 
     void CreateMarkerForNode( Node node )
     {
         if ( buildingMarkerPrefab == null ) {
+            Debug.LogError( "❌ Building marker prefab is not assigned!" );
             return;
         }
 
         Infrastructure infra = currentInfrastructures.FirstOrDefault( i => i.infra_id == node.related_infra_id );
 
         if ( infra == null ) {
+            Debug.LogWarning( $"❌ No infrastructure found for node {node.node_id} with infra_id {node.related_infra_id}" );
             return;
         }
 
@@ -516,7 +570,7 @@ public class ARInfrastructureManager : MonoBehaviour
 
         UpdateMarkerText( marker, infra, node );
 
-        // Create anchor for this marker
+        // Create anchor for this marker - this prevents jittering!
         MarkerAnchor anchor = new MarkerAnchor {
             node = node,
             nodeLatitude = node.latitude,
@@ -526,6 +580,9 @@ public class ARInfrastructureManager : MonoBehaviour
 
         markerAnchors[node.node_id] = anchor;
         activeMarkers.Add( marker );
+
+        float distance = CalculateDistance( userLocation, new Vector2( node.latitude, node.longitude ) );
+        Debug.Log( $"✅ Created ANCHORED marker for {infra.name} at {worldPosition}, Distance: {distance:F1}m" );
     }
 
     void UpdateMarkerText( GameObject marker, Infrastructure infra, Node node )
@@ -590,7 +647,7 @@ public class ARInfrastructureManager : MonoBehaviour
         StopAllCoroutines();
     }
 
-    // Helper class to anchor markers and prevent teleporting
+    // Helper class to anchor markers and prevent jittering/drifting
     private class MarkerAnchor
     {
         public Node node;

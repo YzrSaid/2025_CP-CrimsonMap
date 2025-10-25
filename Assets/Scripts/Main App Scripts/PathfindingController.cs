@@ -779,9 +779,7 @@ public class PathfindingController : MonoBehaviour
             PlayerPrefs.SetInt( $"ARNavigation_Direction_{i}_PathNodeCount", dir.pathNodes.Count );
         }
 
-        // Flag this as AR Navigation mode (not Direct AR)
         PlayerPrefs.SetString( "ARMode", "Navigation" );
-
         PlayerPrefs.Save();
 
         if ( enableDebugLogs ) {

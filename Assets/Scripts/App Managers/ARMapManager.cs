@@ -25,6 +25,9 @@ public class ARMapManager : MonoBehaviour
     [Header("Settings")]
     public bool enableDebugLogs = true;
 
+    // ✅ ADD THIS EVENT
+    public static event System.Action OnSpawningComplete;
+
     private string currentMapId;
     private List<string> currentCampusIds = new List<string>();
     private List<string> navigationNodeIds = new List<string>();
@@ -209,6 +212,7 @@ public class ARMapManager : MonoBehaviour
         return pathNodeIds;
     }
 
+    // ✅ MODIFIED: Fire event when ALL spawning is done
     private IEnumerator InitializeSpawners(string mapId, List<string> campusIds)
     {
         if (pathRenderer != null)
@@ -226,6 +230,10 @@ public class ARMapManager : MonoBehaviour
 
         if (infrastructureSpawner != null)
             yield return StartCoroutine(infrastructureSpawner.LoadAndSpawnForCampuses(campusIds));
+
+        // ✅ NEW: Fire event when ALL spawning is done
+        DebugLog("🎉 All spawning complete - firing OnSpawningComplete event");
+        OnSpawningComplete?.Invoke();
     }
 
     public void InitializeARNavigation(string mapId, List<string> campusIds, RouteData route)

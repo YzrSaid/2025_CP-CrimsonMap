@@ -557,8 +557,9 @@ public class BarrierEdge : MonoBehaviour
             Node fromNodeData = fromNode.GetNodeData();
             Node toNodeData = toNode.GetNodeData();
 
-            referenceFromPos = map.GeoToWorldPosition(new Vector2d(fromNodeData.latitude, fromNodeData.longitude), false);
-            referenceToPos = map.GeoToWorldPosition(new Vector2d(toNodeData.latitude, toNodeData.longitude), false);
+            // FIXED: Changed false to true - get positions relative to map
+            referenceFromPos = map.GeoToWorldPosition(new Vector2d(fromNodeData.latitude, fromNodeData.longitude), true);
+            referenceToPos = map.GeoToWorldPosition(new Vector2d(toNodeData.latitude, toNodeData.longitude), true);
             referenceDistance = Vector3.Distance(referenceFromPos, referenceToPos);
 
             isInitialized = true;
@@ -597,8 +598,9 @@ public class BarrierEdge : MonoBehaviour
         Node toNodeData = toNode.GetNodeData();
         if (fromNodeData == null || toNodeData == null) return;
 
-        Vector3 fromPos = map.GeoToWorldPosition(new Vector2d(fromNodeData.latitude, fromNodeData.longitude), false);
-        Vector3 toPos = map.GeoToWorldPosition(new Vector2d(toNodeData.latitude, toNodeData.longitude), false);
+        // FIXED: Changed false to true - get positions relative to map
+        Vector3 fromPos = map.GeoToWorldPosition(new Vector2d(fromNodeData.latitude, fromNodeData.longitude), true);
+        Vector3 toPos = map.GeoToWorldPosition(new Vector2d(toNodeData.latitude, toNodeData.longitude), true);
 
         fromPos.y = heightOffset;
         toPos.y = heightOffset;
@@ -643,8 +645,8 @@ public class BarrierEdge : MonoBehaviour
             Node toNodeData = toNode.GetNodeData();
             if (fromNodeData == null || toNodeData == null) return;
 
-            Vector3 fromPos = map.GeoToWorldPosition(new Vector2d(fromNodeData.latitude, fromNodeData.longitude), false);
-            Vector3 toPos = map.GeoToWorldPosition(new Vector2d(toNodeData.latitude, toNodeData.longitude), false);
+            Vector3 fromPos = map.GeoToWorldPosition(new Vector2d(fromNodeData.latitude, fromNodeData.longitude), true);
+            Vector3 toPos = map.GeoToWorldPosition(new Vector2d(toNodeData.latitude, toNodeData.longitude), true);
 
             fromPos.y = heightOffset;
             toPos.y = heightOffset;
@@ -660,7 +662,6 @@ public class BarrierEdge : MonoBehaviour
         }
     }
 }
-
 public class BarrierNode : MonoBehaviour
 {
     private AbstractMap map;

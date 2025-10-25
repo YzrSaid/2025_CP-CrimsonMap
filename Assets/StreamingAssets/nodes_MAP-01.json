@@ -151,7 +151,7 @@
         "related_room_id": null,
         "indoor": null,
         "type": "infrastructure",
-        "name": "CSM Office of the dean",
+        "name": "CSM Office of the Dean",
         "latitude": 6.91274,
         "created_at": {
             "seconds": 1756912849,
@@ -205,7 +205,7 @@
         "related_room_id": null,
         "indoor": null,
         "type": "infrastructure",
-        "name": "Department of Mathematics and statistics",
+        "name": "Department of Mathematics and Statistics",
         "latitude": 6.91264,
         "created_at": {
             "seconds": 1756912990,
@@ -313,7 +313,7 @@
         "related_room_id": null,
         "indoor": null,
         "type": "infrastructure",
-        "name": "Old building Campus B",
+        "name": "Old Building Campus B",
         "latitude": 6.91288,
         "created_at": {
             "seconds": 1756913224,
@@ -385,7 +385,7 @@
         "related_room_id": null,
         "indoor": null,
         "type": "infrastructure",
-        "name": "Wmsu Integrated School SHS building",
+        "name": "Wmsu Integrated School SHS Building",
         "latitude": 6.91306,
         "created_at": {
             "seconds": 1756913310,
@@ -416,7 +416,7 @@
 {
         "longitude": 122.062982,
         "campus_id": "CAMP-02",
-        "related_infra_id": "INFRA-27",
+        "related_infra_id": "",
         "updated_at": "2025-10-08T12:07:06.070Z",
         "created_at": {
             "seconds": 1756913748,
@@ -435,7 +435,7 @@
 {
         "longitude": 122.062234,
         "campus_id": "CAMP-02",
-        "related_infra_id": "INFRA-28",
+        "related_infra_id": "",
         "updated_at": "2025-10-08T12:01:25.652Z",
         "created_at": {
             "seconds": 1756913805,
@@ -454,7 +454,7 @@
 {
         "longitude": 122.06345,
         "campus_id": "CAMP-02",
-        "related_infra_id": "INFRA-29",
+        "related_infra_id": "",
         "updated_at": {
             "seconds": 1756914236,
             "nanoseconds": 471000000
@@ -487,7 +487,7 @@
             "seconds": 1756913915,
             "nanoseconds": 906000000
         },
-        "related_infra_id": "INFRA-30",
+        "related_infra_id": "",
         "longitude": 122.0639,
         "campus_id": "CAMP-02"
     },
@@ -520,14 +520,14 @@
             "x": -4.2672,
             "floor": "1"
         },
-        "type": "indoor",
+        "type": "indoorinfra",
         "name": "Department of Computer Science",
         "latitude": null,
         "created_at": {
             "seconds": 1759140524,
             "nanoseconds": 18000000
         },
-        "related_infra_id": null,
+        "related_infra_id": "INFRA-14",
         "longitude": null,
         "campus_id": "CAMP-02"
     },
@@ -542,14 +542,14 @@
             "x": -0.4572,
             "floor": "1"
         },
-        "type": "indoor",
+        "type": "indoorinfra",
         "name": "Department of Information Technology",
         "latitude": null,
         "created_at": {
             "seconds": 1759151492,
             "nanoseconds": 685000000
         },
-        "related_infra_id": null,
+        "related_infra_id": "INFRA-14",
         "longitude": null,
         "campus_id": "CAMP-02"
     },
@@ -564,14 +564,14 @@
             "x": 0,
             "floor": "1"
         },
-        "type": "indoor",
+        "type": "indoorinfra",
         "name": "Deans Office",
         "latitude": null,
         "created_at": {
             "seconds": 1759152043,
             "nanoseconds": 935000000
         },
-        "related_infra_id": null,
+        "related_infra_id": "INFRA-14",
         "longitude": null,
         "campus_id": "CAMP-02"
     },
@@ -586,14 +586,14 @@
             "x": 5.4864,
             "floor": "1"
         },
-        "type": "indoor",
+        "type": "indoorinfra",
         "name": "Staris Floor 1",
         "latitude": null,
         "created_at": {
             "seconds": 1759152250,
             "nanoseconds": 900000000
         },
-        "related_infra_id": null,
+        "related_infra_id": "INFRA-14",
         "longitude": null,
         "campus_id": "CAMP-02"
     },
@@ -608,14 +608,14 @@
             "x": 5.7912,
             "floor": "1"
         },
-        "type": "indoor",
+        "type": "indoorinfra",
         "name": "Laboratory 1",
         "latitude": null,
         "created_at": {
             "seconds": 1759152325,
             "nanoseconds": 426000000
         },
-        "related_infra_id": null,
+        "related_infra_id": "INFRA-14",
         "longitude": null,
         "campus_id": "CAMP-02"
     },
@@ -630,14 +630,14 @@
             "x": 11.9634,
             "floor": "1"
         },
-        "type": "indoor",
+        "type": "indoorinfra",
         "name": "Laboratory 2",
         "latitude": null,
         "created_at": {
             "seconds": 1759152392,
             "nanoseconds": 70000000
         },
-        "related_infra_id": null,
+        "related_infra_id": "INFRA-14",
         "longitude": null,
         "campus_id": "CAMP-02"
     },
@@ -652,14 +652,14 @@
             "x": 17.9832,
             "floor": "1"
         },
-        "type": "indoor",
+        "type": "indoorinfra",
         "name": "Fire Exit ",
         "latitude": null,
         "created_at": {
             "seconds": 1759152744,
             "nanoseconds": 835000000
         },
-        "related_infra_id": null,
+        "related_infra_id": "INFRA-14",
         "longitude": null,
         "campus_id": "CAMP-02"
     },
@@ -674,14 +674,14 @@
             "x": -4.2672,
             "floor": "2"
         },
-        "type": "indoor",
+        "type": "indoorinfra",
         "name": "Auditorium",
         "latitude": null,
         "created_at": {
             "seconds": 1759153332,
             "nanoseconds": 938000000
         },
-        "related_infra_id": null,
+        "related_infra_id": "INFRA-14",
         "longitude": null,
         "campus_id": "CAMP-02"
     },
@@ -696,14 +696,14 @@
             "x": -0.4572,
             "floor": "2"
         },
-        "type": "indoor",
+        "type": "indoorinfra",
         "name": "Guidance Offcie",
         "latitude": null,
         "created_at": {
             "seconds": 1759153401,
             "nanoseconds": 363000000
         },
-        "related_infra_id": null,
+        "related_infra_id": "INFRA-14",
         "longitude": null,
         "campus_id": "CAMP-02"
     },
@@ -718,14 +718,14 @@
             "x": 0,
             "floor": "2"
         },
-        "type": "indoor",
+        "type": "indoorinfra",
         "name": "PhiCCS",
         "latitude": null,
         "created_at": {
             "seconds": 1759153504,
             "nanoseconds": 873000000
         },
-        "related_infra_id": null,
+        "related_infra_id": "INFRA-14",
         "longitude": null,
         "campus_id": "CAMP-02"
     },
@@ -740,21 +740,21 @@
             "x": 5.4864,
             "floor": "2"
         },
-        "type": "indoor",
+        "type": "indoorinfra",
         "name": "Stairs Floor 2",
         "latitude": null,
         "created_at": {
             "seconds": 1759153583,
             "nanoseconds": 622000000
         },
-        "related_infra_id": null,
+        "related_infra_id": "INFRA-14",
         "longitude": null,
         "campus_id": "CAMP-02"
     },
 {
         "longitude": null,
         "campus_id": "CAMP-02",
-        "related_infra_id": "",
+        "related_infra_id": "INFRA-14",
         "updated_at": "2025-10-08T07:33:50.663Z",
         "created_at": {
             "seconds": 1759153646,
@@ -762,7 +762,7 @@
         },
         "latitude": null,
         "name": "Lecture Room 1",
-        "type": "indoorInfra",
+        "type": "indoorinfra",
         "indoor": {
             "y": 4.8768,
             "x": 5.7912,
@@ -785,14 +785,14 @@
             "x": 11.6586,
             "floor": "2"
         },
-        "type": "indoor",
+        "type": "indoorinfra",
         "name": "Lecture Room 2",
         "latitude": null,
         "created_at": {
             "seconds": 1759153685,
             "nanoseconds": 538000000
         },
-        "related_infra_id": null,
+        "related_infra_id": "INFRA-14",
         "longitude": null,
         "campus_id": "CAMP-02"
     },
@@ -822,7 +822,7 @@
         "related_room_id": null,
         "indoor": null,
         "type": "infrastructure",
-        "name": "Overpass Campus A (intermediate)",
+        "name": "Overpass Campus A (Intermediate)",
         "latitude": 6.91325,
         "created_at": {
             "seconds": 1759154685,
@@ -851,76 +851,80 @@
         "campus_id": "CAMP-01"
     },
 {
-        "y_coordinate": 143.330260444822,
-        "x_coordinate": 6134.94863993103,
-        "node_id": "ND-045",
-        "is_active": true,
-        "related_room_id": null,
-        "indoor": null,
-        "type": "infrastructure",
-        "name": "Bahay Ni Aldrin Main Door",
-        "latitude": 6.91463,
+        "longitude": 122.11927,
+        "campus_id": "CAMP-02",
+        "related_infra_id": "INFRA-70",
+        "updated_at": "2025-10-24T02:53:29.842Z",
         "created_at": {
             "seconds": 1759155776,
             "nanoseconds": 872000000
         },
-        "related_infra_id": null,
-        "longitude": 122.11927,
-        "campus_id": "CAMP-02"
+        "latitude": 6.91463,
+        "name": "Bahay Ni Aldrin Main Door",
+        "type": "infrastructure",
+        "indoor": null,
+        "related_room_id": "",
+        "is_active": true,
+        "node_id": "ND-045",
+        "y_coordinate": 0,
+        "x_coordinate": 0
     },
 {
-        "y_coordinate": 141.106361911916,
-        "x_coordinate": 6127.22158728772,
-        "node_id": "ND-046",
-        "is_active": true,
-        "related_room_id": null,
-        "indoor": null,
-        "type": "infrastructure",
-        "name": "Gate Ni Aldrin",
-        "latitude": 6.91461,
+        "longitude": 122.1192,
+        "campus_id": "CAMP-02",
+        "related_infra_id": "INFRA-71",
+        "updated_at": "2025-10-24T02:54:02.816Z",
         "created_at": {
             "seconds": 1759155803,
             "nanoseconds": 887000000
         },
-        "related_infra_id": null,
-        "longitude": 122.1192,
-        "campus_id": "CAMP-02"
+        "latitude": 6.91461,
+        "name": "Gate Ni Aldrin",
+        "type": "infrastructure",
+        "indoor": null,
+        "related_room_id": "",
+        "is_active": true,
+        "node_id": "ND-046",
+        "y_coordinate": -2.22389853290574,
+        "x_coordinate": -7.72703156359906
     },
 {
-        "y_coordinate": 151.113905309943,
-        "x_coordinate": 6136.05250459481,
-        "node_id": "ND-047",
-        "is_active": true,
-        "related_room_id": null,
-        "indoor": null,
-        "type": "infrastructure",
-        "name": "Puno Ni Aldrin",
-        "latitude": 6.9147,
+        "longitude": 122.11928,
+        "campus_id": "CAMP-02",
+        "related_infra_id": "INFRA-72",
+        "updated_at": "2025-10-24T02:54:28.193Z",
         "created_at": {
             "seconds": 1759155835,
             "nanoseconds": 91000000
         },
-        "related_infra_id": null,
-        "longitude": 122.11928,
-        "campus_id": "CAMP-02"
+        "latitude": 6.9147,
+        "name": "Puno Ni Aldrin",
+        "type": "infrastructure",
+        "indoor": null,
+        "related_room_id": "",
+        "is_active": true,
+        "node_id": "ND-047",
+        "y_coordinate": 7.78364486512072,
+        "x_coordinate": 1.10386165239092
     },
 {
-        "y_coordinate": 158.897550175064,
-        "x_coordinate": 6130.53318127749,
-        "node_id": "ND-048",
-        "is_active": true,
-        "related_room_id": null,
-        "indoor": null,
-        "type": "infrastructure",
-        "name": "Dirty Kitchen Ni Aldrin",
-        "latitude": 6.91477,
+        "longitude": 122.11923,
+        "campus_id": "CAMP-02",
+        "related_infra_id": "INFRA-73",
+        "updated_at": "2025-10-24T02:54:43.907Z",
         "created_at": {
             "seconds": 1759155859,
             "nanoseconds": 670000000
         },
-        "related_infra_id": null,
-        "longitude": 122.11923,
-        "campus_id": "CAMP-02"
+        "latitude": 6.91477,
+        "name": "Dirty Kitchen Ni Aldrin",
+        "type": "infrastructure",
+        "indoor": null,
+        "related_room_id": "",
+        "is_active": true,
+        "node_id": "ND-048",
+        "y_coordinate": 15.5672897302414,
+        "x_coordinate": -4.41544660799499
     },
 {
         "y_coordinate": -29.8002403407592,
@@ -966,7 +970,7 @@
         "related_room_id": null,
         "indoor": null,
         "type": "infrastructure",
-        "name": "College of home economics",
+        "name": "College of Home Economics",
         "latitude": 6.913612,
         "created_at": {
             "seconds": 1759158951,
@@ -1164,7 +1168,7 @@
         "related_room_id": null,
         "indoor": null,
         "type": "infrastructure",
-        "name": "Office of the principal",
+        "name": "Office of the Principal",
         "latitude": 6.914331,
         "created_at": {
             "seconds": 1759159419,
@@ -2020,14 +2024,14 @@
 {
         "longitude": 122.063726,
         "campus_id": "CAMP-02",
-        "related_infra_id": "",
+        "related_infra_id": null,
         "updated_at": "2025-10-08T12:05:14.386Z",
         "created_at": "2025-10-08T12:04:00.122Z",
         "latitude": 6.912345,
         "name": "Barrier",
         "type": "barrier",
         "indoor": null,
-        "related_room_id": "",
+        "related_room_id": null,
         "is_active": true,
         "node_id": "ND-113",
         "y_coordinate": -110.994775776568,

@@ -64,6 +64,7 @@
     <Analyzer Include="/home/yazar/Unity/2022.3.62f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.Properties.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets/Scripts/ARSCene/ARCameraLayerManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Filters/TypeFilter.cs" />
     <Compile Include="Assets/Mapbox/Unity/Utilities/StyleSearchAttribute.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/MapMatching/Tracepoint.cs" />
@@ -209,6 +210,7 @@
     <Compile Include="Assets/Mapbox/Unity/Location/EditorLocationProvider.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Data/VectorFeatureUnity.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/MergedModifierStack.cs" />
+    <Compile Include="Assets/Scripts/App Managers/ARTrackingManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/LayerProperties/ImageryLayerProperties.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/TileErrorEventArgs.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Data/KdTree/KDTree.cs" />
@@ -337,6 +339,7 @@
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Directions/Response/Leg.cs" />
     <Compile Include="Assets/Mapbox/Examples/6_ZoomableMap/Scripts/SpawnOnMap.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/CrossPlatformFileLoader.cs" />
+    <Compile Include="Assets/Scripts/ARSCene/ARUIManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/TileJsonData.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/MapOptions.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Utils/IObservable.cs" />

@@ -189,6 +189,17 @@
   },
   {
     "phone": "09123456789",
+    "name": "Puno Ni Aldrin",
+    "is_deleted": false,
+    "infra_id": "INFRA-72",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-05",
+    "id": "GCd0zYJWunQHzW7A1PSu"
+  },
+  {
+    "phone": "09123456789",
     "name": "Department of Biological Sciences",
     "is_deleted": false,
     "infra_id": "INFRA-05",
@@ -453,6 +464,17 @@
   },
   {
     "phone": "09123456789",
+    "name": "Bahay Ni Aldrin Main Door",
+    "is_deleted": false,
+    "infra_id": "INFRA-70",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-02",
+    "id": "d4wsZE3pg1NrFcwpU5nF"
+  },
+  {
+    "phone": "09123456789",
     "name": "College of Law",
     "is_deleted": false,
     "infra_id": "INFRA-54",
@@ -494,6 +516,17 @@
     "createdAt": {},
     "category_id": "CAT-01",
     "id": "gHYfzZodN4SSJ5QF5nXG"
+  },
+  {
+    "phone": "09123456789",
+    "name": "Gate Ni Aldrin",
+    "is_deleted": false,
+    "infra_id": "INFRA-71",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-02",
+    "id": "gqgZdkyYRXGUGiim5TGr"
   },
   {
     "phone": "091234567890",
@@ -604,6 +637,17 @@
     "createdAt": {},
     "category_id": "CAT-06",
     "id": "mJLp7sJ1o1gjs8W2T4Y3"
+  },
+  {
+    "phone": "09123456789",
+    "name": "Dirty Kitchen Ni Aldrin",
+    "is_deleted": false,
+    "infra_id": "INFRA-73",
+    "image_url": "",
+    "email": "sample@gmail.com",
+    "createdAt": {},
+    "category_id": "CAT-01",
+    "id": "nebsKo1R83zwGbjvvZMs"
   },
   {
     "phone": "09123456789",
