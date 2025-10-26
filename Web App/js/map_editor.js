@@ -693,7 +693,7 @@ async function saveNode(option) {
         const mapsSnapshot = await getDocs(mapsQuery);
 
         if (mapsSnapshot.empty) {
-            alert("No map found for this campus.");
+            showModal('error', 'No map found for this campus.');
             return;
         }
 
@@ -721,7 +721,7 @@ async function saveNode(option) {
 
             await updateDoc(versionRef, { nodes: updatedNodes });
 
-            alert(`Node ${pendingNodeData.node_id} added/updated in current version ${currentVersion}`);
+            showModal('success', `Node ${pendingNodeData.node_id} added/updated in current version ${currentVersion}`);
         } 
         else if (option === "newVersion") {
             let [major, minor, patch] = currentVersion.slice(1).split(".").map(Number);
@@ -743,7 +743,7 @@ async function saveNode(option) {
                 current_version_update: true,
             });
 
-            alert(`New version created: ${newVersion}`);
+            showModal('success', 'New version created successfully!');
         }
 
         // ✅ Update StaticDataVersions/GlobalInfo
@@ -814,7 +814,7 @@ async function saveNode(option) {
 
     } catch (err) {
         console.error(err);
-        alert("Error saving node: " + err);
+        showModal('error', 'Failed to save node. Please try again.');
     }
 }
 
@@ -1012,7 +1012,7 @@ document.querySelector(".nodetbl").addEventListener("click", async (e) => {
     }
 
     if (!nodeData) {
-      alert("Node not found in the current map versions.");
+      showModal('error', 'Node not found in the current map versions.');
       return;
     }
 
@@ -1141,7 +1141,7 @@ typeSelect.addEventListener("change", (e) => {
     document.getElementById("editNodeForm").dataset.mapVersionRef = versionRef.path;
   } catch (err) {
     console.error("Error opening edit modal:", err);
-    alert("Failed to open edit modal. Check console for details.");
+    showModal('error', 'Failed to prepare edit modal. Please try again.');
   }
 });
 
@@ -1158,7 +1158,7 @@ document.getElementById("editNodeForm").addEventListener("submit", async (e) => 
   const form = e.target;
   const versionRefPath = form.dataset.mapVersionRef; // stored earlier
   if (!versionRefPath) {
-    alert("No map version reference found for update.");
+    showModal('error', 'No map version reference found for update.');
     return;
   }
 
@@ -1218,13 +1218,13 @@ document.getElementById("editNodeForm").addEventListener("submit", async (e) => 
     });
 
 
-    alert("✅ Node updated successfully!");
+    showModal('success', 'Node has been updated successfully!');
     document.getElementById("editNodeModal").style.display = "none";
     renderNodesTable();
 
   } catch (err) {
     console.error("Error updating node:", err);
-    alert("❌ Failed to update node: " + err.message);
+    showModal('error', 'Failed to update node. Please try again.');
   }
 });
 
@@ -1469,7 +1469,7 @@ async function saveEdge(option) {
         mapDoc = mapsSnapshot.docs.find(d => d.data().current_active_map === d.id);
 
         if (!mapDoc) {
-            alert("No active map found.");
+            showModal('error', 'No active map found. Please try again.');
             return;
         }
 
@@ -1502,7 +1502,7 @@ async function saveEdge(option) {
         const endNode = oldNodes.find(n => n.node_id === pendingEdgeData.to_node);
 
         if (!startNode || !endNode) {
-            alert("Start or End node not found in MapVersion.");
+            showModal('error', 'Start or End node not found in MapVersion.');
             return;
         }
 
@@ -1546,7 +1546,7 @@ async function saveEdge(option) {
             });
 
             await updateDoc(doc(db, "MapVersions", mapDocId), { current_version: newVersion });
-            alert(`New version created: ${newVersion} with migrated nodes and edges`);
+            showModal('success', `New version created: ${newVersion} with migrated nodes and edges`);
         }
 
           // ✅ Update StaticDataVersions/GlobalInfo after saving or updating a node
@@ -1568,7 +1568,7 @@ async function saveEdge(option) {
 
     } catch (err) {
         console.error(err);
-        alert("Error saving edge: " + err);
+        showModal('error', 'Failed to save Edge. Please try again.');
     }
 }
 
@@ -1836,7 +1836,7 @@ document.querySelector(".edgetbl").addEventListener("click", async (e) => {
         }
 
         if (!edgeData) {
-            alert("Edge data not found in MapVersions.");
+            showModal('error', 'Edge data not found in MapVersions.');
             return;
         }
 
@@ -1856,7 +1856,7 @@ document.querySelector(".edgetbl").addEventListener("click", async (e) => {
 
     } catch (err) {
         console.error("Error opening edge edit modal:", err);
-        alert("Failed to load edge data. See console for details.");
+        showModal('error', 'Failed to load edge data. See console for details.');
     }
 });
 
@@ -2005,14 +2005,14 @@ document.querySelector("#editEdgeModal form").addEventListener("submit", async (
         }
 
         if (!activeVersionRef) {
-            alert("No active map version found!");
+            showModal('error', 'No active map version found!');
             return;
         }
 
         // 🔹 Get the version data
         const versionSnap = await getDoc(activeVersionRef);
         if (!versionSnap.exists()) {
-            alert("Active version document not found!");
+            showModal('error', 'Active version document not found!');
             return;
         }
 
@@ -2022,7 +2022,7 @@ document.querySelector("#editEdgeModal form").addEventListener("submit", async (
         // 🔹 Find the edge by ID and update it
         const edgeIndex = edges.findIndex(edge => edge.edge_id === docId);
         if (edgeIndex === -1) {
-            alert("Edge not found in current version!");
+            showModal('error', 'Edge not found in current version!');
             return;
         }
 
@@ -2041,13 +2041,13 @@ document.querySelector("#editEdgeModal form").addEventListener("submit", async (
             infrastructure_updated: true,
         });
 
-        alert("Edge updated successfully!");
+        showModal('success', 'Edge has been updated successfully!');
         modal.style.display = "none";
         renderEdgesTable();
 
     } catch (err) {
         console.error("Error updating edge:", err);
-        alert("Error updating edge: " + err.message);
+        showModal('error', 'Failed to update edge. Please try again.');
     }
 });
 
@@ -2266,8 +2266,9 @@ document.getElementById("confirmDeleteEdgeBtn").addEventListener("click", async 
         document.getElementById("deleteEdgeModal").style.display = "none";
         edgeToDelete = null;
         renderEdgesTable();
+        showModal('success', 'Edge deleted successfully!');
     } catch (err) {
-        alert("Error deleting edge: " + err);
+        showModal('error', 'Failed to delete edge. Please try again.');
     }
 });
 
@@ -2320,8 +2321,9 @@ document.getElementById("confirmDeleteNodeBtn").addEventListener("click", async 
         document.getElementById("deleteNodeModal").style.display = "none";
         nodeToDelete = null;
         renderNodesTable();
+        showModal('success', 'Node deleted successfully!');
     } catch (err) {
-        alert("Error deleting node: " + err);
+        showModal('error', 'Failed to delete node. Please try again.');
     }
 });
 
@@ -2652,6 +2654,29 @@ document.getElementById("customToggle").addEventListener("change", (e) => {
 // --- LOAD MAP FUNCTION ---
 // ===============================================================
 async function loadMap(mapId, campusId = null, versionId = null) {
+  // --- show immediate loader in the overview container BEFORE any awaits ---
+  try {
+    const container = document.getElementById("map-overview");
+    if (container) {
+      container.style.position = container.style.position || "relative";
+      // remove any old loader
+      container.querySelectorAll(".map-loader").forEach(n => n.remove());
+      const earlyOverlay = document.createElement("div");
+      earlyOverlay.className = "map-loader";
+      earlyOverlay.innerHTML = `
+        <div class="map-loader-inner">
+          <div class="map-loader-spinner" aria-hidden="true"></div>
+          <div class="map-loader-text">Loading Nodes...</div>
+        </div>
+      `;
+      container.appendChild(earlyOverlay);
+      // allow browser to paint the overlay before doing heavy async work
+      await new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res)));
+    }
+  } catch (e) {
+    console.warn("Could not show early map loader:", e);
+  }
+
   try {
     currentMapId = mapId; // store current map for toggle reload
     const safeMapId = String(mapId);
@@ -2663,7 +2688,11 @@ async function loadMap(mapId, campusId = null, versionId = null) {
       // --- Firestore ---
       const mapDocRef = doc(db, "MapVersions", safeMapId);
       const mapDocSnap = await getDoc(mapDocRef);
-      if (!mapDocSnap.exists()) return console.error("❌ Map not found:", safeMapId);
+      if (!mapDocSnap.exists()) {
+        // remove early loader if map missing
+        try { const el = document.getElementById("map-overview")?.querySelector(".map-loader"); if (el) el.remove(); } catch(e){}
+        return console.error("❌ Map not found:", safeMapId);
+      }
 
       mapData = mapDocSnap.data();
       activeCampus = campusId || mapData.current_active_campus;
@@ -2671,7 +2700,10 @@ async function loadMap(mapId, campusId = null, versionId = null) {
 
       const versionDocRef = doc(db, "MapVersions", safeMapId, "versions", activeVersion);
       const versionDocSnap = await getDoc(versionDocRef);
-      if (!versionDocSnap.exists()) return console.error("❌ Version not found:", activeVersion);
+      if (!versionDocSnap.exists()) {
+        try { const el = document.getElementById("map-overview")?.querySelector(".map-loader"); if (el) el.remove(); } catch(e){}
+        return console.error("❌ Version not found:", activeVersion);
+      }
 
       const versionData = versionDocSnap.data();
       nodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
@@ -2691,7 +2723,10 @@ async function loadMap(mapId, campusId = null, versionId = null) {
       const mapRes = await fetch("../assets/firestore/MapVersions.json");
       const mapsJson = await mapRes.json();
       mapData = mapsJson.find(m => m.map_id === safeMapId) || mapsJson[0];
-      if (!mapData) return console.error("No maps found in JSON");
+      if (!mapData) {
+        try { const el = document.getElementById("map-overview")?.querySelector(".map-loader"); if (el) el.remove(); } catch(e){}
+        return console.error("No maps found in JSON");
+      }
 
       activeCampus = campusId || mapData.current_active_campus;
       activeVersion = String(versionId || mapData.current_version || (mapData.versions?.[0]?.id || ""));
@@ -2714,6 +2749,7 @@ async function loadMap(mapId, campusId = null, versionId = null) {
       console.log("📂 Offline → Map, nodes, edges loaded from JSON");
     }
 
+    // ... rest of existing loadMap logic unchanged ...
     // ===============================================================
     // --- FILTER NODES BASED ON TOGGLE ---
     // ===============================================================
@@ -2749,7 +2785,7 @@ async function loadMap(mapId, campusId = null, versionId = null) {
     // ===============================================================
     nodes.forEach(d => {
       d.infraName = d.related_infra_id ? (infraMap[d.related_infra_id] || d.related_infra_id) : "-";
-      d.roomName = d.related_room_id ? (roomMap[d.related_room_id] || d.related_room_id) : "-";
+      d.roomName = d.related_room_id ? (roomMap[d.related_room_id] || roomMap[d.related_room_id] || d.related_room_id) : "-";
       d.campusName = d.campus_id ? (campusMap[d.campus_id] || d.campus_id) : "-";
     });
 
@@ -2760,6 +2796,8 @@ async function loadMap(mapId, campusId = null, versionId = null) {
 
   } catch (err) {
     console.error("❌ Error loading map:", err);
+    // ensure loader removed on failure
+    try { const el = document.getElementById("map-overview")?.querySelector(".map-loader"); if (el) el.remove(); } catch(e){}
   }
 }
 
@@ -2767,11 +2805,32 @@ async function loadMap(mapId, campusId = null, versionId = null) {
 // --- CREATE OVERVIEW MAP ---
 // ===============================================================
 function createOverviewMap(nodes, edges, activeCampus) {
+  // remove previous overview if present
   if (mapOverview) {
     mapOverview.remove();
     document.getElementById("map-overview").innerHTML = "";
   }
 
+  // ensure container exists and is positioned for absolute overlay
+  const container = document.getElementById("map-overview");
+  if (!container) return;
+  container.style.position = container.style.position || "relative";
+
+  // create loader overlay inside the overview container
+  const overlay = document.createElement("div");
+  overlay.className = "map-loader";
+  overlay.innerHTML = `
+    <div class="map-loader-inner">
+      <div class="map-loader-spinner" aria-hidden="true"></div>
+      <div class="map-loader-text">Loading Nodes...</div>
+    </div>
+  `;
+  // ensure any previous loader removed first
+  const prev = container.querySelector(".map-loader");
+  if (prev) prev.remove();
+  container.appendChild(overlay);
+
+  // create leaflet map
   mapOverview = L.map("map-overview", {
     zoomControl: true,
     dragging: true,
@@ -2789,11 +2848,23 @@ function createOverviewMap(nodes, edges, activeCampus) {
     mapOverview.setView(getGeographicCenter(nodes, activeCampus), 18);
   }
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  // add tiles and remove loader when tiles have loaded
+  const tiles = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap"
   }).addTo(mapOverview);
 
-  renderDataOnMap(mapOverview, { nodes, edges });
+  // When tiles finish loading remove overlay (best-effort)
+  tiles.on && tiles.on("load", () => {
+    try { const el = container.querySelector(".map-loader"); if (el) el.remove(); } catch (e) {}
+  });
+
+  // render nodes/edges
+  try {
+    renderDataOnMap(mapOverview, { nodes, edges });
+  } finally {
+    // remove overlay after rendering (covers case where tiles event didn't fire or rendering is the slow step)
+    try { const el = container.querySelector(".map-loader"); if (el) el.remove(); } catch (e) {}
+  }
 
   // ===============================================================
   // --- MODAL MAP SYNC ---
@@ -3105,12 +3176,12 @@ function createOverviewMap(nodes, edges, activeCampus) {
 
 
 
-
-
+const edgePolylines = new Map();
 
 function renderDataOnMap(map, data, enableClick = false) {
   const nodes = Array.isArray(data.nodes) ? data.nodes : [];
   const edges = Array.isArray(data.edges) ? data.edges : [];
+
 
   // collect node marker references so we can ensure they render above edges
   const nodeMarkers = [];
@@ -3195,13 +3266,42 @@ function renderDataOnMap(map, data, enableClick = false) {
     // 🚫 Skip if either endpoint is missing or a barrier
     if (!from || !to || from.type === "barrier" || to.type === "barrier") return;
 
+    const edgeActive = edge.is_active !== false;
+
     // place edges on map early — markers will be brought above afterwards
     const line = L.polyline([from.coords, to.coords], {
       color: "orange",
-      weight: 3,
-      opacity: 0.8,
+      weight: edgeActive ? 3 : 2,
+      opacity: edgeActive ? 0.8 : 0.18,
       interactive: true
     }).addTo(map);
+
+    // store lookup so UI toggles can update the polyline style later
+    try { if (edge.edge_id) { line._edge_id = edge.edge_id; edgePolylines.set(edge.edge_id, line); } } catch(e){}
+
+    // Always provide a hover effect even for inactive edges:
+    line.on("mouseover", () => {
+      try {
+        if (edgeActive) {
+          line.setStyle({ weight: 5, color: "rgba(250, 138, 46, 1)", opacity: 1.0 });
+        } else {
+          // clearer but still "faint" hover for inactive edges
+          line.setStyle({ weight: 4, color: "#FFB347", opacity: 0.75 });
+        }
+      } catch (e) { /* ignore */ }
+      try { map.getContainer().style.cursor = "pointer"; } catch(e){}
+    });
+    line.on("mouseout", () => {
+      try {
+        // restore baseline style depending on active state
+        if (edgeActive) {
+          line.setStyle({ weight: 3, color: "orange", opacity: 0.8 });
+        } else {
+          line.setStyle({ weight: 2, color: "orange", opacity: 0.48 });
+        }
+      } catch (e) { /* ignore */ }
+      try { map.getContainer().style.cursor = ""; } catch(e){}
+    });
 
     if (enableClick) {
       line.on("click", () => {
@@ -3210,7 +3310,9 @@ function renderDataOnMap(map, data, enableClick = false) {
           from: edge.from_node,
           to: edge.to_node,
           distance: edge.distance,
-          path_type: edge.path_type
+          path_type: edge.path_type,
+          elevations: edge.elevations,
+          is_active: edge.is_active 
         });
       });
     }
@@ -3287,7 +3389,59 @@ function renderDataOnMap(map, data, enableClick = false) {
 
 
 
+async function refreshModalMap() {
+  try {
+    if (!window.mapFull || !currentMapId) return;
+    const modal = document.getElementById("mapModal");
+    if (!modal) return;
 
+    // overlay
+    const overlay = document.createElement("div");
+    overlay.className = "modal-map-refresh-overlay";
+    overlay.style = "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.85);z-index:9999;";
+    overlay.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+      <div style="width:44px;height:44px;border-radius:50%;border:5px solid rgba(0,0,0,0.06);border-top-color:#DC143C;animation:spin 0.9s linear infinite"></div>
+      <div style="color:#222;font-weight:700">Refreshing map…</div>
+    </div>`;
+    modal.appendChild(overlay);
+
+    // fetch latest nodes+edges for the current map/version
+    const mapDocRef = doc(db, "MapVersions", String(currentMapId));
+    const mapDocSnap = await getDoc(mapDocRef);
+    if (!mapDocSnap.exists()) { overlay.remove(); return; }
+    const mapData = mapDocSnap.data();
+    const versionId = mapData.current_version;
+    const versionRef = doc(db, "MapVersions", String(currentMapId), "versions", versionId);
+    const versionSnap = await getDoc(versionRef);
+    if (!versionSnap.exists()) { overlay.remove(); return; }
+    const versionData = versionSnap.data();
+    let nodes = Array.isArray(versionData.nodes) ? versionData.nodes : [];
+    let edges = Array.isArray(versionData.edges) ? versionData.edges : [];
+
+    // filter nodes to active campus (mirror loadMap behaviour)
+    const activeCampus = mapData.current_active_campus;
+    nodes = nodes.filter(n => !n.is_deleted && (n.campus_id ? n.campus_id === activeCampus : true));
+    const validNodeIds = new Set(nodes.map(n => n.node_id));
+    edges = edges.filter(e => !e.is_deleted && validNodeIds.has(e.from_node) && validNodeIds.has(e.to_node));
+
+    // preserve view
+    const center = window.mapFull.getCenter();
+    const zoom = window.mapFull.getZoom();
+
+    // destroy previous map and recreate
+    try { window.mapFull.remove(); } catch (e) {}
+    document.getElementById("map-full").innerHTML = "";
+    window.mapFull = L.map("map-full", { center, zoom, zoomControl: true, dragging: true, scrollWheelZoom: true, doubleClickZoom: true });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(window.mapFull);
+
+    // render refreshed data (enableClick true so sidebar still works)
+    renderDataOnMap(window.mapFull, { nodes, edges }, true);
+    overlay.remove();
+  } catch (err) {
+    console.warn("refreshModalMap failed:", err);
+    try { document.querySelector(".modal-map-refresh-overlay")?.remove(); } catch(e){/*ignore*/}
+  }
+}
 
 
 
@@ -3306,12 +3460,207 @@ async function showDetails(node) {
     </div>
   `;
 
+  // If this is an EDGE, render edge-specific details and DO NOT render QR
+  if (node && (node.edge_id || (node.from && node.to))) {
+    // helper to find node display name by searching MapVersions -> versions -> nodes
+    async function findNodeName(nodeId) {
+      try {
+        const mapsSnap = await getDocs(collection(db, "MapVersions"));
+        for (const mapDoc of mapsSnap.docs) {
+          const mapData = mapDoc.data();
+          const currentVersion = mapData.current_version;
+          if (!currentVersion) continue;
+          const versionRef = doc(db, "MapVersions", mapDoc.id, "versions", currentVersion);
+          const versionSnap = await getDoc(versionRef);
+          if (!versionSnap.exists()) continue;
+          const versionNodes = Array.isArray(versionSnap.data().nodes) ? versionSnap.data().nodes : [];
+          const found = versionNodes.find(n => String(n.node_id) === String(nodeId) || String(n.related_room_id) === String(nodeId));
+          if (found) return found.name || found.node_id || nodeId;
+        }
+      } catch (e) {
+        console.warn("findNodeName error:", e);
+      }
+      return nodeId;
+    }
+
+    const fromId = node.from || node.from_node || "";
+    const toId = node.to || node.to_node || "";
+    const [fromName, toName] = await Promise.all([findNodeName(fromId), findNodeName(toId)]);
+
+    // format path_type/elevations nicely
+    const nice = (v) => v ? String(v).split("_").map(s => s[0].toUpperCase() + s.slice(1)).join(" ") : "-";
+    const distanceText = (node.distance !== undefined && node.distance !== null) ? `${Number(node.distance).toFixed(2)} m` : "-";
+
+    const edgeActive = node.is_active !== false;
+    const edgeImg = edgeActive
+      ? "../assets/imgs/pathway_active.png"
+      : "../assets/imgs/pathway_inactive.png";
+
+    sidebar.innerHTML = `
+      <div style="padding:12px; display:flex;flex-direction:column;gap:12px;font-family:Inter, Arial, Helvetica, sans-serif;">
+        <div style="border-radius:8px;overflow:hidden;box-shadow:0 8px 22px rgba(2,6,23,0.08);background:linear-gradient(180deg,#fff,#fff);">
+          <div style="position:relative;height:170px;overflow:hidden;background:#f3f3f5">
+            <img src="${edgeImg}" alt="Pathway" onerror="this.style.display='none'" style="width:100%;height:170px;object-fit:cover;display:block;"/>
+            <div style="position:absolute;left:12px;bottom:12px;background:linear-gradient(90deg, rgba(220,20,60,0.12), rgba(0,0,0,0.04));backdrop-filter:blur(2px);padding:8px 10px;border-radius:999px;">
+              <span style="font-weight:700;color:#7f1720;font-size:13px">Edge</span>
+              <div style="font-size:12px;color:#3b3f45">${node.edge_id || "-"}</div>
+            </div>
+          </div>
+
+          <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;color:#6b7280;font-weight:700;margin-bottom:6px">From → To</div>
+                <div id="edge-names" title="${escapeHtml(fromName + ' → ' + toName)}" style="font-size:15px;color:#0f1720;font-weight:700;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;cursor:pointer;">
+                  ${escapeHtml(fromName)} <span style="color:#9aa0a6;font-weight:600;margin:0 8px">→</span> ${escapeHtml(toName)}
+                </div>
+                <div style="margin-top:6px;font-size:12px;color:#667085">${fromId}  •  ${toId}</div>
+              </div>
+            </div>
+
+            <!-- moved toggle: clear, visible and near path/elevation -->
+            <div style="display:flex;justify-content:flex-start;align-items:center;gap:10px;padding-top:6px;">
+              <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#374151;">
+                <span style="font-size:13px;color:#6b7280;font-weight:700;margin-right:6px">Status</span>
+                <input id="edge-active-input" type="checkbox" ${edgeActive ? "checked" : ""} style="width:0;height:0;opacity:0;position:absolute;">
+                <span id="edge-active-switch" style="display:inline-block;width:46px;height:26px;border-radius:999px;background:${edgeActive ? "#DC143C" : "#e6e9ee"};position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);cursor:pointer;">
+                  <span id="edge-active-thumb" style="position:absolute;top:4px;left:${edgeActive ? "24px" : "4px"};width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(2,6,23,0.12);transition:left 220ms ease"></span>
+                </span>
+              </label>
+              <div id="edge-active-status" style="font-size:12px;color:#ffffff;font-weight:700;display:inline-block;padding:6px 10px;border-radius:999px;background:${edgeActive ? "rgba(220,20,60,0.14)" : "rgba(99,102,241,0.08)"};color:${edgeActive ? "#7f1720" : "#556070"}">
+                ${edgeActive ? "Active" : "Inactive"}
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;align-items:stretch;margin-top:6px;">
+              <div style="flex:1;background:linear-gradient(180deg,#ffffff,#fafafa);padding:10px;border-radius:8px;border:1px solid #eef2f7;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);">
+                <div style="font-size:12px;color:#69717a;font-weight:700">Path type</div>
+                <div style="margin-top:6px;font-size:14px;color:#0f1720;font-weight:600">${nice(node.path_type)}</div>
+              </div>
+              <div style="width:12px"></div>
+              <div style="flex:1;background:linear-gradient(180deg,#ffffff,#fafafa);padding:10px;border-radius:8px;border:1px solid #eef2f7;">
+                <div style="font-size:12px;color:#69717a;font-weight:700">Elevations</div>
+                <div style="margin-top:6px;font-size:14px;color:#0f1720;font-weight:600">${nice(node.elevations)}</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div style="text-align:center;color:#6b7280;font-size:12px">This is an edge — QR codes only apply to nodes.</div>
+      </div>
+    `;
+
+    // allow user to click the names area to toggle expanded/collapsed view
+    try {
+      const namesEl = sidebar.querySelector("#edge-names");
+      if (namesEl) {
+        namesEl.addEventListener("click", () => {
+          const expanded = namesEl.classList.toggle("expanded");
+          if (expanded) {
+            namesEl.style.display = "block";
+            namesEl.style.webkitLineClamp = "unset";
+            namesEl.style.WebkitLineClamp = "unset";
+            namesEl.style.whiteSpace = "normal";
+            namesEl.style.overflow = "visible";
+          } else {
+            namesEl.style.display = "-webkit-box";
+            namesEl.style.WebkitBoxOrient = "vertical";
+            namesEl.style.webkitLineClamp = "2";
+            namesEl.style.WebkitLineClamp = "2";
+            namesEl.style.whiteSpace = "normal";
+            namesEl.style.overflow = "hidden";
+          }
+        });
+      }
+     } catch (e) { /* ignore */ }
+    // Edge active toggle handler: updates MapVersions -> versions -> edges and updates polyline style
+    try {
+      const toggleSwitch = sidebar.querySelector("#edge-active-switch");
+      const toggleInput = sidebar.querySelector("#edge-active-input");
+      const statusEl = sidebar.querySelector("#edge-active-status");
+      if (toggleSwitch && toggleInput && statusEl) {
+        // clicking the visible switch toggles the hidden checkbox to get visual change
+        toggleSwitch.addEventListener("click", async (ev) => {
+          ev.preventDefault();
+          const newState = !toggleInput.checked;
+          // optimistic visual feedback (move thumb & color)
+          toggleInput.checked = newState;
+          sidebar.querySelector("#edge-active-thumb").style.left = newState ? "20px" : "3px";
+          toggleSwitch.style.background = newState ? "#DC143C" : "#e6e9ee";
+          // show tiny loader in status
+          const prevText = statusEl.textContent;
+          statusEl.innerHTML = `<span style="width:18px;height:18px;border:3px solid rgba(0,0,0,0.08);border-top-color:#DC143C;border-radius:50%;display:inline-block;animation:spin 0.8s linear infinite;"></span> Updating...`;
+
+          try {
+            // persist change
+            await (async function toggleEdgeActive(edgeId, active) {
+              // find the version doc that contains this edge and update it
+              const mapsSnap = await getDocs(collection(db, "MapVersions"));
+              for (const mapDoc of mapsSnap.docs) {
+                const mapData = mapDoc.data();
+                const currentVersion = mapData.current_version;
+                if (!currentVersion) continue;
+                const versionRef = doc(db, "MapVersions", mapDoc.id, "versions", currentVersion);
+                const versionSnap = await getDoc(versionRef);
+                if (!versionSnap.exists()) continue;
+                const versionData = versionSnap.data();
+                const edgesArr = Array.isArray(versionData.edges) ? [...versionData.edges] : [];
+                const idx = edgesArr.findIndex(e => e.edge_id === edgeId);
+                if (idx !== -1) {
+                  edgesArr[idx] = { ...edgesArr[idx], is_active: active, updated_at: new Date() };
+                  await updateDoc(versionRef, { edges: edgesArr });
+                  return;
+                }
+              }
+              throw new Error("Edge not found in MapVersions");
+            })(node.edge_id, newState);
+
+            // update UI status text
+            statusEl.textContent = newState ? "Active" : "Inactive";
+
+            // update polyline style if present
+            const poly = edgePolylines.get(node.edge_id);
+            if (poly && typeof poly.setStyle === "function") {
+              poly.setStyle({ opacity: newState ? 0.8 : 0.18, weight: newState ? 3 : 2 });
+            }
+            try { await refreshModalMap(); } catch(e) { /* ignore */ }
+          } catch (err) {
+            console.error("Failed to toggle edge active:", err);
+            // revert visual
+            toggleInput.checked = !toggleInput.checked;
+            sidebar.querySelector("#edge-active-thumb").style.left = toggleInput.checked ? "20px" : "3px";
+            toggleSwitch.style.background = toggleInput.checked ? "#DC143C" : "#e6e9ee";
+            statusEl.textContent = prevText || (toggleInput.checked ? "Active" : "Inactive");
+            showModal('error', 'Failed to update edge status. See console for details.');
+          }
+        });
+      }
+    } catch (err) { console.warn("edge toggle init failed:", err); }
+
+    return; // DO NOT continue to node QR rendering
+  }
+
+  if (node && (node.type === "Campus Area" || String(node.name || "").startsWith("Campus Area"))) {
+    // mark so later code can treat this specially (no infra DB lookup)
+    node.__isCampusArea = true;
+    // force active status and created-year text
+    node.is_active = true;
+    node.created_at = "1904";
+    // ensure there is no node_id so QR won't be rendered
+    delete node.node_id;
+  }
+
   // --- Fetch related infrastructure info (image / email / phone) ---
   let imageUrl = null;
   let infraEmail = "-";
   let infraPhone = "-";
   try {
-    if (node.related_infra_id) {
+    if (node && node.__isCampusArea) {
+      imageUrl = "../assets/imgs/Western_Mindanao_State_University.png";
+      infraEmail = "wmsu@wmsu.edu.ph";
+      infraPhone = "991-1771";
+    } else if (node.related_infra_id) {
       const q = query(collection(db, "Infrastructure"), where("infra_id", "==", node.related_infra_id));
       const snap = await getDocs(q);
       if (!snap.empty) {
@@ -3323,6 +3672,39 @@ async function showDetails(node) {
     }
   } catch (err) {
     console.warn("Failed to load infrastructure info for sidebar:", err);
+  }
+
+  // --- Determine whether this infra has rooms (IndoorInfrastructure -> Rooms fallback) ---
+  let showRoomsLinkHtml = "";
+  try {
+    if (node.related_infra_id) {
+      const infraId = String(node.related_infra_id);
+      // check IndoorInfrastructure collection first
+      const indoorQ = query(collection(db, "IndoorInfrastructure"), where("infra_id", "==", infraId));
+      const indoorSnap = await getDocs(indoorQ);
+      if (!indoorSnap.empty) {
+        showRoomsLinkHtml = `
+          <a class="show-rooms-link" href="#" style="position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,0.95);padding:6px 10px;border-radius:6px;color:#0f1720;font-weight:600;text-decoration:none;box-shadow:0 2px 6px rgba(2,6,23,0.12);display:inline-flex;align-items:center;gap:8px;">
+            <i class="fas fa-th-large" style="color:#374151"></i>
+            Show Rooms
+          </a>`;
+      } else {
+        // fallback: some setups store rooms in "Rooms" collection with infra_id
+        const roomsQ = query(collection(db, "Rooms"), where("infra_id", "==", infraId));
+        const roomsSnap = await getDocs(roomsQ);
+        if (!roomsSnap.empty) {
+          showRoomsLinkHtml = `
+            <a class="show-rooms-link" href="#" style="position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,0.95);padding:6px 10px;border-radius:6px;color:#0f1720;font-weight:600;text-decoration:none;box-shadow:0 2px 6px rgba(2,6,23,0.12);display:inline-flex;align-items:center;gap:8px;">
+              <i class="fas fa-th-large" style="color:#374151"></i>
+              Show Rooms
+            </a>`;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to check rooms for infrastructure (show/hide Show Rooms):", err);
+    // safe default: do not show link on error
+    showRoomsLinkHtml = "";
   }
 
   // --- Small inline SVG placeholder so UI stays consistent when there's no image ---
@@ -3371,11 +3753,7 @@ async function showDetails(node) {
       <div style="width:100%;display:flex;justify-content:center;">
         <div style="width:100%;max-width:320px;border-radius:8px;overflow:hidden;box-shadow:0 6px 18px rgba(9,30,66,0.08);position:relative;">
           <img id="sidebar-infra-image" src="${imgSrc}" alt="${(node.name||'Image').replace(/"/g,'')}" style="width:100%;height:220px;object-fit:cover;display:block;background:#f6f6f8" />
-          <!-- show rooms link overlay -->
-          <a class="show-rooms-link" href="#" style="position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,0.95);padding:6px 10px;border-radius:6px;color:#0f1720;font-weight:600;text-decoration:none;box-shadow:0 2px 6px rgba(2,6,23,0.12);display:inline-flex;align-items:center;gap:8px;">
-            <i class="fas fa-th-large" style="color:#374151"></i>
-            Show Rooms
-          </a>
+          ${showRoomsLinkHtml}
         </div>
       </div>
 
@@ -3444,7 +3822,7 @@ async function showDetails(node) {
       // Only open if we have a related_infra_id
       const infraId = node.related_infra_id || null;
       if (!infraId) {
-        alert("No related infrastructure recorded for this node.");
+        showModal('error', 'No related infrastructure recorded for this node.');
         return;
       }
       openRoomsModal({ infra_id: infraId, infra_node: node });
@@ -3452,7 +3830,11 @@ async function showDetails(node) {
   }
 
   // re-use existing QR rendering logic
-  await renderQrSection(node);
+
+
+  if (node && node.node_id) {
+    await renderQrSection(node);
+  }
 }
 
 
@@ -3936,7 +4318,8 @@ async function renderQrSection(node) {
       const dataUrl = canvas.toDataURL("image/png");
 
       // show modal with the generated QR (only shown on click)
-      openQrModal(dataUrl, crimsonNodeId, canvas);
+      openQrModal(dataUrl, crimsonNodeId, canvas, node.name);
+
 
       // save minimal info to Firestore
       await setDoc(qrRef, {
@@ -3949,7 +4332,7 @@ async function renderQrSection(node) {
       await renderQrSection(node);
     } catch (err) {
       console.error("QR generate error:", err);
-      alert("Failed to generate QR");
+      showModal('error', 'Failed to generate QR code. Please try again.');
     }
   });
 
@@ -3967,7 +4350,7 @@ async function renderQrSection(node) {
         await new Promise(res => setTimeout(res, 80));
         const canvas = qrDiv.querySelector("canvas") || qrDiv.querySelector("img");
         const dataUrl = canvas.toDataURL("image/png");
-        openQrModal(dataUrl, crimsonNodeId, canvas);
+        openQrModal(dataUrl, crimsonNodeId, canvas, node.name);
       } catch (err) {
         console.error(err);
       }
@@ -3975,70 +4358,239 @@ async function renderQrSection(node) {
   }
 }
 
-// ...existing code...
-function openQrModal(qrDataUrl, nodeId, canvas = null) {
+function openQrModal(qrDataUrl, nodeId, canvas = null, nodeName = "") {
   // remove existing modal if any
-  const existing = document.querySelector(".qr-modal");
-  if (existing) existing.remove();
+  document.querySelector(".qr-modal")?.remove();
 
   const modal = document.createElement("div");
   modal.className = "qr-modal";
-  modal.style.position = "fixed";
-  modal.style.inset = "0";
-  modal.style.zIndex = "9999";
-  modal.style.display = "flex";
-  modal.style.alignItems = "center";
-  modal.style.justifyContent = "center";
-  modal.style.background = "rgba(6,18,31,0.45)";
+  Object.assign(modal.style, {
+    position: "fixed",
+    inset: "0",
+    zIndex: "9999",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "rgba(6,18,31,0.45)",
+  });
 
   modal.innerHTML = `
-    <div style="background:#fff;border-radius:10px;padding:18px;min-width:320px;max-width:720px;width:92%;box-shadow:0 10px 40px rgba(2,6,23,0.35);display:flex;flex-direction:column;gap:12px;align-items:center;">
+    <div style="background:#fff;border-radius:12px;padding:18px;min-width:360px;max-width:820px;width:94%;
+      box-shadow:0 12px 48px rgba(2,6,23,0.35);display:flex;flex-direction:column;gap:12px;align-items:center;">
       <div style="width:100%;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-weight:700;color:#0f1720">${nodeId}</div>
-        <button class="qr-close" style="background:transparent;border:none;font-size:20px;cursor:pointer;color:#556070;"><i class="fas fa-times"></i></button>
+        <div style="font-weight:700;color:#0f1720">${nodeName || nodeId}</div>
+        <button class="qr-close" style="background:transparent;border:none;font-size:20px;cursor:pointer;color:#556070;">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
 
-      <div style="background:#fafafa;padding:12px;border-radius:8px;">
+      <div style="background:#fafafa;padding:12px;border-radius:10px;">
         <img src="${qrDataUrl}" alt="${nodeId}" style="width:320px;height:320px;object-fit:contain;display:block;"/>
       </div>
 
       <div style="display:flex;gap:10px;justify-content:center;width:100%;">
-        <button id="download-qr-btn" style="background:#007bff;color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700;"><i class="fas fa-download" style="margin-right:8px"></i> Download PNG</button>
-        <button id="print-qr-btn" style="background:#fff;border:1px solid #d1d5db;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700;color:#111;"><i class="fas fa-print" style="margin-right:8px"></i> Print</button>
-        <button id="pdf-qr-btn" style="background:#111;color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700;"><i class="fas fa-file-pdf" style="margin-right:8px"></i> Export PDF</button>
+        <button id="download-qr-btn" style="background:#7b001e;color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700;">
+          <i class="fas fa-download" style="margin-right:8px"></i> Download PNG
+        </button>
+        <button id="print-qr-btn" style="background:#fff;border:1px solid #d1d5db;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700;color:#111;">
+          <i class="fas fa-print" style="margin-right:8px"></i> Print
+        </button>
+        <button id="pdf-qr-btn" style="background:#111;color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700;">
+          <i class="fas fa-file-pdf" style="margin-right:8px"></i> Export PDF
+        </button>
       </div>
     </div>
   `;
 
   document.body.appendChild(modal);
-
   modal.querySelector(".qr-close").addEventListener("click", () => modal.remove());
   modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
 
-  modal.querySelector("#download-qr-btn").addEventListener("click", () => {
+  // 🎨 Build Stylish Layout (outer white, inner crimson box, padded content)
+// 🎨 Build Stylish Layout (outer white, inner crimson box, padded content)
+async function buildQrLayout() {
+  const width = 800;
+  const height = width; // square layout
+  const qrCanvas = document.createElement("canvas");
+  qrCanvas.width = width;
+  qrCanvas.height = height;
+  const ctx = qrCanvas.getContext("2d");
+
+  // ---------- Outer background ----------
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
+
+  // ---------- Crimson main box ----------
+  const padding = 40;
+  const boxX = padding;
+  const boxY = padding;
+  const boxW = width - padding * 2;
+  const boxH = height - padding * 2;
+  const radius = 20;
+
+  ctx.fillStyle = "#7b001e";
+  ctx.beginPath();
+  ctx.moveTo(boxX + radius, boxY);
+  ctx.lineTo(boxX + boxW - radius, boxY);
+  ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + radius);
+  ctx.lineTo(boxX + boxW, boxY + boxH - radius);
+  ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - radius, boxY + boxH);
+  ctx.lineTo(boxX + radius, boxY + boxH);
+  ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - radius);
+  ctx.lineTo(boxX, boxY + radius);
+  ctx.quadraticCurveTo(boxX, boxY, boxX + radius, boxY);
+  ctx.closePath();
+  ctx.fill();
+
+  // ---------- "SCAN HERE" (top header) ----------
+  ctx.fillStyle = "#ffffffff";
+  ctx.textAlign = "center";
+  ctx.font = "bold 70px 'Poppins', sans-serif";
+  const scanY = boxY + 90;
+  ctx.fillText("SCAN HERE!", boxX + boxW / 2, scanY);
+
+  // ---------- QR box ----------
+  const qrBoxSize = 340;
+  const qrBoxX = boxX + (boxW - qrBoxSize) / 2;
+  const qrBoxY = scanY + 40;
+  const qrRadius = 20;
+
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.moveTo(qrBoxX + qrRadius, qrBoxY);
+  ctx.lineTo(qrBoxX + qrBoxSize - qrRadius, qrBoxY);
+  ctx.quadraticCurveTo(qrBoxX + qrBoxSize, qrBoxY, qrBoxX + qrBoxSize, qrBoxY + qrRadius);
+  ctx.lineTo(qrBoxX + qrBoxSize, qrBoxY + qrBoxSize - qrRadius);
+  ctx.quadraticCurveTo(qrBoxX + qrBoxSize, qrBoxY + qrBoxSize, qrBoxX + qrBoxSize - qrRadius, qrBoxY + qrBoxSize);
+  ctx.lineTo(qrBoxX + qrRadius, qrBoxY + qrBoxSize);
+  ctx.quadraticCurveTo(qrBoxX, qrBoxY + qrBoxSize, qrBoxX, qrBoxY + qrBoxSize - qrRadius);
+  ctx.lineTo(qrBoxX, qrBoxY + qrRadius);
+  ctx.quadraticCurveTo(qrBoxX, qrBoxY, qrBoxX + qrRadius, qrBoxY);
+  ctx.closePath();
+
+  ctx.shadowColor = "rgba(0,0,0,0.12)";
+  ctx.shadowBlur = 18;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // ---------- QR image ----------
+  const qrImg = new Image();
+  qrImg.src = qrDataUrl;
+  await new Promise(res => (qrImg.onload = res));
+  const qrPadding = 20;
+  const qrImgSize = qrBoxSize - qrPadding * 2;
+  ctx.drawImage(qrImg, qrBoxX + qrPadding, qrBoxY + qrPadding, qrImgSize, qrImgSize);
+
+  // ---------- Footer texts ----------
+  let footerY = qrBoxY + qrBoxSize + 50;
+  ctx.textAlign = "center";
+
+  // University name (bigger)
+  ctx.font = "700 30px 'Poppins', sans-serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Western Mindanao State University", boxX + boxW / 2, footerY);
+
+  // Node name (smaller, in between)
+  ctx.font = "600 22px 'Poppins', sans-serif";
+  ctx.fillStyle = "#fce8e8";
+  footerY += 34;
+  wrapAndDrawText(ctx, nodeName || nodeId, boxX + 60, footerY, boxW - 120, 28);
+
+  // "Generated via..." (smallest)
+  ctx.font = "14px 'Poppins', sans-serif";
+  ctx.fillStyle = "#f7dede";
+  footerY += 40;
+  ctx.fillText("Generated via CrimsonMap QR System", boxX + boxW / 2, footerY);
+
+  // ---------- Logos ----------
+  const logo1 = new Image();
+  const logo2 = new Image();
+  logo1.src = "../assets/imgs/Western_Mindanao_State_University.png";
+  logo2.src = "../assets/imgs/CrimsonMap Logo 1.png";
+  await Promise.all([
+    new Promise(res => (logo1.onload = res)),
+    new Promise(res => (logo2.onload = res)),
+  ]);
+
+  const logoSize = 70;
+  const logosY = footerY + 25;
+  ctx.drawImage(logo1, boxX + (boxW / 2) - logoSize - 12, logosY, logoSize, logoSize);
+  ctx.drawImage(logo2, boxX + (boxW / 2) + 12, logosY, logoSize, logoSize);
+
+  // ---------- Border polish ----------
+  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(boxX + 6, boxY + 6, boxW - 12, boxH - 12);
+
+  return qrCanvas;
+}
+
+
+
+  // small helper: draw wrapped text (simple)
+  function wrapAndDrawText(ctx, text, x, y, maxWidth, lineHeight) {
+    // split on spaces, wrap
+    const words = text.split(" ");
+    let line = "";
+    let curY = y;
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + " ";
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > maxWidth && n > 0) {
+        ctx.fillText(line.trim(), x + maxWidth / 2, curY);
+        line = words[n] + " ";
+        curY += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    if (line) ctx.fillText(line.trim(), x + maxWidth / 2, curY);
+  }
+
+  // helper to stroke rounded rect
+  function roundRectStroke(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  // ---------- Download / Print / PDF handlers (use buildQrLayout) ----------
+  modal.querySelector("#download-qr-btn").addEventListener("click", async () => {
+    const layoutCanvas = await buildQrLayout();
     const a = document.createElement("a");
-    a.href = qrDataUrl;
-    a.download = `${nodeId}_qr.png`;
+    a.href = layoutCanvas.toDataURL("image/png");
+    a.download = `${(nodeName || nodeId).replace(/\s+/g, "_")}_qr.png`;
     a.click();
   });
 
-  modal.querySelector("#print-qr-btn").addEventListener("click", () => {
+  modal.querySelector("#print-qr-btn").addEventListener("click", async () => {
+    const layoutCanvas = await buildQrLayout();
+    const dataUrl = layoutCanvas.toDataURL("image/png");
     const w = window.open("");
-    w.document.write(`<img src="${qrDataUrl}" style="width:512px;height:512px;">`);
+    w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto;">`);
     w.document.close();
     w.focus();
     w.print();
     w.close();
   });
 
-  modal.querySelector("#pdf-qr-btn").addEventListener("click", () => {
-    if (!canvas) return alert("Cannot export PDF because QR canvas not available.");
-    const imgData = (canvas.tagName === "CANVAS") ? canvas.toDataURL("image/png") : canvas.src;
+  modal.querySelector("#pdf-qr-btn").addEventListener("click", async () => {
+    const layoutCanvas = await buildQrLayout();
+    const imgData = layoutCanvas.toDataURL("image/png");
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ unit: "px", format: "a4" });
-    // center 300x300 at top
-    pdf.addImage(imgData, "PNG", 60, 60, 420, 420);
-    pdf.save(`${nodeId}_qr.pdf`);
+    // generate PDF with reasonable margins
+    const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: "a4" });
+    pdf.addImage(imgData, "PNG", 20, 20, 555, 760); // fit with margins
+    pdf.save(`${(nodeName || nodeId).replace(/\s+/g, "_")}_qr.pdf`);
   });
 }
 
@@ -4058,3 +4610,52 @@ function openQrModal(qrDataUrl, nodeId, canvas = null) {
 
 
 
+function showModal(type, message) {
+  const overlay = document.getElementById("jModal");
+  const box = overlay.querySelector(".jModal-box");
+  const icon = document.getElementById("jModal-icon");
+  const title = document.getElementById("jModal-title");
+  const msg = document.getElementById("jModal-message");
+  const btn = document.getElementById("jModal-btn");
+
+  // Reset
+  box.classList.remove("jModal-success", "jModal-error");
+  icon.innerHTML = "";
+
+  // Decide content based on type
+  let titleText = "";
+  let iconSVG = "";
+
+  if (type === "success") {
+    box.classList.add("jModal-success");
+    btn.style.background = "var(--jModal-success)";
+    titleText = "Success";
+    iconSVG = `
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke-width="3" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" stroke="#28a745"/>
+        <path d="M8 12.5l3 3 5-6" stroke="#28a745" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`;
+  } else {
+    box.classList.add("jModal-error");
+    btn.style.background = "var(--jModal-error)";
+    titleText = "Error";
+    iconSVG = `
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke-width="3" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" stroke="#dc3545"/>
+        <path d="M15 9l-6 6M9 9l6 6" stroke="#dc3545" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`;
+  }
+
+  // Apply content
+  icon.innerHTML = iconSVG;
+  title.textContent = titleText;
+  msg.textContent = message;
+
+  // Show modal
+  overlay.classList.add("jModal-active");
+
+  // Close button
+  btn.onclick = () => {
+    overlay.classList.remove("jModal-active");
+  };
+}

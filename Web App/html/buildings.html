@@ -357,8 +357,8 @@
                 <input type="text" id="categoryName" placeholder="Category Name" required>
             </div>
             <div class="form-group">
-                <label>Legend/Label (Color)</label>
-                <input type="color" id="categoryColor" value="#b41c1c" required>
+                <label>Legend Letter (A–Z):</label>
+                <select id="categoryLegend" required></select>
             </div>
             <div class="modal-actions">
                 <button type="submit" class="save-btn">Save</button>
@@ -714,6 +714,16 @@
 </div>
 
 
+
+<!-- ===================== Custom Modal ===================== -->
+<div id="jModal" class="jModal-overlay">
+  <div class="jModal-box">
+    <div id="jModal-icon" class="jModal-icon"></div>
+    <h2 id="jModal-title" class="jModal-title">Title</h2>
+    <p id="jModal-message" class="jModal-message">Message goes here.</p>
+    <button id="jModal-btn" class="jModal-btn">Okay</button>
+  </div>
+</div>
 
 <script type="module" src="/js/buildings.js "></script>
 <script type="module" src="/js/welcome.js"></script>

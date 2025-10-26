@@ -1087,3 +1087,118 @@ button.loading .loading-text {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
+
+
+
+
+
+
+
+
+
+:root {
+  --jModal-success: #28a745;
+  --jModal-error: #dc3545;
+  --jModal-bg: #fff;
+  --jModal-overlay: rgba(0, 0, 0, 0.45);
+  --jModal-font: "Poppins", "Segoe UI", sans-serif;
+}
+
+.jModal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--jModal-overlay);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s ease;
+}
+
+.jModal-overlay.jModal-active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.jModal-box {
+  background: var(--jModal-bg);
+  border-radius: 16px;
+  padding: 34px 40px;
+  width: 90%;
+  max-width: 380px;
+  text-align: center;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+  font-family: var(--jModal-font);
+  transform: translateY(-20px) scale(0.95);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.jModal-overlay.jModal-active .jModal-box {
+  transform: translateY(0) scale(1);
+}
+
+.jModal-icon {
+  width: 85px;
+  height: 85px;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: jModal-pop 0.4s ease;
+}
+
+.jModal-success .jModal-icon {
+  background: #e6f7ee;
+}
+
+.jModal-error .jModal-icon {
+  background: #fde8e8;
+}
+
+.jModal-icon svg {
+  width: 42px;
+  height: 42px;
+}
+
+.jModal-title {
+  font-size: 1.4em;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #222;
+}
+
+.jModal-message {
+  font-size: 0.95em;
+  color: #555;
+  margin-bottom: 26px;
+  line-height: 1.5;
+}
+
+.jModal-btn {
+  background: var(--jModal-error);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 26px;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.2s ease;
+}
+
+.jModal-btn:hover {
+  background: #b3002c;
+  transform: translateY(-2px);
+}
+
+.jModal-btn:active {
+  transform: translateY(0);
+}
+
+@keyframes jModal-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}

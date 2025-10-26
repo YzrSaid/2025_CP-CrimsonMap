@@ -141,7 +141,7 @@ function renderCategoriesTableRows(data) {
       <td>${data.name}</td>
       <td>
         <span class="category-color" style="background:#e5e7eb; color:#111827; padding:4px 8px; border-radius:6px;">
-          ${data.label || "—"}
+          ${data.legend || "—"}
         </span>
       </td>
       <td>${data.buildings}</td>
@@ -160,85 +160,208 @@ document.addEventListener("DOMContentLoaded", renderCategoriesTable);
 
 
 
+// // ----------- Add Category Handler with Loading Spinner + Saving Text -----------
+// document.getElementById('categoryForm')?.addEventListener('submit', async (e) => {
+//     e.preventDefault();
+
+//     const submitBtn = e.target.querySelector(".save-btn");
+//     if (!submitBtn) return;
+
+//     const originalBtnHTML = submitBtn.innerHTML;
+
+//     // 🟢 Show spinner + "Saving..." text + disable button
+//     submitBtn.innerHTML = `
+//         <div class="spinner"></div>
+//         <span class="loading-text">Saving...</span>
+//     `;
+//     submitBtn.disabled = true;
+
+//     const name = document.getElementById('categoryName').value.trim();
+//     const color = document.getElementById('categoryColor').value;
+
+//     if (!name || !color) {
+//         alert("Please fill in all required fields.");
+//         submitBtn.innerHTML = originalBtnHTML;
+//         submitBtn.disabled = false;
+//         return;
+//     }
+
+//     try {
+//         // Generate next category ID in format CAT-01, CAT-02, etc.
+//         let nextNum = 1;
+//         const querySnapshot = await getDocs(collection(db, "Categories"));
+//         const existingIds = querySnapshot.docs
+//             .map(doc => doc.data().category_id)
+//             .filter(id => id && id.startsWith("CAT-"))
+//             .map(id => parseInt(id.slice(4), 10))
+//             .filter(num => !isNaN(num));
+//         if (existingIds.length > 0) {
+//             nextNum = Math.max(...existingIds) + 1;
+//         }
+//         const categoryId = `CAT-${String(nextNum).padStart(2, "0")}`;
+
+//         // Save category
+//         await addDoc(collection(db, "Categories"), {
+//             category_id: categoryId,
+//             name: name,
+//             color: color,
+//             buildings: 0,
+//             is_deleted: false,
+//             createdAt: new Date()
+//         });
+
+//         // Save Activity Log
+//         await addDoc(collection(db, "ActivityLogs"), {
+//             timestamp: new Date(),
+//             activity: "Added Category",
+//             item: `Category ${categoryId}`,
+//             description: `Added category "${name}" with color "${color}".`
+//         });
+
+//         // ✅ Update StaticDataVersions/GlobalInfo
+//         const staticDataRef = doc(db, "StaticDataVersions", "GlobalInfo");
+//         await updateDoc(staticDataRef, {
+//             categories_updated: true,
+//         });
+
+//         document.getElementById('categoryForm').reset();
+//         hideCategoryModal();
+//         renderCategoriesTable();
+//         populateCategoryDropdownForInfra();
+
+//         alert("Category saved!");
+//     } catch (err) {
+//         console.error("Error adding category:", err);
+//         alert("Error adding category: " + err);
+//     } finally {
+//         // 🔄 Restore original button
+//         submitBtn.innerHTML = originalBtnHTML;
+//         submitBtn.disabled = false;
+//     }
+// });
+
+
+
+
+
+
+
+
+
+
 // ----------- Add Category Handler with Loading Spinner + Saving Text -----------
 document.getElementById('categoryForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const submitBtn = e.target.querySelector(".save-btn");
-    if (!submitBtn) return;
+  const submitBtn = e.target.querySelector(".save-btn");
+  if (!submitBtn) return;
 
-    const originalBtnHTML = submitBtn.innerHTML;
+  const originalBtnHTML = submitBtn.innerHTML;
 
-    // 🟢 Show spinner + "Saving..." text + disable button
-    submitBtn.innerHTML = `
-        <div class="spinner"></div>
-        <span class="loading-text">Saving...</span>
-    `;
-    submitBtn.disabled = true;
+  // 🟢 Show spinner + "Saving..." text + disable button
+  submitBtn.innerHTML = `
+      <div class="spinner"></div>
+      <span class="loading-text">Saving...</span>
+  `;
+  submitBtn.disabled = true;
 
-    const name = document.getElementById('categoryName').value.trim();
-    const color = document.getElementById('categoryColor').value;
+  const name = document.getElementById('categoryName').value.trim();
+  const legend = document.getElementById('categoryLegend').value; // ← get legend letter
 
-    if (!name || !color) {
-        alert("Please fill in all required fields.");
-        submitBtn.innerHTML = originalBtnHTML;
-        submitBtn.disabled = false;
-        return;
+  if (!name || !legend) {
+    showModal('error', 'Please fill in all required fields.');
+    submitBtn.innerHTML = originalBtnHTML;
+    submitBtn.disabled = false;
+    return;
+  }
+
+  try {
+    // Generate next category ID in format CAT-01, CAT-02, etc.
+    let nextNum = 1;
+    const querySnapshot = await getDocs(collection(db, "Categories"));
+    const existingIds = querySnapshot.docs
+      .map(doc => doc.data().category_id)
+      .filter(id => id && id.startsWith("CAT-"))
+      .map(id => parseInt(id.slice(4), 10))
+      .filter(num => !isNaN(num));
+
+    if (existingIds.length > 0) {
+      nextNum = Math.max(...existingIds) + 1;
     }
+    const categoryId = `CAT-${String(nextNum).padStart(2, "0")}`;
 
-    try {
-        // Generate next category ID in format CAT-01, CAT-02, etc.
-        let nextNum = 1;
-        const querySnapshot = await getDocs(collection(db, "Categories"));
-        const existingIds = querySnapshot.docs
-            .map(doc => doc.data().category_id)
-            .filter(id => id && id.startsWith("CAT-"))
-            .map(id => parseInt(id.slice(4), 10))
-            .filter(num => !isNaN(num));
-        if (existingIds.length > 0) {
-            nextNum = Math.max(...existingIds) + 1;
-        }
-        const categoryId = `CAT-${String(nextNum).padStart(2, "0")}`;
+    // Save new category with legend
+    await addDoc(collection(db, "Categories"), {
+      category_id: categoryId,
+      name: name,
+      legend: legend, // ← store letter legend
+      buildings: 0,
+      is_deleted: false,
+      createdAt: new Date()
+    });
 
-        // Save category
-        await addDoc(collection(db, "Categories"), {
-            category_id: categoryId,
-            name: name,
-            color: color,
-            buildings: 0,
-            is_deleted: false,
-            createdAt: new Date()
-        });
+    // Save Activity Log
+    await addDoc(collection(db, "ActivityLogs"), {
+      timestamp: new Date(),
+      activity: "Added Category",
+      item: `Category ${categoryId}`,
+      description: `Added category "${name}" with legend "${legend}".`
+    });
 
-        // Save Activity Log
-        await addDoc(collection(db, "ActivityLogs"), {
-            timestamp: new Date(),
-            activity: "Added Category",
-            item: `Category ${categoryId}`,
-            description: `Added category "${name}" with color "${color}".`
-        });
+    // ✅ Update StaticDataVersions/GlobalInfo
+    const staticDataRef = doc(db, "StaticDataVersions", "GlobalInfo");
+    await updateDoc(staticDataRef, {
+      categories_updated: true,
+    });
 
-        // ✅ Update StaticDataVersions/GlobalInfo
-        const staticDataRef = doc(db, "StaticDataVersions", "GlobalInfo");
-        await updateDoc(staticDataRef, {
-            categories_updated: true,
-        });
+    document.getElementById('categoryForm').reset();
+    hideCategoryModal();
+    renderCategoriesTable();
+    populateCategoryDropdownForInfra();
 
-        document.getElementById('categoryForm').reset();
-        hideCategoryModal();
-        renderCategoriesTable();
-        populateCategoryDropdownForInfra();
-
-        alert("Category saved!");
-    } catch (err) {
-        console.error("Error adding category:", err);
-        alert("Error adding category: " + err);
-    } finally {
-        // 🔄 Restore original button
-        submitBtn.innerHTML = originalBtnHTML;
-        submitBtn.disabled = false;
-    }
+    showModal('success', 'Category has been saved successfully!');
+  } catch (err) {
+    console.error("Error adding category:", err);
+    showModal('error', 'Failed to save category. Please try again.');
+  } finally {
+    // 🔄 Restore original button
+    submitBtn.innerHTML = originalBtnHTML;
+    submitBtn.disabled = false;
+  }
 });
+
+
+// ----------- Populate Legend Dropdown (A–Z) -----------
+async function populateLegendDropdown() {
+  const legendSelect = document.getElementById("categoryLegend");
+  legendSelect.innerHTML = "<option value=''>Select a letter</option>";
+
+  try {
+    const snapshot = await getDocs(collection(db, "Categories"));
+    const usedLetters = snapshot.docs
+      .map(doc => doc.data().legend)
+      .filter(l => !!l);
+
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+    alphabet.forEach(letter => {
+      const option = document.createElement("option");
+      option.value = letter;
+      option.textContent = letter;
+
+      if (usedLetters.includes(letter)) {
+        option.disabled = true; // Disable if already used
+        option.textContent = `${letter} (used)`;
+      }
+
+      legendSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error populating legends:", error);
+  }
+}
+
+// Call the function when the modal or form loads
+document.addEventListener("DOMContentLoaded", populateLegendDropdown);
 
 
 
@@ -507,7 +630,7 @@ document.querySelector("#addInfraModal form")?.addEventListener("submit", async 
         let imageUrl = existingImg?.src || "";
 
         if (!name || !infraId || !categoryId) {
-            alert("Please fill in all required fields.");
+            showModal('error', 'Please fill in all required fields.');
             return;
         }
 
@@ -538,9 +661,11 @@ document.querySelector("#addInfraModal form")?.addEventListener("submit", async 
         const existingImg2 = uploadBox.querySelector("img");
         if (existingImg2) existingImg2.remove();
 
+        showModal('success', 'Infrastructure has been saved successfully!');
+
     } catch (err) {
         console.error("Error adding infrastructure:", err);
-        alert("Error saving infrastructure.");
+        showModal('error', 'Failed to save infrastructure. Please try again.');
     } finally {
         // 🔄 Restore original button
         submitBtn.innerHTML = originalBtnHTML;
@@ -807,7 +932,7 @@ document.querySelector("#addRoomModal form")?.addEventListener("submit", async (
 
     // Validation
     if (!name || !roomId || !infraId || !indoorType) {
-        alert("Please fill in all required fields.");
+        showModal('error', 'Please fill in all required fields.');
         submitBtn.innerHTML = originalBtnHTML;
         submitBtn.disabled = false;
         return;
@@ -840,9 +965,11 @@ document.querySelector("#addRoomModal form")?.addEventListener("submit", async (
         hideRoomModal();
         renderRoomsTable();
 
+        showModal('success', 'Room has been saved successfully!');
+
     } catch (err) {
         console.error("Error adding infrastructure:", err);
-        alert("Error saving infrastructure.");
+        showModal('error', 'Failed to save room. Please try again.');
     } finally {
         // 🔄 Restore button
         submitBtn.innerHTML = originalBtnHTML;
@@ -999,7 +1126,7 @@ document.querySelector(".rooms-table").addEventListener("click", async (e) => {
         const snap = await getDocs(roomQ);
 
         if (snap.empty) {
-            alert("Indoor Infrastructure not found in Firestore");
+            showModal('error', 'Indoor Infrastructure not found. Please try again.');
             return;
         }
 
@@ -1018,7 +1145,7 @@ document.querySelector(".rooms-table").addEventListener("click", async (e) => {
         document.getElementById("editRoomModal").style.display = "flex";
     } catch (err) {
         console.error("Error opening edit room modal:", err);
-        alert("Failed to load room data.");
+        showModal('error', 'Failed to load room data.');
     } finally {
         // 🔄 Restore original icon
         if (icon) icon.outerHTML = originalIconHTML;
@@ -1062,7 +1189,7 @@ document.getElementById("editRoomForm").addEventListener("submit", async (e) => 
 
     const docId = form.dataset.docId;
     if (!docId) {
-        alert("No document ID found for update.");
+        showModal('error', 'No document ID found for update.');
         return;
     }
 
@@ -1072,7 +1199,7 @@ document.getElementById("editRoomForm").addEventListener("submit", async (e) => 
     const indoorType = document.getElementById("editRoomType").value;
 
     if (!name || !roomId || !infraId || !indoorType) {
-        alert("Please fill in all required fields.");
+        showModal('error', 'Please fill in all required fields.');
         return;
     }
 
@@ -1095,8 +1222,9 @@ document.getElementById("editRoomForm").addEventListener("submit", async (e) => 
         form.reset();
         document.getElementById("editRoomModal").style.display = "none";
         renderRoomsTable();
+        showModal('success', 'Room has been updated successfully!');
     } catch (err) {
-        alert("Error updating indoor infrastructure: " + err);
+        showModal('error', 'Failed to update room. Please try again.');
         console.error(err);
     } finally {
         // 🔄 Restore button
@@ -1222,7 +1350,8 @@ document.querySelector("#addMapModal form")?.addEventListener("submit", async (e
     const campusIncluded = campusDropdown?.getSelectedValues() || [];
 
     if (!mapName) {
-        alert("Please enter a map name.");
+        
+        showModal('error', 'Please fill in all required fields.');
         submitBtn.innerHTML = originalBtnHTML;
         submitBtn.disabled = false;
         return;
@@ -1279,9 +1408,10 @@ document.querySelector("#addMapModal form")?.addEventListener("submit", async (e
 
         hideMapModal();
         renderMapsTable();
+        showModal('success', 'Map has been saved successfully!');
     } catch (err) {
         console.error("Error creating map:", err);
-        alert("Error creating map: " + err.message);
+        showModal('error', 'Failed to save Map. Please try again.');
     } finally {
         // 🔄 Restore button
         submitBtn.innerHTML = originalBtnHTML;
@@ -1548,7 +1678,7 @@ document.querySelector("#addCampusModal form")?.addEventListener("submit", async
     const mapName = mapSelect.options[mapSelect.selectedIndex]?.dataset.mapName || "";
 
     if (!campusId || !campusName || !mapId) {
-        alert("Please fill in all required fields.");
+        showModal('error', 'Please fill in all required fields.');
         submitBtn.innerHTML = originalBtnHTML;
         submitBtn.disabled = false;
         return;
@@ -1578,9 +1708,10 @@ document.querySelector("#addCampusModal form")?.addEventListener("submit", async
         e.target.reset();
         hideCampusModal();
         renderCampusTable();
+        showModal('success', 'Campus has been saved successfully!');
     } catch (err) {
         console.error("Error saving campus:", err);
-        alert("Error saving campus: " + err);
+        showModal('error', 'Failed to save campus. Please try again.');
     } finally {
         // 🔄 Restore button
         submitBtn.innerHTML = originalBtnHTML;
@@ -1765,7 +1896,7 @@ document.getElementById("editCategoryForm").addEventListener("submit", async (e)
 
     const docId = form.dataset.docId;
     if (!docId) {
-        alert("No document ID found for update.");
+        showModal('error', 'No document ID found for update.');
         return;
     }
 
@@ -1773,7 +1904,7 @@ document.getElementById("editCategoryForm").addEventListener("submit", async (e)
     const color = document.getElementById("editCategoryColor").value;
 
     if (!name || !color) {
-        alert("Please fill in all required fields.");
+        showModal('error', 'Please fill in all required fields.');
         return;
     }
 
@@ -1796,8 +1927,10 @@ document.getElementById("editCategoryForm").addEventListener("submit", async (e)
         document.getElementById("editCategoryModal").style.display = "none";
         renderCategoriesTable();
         populateCategoryDropdownForInfra();
+
+        showModal('success', 'Category has been updated successfully!');
     } catch (err) {
-        alert("Error updating category: " + err);
+        showModal('error', 'Failed to update category. Please try again.');
         console.error(err);
     } finally {
         // 🔄 Restore button
@@ -1953,13 +2086,13 @@ document.getElementById("editMapForm").addEventListener("submit", async (e) => {
     const saveBtn = form.querySelector(".save-btn");
 
     const docId = form.dataset.docId;
-    if (!docId) return alert("No Map ID found for update.");
+    if (!docId) return showModal('error', 'No Map ID found for update.');
 
     const mapName = document.getElementById("editMapName").value.trim();
     const campusDropdown = document.getElementById("editCampusDropdown");
     const campusIncluded = campusDropdown.getSelectedValues() || [];
 
-    if (!mapName) return alert("Please enter a map name.");
+    if (!mapName) return showModal('error', 'Please enter a map name.');
 
     // 🌀 Show loading spinner and "Saving..." text
     const originalBtnHTML = saveBtn.innerHTML;
@@ -1975,12 +2108,12 @@ document.getElementById("editMapForm").addEventListener("submit", async (e) => {
             updatedAt: new Date()
         });
 
-        alert("Map updated successfully!");
+        showModal('success', 'Map has been updated successfully!');
         form.reset();
         document.getElementById("editMapModal").style.display = "none";
         renderMapsTable();
     } catch (err) {
-        alert("Error updating map: " + err.message);
+        showModal('error', 'Failed to update map. Please try again.');
         console.error(err);
     } finally {
         // 🔄 Restore button
@@ -2031,7 +2164,7 @@ document.querySelector(".campus-table tbody").addEventListener("click", async (e
     try {
         const q = query(collection(db, "Campus"), where("campus_id", "==", campusId));
         const snap = await getDocs(q);
-        if (snap.empty) return alert("Campus not found");
+        if (snap.empty) return showModal('error', 'Campus not found.');
 
         const docSnap = snap.docs[0];
         const data = docSnap.data();
@@ -2056,6 +2189,7 @@ document.querySelector(".campus-table tbody").addEventListener("click", async (e
         document.getElementById("editCampusModal").style.display = "flex";
     } catch (err) {
         console.error("Error opening edit campus modal:", err);
+        showModal('error', 'PError opening edit campus modal.');
     } finally {
         // 🔄 Restore original icon
         if (icon) icon.outerHTML = originalIconHTML;
@@ -2093,7 +2227,7 @@ document.getElementById("editCampusForm").addEventListener("submit", async (e) =
     const saveBtn = form.querySelector(".save-btn");
 
     const docId = form.dataset.docId;
-    if (!docId) return alert("No document ID found for update.");
+    if (!docId) return showModal('error', 'No document ID found for update.');
 
     const campusName = document.getElementById("editCampusName").value.trim();
     const mapSelect = document.getElementById("editMapSelect");
@@ -2101,7 +2235,7 @@ document.getElementById("editCampusForm").addEventListener("submit", async (e) =
     const mapName = mapSelect.options[mapSelect.selectedIndex]?.dataset.mapName || "";
 
     if (!campusName || !mapId) {
-        alert("Please fill in all required fields.");
+        showModal('error', 'Please fill in all required fields.');
         return;
     }
 
@@ -2127,12 +2261,12 @@ document.getElementById("editCampusForm").addEventListener("submit", async (e) =
             description: `Updated campus "${campusName}" under map "${mapName}".`
         });
 
-        alert("Campus updated successfully!");
+        showModal('success', 'Campus has been updated successfully!');
         form.reset();
         document.getElementById("editCampusModal").style.display = "none";
         renderCampusTable();
     } catch (err) {
-        alert("Error updating campus: " + err.message);
+        showModal('error', 'Failed to update campus. Please try again.');
         console.error(err);
     } finally {
         // 🔄 Restore button
@@ -2629,7 +2763,7 @@ editUploadInput.addEventListener("change", () => {
           const snap = await getDocs(infraQ);
 
           if (snap.empty) {
-            alert("Infrastructure not found in Firestore");
+            showModal('error', 'Infrastructure not found in Firestore');
             return;
           }
 
@@ -2675,6 +2809,7 @@ editUploadInput.addEventListener("change", () => {
           document.getElementById("editInfraModal").style.display = "flex";
         } catch (err) {
           console.error("Error opening edit modal:", err);
+          showModal('error', 'Error loading infrastructure details. Please try again.');
         } finally {
           // 🔄 Restore original icon
           if (icon) icon.outerHTML = originalIconHTML;
@@ -2684,89 +2819,7 @@ editUploadInput.addEventListener("change", () => {
 
 
 
-document
-  .getElementById("editInfraForm")
-  .addEventListener("submit", async (e) => {
-    e.preventDefault();
 
-    const submitBtn = e.target.querySelector(".save-btn");
-    if (!submitBtn) return;
-
-    // Save original button HTML
-    const originalBtnHTML = submitBtn.innerHTML;
-
-    // 🟢 Show spinner + disable button
-    submitBtn.innerHTML = `<div class="spinner"></div>`;
-    submitBtn.disabled = true;
-
-    const docId = e.target.dataset.docId;
-    if (!docId) {
-      alert("No infrastructure selected");
-      // restore button
-      submitBtn.innerHTML = originalBtnHTML;
-      submitBtn.disabled = false;
-      return;
-    }
-
-    const name = document.getElementById("editInfraName").value.trim();
-    const categoryId = document.getElementById("editInfraCategory").value;
-    const phone = document.getElementById("editInfraPhone").value.trim();
-    const email = document.getElementById("editInfraEmail").value.trim();
-
-    let imageUrl = editPreview.src || "";
-
-    try {
-      // Use preview if it's a data URL (blurred/compressed)
-      if (!(imageUrl && imageUrl.startsWith("data:"))) {
-        const file = editUploadInput.files[0];
-        if (file) {
-          imageUrl = await convertFileToBase64(file);
-        }
-        // else keep existing URL (already in imageUrl)
-      }
-
-      await updateDoc(doc(db, "Infrastructure", docId), {
-        name,
-        category_id: categoryId,
-        phone,
-        email,
-        image_url: imageUrl,
-      });
-
-      document.getElementById("editInfraModal").style.display = "none";
-      editPreview.src = "";
-      editPreview.style.display = "none";
-      editUploadBox.querySelector(".upload-label").style.display = "flex";
-      editUploadInput.value = "";
-
-      renderInfraTable();
-    } catch (err) {
-      console.error("Error saving infrastructure:", err);
-    } finally {
-      // ✅ Ensure the edit modal save button is reset (no leftover spinner)
-      try {
-        // restore the submit button to original content/state
-        if (submitBtn) {
-          submitBtn.innerHTML = originalBtnHTML;
-          submitBtn.disabled = false;
-          submitBtn.style.opacity = 1;
-          submitBtn.style.cursor = "pointer";
-        }
-      } catch (ex) {
-        // defensive: ignore if something unexpected happens
-        console.warn("Failed to restore edit save button:", ex);
-      }
-
-      // Avoid referencing undeclared variables (icon/button may not exist in this scope)
-      if (typeof icon !== "undefined" && icon && typeof originalIconHTML !== "undefined") {
-        try { icon.outerHTML = originalIconHTML; } catch (e) { /* ignore */ }
-      }
-      if (typeof button !== "undefined" && button && typeof originalIconHTML !== "undefined") {
-        try { button.innerHTML = originalIconHTML; } catch (e) { /* ignore */ }
-      }
-    }
-  });
-// ...existing code...
 
 // Cancel
 document
@@ -2829,7 +2882,7 @@ document.getElementById("editInfraForm").addEventListener("submit", async (e) =>
     const form = e.target;
     const docId = form.dataset.docId;
     if (!docId) {
-        alert("No document ID found for update.");
+        showModal('error', 'No document ID found for update.');
         return;
     }
 
@@ -2854,7 +2907,7 @@ document.getElementById("editInfraForm").addEventListener("submit", async (e) =>
     }
 
     if (!name || !categoryId) {
-        alert("Please fill in all required fields.");
+        showModal('error', 'Please fill in all required fields.');
         saveBtn.innerHTML = originalBtnHTML;
         saveBtn.disabled = false;
         saveBtn.style.opacity = 1;
@@ -2873,8 +2926,9 @@ document.getElementById("editInfraForm").addEventListener("submit", async (e) =>
 
         document.getElementById("editInfraModal").style.display = "none";
         renderInfraTable();
+        showModal('success', 'Infrastructure has been updated successfully!');
     } catch (err) {
-        alert("Error updating infrastructure: " + err);
+        showModal('error', 'Failed to update infrastructure. Please try again.');
         console.error(err);
     } finally {
         // 🔄 Restore button state
@@ -2939,7 +2993,7 @@ document.querySelector(".infra-table").addEventListener("click", async (e) => {
         const snap = await getDocs(infraQ);
 
         if (snap.empty) {
-            alert("Infrastructure not found in Firestore");
+            showModal('error', 'Infrastructure not found. Please try again.');
             return;
         }
 
@@ -2954,6 +3008,7 @@ document.querySelector(".infra-table").addEventListener("click", async (e) => {
         document.getElementById("deleteInfraModal").style.display = "flex";
     } catch (err) {
         console.error("Error preparing delete modal:", err);
+        showModal('error', 'Failed to prepare delete modal. Please try again.');
     } finally {
         // 🔄 Restore original icon after modal is rendered
         requestAnimationFrame(() => {
@@ -2965,42 +3020,42 @@ document.querySelector(".infra-table").addEventListener("click", async (e) => {
 
 
 
-// Confirm deletion
-document.getElementById("confirmDeleteInfraBtn").addEventListener("click", async (e) => {
-    if (!infraToDelete) return;
+// ----------- Confirm Infrastructure Deletion -----------
+document.getElementById("confirmDeleteInfraBtn")?.addEventListener("click", async (e) => {
+  if (!infraToDelete) return;
 
-    const btn = e.target;
-    // 🌀 Store original button text
-    const originalHTML = btn.innerHTML;
+  const btn = e.target;
+  const originalHTML = btn.innerHTML;
 
-    // Add loading class to make button lighter
-    btn.classList.add("loading");
+  // 🌀 Show spinner + disable button
+  btn.innerHTML = `<div class="spinner"></div> <span class="loading-text">Deleting...</span>`;
+  btn.disabled = true;
+  btn.style.opacity = 0.7;
+  btn.style.cursor = "not-allowed";
 
-    // Show spinner + text
-    btn.innerHTML = `
-        <div class="spinner"></div>
-        <span class="loading-text">Deleting...</span>
-    `;
-    btn.disabled = true;
+  try {
+    // 🔥 Delete document from Firestore
+    await deleteDoc(doc(db, "Infrastructure", infraToDelete.docId));
 
-    try {
-        // Actual deletion from Firestore
-        await deleteDoc(doc(db, "Infrastructure", infraToDelete.docId));
+    // 🧹 Close modal and refresh table
+    document.getElementById("deleteInfraModal").style.display = "none";
+    infraToDelete = null;
+    renderInfraTable();
 
-        // Close modal & refresh table
-        document.getElementById("deleteInfraModal").style.display = "none";
-        infraToDelete = null;
-        renderInfraTable();
-    } catch (err) {
-        alert("Error deleting infrastructure: " + err);
-        console.error(err);
-    } finally {
-        // 🔄 Restore original button state
-        btn.classList.remove("loading");
-        btn.innerHTML = originalHTML;
-        btn.disabled = false;
-    }
+    // ✅ Success modal
+    showModal('success', 'Infrastructure deleted successfully!');
+  } catch (err) {
+    console.error("Error deleting infrastructure:", err);
+    showModal('error', 'Failed to delete infrastructure. Please try again.');
+  } finally {
+    // 🔄 Restore original button
+    btn.innerHTML = originalHTML;
+    btn.disabled = false;
+    btn.style.opacity = 1;
+    btn.style.cursor = "pointer";
+  }
 });
+
 
 
 // Cancel deletion
@@ -3048,7 +3103,7 @@ document.querySelector(".rooms-table").addEventListener("click", async (e) => {
         const snap = await getDocs(roomQ);
 
         if (snap.empty) {
-            alert("Room not found in Firestore");
+            showModal('error', 'Room not found. Please try again.');
             return;
         }
 
@@ -3063,6 +3118,7 @@ document.querySelector(".rooms-table").addEventListener("click", async (e) => {
         document.getElementById("deleteRoomModal").style.display = "flex";
     } catch (err) {
         console.error("Error preparing delete modal:", err);
+        showModal('error', 'Failed to prepare delete modal. Please try again.');
     } finally {
         // 🔄 Restore original icon/button after modal opens
         requestAnimationFrame(() => {
@@ -3095,8 +3151,9 @@ document.getElementById("confirmDeleteRoomBtn").addEventListener("click", async 
         document.getElementById("deleteRoomModal").style.display = "none";
         roomToDelete = null;
         renderRoomsTable();
+        showModal('success', 'Room deleted successfully!');
     } catch (err) {
-        alert("Error deleting room: " + err);
+        showModal('error', 'Failed to delete room. Please try again.');
         console.error(err);
     } finally {
         // Restore button
@@ -3151,7 +3208,7 @@ document.querySelector(".categories-table").addEventListener("click", async (e) 
         const snap = await getDocs(catQ);
 
         if (snap.empty) {
-            alert("Category not found in Firestore");
+            showModal('error', 'Category not found. Please try again.');
             return;
         }
 
@@ -3166,6 +3223,7 @@ document.querySelector(".categories-table").addEventListener("click", async (e) 
         document.getElementById("deleteCategoryModal").style.display = "flex";
     } catch (err) {
         console.error("Error preparing delete modal:", err);
+        showModal('error', 'Failed to prepare delete modal. Please try again.');
     } finally {
         // 🔄 Restore original icon/button after modal opens
         requestAnimationFrame(() => {
@@ -3198,8 +3256,9 @@ document.getElementById("confirmDeleteCategoryBtn").addEventListener("click", as
         document.getElementById("deleteCategoryModal").style.display = "none";
         categoryToDelete = null;
         renderCategoriesTable();
+        showModal('success', 'Category deleted successfully!');
     } catch (err) {
-        alert("Error deleting category: " + err);
+        showModal('error', 'Failed to delete category. Please try again.');
         console.error(err);
     } finally {
         // Restore button
@@ -3252,6 +3311,7 @@ function setupMapDeleteHandlers() {
                 document.getElementById("deleteMapModal").style.display = "flex";
             } catch (err) {
                 console.error("Error preparing delete modal:", err);
+                showModal('error', 'Failed to prepare delete modal. Please try again.');
             } finally {
                 // Restore button after modal opens
                 requestAnimationFrame(() => {
@@ -3290,8 +3350,9 @@ document.getElementById("confirmDeleteMapBtn").addEventListener("click", async (
         document.getElementById("deleteMapModal").style.display = "none";
         mapToDelete = null;
         renderMapsTable();
+        showModal('success', 'Map deleted successfully!');
     } catch (err) {
-        alert("Error deleting map: " + err);
+        showModal('error', 'Failed to delete map. Please try again.');
         console.error(err);
     } finally {
         // Restore button
@@ -3346,6 +3407,7 @@ function setupCampusDeleteHandlers() {
                 document.getElementById("deleteCampusModal").style.display = "flex";
             } catch (err) {
                 console.error("Error preparing delete modal:", err);
+                showModal('error', 'Failed to prepare delete modal. Please try again.');
             } finally {
                 // Restore button after modal opens
                 requestAnimationFrame(() => {
@@ -3384,8 +3446,9 @@ document.getElementById("confirmDeleteCampusBtn").addEventListener("click", asyn
         document.getElementById("deleteCampusModal").style.display = "none";
         campusToDelete = null;
         renderCampusTable();
+        showModal('success', 'Campus deleted successfully!');
     } catch (err) {
-        alert("Error deleting campus: " + err);
+        showModal('error', 'Failed to delete campus. Please try again.');
         console.error(err);
     } finally {
         // Restore button
@@ -3512,3 +3575,67 @@ document.getElementById("searchInput").addEventListener("input", function() {
         renderCampusTableRows(filtered);
     }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function showModal(type, message) {
+  const overlay = document.getElementById("jModal");
+  const box = overlay.querySelector(".jModal-box");
+  const icon = document.getElementById("jModal-icon");
+  const title = document.getElementById("jModal-title");
+  const msg = document.getElementById("jModal-message");
+  const btn = document.getElementById("jModal-btn");
+
+  // Reset
+  box.classList.remove("jModal-success", "jModal-error");
+  icon.innerHTML = "";
+
+  // Decide content based on type
+  let titleText = "";
+  let iconSVG = "";
+
+  if (type === "success") {
+    box.classList.add("jModal-success");
+    btn.style.background = "var(--jModal-success)";
+    titleText = "Success";
+    iconSVG = `
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke-width="3" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" stroke="#28a745"/>
+        <path d="M8 12.5l3 3 5-6" stroke="#28a745" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`;
+  } else {
+    box.classList.add("jModal-error");
+    btn.style.background = "var(--jModal-error)";
+    titleText = "Error";
+    iconSVG = `
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke-width="3" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" stroke="#dc3545"/>
+        <path d="M15 9l-6 6M9 9l6 6" stroke="#dc3545" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`;
+  }
+
+  // Apply content
+  icon.innerHTML = iconSVG;
+  title.textContent = titleText;
+  msg.textContent = message;
+
+  // Show modal
+  overlay.classList.add("jModal-active");
+
+  // Close button
+  btn.onclick = () => {
+    overlay.classList.remove("jModal-active");
+  };
+}
