@@ -1577,6 +1577,7 @@
         "path_type": "walkway",
         "is_deleted": false,
         "is_active": true,
+        "updated_at": "2025-10-26T07:39:29.330Z",
         "from_node": "ND-015",
         "elevations": "flat",
         "edge_id": "EDG-144",
@@ -1665,6 +1666,7 @@
         "path_type": "walkway",
         "is_deleted": false,
         "is_active": true,
+        "updated_at": "2025-10-26T06:54:29.244Z",
         "from_node": "ND-118",
         "elevations": "flat",
         "edge_id": "EDG-152",
@@ -1687,6 +1689,7 @@
         "path_type": "walkway",
         "is_deleted": false,
         "is_active": true,
+        "updated_at": "2025-10-26T06:54:14.690Z",
         "from_node": "ND-021",
         "elevations": "flat",
         "edge_id": "EDG-154",
@@ -1901,5 +1904,50 @@
         "edge_id": "EDG-173",
         "distance": 337.22,
         "created_at": "2025-10-14T14:04:21.947Z"
+    },
+{
+        "to_node": "ND-127",
+        "path_type": "walkway",
+        "is_deleted": false,
+        "is_active": true,
+        "from_node": "ND-046",
+        "elevations": "flat",
+        "edge_id": "EDG-174",
+        "distance": 11.53,
+        "created_at": "2025-10-26T05:14:06.122Z"
+    },
+{
+        "to_node": "ND-128",
+        "path_type": "walkway",
+        "is_deleted": false,
+        "is_active": true,
+        "from_node": "ND-127",
+        "elevations": "flat",
+        "edge_id": "EDG-175",
+        "distance": 8.14,
+        "created_at": "2025-10-26T05:14:38.236Z"
+    },
+{
+        "to_node": "ND-048",
+        "path_type": "walkway",
+        "is_deleted": false,
+        "is_active": true,
+        "from_node": "ND-128",
+        "elevations": "flat",
+        "edge_id": "EDG-176",
+        "distance": 7.85,
+        "created_at": "2025-10-26T05:15:23.696Z"
+    },
+{
+        "to_node": "ND-022",
+        "path_type": "walkway",
+        "is_deleted": false,
+        "is_active": false,
+        "updated_at": "2025-10-26T06:55:16.235Z",
+        "from_node": "ND-115",
+        "elevations": "flat",
+        "edge_id": "EDG-177",
+        "distance": 51.39,
+        "created_at": "2025-10-26T06:37:18.287Z"
     }
 ]

@@ -13,6 +13,7 @@ public class ARManagerCleanup : MonoBehaviour
 
     [Header("AR Navigation Button (Optional)")]
     [SerializeField] private Button arNavigationButton;
+    [SerializeField] private GameObject pathFindingPanel;
 
     [Header("READQRCODE Button (Optional)")]
     [SerializeField] private Button readQRCodeButton;
@@ -59,6 +60,10 @@ public class ARManagerCleanup : MonoBehaviour
         if (localizationPanel != null)
         {
             localizationPanel.SetActive(true);
+            if (pathFindingPanel != null)
+            {
+                pathFindingPanel.SetActive(false);
+            }
         }
     }
 

@@ -797,22 +797,23 @@
         "campus_id": "CAMP-02"
     },
 {
-        "y_coordinate": -30.1338251206407,
-        "x_coordinate": -146.041294971382,
-        "node_id": "ND-042",
-        "is_active": true,
-        "related_room_id": null,
-        "indoor": null,
-        "type": "infrastructure",
-        "name": "Overpass Campus B",
-        "latitude": 6.913134,
+        "longitude": 122.062346,
+        "campus_id": "CAMP-02",
+        "related_infra_id": "INFRA-26",
+        "updated_at": "2025-10-25T12:20:21.814Z",
         "created_at": {
             "seconds": 1759154638,
             "nanoseconds": 729000000
         },
-        "related_infra_id": null,
-        "longitude": 122.062346,
-        "campus_id": "CAMP-02"
+        "latitude": 6.913134,
+        "name": "Overpass Campus B",
+        "type": "infrastructure",
+        "indoor": null,
+        "related_room_id": "",
+        "is_active": true,
+        "node_id": "ND-042",
+        "y_coordinate": -30.1338251206407,
+        "x_coordinate": -146.041294971382
     },
 {
         "y_coordinate": -10.1187383246866,
@@ -870,15 +871,15 @@
         "x_coordinate": 0
     },
 {
-        "longitude": 122.1192,
+        "longitude": 122.119155,
         "campus_id": "CAMP-02",
         "related_infra_id": "INFRA-71",
-        "updated_at": "2025-10-24T02:54:02.816Z",
+        "updated_at": "2025-10-26T04:36:20.388Z",
         "created_at": {
             "seconds": 1759155803,
             "nanoseconds": 887000000
         },
-        "latitude": 6.91461,
+        "latitude": 6.914582,
         "name": "Gate Ni Aldrin",
         "type": "infrastructure",
         "indoor": null,
@@ -908,15 +909,15 @@
         "x_coordinate": 1.10386165239092
     },
 {
-        "longitude": 122.11923,
+        "longitude": 122.119155,
         "campus_id": "CAMP-02",
         "related_infra_id": "INFRA-73",
-        "updated_at": "2025-10-24T02:54:43.907Z",
+        "updated_at": "2025-10-26T04:37:18.332Z",
         "created_at": {
             "seconds": 1759155859,
             "nanoseconds": 670000000
         },
-        "latitude": 6.91477,
+        "latitude": 6.914763,
         "name": "Dirty Kitchen Ni Aldrin",
         "type": "infrastructure",
         "indoor": null,
@@ -2053,19 +2054,20 @@
         "campus_id": "CAMP-01"
     },
 {
-        "y_coordinate": -5.89333111219528,
-        "x_coordinate": -123.522455837843,
-        "node_id": "ND-115",
-        "is_active": true,
-        "related_room_id": null,
-        "indoor": null,
-        "type": "intermediate",
-        "name": "Intermediate 1",
-        "latitude": 6.913288,
+        "longitude": 122.062604,
+        "campus_id": "CAMP-02",
+        "related_infra_id": "",
+        "updated_at": "2025-10-26T06:38:37.398Z",
         "created_at": "2025-10-12T03:17:41.454Z",
-        "related_infra_id": null,
-        "longitude": 122.062574,
-        "campus_id": "CAMP-02"
+        "latitude": 6.913336,
+        "name": "Intermediate 1",
+        "type": "intermediate",
+        "indoor": null,
+        "related_room_id": "",
+        "is_active": true,
+        "node_id": "ND-115",
+        "y_coordinate": -5.89333111219528,
+        "x_coordinate": -123.522455837843
     },
 {
         "y_coordinate": -22.1277904022986,
@@ -2110,6 +2112,189 @@
         "created_at": "2025-10-12T03:19:30.480Z",
         "related_infra_id": null,
         "longitude": 122.06344,
+        "campus_id": "CAMP-02"
+    },
+{
+        "y_coordinate": null,
+        "x_coordinate": null,
+        "node_id": "ND-119",
+        "is_active": true,
+        "related_room_id": "IND-014",
+        "indoor": {
+            "y": 3.4798,
+            "x": 0,
+            "floor": "1"
+        },
+        "type": "indoorinfra",
+        "name": "FLoor 1 Stairs (Old Building)",
+        "latitude": null,
+        "created_at": "2025-10-25T09:16:10.709Z",
+        "related_infra_id": "INFRA-17",
+        "longitude": null,
+        "campus_id": "CAMP-02"
+    },
+{
+        "y_coordinate": null,
+        "x_coordinate": null,
+        "node_id": "ND-120",
+        "is_active": true,
+        "related_room_id": "IND-015",
+        "indoor": {
+            "y": 3.4798,
+            "x": -9.5758,
+            "floor": "1"
+        },
+        "type": "indoorinfra",
+        "name": "Testing and Evaluation Center",
+        "latitude": null,
+        "created_at": "2025-10-25T10:19:31.904Z",
+        "related_infra_id": "INFRA-17",
+        "longitude": null,
+        "campus_id": "CAMP-02"
+    },
+{
+        "longitude": null,
+        "campus_id": "CAMP-02",
+        "related_infra_id": "INFRA-17",
+        "updated_at": "2025-10-25T10:25:40.338Z",
+        "created_at": "2025-10-25T10:20:13.408Z",
+        "latitude": null,
+        "name": "TEC Office",
+        "type": "indoorinfra",
+        "indoor": {
+            "y": 3.4798,
+            "x": -20.4216,
+            "floor": "1"
+        },
+        "related_room_id": "IND-016",
+        "is_active": true,
+        "node_id": "ND-121",
+        "y_coordinate": null,
+        "x_coordinate": null
+    },
+{
+        "y_coordinate": null,
+        "x_coordinate": null,
+        "node_id": "ND-122",
+        "is_active": true,
+        "related_room_id": "IND-017",
+        "indoor": {
+            "y": 3.4798,
+            "x": -22.86,
+            "floor": "1"
+        },
+        "type": "indoorinfra",
+        "name": "COA",
+        "latitude": null,
+        "created_at": "2025-10-25T10:22:08.620Z",
+        "related_infra_id": "INFRA-17",
+        "longitude": null,
+        "campus_id": "CAMP-02"
+    },
+{
+        "y_coordinate": null,
+        "x_coordinate": null,
+        "node_id": "ND-123",
+        "is_active": true,
+        "related_room_id": "IND-018",
+        "indoor": {
+            "y": 4.0894,
+            "x": -1.8288,
+            "floor": "2"
+        },
+        "type": "indoorinfra",
+        "name": "Floor 2 Stairs (Old Building)",
+        "latitude": null,
+        "created_at": "2025-10-25T10:23:17.982Z",
+        "related_infra_id": "INFRA-17",
+        "longitude": null,
+        "campus_id": "CAMP-02"
+    },
+{
+        "y_coordinate": null,
+        "x_coordinate": null,
+        "node_id": "ND-124",
+        "is_active": true,
+        "related_room_id": "IND-019",
+        "indoor": {
+            "y": 3.4798,
+            "x": -3.3528,
+            "floor": "2"
+        },
+        "type": "indoorinfra",
+        "name": "Room 22",
+        "latitude": null,
+        "created_at": "2025-10-25T10:23:49.903Z",
+        "related_infra_id": "INFRA-17",
+        "longitude": null,
+        "campus_id": "CAMP-02"
+    },
+{
+        "y_coordinate": null,
+        "x_coordinate": null,
+        "node_id": "ND-125",
+        "is_active": true,
+        "related_room_id": "IND-020",
+        "indoor": {
+            "y": 3.4798,
+            "x": -14.0208,
+            "floor": "2"
+        },
+        "type": "indoorinfra",
+        "name": "Audio Visual Room",
+        "latitude": null,
+        "created_at": "2025-10-25T10:24:20.915Z",
+        "related_infra_id": "INFRA-17",
+        "longitude": null,
+        "campus_id": "CAMP-02"
+    },
+{
+        "y_coordinate": null,
+        "x_coordinate": null,
+        "node_id": "ND-126",
+        "is_active": true,
+        "related_room_id": "IND-021",
+        "indoor": {
+            "y": 3.4798,
+            "x": -23.1648,
+            "floor": "2"
+        },
+        "type": "indoorinfra",
+        "name": "Student Council Office",
+        "latitude": null,
+        "created_at": "2025-10-25T10:24:51.481Z",
+        "related_infra_id": "INFRA-17",
+        "longitude": null,
+        "campus_id": "CAMP-02"
+    },
+{
+        "y_coordinate": 149.001201703697,
+        "x_coordinate": 6118.83221584489,
+        "node_id": "ND-127",
+        "is_active": true,
+        "related_room_id": null,
+        "indoor": null,
+        "type": "infrastructure",
+        "name": "Daanan 1",
+        "latitude": 6.914681,
+        "created_at": "2025-10-26T04:40:31.301Z",
+        "related_infra_id": "INFRA-75",
+        "longitude": 122.119124,
+        "campus_id": "CAMP-02"
+    },
+{
+        "y_coordinate": 151.558685016583,
+        "x_coordinate": 6126.5592684882,
+        "node_id": "ND-128",
+        "is_active": true,
+        "related_room_id": null,
+        "indoor": null,
+        "type": "infrastructure",
+        "name": "Daanan 2",
+        "latitude": 6.914704,
+        "created_at": "2025-10-26T04:41:35.069Z",
+        "related_infra_id": "INFRA-76",
+        "longitude": 122.119194,
         "campus_id": "CAMP-02"
     }
 ]

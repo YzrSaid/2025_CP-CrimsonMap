@@ -7,14 +7,6 @@ using System.Linq;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 using Unity.XR.CoreUtils;
-
-/// <summary>
-/// Unified AR Manager - Handles all 4 combinations:
-/// 1. Direct AR + GPS
-/// 2. Direct AR + Offline (X,Y) - requires QR scan first
-/// 3. AR Navigation + GPS
-/// 4. AR Navigation + Offline (X,Y)
-/// </summary>
 public class UnifiedARManager : MonoBehaviour
 {
     [Header("AR Exit Settings")]
@@ -1001,6 +993,17 @@ public class UnifiedARManager : MonoBehaviour
         CancelInvoke();
         ClearMarkers();
         StopAllCoroutines();
+    }
+    public Vector2 GetUserXY()
+    {
+        if (currentLocalizationMode == LocalizationMode.GPS)
+        {
+            return userLocation; // Returns GPS lat/lng
+        }
+        else
+        {
+            return userXY; // Returns Offline X,Y
+        }
     }
 
     private class MarkerAnchor
