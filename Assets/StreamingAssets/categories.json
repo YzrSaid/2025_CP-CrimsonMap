@@ -1,6 +1,5 @@
 [
   {
-    "label": "Z",
     "updatedAt": {},
     "is_deleted": false,
     "name": "Lobbies / Waiting Areass",
@@ -22,7 +21,6 @@
     "id": "DAXMb84LE3hqVjxV1RG8"
   },
   {
-    "label": "U",
     "updatedAt": {},
     "is_deleted": false,
     "name": "Health & Wellness Services",
@@ -34,8 +32,16 @@
     "id": "GEklwq8BSgJ7UK9koul5"
   },
   {
+    "name": "123456789",
+    "is_deleted": false,
+    "createdAt": {},
+    "legend": "A",
+    "category_id": "CAT-11",
+    "buildings": 0,
+    "id": "GqGd10hfGpiuGJKzktEJ"
+  },
+  {
     "name": "Courts & Gyms",
-    "label": "M",
     "updatedAt": {},
     "is_deleted": false,
     "createdAt": {},
@@ -45,7 +51,6 @@
     "id": "LHJFyr5xMnNC9Lhfvbyb"
   },
   {
-    "label": "P",
     "updatedAt": {},
     "is_deleted": false,
     "name": "Canteen / Cafeterias",
@@ -57,7 +62,6 @@
     "id": "N0HNFB5sC1f6Xv8c8WL6"
   },
   {
-    "label": "I",
     "updatedAt": {},
     "is_deleted": false,
     "name": "Academics",
@@ -69,7 +73,6 @@
     "id": "PUHFtmdiqM1FOkw9C0cV"
   },
   {
-    "label": "K",
     "updatedAt": {},
     "is_deleted": false,
     "name": "Parks & Green Spaces",
@@ -81,7 +84,6 @@
     "id": "RC6LPNrgCTaHiCoIdaZM"
   },
   {
-    "label": "X",
     "updatedAt": {},
     "is_deleted": false,
     "name": "Campus Facilities & Shops",
@@ -93,7 +95,6 @@
     "id": "abpznLNteKagGrvvT0MD"
   },
   {
-    "label": "G",
     "updatedAt": {},
     "is_deleted": false,
     "name": "Administrative Offices",
@@ -105,7 +106,6 @@
     "id": "cYbiVuFA12t8f2GXg0XT"
   },
   {
-    "label": "V",
     "updatedAt": {},
     "is_deleted": false,
     "name": "Gates",

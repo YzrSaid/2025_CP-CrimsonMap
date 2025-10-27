@@ -24,7 +24,8 @@ public class FirestoreManager : MonoBehaviour
     private readonly string[] staticCollections = {
         "Infrastructure",
         "Categories",
-        "Campus"
+        "Campus",
+        "IndoorInfrastructure"
     };
 
     private readonly string[] versionedCollections = {
@@ -386,6 +387,7 @@ public class FirestoreManager : MonoBehaviour
                         infrastructure_updated = data.ContainsKey("infrastructure_updated") ? (bool)data["infrastructure_updated"] : false,
                         categories_updated = data.ContainsKey("categories_updated") ? (bool)data["categories_updated"] : false,
                         campus_updated = data.ContainsKey("campus_updated") ? (bool)data["campus_updated"] : false,
+                        indoor_infrastructure_updated = data.ContainsKey("indoor_infrastructure_updated") ? (bool)data["indoor_infrastructure_updated"] : false  // NEW
                     };
 
                     LocalStaticDataCache localCache = GetLocalStaticDataCache();
@@ -394,14 +396,17 @@ public class FirestoreManager : MonoBehaviour
                          !localCache.infrastructure_synced &&
                          !localCache.categories_synced &&
                          !localCache.campus_synced &&
+                         !localCache.indoor_synced &&
                          !serverInfo.infrastructure_updated &&
                          !serverInfo.categories_updated &&
-                         !serverInfo.campus_updated;
+                         !serverInfo.campus_updated &&
+                         !serverInfo.indoor_infrastructure_updated;
 
                     bool needsUpdate = localCache == null || bootstrapNeeded ||
                                        serverInfo.infrastructure_updated ||
                                        serverInfo.categories_updated ||
-                                       serverInfo.campus_updated;
+                                       serverInfo.campus_updated ||
+                                       serverInfo.indoor_infrastructure_updated;
 
                     onComplete?.Invoke(needsUpdate, serverInfo);
                 }
@@ -412,6 +417,7 @@ public class FirestoreManager : MonoBehaviour
                         infrastructure_updated = true,
                         categories_updated = true,
                         campus_updated = true,
+                        indoor_infrastructure_updated = true
                     };
                     onComplete?.Invoke(true, defaultInfo);
                 }
@@ -452,6 +458,13 @@ public class FirestoreManager : MonoBehaviour
             flagsToReset.Add("campus_updated");
         }
 
+        bool shouldSyncIndoor = versionInfo.indoor_infrastructure_updated || !hasLocalCache || (hasLocalCache && !localCache.indoor_synced);
+        if (shouldSyncIndoor)
+        {
+            collectionsToSync.Add("IndoorInfrastructure");
+            flagsToReset.Add("indoor_infrastructure_updated");
+        }
+
         if (collectionsToSync.Count == 0)
         {
             onComplete?.Invoke();
@@ -489,7 +502,15 @@ public class FirestoreManager : MonoBehaviour
             return;
         }
 
-        string fileName = $"{collectionName.ToLower()}.json";
+        string fileName;
+        if (collectionName == "IndoorInfrastructure")
+        {
+            fileName = "indoor.json";
+        }
+        else
+        {
+            fileName = $"{collectionName.ToLower()}.json";
+        }
 
         db.Collection(collectionName).GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
@@ -568,6 +589,7 @@ public class FirestoreManager : MonoBehaviour
                 infrastructure_synced = false,
                 categories_synced = false,
                 campus_synced = false,
+                indoor_synced = false
             };
         }
 
@@ -584,6 +606,11 @@ public class FirestoreManager : MonoBehaviour
         if (syncResults.ContainsKey("Campus") && syncResults["Campus"])
         {
             cache.campus_synced = true;
+        }
+
+        if (syncResults.ContainsKey("IndoorInfrastructure") && syncResults["IndoorInfrastructure"])
+        {
+            cache.indoor_synced = true;
         }
 
         string jsonContent = JsonUtility.ToJson(cache, true);
@@ -603,12 +630,23 @@ public class FirestoreManager : MonoBehaviour
         foreach (string flag in flagsToReset)
         {
             string collectionName = flag.Replace("_updated", "").Replace("_", "");
-            collectionName = char.ToUpper(collectionName[0]) + collectionName.Substring(1);
-
-            if (syncResults.ContainsKey(collectionName) && syncResults[collectionName])
+            if (flag == "indoor_infrastructure_updated")
             {
-                resetData[flag] = false;
-                hasUpdates = true;
+                if (syncResults.ContainsKey("IndoorInfrastructure") && syncResults["IndoorInfrastructure"])
+                {
+                    resetData[flag] = false;
+                    hasUpdates = true;
+                }
+            }
+            else
+            {
+                collectionName = char.ToUpper(collectionName[0]) + collectionName.Substring(1);
+
+                if (syncResults.ContainsKey(collectionName) && syncResults[collectionName])
+                {
+                    resetData[flag] = false;
+                    hasUpdates = true;
+                }
             }
         }
 
@@ -619,13 +657,17 @@ public class FirestoreManager : MonoBehaviour
         {
             staticRef.SetAsync(resetData, SetOptions.MergeAll).ContinueWithOnMainThread(task =>
             {
-                if (!task.IsCompletedSuccessfully)
+                if (task.IsCompletedSuccessfully)
                 {
+                    Debug.Log("Successfully reset static data flags in Firebase");
+                }
+                else
+                {
+                    Debug.LogError($"Failed to reset flags: {task.Exception?.Message}");
                 }
             });
         }
     }
-
     private void SyncStaticDataSelectively(StaticDataVersionInfo versionInfo, System.Action onComplete)
     {
         StartCoroutine(SyncStaticDataSelectivelyCoroutine(versionInfo, onComplete));

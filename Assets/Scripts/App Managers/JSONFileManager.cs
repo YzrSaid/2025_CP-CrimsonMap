@@ -19,9 +19,9 @@ public class JSONFileManager : MonoBehaviour
         "campus.json",
         "maps.json",
         "recent_destinations.json",
-        "rooms.json",
         "saved_destinations.json",
-        "static_data_cache.json"
+        "static_data_cache.json",
+        "indoor.json"
     };
 
     void Awake()
@@ -180,15 +180,15 @@ public class JSONFileManager : MonoBehaviour
                 
             case "campus.json":
                 return "[]";
+
+            case "indoor.json":
+                return "[]";
                 
             case "maps.json":
                 return "[]";
                 
             case "recent_destinations.json":
                 return CreateDefaultRecentDestinations();
-                
-            case "rooms.json":
-                return "[]";
                 
             case "saved_destinations.json":
                 return CreateDefaultSavedDestinations();
@@ -224,6 +224,7 @@ public class JSONFileManager : MonoBehaviour
             infrastructure_synced = false,
             categories_synced = false,
             campus_synced = false,
+            indoor_synced = false,
         };
         return JsonUtility.ToJson(defaultData, true);
     }

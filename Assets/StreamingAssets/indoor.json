@@ -1,0 +1,484 @@
+[
+  {
+    "room_id": "IND-047",
+    "name": "CSM 205",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "4sCLqnwY5xeYjkJETEg2"
+  },
+  {
+    "room_id": "IND-041",
+    "name": "Floor 2 Stairs CSM",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "stairs",
+    "createdAt": {},
+    "id": "4yGH3q5i1z91ukfFc0VK"
+  },
+  {
+    "room_id": "IND-035",
+    "name": "LSS Office",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "7fXOOGNre1qgR3cglgr3"
+  },
+  {
+    "room_id": "IND-009",
+    "name": "Lecture Room 2",
+    "is_deleted": false,
+    "infra_id": "INFRA-14",
+    "indoor_type": "room\n",
+    "createdAt": {},
+    "id": "8RapT9ISmE1EINoYbhVm"
+  },
+  {
+    "room_id": "IND-031",
+    "name": "Department of Bio Sciences Faculty",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "AxpjIRLvVaOcM3dgzQYi"
+  },
+  {
+    "room_id": "IND-027",
+    "name": "CSM 101 Lab Room Ground Floor",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "CfLuXB8Z405kviPf17gh"
+  },
+  {
+    "room_id": "IND-036",
+    "name": "Stairs 2 CSM",
+    "updatedAt": {},
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "stairs",
+    "createdAt": {},
+    "id": "Chl1gFvi8u1T5QiWOiAt"
+  },
+  {
+    "room_id": "IND-028",
+    "name": "Physical Plant Facilities Office",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "DKgQIAqYNDjnL5oy5qCw"
+  },
+  {
+    "room_id": "IND-002",
+    "name": "Deoartment of Information Technology",
+    "is_deleted": false,
+    "infra_id": "INFRA-14",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "DtYJVSr2qNgPsNN0adLk"
+  },
+  {
+    "room_id": "IND-010",
+    "name": "Guidance Office",
+    "updatedAt": {},
+    "is_deleted": false,
+    "infra_id": "INFRA-14",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "EcagbSOlzCkkGezT3AFw"
+  },
+  {
+    "room_id": "IND-045",
+    "name": "CSM 204",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "FpFUiE4VVjnCVZgaW0vO"
+  },
+  {
+    "room_id": "IND-046",
+    "name": "Office of the Dean CSM",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "GolXjAaFhDrqF5usNOIk"
+  },
+  {
+    "room_id": "IND-025",
+    "name": "BSCD Department",
+    "is_deleted": false,
+    "infra_id": "INFRA-13",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "GxqiuzrdxezQzGB0dUWQ"
+  },
+  {
+    "room_id": "IND-007",
+    "name": "Floor 2 Stairs",
+    "is_deleted": false,
+    "infra_id": "INFRA-14",
+    "indoor_type": "stairs",
+    "createdAt": {},
+    "id": "J96F64VT7f3eGK1r4Dxv"
+  },
+  {
+    "room_id": "IND-037",
+    "name": "College Student Council Office CSM",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "K50guWGrRrsO6C8ZAt4W"
+  },
+  {
+    "room_id": "IND-022",
+    "name": "Social work",
+    "is_deleted": false,
+    "infra_id": "INFRA-13",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "LDX05viUXXQbjs1HKqyD"
+  },
+  {
+    "room_id": "IND-043",
+    "name": "CSM 202",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "MhF9RVWs3gaTScam7O5d"
+  },
+  {
+    "room_id": "IND-040",
+    "name": "Stairs 1 CSM",
+    "updatedAt": {},
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "stairs",
+    "createdAt": {},
+    "id": "MkUfGSTOeZ2UPvajwyf7"
+  },
+  {
+    "room_id": "IND-051",
+    "name": "Faculty Room Math and Stats",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "ONDJvdQJKNge9X2ZiOCl"
+  },
+  {
+    "room_id": "IND-006",
+    "name": "Floor 1 Stairs",
+    "is_deleted": false,
+    "infra_id": "INFRA-14",
+    "indoor_type": "stairs",
+    "createdAt": {},
+    "id": "PKMp02eLXL9R5YPOpeLL"
+  },
+  {
+    "room_id": "IND-053",
+    "name": "sample indoor infra",
+    "is_deleted": false,
+    "infra_id": "INFRA-41",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "QjnJFuZMvMEJtgo1cuMX"
+  },
+  {
+    "room_id": "IND-048",
+    "name": "CSM 206",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "QlkmEvxZ3l8ReCYKtfV9"
+  },
+  {
+    "room_id": "IND-005",
+    "name": "Laboratory 2",
+    "is_deleted": false,
+    "infra_id": "INFRA-14",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "RAArcOOw9biiabIRWlCH"
+  },
+  {
+    "room_id": "IND-034",
+    "name": "CSM 105 Analytical Services RM",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "SI2hAkCnwWszDBibYD0y"
+  },
+  {
+    "room_id": "IND-016",
+    "name": "TEC Office",
+    "is_deleted": false,
+    "infra_id": "INFRA-17",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "T9s62KzM6SYZmA90nZLG"
+  },
+  {
+    "room_id": "IND-011",
+    "name": "Fire Exit",
+    "is_deleted": false,
+    "infra_id": "INFRA-14",
+    "indoor_type": "fire_exit",
+    "createdAt": {},
+    "id": "UdPhyUiWkCdDuglN2MqV"
+  },
+  {
+    "room_id": "IND-039",
+    "name": "CSM Back Room",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "Uv66JIcRZJ832XX7rqCm"
+  },
+  {
+    "room_id": "IND-029",
+    "name": "Stockroom",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "VvZD38aXcTxcUbhKp3sp"
+  },
+  {
+    "room_id": "IND-013",
+    "name": "PhiCCS",
+    "is_deleted": false,
+    "infra_id": "INFRA-14",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "YSoWfXDSZaajiQohhacO"
+  },
+  {
+    "room_id": "IND-004",
+    "name": "Laboratory 1",
+    "is_deleted": false,
+    "infra_id": "INFRA-14",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "b0HUUyzH6AQK7kugnBIk"
+  },
+  {
+    "room_id": "IND-020",
+    "name": "Audio Visual Room",
+    "is_deleted": false,
+    "infra_id": "INFRA-17",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "c9nhWuAV7lEvaRLUsXnM"
+  },
+  {
+    "room_id": "IND-014",
+    "name": "Floor 1 Stairs (Old Building)",
+    "updatedAt": {},
+    "is_deleted": false,
+    "infra_id": "INFRA-17",
+    "indoor_type": "stairs",
+    "createdAt": {},
+    "id": "daJi261Ksehb28yUgBLN"
+  },
+  {
+    "room_id": "IND-026",
+    "name": "Floor 1 Stairs (Social Work)",
+    "is_deleted": false,
+    "infra_id": "INFRA-13",
+    "indoor_type": "stairs",
+    "createdAt": {},
+    "id": "dog74zRj5h0Ou5xv2TYN"
+  },
+  {
+    "room_id": "IND-021",
+    "name": "Student Council Office",
+    "is_deleted": false,
+    "infra_id": "INFRA-17",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "ffWEBlyrX8UNJQ8Kp0aB"
+  },
+  {
+    "room_id": "IND-019",
+    "name": "Room 22",
+    "is_deleted": false,
+    "infra_id": "INFRA-17",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "gGhev7gdw2X47uWYYjJH"
+  },
+  {
+    "room_id": "IND-050",
+    "name": "Stairs CSM 2nd Floor Near Room 207",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "gJ5BjCnH049zEmbpH9nw"
+  },
+  {
+    "room_id": "IND-044",
+    "name": "CSM 203",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "imiztPwotsAVR7oRZslh"
+  },
+  {
+    "room_id": "IND-030",
+    "name": "CSM 102 Lab Room",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "ktGJDDwj45NzZe45ZX1t"
+  },
+  {
+    "room_id": "IND-018",
+    "name": "Floor 2 Stairs (Old Building)",
+    "updatedAt": {},
+    "is_deleted": false,
+    "infra_id": "INFRA-17",
+    "indoor_type": "stairs",
+    "createdAt": {},
+    "id": "ln6pR9evq1XEOYUYqJ26"
+  },
+  {
+    "room_id": "IND-032",
+    "name": "Microbiology CSM10",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "nGFLMvgNVOVDjDeDIt2J"
+  },
+  {
+    "room_id": "IND-017",
+    "name": "COA",
+    "is_deleted": false,
+    "infra_id": "INFRA-17",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "o2CU8Ps2wim7LyA2RC8a"
+  },
+  {
+    "room_id": "IND-008",
+    "name": "Lecture Room 1",
+    "is_deleted": false,
+    "infra_id": "INFRA-14",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "oqtqXjyk7KkAMRe1LYxx"
+  },
+  {
+    "room_id": "IND-015",
+    "name": "Testing and Evaluation Center",
+    "is_deleted": false,
+    "infra_id": "INFRA-17",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "oueVetTXYgKvDPmvEYLE"
+  },
+  {
+    "room_id": "IND-049",
+    "name": "CSM 207",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "piihDg5qs8fkMi2zxyui"
+  },
+  {
+    "room_id": "IND-033",
+    "name": "CSM 104 Lab Room",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "roUujaSfmhWu425b8UvR"
+  },
+  {
+    "room_id": "IND-001",
+    "name": "Department of Computer Science",
+    "is_deleted": false,
+    "infra_id": "INFRA-14",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "ruBPRWvbcxowjgm1ZB4U"
+  },
+  {
+    "room_id": "IND-038",
+    "name": "CSM and IB Lec Room",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "tpkdWtgpjaRUqPUhKcoN"
+  },
+  {
+    "room_id": "IND-052",
+    "name": "Department of Math and Statistics",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "vFWIIk4W7Q5dunxUMIA1"
+  },
+  {
+    "room_id": "IND-042",
+    "name": "CSM 201",
+    "is_deleted": false,
+    "infra_id": "INFRA-03",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "wYqOOXtThYDcpdWWCeaX"
+  },
+  {
+    "room_id": "IND-023",
+    "name": "Comdev",
+    "is_deleted": false,
+    "infra_id": "INFRA-13",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "wskEGKupJUIJVwHs0LH9"
+  },
+  {
+    "room_id": "IND-024",
+    "name": "Entrance (Social Work)",
+    "is_deleted": false,
+    "infra_id": "INFRA-13",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "x74PLYWAJgsqftuysUTl"
+  },
+  {
+    "room_id": "IND-012",
+    "name": "Auditorium",
+    "is_deleted": false,
+    "infra_id": "INFRA-14",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "yXLM7e2WD7AOC3GLs00y"
+  },
+  {
+    "room_id": "IND-003",
+    "name": "Deans Office",
+    "is_deleted": false,
+    "infra_id": "INFRA-14",
+    "indoor_type": "room",
+    "createdAt": {},
+    "id": "ytGJG6AVweoleIdHdiN6"
+  }
+]

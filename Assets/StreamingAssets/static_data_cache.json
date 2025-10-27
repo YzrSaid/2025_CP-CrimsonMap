@@ -1,5 +1,6 @@
 {
     "infrastructure_synced": true,
     "categories_synced": true,
-    "campus_synced": true
+    "campus_synced": true,
+    "indoor_synced": true
 }

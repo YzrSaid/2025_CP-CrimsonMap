@@ -118,7 +118,6 @@ public class Node
     public string related_infra_id;
     public string related_room_id;
 
-    public IndoorInfo indoor;
     public string campus_id;
     public float x_coordinate;
     public float y_coordinate;
@@ -136,14 +135,17 @@ public class NodeList
     public List<Node> nodes;
 }
 
-// IndoorData
-
-[System.Serializable]
-public class IndoorInfo
+// IndoorInfrastructure Data
+[Serializable]
+public class IndoorInfrastructure
 {
-    public float x;
-    public float y;
-    public int floor;
+    public string id;
+    public DateTime createdAt;
+    public string indoor_type;
+    public string infra_id;
+    public bool is_deleted;
+    public string name;
+    public string room_id;
 }
 
 // Campus data class
@@ -192,6 +194,7 @@ public class StaticDataVersionInfo
     public bool infrastructure_updated;
     public bool categories_updated;
     public bool campus_updated;
+    public bool indoor_infrastructure_updated;
 }
 
 [System.Serializable]
@@ -200,6 +203,7 @@ public class LocalStaticDataCache
     public bool infrastructure_synced;
     public bool categories_synced;
     public bool campus_synced;
+    public bool indoor_synced;
 }
 
 [System.Serializable]
