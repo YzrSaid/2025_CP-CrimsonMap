@@ -122,11 +122,20 @@ public class Node
     public float x_coordinate;
     public float y_coordinate;
 
-    public bool HasRelatedInfraId => !string.IsNullOrEmpty( related_infra_id );
-    public bool HasRelatedRoomId => !string.IsNullOrEmpty( related_room_id );
+    public bool HasRelatedInfraId => !string.IsNullOrEmpty(related_infra_id);
+    public bool HasRelatedRoomId => !string.IsNullOrEmpty(related_room_id);
 
     public string GetRelatedInfraId() => HasRelatedInfraId ? related_infra_id : null;
     public string GetRelatedRoomId() => HasRelatedRoomId ? related_room_id : null;
+    public IndoorCoordinates indoor;
+}
+
+[Serializable]
+public class IndoorCoordinates
+{
+    public float x;
+    public float y; 
+    public string floor; 
 }
 
 [System.Serializable]

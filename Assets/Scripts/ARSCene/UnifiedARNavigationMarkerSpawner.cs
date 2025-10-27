@@ -23,7 +23,7 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
     [Header("Marker Settings")]
     public float markerScale = 1.5f;
     public float markerHeightOffset = 0.05f;
-    public float nodeMarkerDistance = 10f; // Show markers when close to waypoints
+    public float nodeMarkerDistance = 10f;
 
     [Header("Colors")]
     public Color navigationNodeColor = new Color(0.74f, 0.06f, 0.18f, 1f);
@@ -31,7 +31,7 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
 
     [Header("Settings")]
     public bool enableDebugLogs = true;
-    public bool showWaypointMarkers = true; // Toggle to show/hide 3D markers
+    public bool showWaypointMarkers = true;
 
     private List<Node> pathNodes = new List<Node>();
     private Dictionary<string, GameObject> spawnedNodeMarkers = new Dictionary<string, GameObject>();
@@ -39,9 +39,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
     private Vector2 userLocation;
     private DirectionDisplayManager directionManager;
     private bool isARNavigationMode = false;
-
-    private enum LocalizationMode { GPS, Offline }
-    private LocalizationMode currentLocalizationMode = LocalizationMode.GPS;
 
     private Vector2 userXY;
     private float groundPlaneY = 0f;
@@ -67,7 +64,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         if (directionManager == null)
             directionManager = FindObjectOfType<DirectionDisplayManager>();
 
-        // Find compass arrow if not assigned
         if (compassArrow == null)
             compassArrow = FindObjectOfType<CompassNavigationArrow>();
 
@@ -76,15 +72,7 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         if (isARNavigationMode)
         {
             LoadPathNodesFromPlayerPrefs();
-            
-            // For offline mode, estimate ground plane height
-            if (currentLocalizationMode == LocalizationMode.Offline)
-            {
-                groundPlaneY = arCamera.transform.position.y - 1.6f;
-                if (enableDebugLogs)
-                    Debug.Log($"[ARMarkerSpawner] Estimated ground Y: {groundPlaneY:F2}");
-            }
-
+            groundPlaneY = arCamera.transform.position.y - 1.6f;
             StartCoroutine(InitializeNavigationMarkers());
         }
     }
@@ -93,14 +81,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
     {
         string arMode = PlayerPrefs.GetString("ARMode", "DirectAR");
         isARNavigationMode = (arMode == "Navigation");
-
-        string localizationModeString = PlayerPrefs.GetString("LocalizationMode", "GPS");
-        currentLocalizationMode = localizationModeString == "Offline" 
-            ? LocalizationMode.Offline 
-            : LocalizationMode.GPS;
-
-        if (enableDebugLogs)
-            Debug.Log($"[ARMarkerSpawner] Mode: {(isARNavigationMode ? "Navigation" : "DirectAR")} + {currentLocalizationMode}");
     }
 
     private void LoadPathNodesFromPlayerPrefs()
@@ -109,8 +89,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
 
         if (pathNodeCount == 0)
         {
-            if (enableDebugLogs)
-                Debug.LogWarning("[ARMarkerSpawner] No path nodes found");
             return;
         }
 
@@ -123,9 +101,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
             if (!string.IsNullOrEmpty(nodeId))
                 pathNodeIds.Add(nodeId);
         }
-
-        if (enableDebugLogs)
-            Debug.Log($"[ARMarkerSpawner] Loading {pathNodeIds.Count} path nodes...");
 
         StartCoroutine(LoadNodesData(pathNodeIds));
     }
@@ -152,20 +127,15 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
                             pathNodes.Add(node);
                     }
 
-                    if (enableDebugLogs)
-                        Debug.Log($"[ARMarkerSpawner] ✅ Loaded {pathNodes.Count} path nodes");
-
                     loadComplete = true;
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError($"[ARMarkerSpawner] ❌ Error: {e.Message}");
                     loadComplete = true;
                 }
             },
             (error) =>
             {
-                Debug.LogError($"[ARMarkerSpawner] ❌ Failed to load: {error}");
                 loadComplete = true;
             }
         ));
@@ -179,18 +149,12 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
 
         if (pathNodes.Count < 2)
         {
-            if (enableDebugLogs)
-                Debug.LogWarning("[ARMarkerSpawner] Not enough path nodes (min 2)");
             yield break;
         }
 
         markersInitialized = true;
 
-        // Start updating compass arrow and optional waypoint markers
         InvokeRepeating(nameof(UpdateNavigationSystem), 0.5f, 0.2f);
-
-        if (enableDebugLogs)
-            Debug.Log("[ARMarkerSpawner] ✅ Navigation system initialized");
     }
 
     private void UpdateNavigationSystem()
@@ -198,57 +162,26 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         if (!isARNavigationMode || pathNodes.Count == 0 || !markersInitialized)
             return;
 
-        // Get user location
-        if (currentLocalizationMode == LocalizationMode.GPS)
+        if (unifiedARManager != null)
         {
-            if (GPSManager.Instance == null)
-            {
-                if (enableDebugLogs && Time.frameCount % 120 == 0)
-                    Debug.LogWarning("[ARMarkerSpawner] GPS Manager not found");
-                return;
-            }
-
+            userLocation = unifiedARManager.GetUserXY();
+            userXY = userLocation;
+        }
+        else if (GPSManager.Instance != null)
+        {
             userLocation = GPSManager.Instance.GetSmoothedCoordinates();
-
-            if (userLocation.magnitude < 0.0001f)
-            {
-                if (enableDebugLogs && Time.frameCount % 120 == 0)
-                    Debug.LogWarning("[ARMarkerSpawner] Waiting for GPS signal...");
-                return;
-            }
         }
-        else
+
+        if (userLocation.magnitude < 0.0001f)
         {
-            if (unifiedARManager == null)
-            {
-                if (enableDebugLogs && Time.frameCount % 120 == 0)
-                    Debug.LogWarning("[ARMarkerSpawner] UnifiedARManager not found");
-                return;
-            }
-
-            userXY = unifiedARManager.GetUserXY();
-            userLocation = userXY;
-
-            if (userXY.magnitude < 0.0001f)
-            {
-                if (enableDebugLogs && Time.frameCount % 120 == 0)
-                    Debug.LogWarning("[ARMarkerSpawner] Waiting for user XY position...");
-                return;
-            }
+            return;
         }
 
-        // Update compass arrow to point to current target
         UpdateCompassArrow();
 
-        // Update optional 3D waypoint markers
         if (showWaypointMarkers)
         {
             UpdateNodeMarkers();
-        }
-
-        if (enableDebugLogs && Time.frameCount % 120 == 0)
-        {
-            Debug.Log($"[ARMarkerSpawner] User location: {userLocation}");
         }
     }
 
@@ -257,21 +190,14 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         if (compassArrow == null || directionManager == null)
             return;
 
-        // Get current target node from direction manager
         NavigationDirection currentDir = directionManager.GetCurrentDirection();
         if (currentDir == null || currentDir.destinationNode == null)
             return;
 
         Node targetNode = currentDir.destinationNode;
 
-        // Update compass arrow to point to target
         compassArrow.SetTargetNode(targetNode);
         compassArrow.SetActive(true);
-
-        if (enableDebugLogs && Time.frameCount % 120 == 0)
-        {
-            Debug.Log($"[ARMarkerSpawner] Compass pointing to: {targetNode.name}");
-        }
     }
 
     private void UpdateNodeMarkers()
@@ -279,20 +205,13 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         if (nodeMarkerPrefab == null && destinationMarkerPrefab == null)
             return;
 
+        bool isIndoor = (unifiedARManager != null && unifiedARManager.IsIndoorMode());
+
         for (int i = 0; i < pathNodes.Count; i++)
         {
             Node node = pathNodes[i];
 
-            float distance = 0f;
-
-            if (currentLocalizationMode == LocalizationMode.GPS)
-            {
-                distance = CalculateDistanceGPS(userLocation, new Vector2(node.latitude, node.longitude));
-            }
-            else
-            {
-                distance = CalculateDistanceXY(userLocation, new Vector2(node.x_coordinate, node.y_coordinate));
-            }
+            float distance = CalculateDistance(node, isIndoor);
 
             bool shouldShow = distance <= nodeMarkerDistance;
             bool isDestination = (i == pathNodes.Count - 1);
@@ -306,17 +225,7 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
 
                 if (prefab != null)
                 {
-                    Vector3 worldPos;
-
-                    if (currentLocalizationMode == LocalizationMode.GPS)
-                    {
-                        worldPos = GPSToWorldPosition(node.latitude, node.longitude);
-                    }
-                    else
-                    {
-                        worldPos = XYToWorldPosition(node.x_coordinate, node.y_coordinate);
-                    }
-
+                    Vector3 worldPos = GetNodeWorldPosition(node, isIndoor);
                     worldPos = GetGroundPosition(worldPos);
 
                     GameObject marker = Instantiate(prefab, worldPos, Quaternion.identity);
@@ -340,7 +249,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
             }
         }
 
-        // Make markers face camera
         foreach (var marker in spawnedNodeMarkers.Values)
         {
             if (marker != null && arCamera != null)
@@ -348,6 +256,46 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
                 marker.transform.LookAt(arCamera.transform);
                 marker.transform.Rotate(0, 180, 0);
             }
+        }
+    }
+
+    private float CalculateDistance(Node node, bool isIndoor)
+    {
+        if (isIndoor)
+        {
+            // Indoor navigation uses X,Y coordinates
+            Vector2 nodeXY;
+            if (node.indoor != null)
+            {
+                nodeXY = new Vector2(node.indoor.x, node.indoor.y);
+            }
+            else
+            {
+                nodeXY = new Vector2(node.x_coordinate, node.y_coordinate);
+            }
+            return CalculateDistanceXY(userLocation, nodeXY);
+        }
+        else
+        {
+            // Outdoor navigation uses GPS
+            Vector2 nodeGPS = new Vector2(node.latitude, node.longitude);
+            return CalculateDistanceGPS(userLocation, nodeGPS);
+        }
+    }
+
+    private Vector3 GetNodeWorldPosition(Node node, bool isIndoor)
+    {
+        if (isIndoor)
+        {
+            // Indoor uses X,Y coordinates
+            float nodeX = node.indoor != null ? node.indoor.x : node.x_coordinate;
+            float nodeY = node.indoor != null ? node.indoor.y : node.y_coordinate;
+            return XYToWorldPosition(nodeX, nodeY);
+        }
+        else
+        {
+            // Outdoor uses GPS
+            return GPSToWorldPosition(node.latitude, node.longitude);
         }
     }
 
@@ -452,9 +400,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         return userLocation;
     }
 
-    /// <summary>
-    /// Toggle waypoint markers on/off (compass arrow remains)
-    /// </summary>
     public void ToggleWaypointMarkers(bool show)
     {
         showWaypointMarkers = show;

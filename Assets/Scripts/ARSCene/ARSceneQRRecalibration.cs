@@ -13,24 +13,18 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-/// <summary>
-/// QR Scanner for AR Scene - Works with UnifiedARManager
-/// Supports both GPS and Offline (X,Y) localization modes
-/// GPS mode: Gets latitude/longitude from scanned node
-/// Offline mode: Gets x_coordinate/y_coordinate from scanned node
-/// </summary>
 public class ARSceneQRRecalibration : MonoBehaviour
 {
     [Header("AR References")]
     public ARCameraManager arCameraManager;
-    public UnifiedARManager unifiedARManager; // UPDATED: Now uses UnifiedARManager
+    public UnifiedARManager unifiedARManager;
     public ARUIManager arUIManager;
 
     [Header("UI References")]
-    public GameObject scanTriggerButton; // Button to activate scanning mode (after first scan)
-    public GameObject scanTriggerButton2; // Button in the "Scan Required" panel
+    public GameObject scanTriggerButton;
+    public GameObject scanTriggerButton2;
     public TextMeshProUGUI scanButtonText;
-    public GameObject qrFrameContainer; // Visual QR frame overlay
+    public GameObject qrFrameContainer;
     public TextMeshProUGUI debugText;
 
     [Header("Confirmation Panel")]
@@ -51,9 +45,8 @@ public class ARSceneQRRecalibration : MonoBehaviour
     public bool enableTestMode = false;
     public string testNodeId = "ND-001";
 
-    private bool isScanning = false; // Scanner initialized and ready
-    private bool isScanningActive = false; // Currently looking for QR codes
-    private bool isFirstScan = true; // Track if this is the first QR scan in Direct AR + Offline mode
+    private bool isScanning = false;
+    private bool isScanningActive = false;
     private string scannedNodeId;
     private Node scannedNodeInfo;
     private List<string> availableMapIds = new List<string>();
@@ -71,7 +64,6 @@ public class ARSceneQRRecalibration : MonoBehaviour
 
     void Start()
     {
-        // Find AR components if not assigned
         if (arCameraManager == null)
             arCameraManager = FindObjectOfType<ARCameraManager>();
 
@@ -81,14 +73,12 @@ public class ARSceneQRRecalibration : MonoBehaviour
         if (arUIManager == null)
             arUIManager = FindObjectOfType<ARUIManager>();
 
-        // Setup UI
         if (confirmationPanel != null)
             confirmationPanel.SetActive(false);
 
         if (qrFrameContainer != null)
             qrFrameContainer.SetActive(false);
 
-        // Setup buttons
         if (confirmButton != null)
             confirmButton.onClick.AddListener(OnConfirmRecalibration);
 
@@ -115,19 +105,14 @@ public class ARSceneQRRecalibration : MonoBehaviour
     void Update()
     {
 #if UNITY_EDITOR
-        // Test mode - press T key to simulate QR scan
         if (enableTestMode && Keyboard.current != null && Keyboard.current.tKey.wasPressedThisFrame)
         {
             string simulatedQRData = qrSignature + qrDelimiter + testNodeId;
-            Debug.Log($"🧪 Test Mode: Simulating QR scan with {simulatedQRData}");
             OnQRCodeScanned(simulatedQRData);
         }
 #endif
     }
 
-    /// <summary>
-    /// Toggle scanning mode on/off
-    /// </summary>
     public void ToggleScanMode()
     {
         if (isScanningActive)
@@ -136,36 +121,21 @@ public class ARSceneQRRecalibration : MonoBehaviour
         }
         else
         {
-            // Hide the "Scan Required" panel if it exists
-            if (arUIManager != null && arUIManager.scanQRRequiredPanel != null)
-            {
-                arUIManager.scanQRRequiredPanel.SetActive(false);
-            }
             StartScanning();
         }
     }
 
-    /// <summary>
-    /// Start QR scanning mode
-    /// </summary>
     public void StartScanning()
     {
         isScanningActive = true;
 
-        // Show QR frame
         if (qrFrameContainer != null)
             qrFrameContainer.SetActive(true);
 
-        // Update button text
         if (scanButtonText != null)
             scanButtonText.text = "Cancel Scan";
-
-        Debug.Log("📷 QR Scanning mode activated");
     }
 
-    /// <summary>
-    /// Stop QR scanning mode
-    /// </summary>
     public void StopScanning()
     {
         isScanningActive = false;
@@ -175,8 +145,6 @@ public class ARSceneQRRecalibration : MonoBehaviour
 
         if (scanButtonText != null)
             scanButtonText.text = "Scan QR to Recalibrate";
-
-        Debug.Log("📷 QR Scanning mode deactivated");
     }
 
     IEnumerator InitializeScanner()
@@ -185,11 +153,9 @@ public class ARSceneQRRecalibration : MonoBehaviour
 
         if (arCameraManager == null)
         {
-            Debug.LogError("❌ AR Camera Manager not found!");
             yield break;
         }
 
-        // Wait for AR Camera to be ready
         float timeout = 0f;
         while (!arCameraManager.enabled && timeout < 5f)
         {
@@ -199,20 +165,16 @@ public class ARSceneQRRecalibration : MonoBehaviour
 
         if (!arCameraManager.enabled)
         {
-            Debug.LogError("❌ AR system failed to initialize!");
             yield break;
         }
 
         arCameraManager.frameReceived += OnCameraFrameReceived;
         isScanning = true;
 
-        // If auto-scan mode, start immediately
         if (autoScanMode)
         {
             StartScanning();
         }
-
-        Debug.Log("✅ AR QR Recalibration scanner initialized");
     }
 
     IEnumerator LoadAvailableMaps()
@@ -232,17 +194,14 @@ public class ARSceneQRRecalibration : MonoBehaviour
                         {
                             availableMapIds.Add(map.map_id);
                         }
-                        Debug.Log($"✅ Loaded {availableMapIds.Count} maps for QR validation");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError("❌ Error loading maps: " + ex.Message);
                 }
             },
             (error) =>
             {
-                Debug.LogError("❌ Error loading maps.json: " + error);
             }
         ));
     }
@@ -251,11 +210,9 @@ public class ARSceneQRRecalibration : MonoBehaviour
     {
         frameCount++;
 
-        // Only process if scanning mode is active AND scanner is ready
         if (!isScanning || !isScanningActive || arCameraManager == null)
             return;
 
-        // Skip frames for performance
         if (frameCount % frameSkip != 0)
             return;
 
@@ -309,13 +266,11 @@ public class ARSceneQRRecalibration : MonoBehaviour
         }
         catch (Exception ex)
         {
-            Debug.LogError("❌ Error processing frame: " + ex.Message);
         }
     }
 
     void OnQRCodeScanned(string qrData)
     {
-        // Pause scanning while processing
         isScanningActive = false;
 
         if (!ValidateQRCode(qrData, out string nodeId))
@@ -413,7 +368,6 @@ public class ARSceneQRRecalibration : MonoBehaviour
         }
         catch (Exception ex)
         {
-            Debug.LogError("❌ Error searching node: " + ex.Message);
         }
 
         return null;
@@ -421,11 +375,9 @@ public class ARSceneQRRecalibration : MonoBehaviour
 
     void ShowConfirmation()
     {
-        // Hide QR frame
         if (qrFrameContainer != null)
             qrFrameContainer.SetActive(false);
 
-        // Show confirmation panel
         if (confirmationPanel != null)
         {
             confirmationPanel.SetActive(true);
@@ -438,37 +390,40 @@ public class ARSceneQRRecalibration : MonoBehaviour
             canvasGroup.DOFade(1, 0.5f).SetEase(Ease.OutQuad);
         }
 
-        // Get current mode to show appropriate confirmation text
-        string localizationMode = PlayerPrefs.GetString("LocalizationMode", "GPS");
+        // Determine if indoor or outdoor
+        bool isIndoor = scannedNodeInfo.type == "indoorinfra";
+        string locationType = isIndoor ? "🏢 Indoor" : "🌍 Outdoor";
         string coordinateInfo = "";
 
-        if (localizationMode == "GPS")
+        if (isIndoor)
         {
-            coordinateInfo = $"GPS: {scannedNodeInfo.latitude:F6}, {scannedNodeInfo.longitude:F6}";
+            // Indoor uses X,Y coordinates from indoor field
+            if (scannedNodeInfo.indoor != null)
+            {
+                coordinateInfo = $"Indoor Position: X:{scannedNodeInfo.indoor.x:F2}m, Y:{scannedNodeInfo.indoor.y:F2}m\nFloor: {scannedNodeInfo.indoor.floor}";
+            }
+            else
+            {
+                coordinateInfo = "Indoor location data unavailable";
+            }
         }
         else
         {
-            coordinateInfo = $"X,Y: {scannedNodeInfo.x_coordinate:F2}, {scannedNodeInfo.y_coordinate:F2}";
+            // Outdoor uses GPS coordinates
+            coordinateInfo = $"GPS: {scannedNodeInfo.latitude:F6}, {scannedNodeInfo.longitude:F6}";
         }
 
         if (confirmationText != null)
         {
-            confirmationText.text = $"Recalibrate your position to:\n\n<b>{scannedNodeInfo.name}</b>\n\n{coordinateInfo}\n\nYour current position will be updated to match this location.";
+            confirmationText.text = $"Recalibrate your position to:\n\n<b>{scannedNodeInfo.name}</b>\n\n{locationType}\n{coordinateInfo}\n\nYour current position will be updated to match this location.";
         }
-
-        Debug.Log($"📍 QR Scanned: {scannedNodeInfo.name}");
-        Debug.Log($"   GPS: Lat {scannedNodeInfo.latitude:F6}, Lng {scannedNodeInfo.longitude:F6}");
-        Debug.Log($"   X,Y: X {scannedNodeInfo.x_coordinate:F2}, Y {scannedNodeInfo.y_coordinate:F2}");
     }
 
     void ShowError(string errorMessage)
     {
-        Debug.LogWarning($"⚠️ {errorMessage}");
-
         if (debugText != null)
             debugText.text = errorMessage;
 
-        // Resume scanning after 2 seconds
         Invoke(nameof(ResumeScanning), 2f);
     }
 
@@ -484,39 +439,12 @@ public class ARSceneQRRecalibration : MonoBehaviour
     {
         if (unifiedARManager == null)
         {
-            Debug.LogError("❌ UnifiedARManager not found! Cannot recalibrate.");
             OnCancelRecalibration();
             return;
         }
 
-        // Call UnifiedARManager's QR scanned method
-        // It will handle both GPS and Offline modes internally
         unifiedARManager.OnQRCodeScanned(scannedNodeInfo);
 
-        string localizationMode = PlayerPrefs.GetString("LocalizationMode", "GPS");
-        
-        if (localizationMode == "GPS")
-        {
-            Debug.Log($"✅ GPS recalibrated to: {scannedNodeInfo.name}");
-            Debug.Log($"✅ New GPS: Lat {scannedNodeInfo.latitude:F6}, Lng {scannedNodeInfo.longitude:F6}");
-        }
-        else
-        {
-            Debug.Log($"✅ Position recalibrated to: {scannedNodeInfo.name}");
-            Debug.Log($"✅ New reference point: X:{scannedNodeInfo.x_coordinate:F2}, Y:{scannedNodeInfo.y_coordinate:F2}");
-        }
-
-        // Check if this is the first scan in Direct AR + Offline mode
-        string arMode = PlayerPrefs.GetString("ARMode", "DirectAR");
-        
-        if (isFirstScan && arMode == "DirectAR" && localizationMode == "Offline" && arUIManager != null)
-        {
-            arUIManager.OnQRScannedAndConfirmed();
-            isFirstScan = false;
-            Debug.Log("🔓 Direct AR + Offline Mode unlocked - UI now visible");
-        }
-
-        // Hide confirmation panel
         if (confirmationPanel != null)
         {
             CanvasGroup canvasGroup = confirmationPanel.GetComponent<CanvasGroup>();
@@ -529,20 +457,18 @@ public class ARSceneQRRecalibration : MonoBehaviour
             });
         }
 
-        // Stop scanning mode
         StopScanning();
 
-        // Show success message
         if (debugText != null)
         {
-            debugText.text = "✅ Position calibrated successfully!";
+            string locationType = scannedNodeInfo.type == "indoorinfra" ? "Indoor" : "Outdoor";
+            debugText.text = $"✅ Position calibrated successfully! ({locationType})";
             StartCoroutine(HideDebugTextAfterDelay(3f));
         }
     }
 
     void OnCancelRecalibration()
     {
-        // Hide confirmation panel
         if (confirmationPanel != null)
         {
             CanvasGroup canvasGroup = confirmationPanel.GetComponent<CanvasGroup>();
@@ -555,13 +481,10 @@ public class ARSceneQRRecalibration : MonoBehaviour
             });
         }
 
-        // Resume scanning
         ResumeScanning();
 
         if (qrFrameContainer != null)
             qrFrameContainer.SetActive(true);
-
-        Debug.Log("❌ Recalibration cancelled");
     }
 
     IEnumerator HideDebugTextAfterDelay(float delay)

@@ -47,24 +47,14 @@ public class ARManagerCleanup : MonoBehaviour
     {
         PlayerPrefs.SetString("ARMode", "DirectAR");
         PlayerPrefs.Save();
-        if (localizationPanel != null)
-        {
-            localizationPanel.SetActive(true);
-        }
+        CleanupAndLoadAR();
     }
 
     public void LoadARNavigation()
     {
         PlayerPrefs.SetString("ARMode", "Navigation");
         PlayerPrefs.Save();
-        if (localizationPanel != null)
-        {
-            localizationPanel.SetActive(true);
-            if (pathFindingPanel != null)
-            {
-                pathFindingPanel.SetActive(false);
-            }
-        }
+        CleanupAndLoadAR();
     }
 
     public void LoadReadQRCode()

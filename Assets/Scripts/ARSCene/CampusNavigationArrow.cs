@@ -4,37 +4,24 @@ using UnityEngine.UI;
 public class CompassNavigationArrow : MonoBehaviour
 {
     [Header("UI References")]
-    public RectTransform arrowTransform; // The inner arrow image
+    public RectTransform arrowTransform;
 
     [Header("Settings")]
     public float rotationSmoothSpeed = 5f;
     public bool enableDebugLogs = false;
 
-    private Vector2 userLocation; // GPS: lat/lng, Offline: x/y
+    private Vector2 userLocation;
     private Node targetNode;
     private bool isActive = false;
-
-    // Localization mode
-    private enum LocalizationMode { GPS, Offline }
-    private LocalizationMode currentLocalizationMode = LocalizationMode.GPS;
+    private UnifiedARManager arManager;
 
     void Start()
     {
-        // Determine localization mode
-        string localizationModeString = PlayerPrefs.GetString("LocalizationMode", "GPS");
-        currentLocalizationMode = localizationModeString == "Offline"
-            ? LocalizationMode.Offline
-            : LocalizationMode.GPS;
-
-        if (enableDebugLogs)
-            Debug.Log($"[CompassArrow] Localization Mode: {currentLocalizationMode}");
-
-        // Start with compass enabled if using GPS
-        if (currentLocalizationMode == LocalizationMode.GPS)
-        {
-            Input.compass.enabled = true;
-            Input.location.Start();
-        }
+        arManager = FindObjectOfType<UnifiedARManager>();
+        
+        // Always enable compass for outdoor GPS mode
+        Input.compass.enabled = true;
+        Input.location.Start();
     }
 
     void Update()
@@ -48,22 +35,13 @@ public class CompassNavigationArrow : MonoBehaviour
 
     private void UpdateUserLocation()
     {
-        if (currentLocalizationMode == LocalizationMode.GPS)
+        if (arManager != null)
         {
-            // GPS Mode: Get from GPSManager
-            if (GPSManager.Instance != null)
-            {
-                userLocation = GPSManager.Instance.GetSmoothedCoordinates();
-            }
+            userLocation = arManager.GetUserXY();
         }
-        else
+        else if (GPSManager.Instance != null)
         {
-            // Offline Mode: Get from UnifiedARManager
-            UnifiedARManager arManager = FindObjectOfType<UnifiedARManager>();
-            if (arManager != null)
-            {
-                userLocation = arManager.GetUserXY();
-            }
+            userLocation = GPSManager.Instance.GetSmoothedCoordinates();
         }
     }
 
@@ -72,35 +50,53 @@ public class CompassNavigationArrow : MonoBehaviour
         if (arrowTransform == null || targetNode == null)
             return;
 
+        bool isIndoor = (arManager != null && arManager.IsIndoorMode()) || 
+                        targetNode.type == "indoorinfra";
+
         float targetAngle = 0f;
 
-        if (currentLocalizationMode == LocalizationMode.GPS)
+        if (isIndoor)
         {
-            // Get GPS position and target bearing
-            Vector2 targetLocation = new Vector2(targetNode.latitude, targetNode.longitude);
-            float bearingToTarget = CalculateBearingGPS(userLocation, targetLocation);
+            // Indoor mode - use X,Y coordinates
+            Vector2 targetXY;
+            if (targetNode.indoor != null)
+            {
+                targetXY = new Vector2(targetNode.indoor.x, targetNode.indoor.y);
+            }
+            else
+            {
+                targetXY = new Vector2(targetNode.x_coordinate, targetNode.y_coordinate);
+            }
 
-            // ✅ Use tilt-compensated heading from GPSManager (not Input.compass)
-            float deviceHeading = GPSManager.Instance != null ? GPSManager.Instance.GetHeading() : 0f;
+            Vector2 direction = targetXY - userLocation;
 
-            // Calculate angle difference (bearing - heading)
+            // Calculate bearing in X,Y space
+            // Assuming Y is forward (north) and X is right (east)
+            float bearingToTarget = Mathf.Atan2(direction.x, direction.y) * Mathf.Rad2Deg;
+            
+            // Get device heading from AR camera if available
+            float deviceHeading = 0f;
+            if (arManager != null && Camera.main != null)
+            {
+                // Use AR camera's Y rotation as heading
+                deviceHeading = Camera.main.transform.eulerAngles.y;
+            }
+
             targetAngle = bearingToTarget - deviceHeading;
-
-            // Normalize to 0–360
             targetAngle = (targetAngle + 360f) % 360f;
         }
         else
         {
-            // Offline mode (XY coordinates)
-            Vector2 targetLocation = new Vector2(targetNode.x_coordinate, targetNode.y_coordinate);
-            Vector2 direction = targetLocation - userLocation;
+            // Outdoor mode - use GPS coordinates
+            Vector2 targetGPS = new Vector2(targetNode.latitude, targetNode.longitude);
+            float bearingToTarget = CalculateBearingGPS(userLocation, targetGPS);
 
-            // Calculate bearing relative to north (up = 0°)
-            float bearingToTarget = Mathf.Atan2(direction.x, direction.y) * Mathf.Rad2Deg;
-            targetAngle = (bearingToTarget + 360f) % 360f;
+            float deviceHeading = GPSManager.Instance != null ? GPSManager.Instance.GetHeading() : 0f;
+
+            targetAngle = bearingToTarget - deviceHeading;
+            targetAngle = (targetAngle + 360f) % 360f;
         }
 
-        // Apply to arrow (rotate clockwise, so invert Z)
         Quaternion targetRotation = Quaternion.Euler(0, 0, -targetAngle);
         arrowTransform.rotation = Quaternion.Lerp(
             arrowTransform.rotation,
@@ -108,16 +104,13 @@ public class CompassNavigationArrow : MonoBehaviour
             Time.deltaTime * rotationSmoothSpeed
         );
 
-        if (enableDebugLogs && Time.frameCount % 60 == 0)
+        if (enableDebugLogs)
         {
-            Debug.Log($"[CompassArrow] TargetAngle: {targetAngle:F1}°");
+            string mode = isIndoor ? "Indoor" : "Outdoor";
+            Debug.Log($"CompassArrow ({mode}): Target angle = {targetAngle:F1}°");
         }
     }
 
-
-    /// <summary>
-    /// Calculate bearing between two GPS coordinates (0° = North, clockwise)
-    /// </summary>
     private float CalculateBearingGPS(Vector2 from, Vector2 to)
     {
         float lat1 = from.x * Mathf.Deg2Rad;
@@ -129,28 +122,23 @@ public class CompassNavigationArrow : MonoBehaviour
                   Mathf.Sin(lat1) * Mathf.Cos(lat2) * Mathf.Cos(deltaLng);
 
         float bearing = Mathf.Atan2(y, x) * Mathf.Rad2Deg;
-
-        // Normalize to 0-360
         bearing = (bearing + 360f) % 360f;
 
         return bearing;
     }
 
-    /// <summary>
-    /// Set the target node to point towards
-    /// </summary>
     public void SetTargetNode(Node node)
     {
         targetNode = node;
         isActive = (node != null);
-
-        if (enableDebugLogs)
-            Debug.Log($"[CompassArrow] Target set to: {node?.name ?? "None"}");
+        
+        if (enableDebugLogs && node != null)
+        {
+            string nodeType = node.type == "indoorinfra" ? "Indoor" : "Outdoor";
+            Debug.Log($"CompassArrow: Target set to {node.name} ({nodeType})");
+        }
     }
 
-    /// <summary>
-    /// Show/hide the compass arrow
-    /// </summary>
     public void SetActive(bool active)
     {
         isActive = active;
@@ -159,10 +147,6 @@ public class CompassNavigationArrow : MonoBehaviour
 
     void OnDestroy()
     {
-        // Disable compass when destroyed
-        if (currentLocalizationMode == LocalizationMode.GPS)
-        {
-            Input.compass.enabled = false;
-        }
+        Input.compass.enabled = false;
     }
 }

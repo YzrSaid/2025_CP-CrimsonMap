@@ -35,25 +35,16 @@ public class DirectionDisplayManager : MonoBehaviour
     private bool isNavigationActive = false;
     private bool debugPanelVisible = false;
 
-    private Vector2 userLocation; // GPS: lat/lng, Offline: x/y
+    private Vector2 userLocation;
     private Node currentTargetNode;
     private float distanceToTarget = 0f;
     private bool hasAutoProgressed = false;
 
-    // Localization mode
-    private enum LocalizationMode { GPS, Offline }
-    private LocalizationMode currentLocalizationMode = LocalizationMode.GPS;
+    private UnifiedARManager arManager;
 
     void Start()
     {
-        // Determine localization mode
-        string localizationModeString = PlayerPrefs.GetString("LocalizationMode", "GPS");
-        currentLocalizationMode = localizationModeString == "Offline" 
-            ? LocalizationMode.Offline 
-            : LocalizationMode.GPS;
-
-        if (enableDebugLogs)
-            Debug.Log($"[DirectionDisplay] Localization Mode: {currentLocalizationMode}");
+        arManager = FindObjectOfType<UnifiedARManager>();
 
         if (directionPanel != null)
             directionPanel.SetActive(false);
@@ -66,7 +57,6 @@ public class DirectionDisplayManager : MonoBehaviour
 
         HideAllTurnIcons();
 
-        // Find compass arrow if not assigned
         if (compassArrow == null)
             compassArrow = FindObjectOfType<CompassNavigationArrow>();
 
@@ -83,40 +73,25 @@ public class DirectionDisplayManager : MonoBehaviour
         if (!isNavigationActive)
             return;
 
-        // Keyboard testing
         if (enableKeyboardTesting && Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
         {
             MoveToNextDirection();
         }
 
-        // Update user location based on localization mode
         UpdateUserLocation();
-        
-        // Update distance to target
         UpdateDistanceToTarget();
-        
-        // Check if we should auto-progress
         CheckAutoProgress();
     }
 
     private void UpdateUserLocation()
     {
-        if (currentLocalizationMode == LocalizationMode.GPS)
+        if (arManager != null)
         {
-            // GPS Mode: Get from GPSManager
-            if (GPSManager.Instance != null)
-            {
-                userLocation = GPSManager.Instance.GetSmoothedCoordinates();
-            }
+            userLocation = arManager.GetUserXY();
         }
-        else
+        else if (GPSManager.Instance != null)
         {
-            // Offline Mode: Get from UnifiedARManager
-            UnifiedARManager arManager = FindObjectOfType<UnifiedARManager>();
-            if (arManager != null)
-            {
-                userLocation = arManager.GetUserXY();
-            }
+            userLocation = GPSManager.Instance.GetSmoothedCoordinates();
         }
     }
 
@@ -124,27 +99,14 @@ public class DirectionDisplayManager : MonoBehaviour
     {
         int directionCount = PlayerPrefs.GetInt("ARNavigation_DirectionCount", 0);
 
-        // ✅ DETAILED DEBUG
-        Debug.Log($"[DirectionDisplay] ========== LOADING DIRECTIONS ==========");
-        Debug.Log($"[DirectionDisplay] Direction count in PlayerPrefs: {directionCount}");
-
         if (directionCount == 0)
         {
-            if (enableDebugLogs)
-                Debug.LogWarning("[DirectionDisplay] ❌ No directions found in PlayerPrefs");
             return;
         }
 
-        // ✅ Log first direction as test
-        string firstInstruction = PlayerPrefs.GetString("ARNavigation_Direction_0_Instruction", "NOT FOUND");
-        Debug.Log($"[DirectionDisplay] First direction instruction: {firstInstruction}");
-
         allDirections.Clear();
 
-        // Load map data to get full node info
         string mapId = PlayerPrefs.GetString("ARScene_MapId", "MAP-01");
-        Debug.Log($"[DirectionDisplay] Loading map: {mapId}");
-
         StartCoroutine(LoadNodesAndDirections(mapId, directionCount));
     }
 
@@ -162,26 +124,20 @@ public class DirectionDisplayManager : MonoBehaviour
                 {
                     allNodes = JsonHelper.FromJson<Node>(jsonContent);
                     loadComplete = true;
-
-                    if (enableDebugLogs)
-                        Debug.Log($"[DirectionDisplay] Loaded {allNodes.Length} nodes for directions");
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError($"[DirectionDisplay] Error loading nodes: {e.Message}");
                     loadComplete = true;
                 }
             },
             (error) =>
             {
-                Debug.LogError($"[DirectionDisplay] Failed to load nodes: {error}");
                 loadComplete = true;
             }
         ));
 
         yield return new WaitUntil(() => loadComplete);
 
-        // Now load directions with proper node references
         for (int i = 0; i < directionCount; i++)
         {
             NavigationDirection dir = new NavigationDirection
@@ -192,17 +148,14 @@ public class DirectionDisplayManager : MonoBehaviour
                 distanceInMeters = PlayerPrefs.GetFloat($"ARNavigation_Direction_{i}_Distance", 0f),
             };
 
-            // ✅ Load full node data using node ID
             string destNodeId = PlayerPrefs.GetString($"ARNavigation_Direction_{i}_DestNodeId", "");
 
             if (allNodes != null && !string.IsNullOrEmpty(destNodeId))
             {
-                // Find the full node data
                 dir.destinationNode = System.Array.Find(allNodes, n => n.node_id == destNodeId);
 
                 if (dir.destinationNode == null)
                 {
-                    // Fallback: create minimal node with just name
                     dir.destinationNode = new Node
                     {
                         name = PlayerPrefs.GetString($"ARNavigation_Direction_{i}_DestNode", "Unknown"),
@@ -212,7 +165,6 @@ public class DirectionDisplayManager : MonoBehaviour
             }
             else
             {
-                // Fallback if no node ID
                 dir.destinationNode = new Node
                 {
                     name = PlayerPrefs.GetString($"ARNavigation_Direction_{i}_DestNode", "Unknown")
@@ -222,12 +174,8 @@ public class DirectionDisplayManager : MonoBehaviour
             allDirections.Add(dir);
         }
 
-        if (enableDebugLogs)
-            Debug.Log($"[DirectionDisplay] ✅ Loaded {allDirections.Count} directions with full node data");
-
         UpdateDebugAllDirections();
 
-        // Start navigation after loading
         if (allDirections.Count > 0)
         {
             StartNavigation();
@@ -267,7 +215,6 @@ public class DirectionDisplayManager : MonoBehaviour
 
         currentTargetNode = currentDir.destinationNode;
 
-        // ✅ Update compass arrow to point to current target
         if (compassArrow != null)
         {
             compassArrow.SetTargetNode(currentTargetNode);
@@ -275,23 +222,6 @@ public class DirectionDisplayManager : MonoBehaviour
         }
 
         hasAutoProgressed = false;
-
-        if (enableDebugLogs)
-        {
-            Debug.Log($"[DirectionDisplay] 🎯 Direction {currentDirectionIndex + 1}/{allDirections.Count}");
-            Debug.Log($"[DirectionDisplay] Target: {currentTargetNode?.name ?? "Unknown"}");
-            if (currentTargetNode != null)
-            {
-                if (currentLocalizationMode == LocalizationMode.GPS)
-                {
-                    Debug.Log($"[DirectionDisplay] Target GPS: {currentTargetNode.latitude:F6}, {currentTargetNode.longitude:F6}");
-                }
-                else
-                {
-                    Debug.Log($"[DirectionDisplay] Target XY: {currentTargetNode.x_coordinate:F2}, {currentTargetNode.y_coordinate:F2}");
-                }
-            }
-        }
     }
 
     private void HideAllTurnIcons()
@@ -371,22 +301,28 @@ public class DirectionDisplayManager : MonoBehaviour
         if (currentTargetNode == null)
             return;
 
-        if (currentLocalizationMode == LocalizationMode.GPS)
+        bool isIndoor = (arManager != null && arManager.IsIndoorMode()) || 
+                        currentTargetNode.type == "indoorinfra";
+
+        if (isIndoor)
         {
-            // GPS Mode
-            Vector2 targetLocation = new Vector2(currentTargetNode.latitude, currentTargetNode.longitude);
-            distanceToTarget = CalculateDistanceGPS(userLocation, targetLocation);
+            // Use X,Y distance for indoor
+            Vector2 targetXY;
+            if (currentTargetNode.indoor != null)
+            {
+                targetXY = new Vector2(currentTargetNode.indoor.x, currentTargetNode.indoor.y);
+            }
+            else
+            {
+                targetXY = new Vector2(currentTargetNode.x_coordinate, currentTargetNode.y_coordinate);
+            }
+            distanceToTarget = CalculateDistanceXY(userLocation, targetXY);
         }
         else
         {
-            // Offline Mode
-            Vector2 targetLocation = new Vector2(currentTargetNode.x_coordinate, currentTargetNode.y_coordinate);
-            distanceToTarget = CalculateDistanceXY(userLocation, targetLocation);
-        }
-
-        if (Time.frameCount % 60 == 0 && enableDebugLogs)
-        {
-            DebugLog($"📏 Distance to target ({currentTargetNode.name}): {distanceToTarget:F1}m");
+            // Use GPS distance for outdoor
+            Vector2 targetGPS = new Vector2(currentTargetNode.latitude, currentTargetNode.longitude);
+            distanceToTarget = CalculateDistanceGPS(userLocation, targetGPS);
         }
     }
 
@@ -397,7 +333,6 @@ public class DirectionDisplayManager : MonoBehaviour
 
         if (distanceToTarget <= autoProgressDistance && distanceToTarget > 0)
         {
-            DebugLog($"✅ Auto-progressing - within {autoProgressDistance}m of {currentTargetNode.name}");
             hasAutoProgressed = true;
             MoveToNextDirection();
         }
@@ -414,11 +349,8 @@ public class DirectionDisplayManager : MonoBehaviour
         if (enterImage != null)
             enterImage.SetActive(true);
 
-        // Hide compass arrow
         if (compassArrow != null)
             compassArrow.SetActive(false);
-
-        DebugLog("🎯 Navigation completed!");
     }
 
     private void ToggleDebugPanel()
@@ -512,8 +444,6 @@ public class DirectionDisplayManager : MonoBehaviour
 
         if (compassArrow != null)
             compassArrow.SetActive(false);
-
-        DebugLog("🔄 Navigation reset");
     }
 
     public int GetCurrentDirectionIndex()
@@ -531,12 +461,6 @@ public class DirectionDisplayManager : MonoBehaviour
     public List<NavigationDirection> GetAllDirections()
     {
         return new List<NavigationDirection>(allDirections);
-    }
-
-    private void DebugLog(string message)
-    {
-        if (enableDebugLogs)
-            Debug.Log($"[DirectionDisplay] {message}");
     }
 
     void OnDestroy()
