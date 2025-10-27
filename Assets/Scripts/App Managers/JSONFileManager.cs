@@ -13,16 +13,15 @@ public class JSONFileManager : MonoBehaviour
     private string streamingAssetsPath;
     private bool useStreamingAssets;
     
-    // Base required JSON files (static collections and system files)
     private readonly string[] baseRequiredFiles = {
-        "categories.json",      // Static collection
-        "infrastructure.json",  // Static collection
-        "campus.json",          // Static collection (moved from versioned)
-        "maps.json",            // Maps collection
+        "categories.json",
+        "infrastructure.json",
+        "campus.json",
+        "maps.json",
         "recent_destinations.json",
         "rooms.json",
         "saved_destinations.json",
-        "static_data_cache.json" // For Infrastructure/Categories/Campus sync tracking
+        "static_data_cache.json"
     };
 
     void Awake()
@@ -32,29 +31,22 @@ public class JSONFileManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             
-            // Determine if we're in Unity Editor or built app
             useStreamingAssets = Application.isEditor;
             
             if (useStreamingAssets)
             {
-                // In Unity Editor - use StreamingAssets folder
                 streamingAssetsPath = Path.Combine(Application.streamingAssetsPath);
                 dataPath = streamingAssetsPath;
                 
-                // Create StreamingAssets folder if it doesn't exist
                 if (!Directory.Exists(streamingAssetsPath))
                 {
                     Directory.CreateDirectory(streamingAssetsPath);
-                    Debug.Log($"Created StreamingAssets folder at: {streamingAssetsPath}");
                 }
             }
             else
             {
-                // In built app - use persistent data path
                 dataPath = Application.persistentDataPath;
             }
-            
-            Debug.Log($"JSON Data Path ({(useStreamingAssets ? "StreamingAssets" : "PersistentData")}): {dataPath}");
         }
         else
         {
@@ -69,32 +61,21 @@ public class JSONFileManager : MonoBehaviour
 
     private IEnumerator CheckAndCreateJSONFiles(System.Action onComplete)
     {
-        Debug.Log("Checking for required JSON files...");
-        
-        // First, create base required files
         foreach (string fileName in baseRequiredFiles)
         {
             string filePath = Path.Combine(dataPath, fileName);
             
             if (!File.Exists(filePath))
             {
-                Debug.Log($"Creating {fileName}...");
                 CreateDefaultJSONFile(fileName, filePath);
             }
-            else
-            {
-                Debug.Log($"{fileName} already exists");
-            }
             
-            yield return null; // Spread work across frames
+            yield return null;
         }
         
-        Debug.Log("Base JSON files checked/created successfully");
         onComplete?.Invoke();
     }
 
-    // Method to initialize map-specific files after maps.json is available
-    // Only creates files for versioned collections (Nodes and Edges)
     public void InitializeMapSpecificFiles(List<string> mapIds, System.Action onComplete = null)
     {
         StartCoroutine(InitializeMapSpecificFilesCoroutine(mapIds, onComplete));
@@ -102,22 +83,17 @@ public class JSONFileManager : MonoBehaviour
 
     private IEnumerator InitializeMapSpecificFilesCoroutine(List<string> mapIds, System.Action onComplete)
     {
-        Debug.Log($"Initializing map-specific files for {mapIds.Count} maps...");
-
         foreach (string mapId in mapIds)
         {
-            // Create version cache file for each map
             string versionCacheFile = $"version_cache_{mapId}.json";
             string filePath = Path.Combine(dataPath, versionCacheFile);
             
             if (!File.Exists(filePath))
             {
-                Debug.Log($"Creating version cache for map {mapId}...");
                 CreateDefaultVersionCache(mapId, filePath);
             }
 
-            // Create map-specific collection files only for versioned collections (Nodes and Edges)
-            string[] versionedCollections = { "nodes", "edges" }; // Only Nodes and Edges are versioned now
+            string[] versionedCollections = { "nodes", "edges" };
             
             foreach (string collection in versionedCollections)
             {
@@ -126,15 +102,13 @@ public class JSONFileManager : MonoBehaviour
                 
                 if (!File.Exists(mapSpecificPath))
                 {
-                    Debug.Log($"Creating {mapSpecificFile}...");
                     CreateDefaultJSONFile(mapSpecificFile, mapSpecificPath);
                 }
             }
             
-            yield return null; // Spread work across frames
+            yield return null;
         }
 
-        Debug.Log("Map-specific files initialized successfully");
         onComplete?.Invoke();
     }
 
@@ -145,9 +119,7 @@ public class JSONFileManager : MonoBehaviour
         try
         {
             File.WriteAllText(filePath, defaultContent);
-            Debug.Log($"Created {fileName} at {filePath}");
             
-            // In Unity Editor, refresh the asset database to show the new file
             if (useStreamingAssets)
             {
 #if UNITY_EDITOR
@@ -176,7 +148,6 @@ public class JSONFileManager : MonoBehaviour
         try
         {
             File.WriteAllText(filePath, jsonContent);
-            Debug.Log($"Created version cache for map {mapId} at {filePath}");
             
             if (useStreamingAssets)
             {
@@ -193,33 +164,31 @@ public class JSONFileManager : MonoBehaviour
 
     private string GetDefaultJSONContent(string fileName)
     {
-        // Handle map-specific files (those with mapId suffix) - only Nodes and Edges
         if (fileName.Contains("_M-") || fileName.Contains("_Map") || 
             fileName.StartsWith("nodes_") || fileName.StartsWith("edges_"))
         {
-            // This is a map-specific versioned file
-            return "[]"; // Default empty array for collections
+            return "[]";
         }
 
         switch (fileName)
         {
             case "categories.json":
-                return "[]"; // Will be populated from Firestore static data
+                return "[]";
                 
             case "infrastructure.json":
-                return "[]"; // Will be populated from Firestore static data
+                return "[]";
                 
             case "campus.json":
-                return "[]"; // Will be populated from Firestore static data (moved from versioned)
+                return "[]";
                 
             case "maps.json":
-                return "[]"; // Will be populated from Firestore Maps collection
+                return "[]";
                 
             case "recent_destinations.json":
                 return CreateDefaultRecentDestinations();
                 
             case "rooms.json":
-                return "[]"; // Empty array initially
+                return "[]";
                 
             case "saved_destinations.json":
                 return CreateDefaultSavedDestinations();
@@ -228,7 +197,7 @@ public class JSONFileManager : MonoBehaviour
                 return CreateDefaultStaticDataCache();
                 
             default:
-                return "[]"; // Default empty array
+                return "[]";
         }
     }
 
@@ -259,7 +228,6 @@ public class JSONFileManager : MonoBehaviour
         return JsonUtility.ToJson(defaultData, true);
     }
 
-    // Helper methods for reading/writing JSON files
     public string ReadJSONFile(string fileName)
     {
         string filePath = Path.Combine(dataPath, fileName);
@@ -290,9 +258,7 @@ public class JSONFileManager : MonoBehaviour
         try
         {
             File.WriteAllText(filePath, jsonContent);
-            Debug.Log($"Successfully wrote {fileName} to {filePath}");
             
-            // In Unity Editor, refresh the asset database to show the new file
             if (useStreamingAssets)
             {
 #if UNITY_EDITOR
@@ -309,12 +275,9 @@ public class JSONFileManager : MonoBehaviour
     public bool DoesFileExist(string fileName)
     {
         string filePath = Path.Combine(dataPath, fileName);
-        bool exists = File.Exists(filePath);
-        Debug.Log($"Checking {fileName}: {(exists ? "EXISTS" : "NOT FOUND")} at {filePath}");
-        return exists;
+        return File.Exists(filePath);
     }
 
-    // Method to check if data is fresh for a specific map
     public bool IsMapDataFresh(string mapId, int maxAgeHours = 24)
     {
         string fileName = $"version_cache_{mapId}.json";
@@ -337,8 +300,6 @@ public class JSONFileManager : MonoBehaviour
         return false;
     }
 
-  
-    // Get all available map IDs from maps.json
     public List<string> GetAvailableMapIds()
     {
         List<string> mapIds = new List<string>();
@@ -360,10 +321,8 @@ public class JSONFileManager : MonoBehaviour
         return mapIds;
     }
 
-    // Get map-specific file name - Only for versioned collections (Nodes and Edges)
     public string GetMapSpecificFileName(string baseFileName, string mapId)
     {
-        // Only create map-specific files for versioned collections
         string nameWithoutExtension = Path.GetFileNameWithoutExtension(baseFileName).ToLower();
         if (nameWithoutExtension == "nodes" || nameWithoutExtension == "edges")
         {
@@ -371,33 +330,27 @@ public class JSONFileManager : MonoBehaviour
             return $"{nameWithoutExtension}_{mapId}{extension}";
         }
         
-        // For static collections (Infrastructure, Categories, Campus), return original name
         return baseFileName;
     }
 
-    // Read map-specific data - Only works for versioned collections
     public string ReadMapSpecificData(string collectionName, string mapId)
     {
         string collectionLower = collectionName.ToLower();
         
-        // Only Nodes and Edges have map-specific files
         if (collectionLower == "nodes" || collectionLower == "edges")
         {
             string fileName = $"{collectionLower}_{mapId}.json";
             return ReadJSONFile(fileName);
         }
         
-        // For static collections, read the regular file
         string staticFileName = $"{collectionLower}.json";
         return ReadJSONFile(staticFileName);
     }
 
-    // Write map-specific data - Only for versioned collections
     public void WriteMapSpecificData(string collectionName, string mapId, string jsonContent)
     {
         string collectionLower = collectionName.ToLower();
         
-        // Only Nodes and Edges have map-specific files
         if (collectionLower == "nodes" || collectionLower == "edges")
         {
             string fileName = $"{collectionLower}_{mapId}.json";
@@ -405,14 +358,11 @@ public class JSONFileManager : MonoBehaviour
         }
         else
         {
-            // For static collections, write to regular file
             string staticFileName = $"{collectionLower}.json";
             WriteJSONFile(staticFileName, jsonContent);
-            Debug.LogWarning($"Collection {collectionName} is static and doesn't use map-specific files. Written to {staticFileName}");
         }
     }
 
-    // Enhanced destination management methods
     public void AddRecentDestination(Dictionary<string, object> destination)
     {
         try
@@ -423,14 +373,11 @@ public class JSONFileManager : MonoBehaviour
                 var data = JsonUtility.FromJson<RecentDestinationsData>(jsonContent);
                 var recentList = new List<Dictionary<string, object>>(data.recent_destinations ?? new Dictionary<string, object>[0]);
                 
-                // Remove if already exists (to move to top)
                 recentList.RemoveAll(d => d.ContainsKey("id") && destination.ContainsKey("id") && 
                                           d["id"].ToString() == destination["id"].ToString());
                 
-                // Add to beginning
                 recentList.Insert(0, destination);
                 
-                // Keep only last 10
                 if (recentList.Count > 10)
                 {
                     recentList = recentList.GetRange(0, 10);
@@ -439,8 +386,6 @@ public class JSONFileManager : MonoBehaviour
                 data.recent_destinations = recentList.ToArray();
                 string updatedJson = JsonUtility.ToJson(data, true);
                 WriteJSONFile("recent_destinations.json", updatedJson);
-                
-                Debug.Log("Added recent destination successfully");
             }
         }
         catch (System.Exception ex)
@@ -459,7 +404,6 @@ public class JSONFileManager : MonoBehaviour
                 var data = JsonUtility.FromJson<SavedDestinationsData>(jsonContent);
                 var savedList = new List<Dictionary<string, object>>(data.saved_destinations ?? new Dictionary<string, object>[0]);
                 
-                // Check if already saved
                 bool alreadyExists = savedList.Any(d => d.ContainsKey("id") && destination.ContainsKey("id") && 
                                                        d["id"].ToString() == destination["id"].ToString());
                 
@@ -469,12 +413,6 @@ public class JSONFileManager : MonoBehaviour
                     data.saved_destinations = savedList.ToArray();
                     string updatedJson = JsonUtility.ToJson(data, true);
                     WriteJSONFile("saved_destinations.json", updatedJson);
-                    
-                    Debug.Log("Added saved destination successfully");
-                }
-                else
-                {
-                    Debug.Log("Destination already saved");
                 }
             }
         }
@@ -499,8 +437,6 @@ public class JSONFileManager : MonoBehaviour
                 data.saved_destinations = savedList.ToArray();
                 string updatedJson = JsonUtility.ToJson(data, true);
                 WriteJSONFile("saved_destinations.json", updatedJson);
-                
-                Debug.Log("Removed saved destination successfully");
             }
         }
         catch (System.Exception ex)
@@ -509,23 +445,17 @@ public class JSONFileManager : MonoBehaviour
         }
     }
 
-    // Method to clear all caches and force re-download
     public void ClearAllCaches()
     {
-        // Clear static data cache
         WriteJSONFile("static_data_cache.json", CreateDefaultStaticDataCache());
         
-        // Clear all map version caches
         List<string> mapIds = GetAvailableMapIds();
         foreach (string mapId in mapIds)
         {
             ClearMapVersionCache(mapId);
         }
-        
-        Debug.Log("All caches cleared - next sync will download fresh data");
     }
 
-    // Method to clear specific map version cache
     public void ClearMapVersionCache(string mapId)
     {
         var defaultCache = new LocalVersionCache
@@ -539,10 +469,8 @@ public class JSONFileManager : MonoBehaviour
         string fileName = $"version_cache_{mapId}.json";
         string jsonContent = JsonUtility.ToJson(defaultCache, true);
         WriteJSONFile(fileName, jsonContent);
-        Debug.Log($"Version cache cleared for map {mapId}");
     }
 
-    // Method to get current cached version for a map
     public LocalVersionCache GetMapVersionCache(string mapId)
     {
         string fileName = $"version_cache_{mapId}.json";
@@ -563,7 +491,6 @@ public class JSONFileManager : MonoBehaviour
         return null;
     }
 
-    // Method to get all cached map versions
     public Dictionary<string, string> GetAllCachedMapVersions()
     {
         Dictionary<string, string> versions = new Dictionary<string, string>();
@@ -578,8 +505,6 @@ public class JSONFileManager : MonoBehaviour
         return versions;
     }
 
-    // Method to clean up unused map files (when maps are removed)
-    // Updated to only clean versioned collection files
     public void CleanupUnusedMapFiles()
     {
         List<string> currentMapIds = GetAvailableMapIds();
@@ -589,7 +514,6 @@ public class JSONFileManager : MonoBehaviour
         {
             string fileName = Path.GetFileName(filePath);
             
-            // Check if it's a map-specific file (version caches or versioned collections)
             if (fileName.StartsWith("version_cache_") || 
                 fileName.StartsWith("nodes_") || 
                 fileName.StartsWith("edges_"))
@@ -609,7 +533,6 @@ public class JSONFileManager : MonoBehaviour
                     try
                     {
                         File.Delete(filePath);
-                        Debug.Log($"Cleaned up unused file: {fileName}");
                     }
                     catch (System.Exception ex)
                     {
@@ -620,7 +543,6 @@ public class JSONFileManager : MonoBehaviour
         }
     }
 
-    // Get system status for debugging
     public string GetFileSystemStatus()
     {
         List<string> mapIds = GetAvailableMapIds();
@@ -643,7 +565,6 @@ public class JSONFileManager : MonoBehaviour
             status += $"  - {file}: {(exists ? "OK" : "MISSING")}\n";
         }
         
-        // Check versioned files for each map
         status += "Versioned Files Status:\n";
         foreach (string mapId in mapIds)
         {

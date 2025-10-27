@@ -175,11 +175,6 @@ public class GPSManager : MonoBehaviour
 
     public float GetHeading()
     {
-        if (useQROverride)
-        {
-            return qrOverrideHeading;
-        }
-
 #if UNITY_EDITOR
         if (useMockLocationInEditor)
         {
