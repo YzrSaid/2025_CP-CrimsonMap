@@ -208,6 +208,51 @@ public class DirectionDisplayManager : MonoBehaviour
 
         NavigationDirection currentDir = allDirections[currentDirectionIndex];
 
+        // Check if this is a grouped indoor direction
+        if (currentDir.isIndoorGrouped)
+        {
+            // Group all consecutive indoor directions together
+            string groupedInstructions = "";
+            List<Node> groupedTargets = new List<Node>();
+
+            int startIndex = currentDirectionIndex;
+            while (currentDirectionIndex < allDirections.Count &&
+                   allDirections[currentDirectionIndex].isIndoorGrouped)
+            {
+                var indoorDir = allDirections[currentDirectionIndex];
+                groupedInstructions += indoorDir.instruction + "\n\n";
+                groupedTargets.Add(indoorDir.destinationNode);
+                currentDirectionIndex++;
+            }
+
+            // Display grouped instructions
+            if (directionText != null)
+            {
+                directionText.text = "🏢 Indoor Navigation:\n\n" + groupedInstructions.Trim();
+            }
+
+            ShowTurnIcon(TurnDirection.Enter);
+
+            // Set compass to final indoor destination
+            if (groupedTargets.Count > 0)
+            {
+                currentTargetNode = groupedTargets[groupedTargets.Count - 1];
+
+                if (compassArrow != null)
+                {
+                    compassArrow.SetTargetNode(currentTargetNode);
+                    compassArrow.SetActive(true);
+                }
+            }
+
+            hasAutoProgressed = false;
+
+            // For indoor, we don't auto-progress since AR tracking isn't accurate
+            // User must manually progress (or we can disable auto-progress for indoor)
+            return;
+        }
+
+        // Normal outdoor direction display
         if (directionText != null)
             directionText.text = currentDir.instruction;
 
@@ -301,7 +346,7 @@ public class DirectionDisplayManager : MonoBehaviour
         if (currentTargetNode == null)
             return;
 
-        bool isIndoor = (arManager != null && arManager.IsIndoorMode()) || 
+        bool isIndoor = (arManager != null && arManager.IsIndoorMode()) ||
                         currentTargetNode.type == "indoorinfra";
 
         if (isIndoor)
@@ -331,13 +376,22 @@ public class DirectionDisplayManager : MonoBehaviour
         if (hasAutoProgressed)
             return;
 
+        // Don't auto-progress indoor directions (user must manually progress)
+        if (currentDirectionIndex < allDirections.Count)
+        {
+            var currentDir = allDirections[currentDirectionIndex];
+            if (currentDir.isIndoorGrouped)
+            {
+                return; // Skip auto-progress for indoor
+            }
+        }
+
         if (distanceToTarget <= autoProgressDistance && distanceToTarget > 0)
         {
             hasAutoProgressed = true;
             MoveToNextDirection();
         }
     }
-
     private void CompleteNavigation()
     {
         isNavigationActive = false;

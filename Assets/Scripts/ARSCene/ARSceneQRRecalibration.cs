@@ -390,32 +390,90 @@ public class ARSceneQRRecalibration : MonoBehaviour
             canvasGroup.DOFade(1, 0.5f).SetEase(Ease.OutQuad);
         }
 
-        // Determine if indoor or outdoor
-        bool isIndoor = scannedNodeInfo.type == "indoorinfra";
-        string locationType = isIndoor ? "🏢 Indoor" : "🌍 Outdoor";
-        string coordinateInfo = "";
+        bool isIndoorNode = scannedNodeInfo.type == "indoorinfra";
+        string confirmationMessage = "";
 
-        if (isIndoor)
+        if (isIndoorNode)
         {
-            // Indoor uses X,Y coordinates from indoor field
-            if (scannedNodeInfo.indoor != null)
+            // INDOOR QR SCANNED
+            string buildingName = unifiedARManager != null ? 
+                unifiedARManager.GetInfrastructureName(scannedNodeInfo.related_infra_id) : 
+                scannedNodeInfo.related_infra_id;
+
+            bool currentlyIndoor = unifiedARManager != null && unifiedARManager.IsIndoorMode();
+            string currentBuildingId = unifiedARManager != null ? unifiedARManager.GetCurrentIndoorInfraId() : "";
+
+            if (currentlyIndoor && currentBuildingId != scannedNodeInfo.related_infra_id)
             {
-                coordinateInfo = $"Indoor Position: X:{scannedNodeInfo.indoor.x:F2}m, Y:{scannedNodeInfo.indoor.y:F2}m\nFloor: {scannedNodeInfo.indoor.floor}";
+                // SWITCHING TO DIFFERENT BUILDING
+                confirmationMessage = $"⚠️ <b>Building Switch Detected</b>\n\n" +
+                    $"You are currently in a different building.\n\n" +
+                    $"<b>New Location:</b> {scannedNodeInfo.name}\n" +
+                    $"<b>Building:</b> {buildingName}\n\n" +
+                    $"🚪 <color=yellow>Please stand at the entrance of {buildingName} before confirming.</color>\n\n" +
+                    $"The entrance (0,0) will be used as your reference point.";
+            }
+            else if (currentlyIndoor && currentBuildingId == scannedNodeInfo.related_infra_id)
+            {
+                // RECALIBRATING WITHIN SAME BUILDING
+                string coordinateInfo = "";
+                if (scannedNodeInfo.indoor != null)
+                {
+                    coordinateInfo = $"📍 Position: X:{scannedNodeInfo.indoor.x:F2}m, Y:{scannedNodeInfo.indoor.y:F2}m\n" +
+                        $"📶 Floor: {scannedNodeInfo.indoor.floor}";
+                }
+
+                confirmationMessage = $"🏢 <b>Recalibrate Indoor Position</b>\n\n" +
+                    $"<b>{scannedNodeInfo.name}</b>\n" +
+                    $"Building: {buildingName}\n\n" +
+                    $"{coordinateInfo}\n\n" +
+                    $"Your position will be updated to this location.";
             }
             else
             {
-                coordinateInfo = "Indoor location data unavailable";
+                // ENTERING INDOOR MODE FROM OUTDOOR
+                string coordinateInfo = "";
+                if (scannedNodeInfo.indoor != null)
+                {
+                    coordinateInfo = $"📍 Position: X:{scannedNodeInfo.indoor.x:F2}m, Y:{scannedNodeInfo.indoor.y:F2}m\n" +
+                        $"📶 Floor: {scannedNodeInfo.indoor.floor}";
+                }
+
+                confirmationMessage = $"🏢 <b>Indoor Location Detected</b>\n\n" +
+                    $"<b>{scannedNodeInfo.name}</b>\n" +
+                    $"Building: {buildingName}\n\n" +
+                    $"🚪 <color=yellow>Please stand at the building entrance before confirming.</color>\n\n" +
+                    $"{coordinateInfo}\n\n" +
+                    $"Switching from GPS to Indoor AR tracking.";
             }
         }
         else
         {
-            // Outdoor uses GPS coordinates
-            coordinateInfo = $"GPS: {scannedNodeInfo.latitude:F6}, {scannedNodeInfo.longitude:F6}";
+            // OUTDOOR QR SCANNED
+            string coordinateInfo = $"📍 GPS: {scannedNodeInfo.latitude:F6}, {scannedNodeInfo.longitude:F6}";
+
+            bool wasIndoor = unifiedARManager != null && unifiedARManager.IsIndoorMode();
+
+            if (wasIndoor)
+            {
+                confirmationMessage = $"🌍 <b>Outdoor Location Detected</b>\n\n" +
+                    $"<b>{scannedNodeInfo.name}</b>\n\n" +
+                    $"{coordinateInfo}\n\n" +
+                    $"✅ Switching from Indoor to GPS tracking.\n" +
+                    $"Your position will be locked for a few seconds.";
+            }
+            else
+            {
+                confirmationMessage = $"🌍 <b>Recalibrate GPS Position</b>\n\n" +
+                    $"<b>{scannedNodeInfo.name}</b>\n\n" +
+                    $"{coordinateInfo}\n\n" +
+                    $"Your GPS position will be updated and locked for a few seconds.";
+            }
         }
 
         if (confirmationText != null)
         {
-            confirmationText.text = $"Recalibrate your position to:\n\n<b>{scannedNodeInfo.name}</b>\n\n{locationType}\n{coordinateInfo}\n\nYour current position will be updated to match this location.";
+            confirmationText.text = confirmationMessage;
         }
     }
 
@@ -443,6 +501,7 @@ public class ARSceneQRRecalibration : MonoBehaviour
             return;
         }
 
+        // Pass the scanned node to UnifiedARManager
         unifiedARManager.OnQRCodeScanned(scannedNodeInfo);
 
         if (confirmationPanel != null)

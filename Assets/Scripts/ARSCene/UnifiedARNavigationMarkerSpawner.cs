@@ -33,6 +33,9 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
     public bool enableDebugLogs = true;
     public bool showWaypointMarkers = true;
 
+    [Header("Floor Settings")]
+    public float floorHeightMeters = 3.048f; // 10 feet per floor
+
     private List<Node> pathNodes = new List<Node>();
     private Dictionary<string, GameObject> spawnedNodeMarkers = new Dictionary<string, GameObject>();
 
@@ -287,10 +290,21 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
     {
         if (isIndoor)
         {
-            // Indoor uses X,Y coordinates
+            // Indoor uses X,Y coordinates with floor height
             float nodeX = node.indoor != null ? node.indoor.x : node.x_coordinate;
             float nodeY = node.indoor != null ? node.indoor.y : node.y_coordinate;
-            return XYToWorldPosition(nodeX, nodeY);
+
+            // ✅ GET FLOOR NUMBER
+            int floor = 1; // Default to floor 1
+            if (node.indoor != null && !string.IsNullOrEmpty(node.indoor.floor))
+            {
+                if (int.TryParse(node.indoor.floor, out int parsedFloor))
+                {
+                    floor = parsedFloor;
+                }
+            }
+
+            return XYToWorldPositionWithFloor(nodeX, nodeY, floor);
         }
         else
         {
@@ -298,7 +312,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
             return GPSToWorldPosition(node.latitude, node.longitude);
         }
     }
-
     private Vector3 GetGroundPosition(Vector3 targetWorldPos)
     {
         if (arRaycastManager == null || arCamera == null)
@@ -385,6 +398,30 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         return worldPos;
     }
 
+    private Vector3 XYToWorldPositionWithFloor(float nodeX, float nodeY, int floor)
+    {
+        float deltaX = nodeX - userXY.x;
+        float deltaY = nodeY - userXY.y;
+
+        Vector3 worldPos = arCamera.transform.position;
+        worldPos.x += deltaX;
+        worldPos.z += deltaY;
+
+        // ✅ ADD FLOOR HEIGHT
+        // Floor 1 = 0m (ground level)
+        // Floor 2 = 3.048m (10 feet)
+        // Floor 3 = 6.096m (20 feet)
+        if (floor > 1)
+        {
+            worldPos.y += (floor - 1) * floorHeightMeters;
+        }
+
+        return worldPos;
+    }
+
+
+
+
     private float CalculateDistanceXY(Vector2 point1, Vector2 point2)
     {
         return Vector2.Distance(point1, point2);
@@ -403,7 +440,7 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
     public void ToggleWaypointMarkers(bool show)
     {
         showWaypointMarkers = show;
-        
+
         if (!show)
         {
             ClearAllMarkers();

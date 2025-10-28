@@ -16,6 +16,234 @@ public class PathfindingController : MonoBehaviour
     public TMP_Dropdown toDropdown;
     public Button findPathButton;
 
+    [Header("Static Testing - Navigation Scenarios")]
+    public bool enableStaticTesting = false;
+    public int testScenarioIndex = 0; // 0-3 for different scenarios
+
+    [Header("Custom Test Node IDs (Override Scenario)")]
+    public bool useCustomNodeIds = false;
+    [Tooltip("Leave empty to use scenario defaults")]
+    public string customFromNodeId = "";
+    [Tooltip("Leave empty to use scenario defaults")]
+    public string customToNodeId = "";
+
+    [System.Serializable]
+    public class TestScenario
+    {
+        public string scenarioName;
+        public string fromNodeId;
+        public string toNodeId;
+        public string description;
+        [TextArea(2, 4)]
+        public string expectedBehavior;
+    }
+
+    [ContextMenu("Run Test Scenario")]
+    public void RunTestFromInspector()
+    {
+        if (!Application.isPlaying)
+        {
+            Debug.LogWarning("⚠️ Must be in Play Mode to run tests");
+            return;
+        }
+
+        RunStaticTest();
+    }
+
+    [ContextMenu("Print All Scenarios")]
+    public void PrintAllScenarios()
+    {
+        Debug.Log("=== AVAILABLE TEST SCENARIOS ===");
+        for (int i = 0; i < testScenarios.Count; i++)
+        {
+            var scenario = testScenarios[i];
+            Debug.Log($"[{i}] {scenario.scenarioName}\n" +
+                      $"    FROM: {scenario.fromNodeId} → TO: {scenario.toNodeId}\n" +
+                      $"    {scenario.description}\n" +
+                      $"    Expected: {scenario.expectedBehavior}\n");
+        }
+    }
+
+    [ContextMenu("Validate Test Node IDs")]
+    public void ValidateTestNodeIds()
+    {
+        if (!nodesLoaded)
+        {
+            Debug.LogWarning("⚠️ Nodes not loaded yet. Wait for map initialization.");
+            return;
+        }
+
+        Debug.Log("=== VALIDATING TEST NODE IDs ===");
+
+        foreach (var scenario in testScenarios)
+        {
+            bool fromExists = allNodes.ContainsKey(scenario.fromNodeId);
+            bool toExists = allNodes.ContainsKey(scenario.toNodeId);
+
+            string status = (fromExists && toExists) ? "✅ VALID" : "❌ INVALID";
+
+            Debug.Log($"{status} {scenario.scenarioName}");
+            if (!fromExists) Debug.LogError($"  ❌ FROM node not found: {scenario.fromNodeId}");
+            if (!toExists) Debug.LogError($"  ❌ TO node not found: {scenario.toNodeId}");
+        }
+
+        // Validate custom IDs if enabled
+        if (useCustomNodeIds)
+        {
+            bool customFromExists = allNodes.ContainsKey(customFromNodeId);
+            bool customToExists = allNodes.ContainsKey(customToNodeId);
+
+            Debug.Log("\n=== CUSTOM NODE IDs ===");
+            Debug.Log($"FROM: {customFromNodeId} - {(customFromExists ? "✅ EXISTS" : "❌ NOT FOUND")}");
+            Debug.Log($"TO: {customToNodeId} - {(customToExists ? "✅ EXISTS" : "❌ NOT FOUND")}");
+        }
+    }
+
+    public void RunStaticTest()
+    {
+        if (!enableStaticTesting)
+        {
+            Debug.LogWarning("⚠️ Static testing is disabled. Enable 'enableStaticTesting' in Inspector.");
+            return;
+        }
+
+        if (testScenarios.Count == 0)
+        {
+            Debug.LogError("❌ No test scenarios available");
+            return;
+        }
+
+        if (testScenarioIndex < 0 || testScenarioIndex >= testScenarios.Count)
+        {
+            Debug.LogError($"❌ Invalid scenario index: {testScenarioIndex} (Valid range: 0-{testScenarios.Count - 1})");
+            return;
+        }
+
+        string fromNodeId;
+        string toNodeId;
+
+        // Use custom node IDs if enabled, otherwise use scenario defaults
+        if (useCustomNodeIds && !string.IsNullOrEmpty(customFromNodeId) && !string.IsNullOrEmpty(customToNodeId))
+        {
+            fromNodeId = customFromNodeId;
+            toNodeId = customToNodeId;
+
+            Debug.Log("=== 🧪 RUNNING CUSTOM TEST ===");
+            Debug.Log($"FROM: {fromNodeId}");
+            Debug.Log($"TO: {toNodeId}");
+        }
+        else
+        {
+            TestScenario scenario = testScenarios[testScenarioIndex];
+            fromNodeId = scenario.fromNodeId;
+            toNodeId = scenario.toNodeId;
+
+            Debug.Log($"=== 🧪 RUNNING TEST SCENARIO [{testScenarioIndex}] ===");
+            Debug.Log($"Scenario: {scenario.scenarioName}");
+            Debug.Log($"FROM: {fromNodeId} → TO: {toNodeId}");
+            Debug.Log($"Description: {scenario.description}");
+            Debug.Log($"Expected: {scenario.expectedBehavior}");
+        }
+
+        // Validate nodes exist
+        if (!allNodes.ContainsKey(fromNodeId))
+        {
+            Debug.LogError($"❌ FROM node not found: {fromNodeId}");
+            return;
+        }
+
+        if (!allNodes.ContainsKey(toNodeId))
+        {
+            Debug.LogError($"❌ TO node not found: {toNodeId}");
+            return;
+        }
+
+        // Get node details
+        Node fromNode = allNodes[fromNodeId];
+        Node toNode = allNodes[toNodeId];
+
+        Debug.Log($"FROM Node: {fromNode.name} (Type: {fromNode.type})");
+        Debug.Log($"TO Node: {toNode.name} (Type: {toNode.type})");
+
+        // Check if indoor nodes
+        bool fromIsIndoor = IsIndoorNode(fromNodeId);
+        bool toIsIndoor = IsIndoorNode(toNodeId);
+
+        Debug.Log($"FROM is Indoor: {fromIsIndoor}");
+        Debug.Log($"TO is Indoor: {toIsIndoor}");
+
+        if (fromIsIndoor)
+        {
+            Debug.Log($"FROM Building: {fromNode.related_infra_id} (Room: {fromNode.related_room_id})");
+        }
+
+        if (toIsIndoor)
+        {
+            Debug.Log($"TO Building: {toNode.related_infra_id} (Room: {toNode.related_room_id})");
+        }
+
+        // Override selected node IDs
+        selectedFromNodeId = fromNodeId;
+        selectedToNodeId = toNodeId;
+
+        Debug.Log("🚀 Starting pathfinding...\n");
+
+        // Trigger pathfinding
+        StartCoroutine(FindAndDisplayPaths(fromNodeId, toNodeId));
+    }
+
+    // Helper: Get node info for debugging
+    public string GetNodeDebugInfo(string nodeId)
+    {
+        if (!allNodes.ContainsKey(nodeId))
+        {
+            return $"❌ Node not found: {nodeId}";
+        }
+
+        Node node = allNodes[nodeId];
+        string info = $"Node: {node.name} ({nodeId})\n";
+        info += $"Type: {node.type}\n";
+
+        if (node.type == "infrastructure")
+        {
+            info += $"GPS: ({node.latitude}, {node.longitude})\n";
+            info += $"Infra ID: {node.related_infra_id}";
+        }
+        else if (node.type == "indoorinfra")
+        {
+            info += $"Building: {node.related_infra_id}\n";
+            info += $"Room: {node.related_room_id}\n";
+            if (node.indoor != null)
+            {
+                info += $"Indoor Pos: ({node.indoor.x}m, {node.indoor.y}m)\n";
+                info += $"Floor: {node.indoor.floor}";
+            }
+        }
+
+        return info;
+    }
+
+    [ContextMenu("Debug Selected Nodes")]
+    public void DebugSelectedNodes()
+    {
+        if (useCustomNodeIds)
+        {
+            Debug.Log("=== CUSTOM FROM NODE ===");
+            Debug.Log(GetNodeDebugInfo(customFromNodeId));
+            Debug.Log("\n=== CUSTOM TO NODE ===");
+            Debug.Log(GetNodeDebugInfo(customToNodeId));
+        }
+        else if (testScenarioIndex >= 0 && testScenarioIndex < testScenarios.Count)
+        {
+            var scenario = testScenarios[testScenarioIndex];
+            Debug.Log($"=== SCENARIO {testScenarioIndex}: {scenario.scenarioName} ===");
+            Debug.Log("\n=== FROM NODE ===");
+            Debug.Log(GetNodeDebugInfo(scenario.fromNodeId));
+            Debug.Log("\n=== TO NODE ===");
+            Debug.Log(GetNodeDebugInfo(scenario.toNodeId));
+        }
+    }
+
     [Header("Location Lock Display")]
     public GameObject locationLockDisplay;
     public TextMeshProUGUI locationLockText;
@@ -46,6 +274,10 @@ public class PathfindingController : MonoBehaviour
     public GameObject routeItemPrefab;
     public ScrollRect routeScrollView;
     public Button confirmRouteButton;
+
+    [Header("Indoor Data")]
+    private Dictionary<string, IndoorInfrastructure> indoorInfrastructures = new Dictionary<string, IndoorInfrastructure>();
+    private Dictionary<string, Node> indoorNodes = new Dictionary<string, Node>();
 
     [Header("Static Test Settings")]
     public bool useStaticTesting = false;
@@ -79,6 +311,8 @@ public class PathfindingController : MonoBehaviour
     private List<RouteData> currentRoutes = new List<RouteData>();
     private List<RouteItem> routeItemInstances = new List<RouteItem>();
     private int selectedRouteIndex = -1;
+
+
 
     void Start()
     {
@@ -151,6 +385,12 @@ public class PathfindingController : MonoBehaviour
         {
             gpsManager = GPSManager.Instance;
         }
+        if (enableStaticTesting)
+        {
+            // You can manually call RunStaticTest() from inspector or create a button
+            Debug.Log($"[PathfindingController] 🧪 Static Testing ENABLED - {testScenarios.Count} scenarios loaded");
+            Debug.Log($"[PathfindingController] Current Scenario [{testScenarioIndex}]: {testScenarios[testScenarioIndex].scenarioName}");
+        }
     }
 
     void OnDestroy()
@@ -197,6 +437,128 @@ public class PathfindingController : MonoBehaviour
         {
             LoadQRScannedNode(scannedNodeId);
         }
+    }
+    public List<TestScenario> testScenarios = new List<TestScenario>
+{
+    // Scenario 0: Outdoor to Outdoor
+    new TestScenario
+    {
+        scenarioName = "Outdoor → Outdoor",
+        fromNodeId = "ND-025", // Medicine Building
+        toNodeId = "ND-017",   // Engineering Building
+        description = "Normal A* pathfinding between two infrastructure buildings",
+        expectedBehavior = "Should generate routes using GPS coordinates. Directions show outdoor navigation only."
+    },
+    
+    // Scenario 1: Outdoor to Indoor (Same Building)
+    new TestScenario
+    {
+        scenarioName = "Outdoor → Indoor (Same Building)",
+        fromNodeId = "ND-017", // Engineering Building (outdoor)
+        toNodeId = "ND-119",   // Room inside Engineering (indoorinfra)
+        description = "Routes to building entrance, then indoor navigation",
+        expectedBehavior = "Path ends at building entrance. Indoor directions added: 'Navigate to Floor 1 Stairs. Room is on floor 1.'"
+    },
+    
+    // Scenario 2: Outdoor to Indoor (Different Building)
+    new TestScenario
+    {
+        scenarioName = "Outdoor → Indoor (Different Building)",
+        fromNodeId = "ND-025", // Medicine Building
+        toNodeId = "ND-119",   // Room inside Engineering
+        description = "Routes Medicine → Engineering entrance → Indoor navigation",
+        expectedBehavior = "GPS route to entrance, then indoor directions. System switches to X,Y mode at destination building."
+    },
+    
+    // Scenario 3: Indoor to Indoor (Different Building)
+    new TestScenario
+    {
+        scenarioName = "Indoor → Indoor (Different Building)",
+        fromNodeId = "ND-120", // Room in Medicine (indoorinfra)
+        toNodeId = "ND-119",   // Room in Engineering (indoorinfra)
+        description = "Exit Medicine → Route to Engineering → Enter Engineering",
+        expectedBehavior = "Indoor exit instructions → GPS outdoor route → Indoor entry instructions. All indoor directions grouped."
+    }
+};
+
+    private IEnumerator LoadIndoorData()
+    {
+        // Load indoor.json
+        bool loadComplete = false;
+
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
+            "indoor.json",
+            (jsonContent) =>
+            {
+                try
+                {
+                    IndoorInfrastructure[] indoorArray = JsonHelper.FromJson<IndoorInfrastructure>(jsonContent);
+
+                    indoorInfrastructures.Clear();
+                    foreach (var indoor in indoorArray)
+                    {
+                        if (!indoor.is_deleted)
+                        {
+                            indoorInfrastructures[indoor.room_id] = indoor;
+                        }
+                    }
+
+                    loadComplete = true;
+                    Debug.Log($"[PathfindingController] Loaded {indoorInfrastructures.Count} indoor infrastructures");
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"[PathfindingController] Error loading indoor data: {e.Message}");
+                    loadComplete = true;
+                }
+            },
+            (error) =>
+            {
+                Debug.LogError($"[PathfindingController] Failed to load indoor.json: {error}");
+                loadComplete = true;
+            }
+        ));
+
+        yield return new WaitUntil(() => loadComplete);
+
+        // Load indoor nodes from nodes JSON
+        foreach (var node in allNodes.Values)
+        {
+            if (node.type == "indoorinfra")
+            {
+                indoorNodes[node.node_id] = node;
+            }
+        }
+
+        Debug.Log($"[PathfindingController] Loaded {indoorNodes.Count} indoor nodes");
+    }
+    private bool IsIndoorNode(string nodeId)
+    {
+        if (allNodes.TryGetValue(nodeId, out Node node))
+        {
+            return node.type == "indoorinfra";
+        }
+        return indoorNodes.ContainsKey(nodeId);
+    }
+
+    // Helper: Get building entrance node from indoor node
+    private Node GetBuildingEntranceNode(Node indoorNode)
+    {
+        if (indoorNode.type != "indoorinfra" || string.IsNullOrEmpty(indoorNode.related_infra_id))
+        {
+            return null;
+        }
+
+        // Find the infrastructure node with matching infra_id
+        foreach (var node in allNodes.Values)
+        {
+            if (node.type == "infrastructure" && node.related_infra_id == indoorNode.related_infra_id)
+            {
+                return node;
+            }
+        }
+
+        return null;
     }
 
     private void LoadQRScannedNode(string nodeId)
@@ -674,7 +1036,37 @@ public class PathfindingController : MonoBehaviour
             findPathButton.interactable = false;
         }
 
-        yield return StartCoroutine(pathfinding.FindMultiplePaths(fromNodeId, toNodeId, 3));
+        // Check if FROM or TO are indoor nodes
+        bool fromIsIndoor = IsIndoorNode(fromNodeId);
+        bool toIsIndoor = IsIndoorNode(toNodeId);
+
+        string pathStartNodeId = fromNodeId;
+        string pathEndNodeId = toNodeId;
+
+        // If FROM is indoor, use building entrance as start
+        if (fromIsIndoor && allNodes.TryGetValue(fromNodeId, out Node fromIndoorNode))
+        {
+            Node entranceNode = GetBuildingEntranceNode(fromIndoorNode);
+            if (entranceNode != null)
+            {
+                pathStartNodeId = entranceNode.node_id;
+                Debug.Log($"[PathfindingController] FROM is indoor, using entrance: {entranceNode.name}");
+            }
+        }
+
+        // If TO is indoor, use building entrance as end
+        if (toIsIndoor && allNodes.TryGetValue(toNodeId, out Node toIndoorNode))
+        {
+            Node entranceNode = GetBuildingEntranceNode(toIndoorNode);
+            if (entranceNode != null)
+            {
+                pathEndNodeId = entranceNode.node_id;
+                Debug.Log($"[PathfindingController] TO is indoor, using entrance: {entranceNode.name}");
+            }
+        }
+
+        // Run A* pathfinding (only outdoor nodes)
+        yield return StartCoroutine(pathfinding.FindMultiplePaths(pathStartNodeId, pathEndNodeId, 3));
 
         if (findPathButton != null)
         {
@@ -689,10 +1081,16 @@ public class PathfindingController : MonoBehaviour
             yield break;
         }
 
+        // Store original FROM/TO for indoor direction generation
+        PlayerPrefs.SetString("ARNavigation_OriginalFromNodeId", fromNodeId);
+        PlayerPrefs.SetString("ARNavigation_OriginalToNodeId", toNodeId);
+        PlayerPrefs.SetInt("ARNavigation_FromIsIndoor", fromIsIndoor ? 1 : 0);
+        PlayerPrefs.SetInt("ARNavigation_ToIsIndoor", toIsIndoor ? 1 : 0);
+        PlayerPrefs.Save();
+
         currentRoutes = routes;
         DisplayAllRoutes();
     }
-
     #endregion
 
     #region Result Display
