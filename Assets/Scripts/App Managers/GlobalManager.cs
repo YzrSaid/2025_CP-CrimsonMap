@@ -606,7 +606,8 @@ public class GlobalManager : MonoBehaviour
     {
         if (JSONFileManager.Instance != null)
         {
-            JSONFileManager.Instance.CleanupUnusedMapFiles();
+            List<string> currentMapIds = availableMaps.Select(m => m.map_id).ToList();
+            JSONFileManager.Instance.CleanupUnusedMapFiles(currentMapIds);
         }
     }
 

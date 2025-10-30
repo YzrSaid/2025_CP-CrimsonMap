@@ -92,6 +92,12 @@ public class FirestoreManager : MonoBehaviour
         yield return new WaitUntil(() => mapsSyncComplete);
 
         LoadAvailableMaps();
+        
+        if (JSONFileManager.Instance != null)
+        {
+            List<string> currentMapIds = availableMaps.Select(m => m.map_id).ToList();
+            JSONFileManager.Instance.CleanupUnusedMapFiles(currentMapIds);
+        }
 
         if (availableMaps.Count == 0)
         {
@@ -387,7 +393,7 @@ public class FirestoreManager : MonoBehaviour
                         infrastructure_updated = data.ContainsKey("infrastructure_updated") ? (bool)data["infrastructure_updated"] : false,
                         categories_updated = data.ContainsKey("categories_updated") ? (bool)data["categories_updated"] : false,
                         campus_updated = data.ContainsKey("campus_updated") ? (bool)data["campus_updated"] : false,
-                        indoor_infrastructure_updated = data.ContainsKey("indoor_infrastructure_updated") ? (bool)data["indoor_infrastructure_updated"] : false  // NEW
+                        indoor_infrastructure_updated = data.ContainsKey("indoor_infrastructure_updated") ? (bool)data["indoor_infrastructure_updated"] : false
                     };
 
                     LocalStaticDataCache localCache = GetLocalStaticDataCache();
@@ -657,14 +663,6 @@ public class FirestoreManager : MonoBehaviour
         {
             staticRef.SetAsync(resetData, SetOptions.MergeAll).ContinueWithOnMainThread(task =>
             {
-                if (task.IsCompletedSuccessfully)
-                {
-                    Debug.Log("Successfully reset static data flags in Firebase");
-                }
-                else
-                {
-                    Debug.LogError($"Failed to reset flags: {task.Exception?.Message}");
-                }
             });
         }
     }
@@ -760,9 +758,6 @@ public class FirestoreManager : MonoBehaviour
 
         staticRef.SetAsync(resetData, SetOptions.MergeAll).ContinueWithOnMainThread(task =>
         {
-            if (!task.IsCompletedSuccessfully)
-            {
-            }
         });
     }
 

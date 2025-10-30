@@ -129,7 +129,6 @@ public class JSONFileManager : MonoBehaviour
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"Failed to create {fileName}: {ex.Message}");
         }
     }
 
@@ -158,7 +157,6 @@ public class JSONFileManager : MonoBehaviour
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"Failed to create version cache for map {mapId}: {ex.Message}");
         }
     }
 
@@ -241,13 +239,11 @@ public class JSONFileManager : MonoBehaviour
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"Failed to read {fileName}: {ex.Message}");
                 return null;
             }
         }
         else
         {
-            Debug.LogWarning($"{fileName} does not exist at {filePath}");
             return null;
         }
     }
@@ -269,7 +265,6 @@ public class JSONFileManager : MonoBehaviour
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"Failed to write {fileName}: {ex.Message}");
         }
     }
 
@@ -295,7 +290,6 @@ public class JSONFileManager : MonoBehaviour
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"Failed to check data freshness for map {mapId}: {ex.Message}");
             }
         }
         return false;
@@ -315,7 +309,6 @@ public class JSONFileManager : MonoBehaviour
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"Failed to parse maps.json to get map IDs: {ex.Message}");
             }
         }
         
@@ -391,7 +384,6 @@ public class JSONFileManager : MonoBehaviour
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"Failed to add recent destination: {ex.Message}");
         }
     }
 
@@ -419,7 +411,6 @@ public class JSONFileManager : MonoBehaviour
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"Failed to add saved destination: {ex.Message}");
         }
     }
 
@@ -442,7 +433,6 @@ public class JSONFileManager : MonoBehaviour
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"Failed to remove saved destination: {ex.Message}");
         }
     }
 
@@ -485,7 +475,6 @@ public class JSONFileManager : MonoBehaviour
             }
             catch (System.Exception ex)
             {
-                Debug.LogWarning($"Failed to parse version cache for map {mapId}: {ex.Message}");
             }
         }
         
@@ -509,6 +498,11 @@ public class JSONFileManager : MonoBehaviour
     public void CleanupUnusedMapFiles()
     {
         List<string> currentMapIds = GetAvailableMapIds();
+        CleanupUnusedMapFiles(currentMapIds);
+    }
+
+    public void CleanupUnusedMapFiles(List<string> currentMapIds)
+    {
         string[] allFiles = Directory.GetFiles(dataPath, "*.json");
         
         foreach (string filePath in allFiles)
