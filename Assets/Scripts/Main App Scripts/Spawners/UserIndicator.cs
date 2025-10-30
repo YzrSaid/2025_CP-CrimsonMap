@@ -9,12 +9,13 @@ public class UserIndicator : MonoBehaviour
     public AbstractMap mapboxMap;
     public GameObject userIndicatorPrefab;
     public GameObject shadowConePrefab;
+    public PathfindingController pathfindingController;
 
     [Header("Settings")]
     public float heightOffset = 2f;
-    public float updateInterval = 0.05f; // Faster update for snappier response
+    public float updateInterval = 0.05f;
     public float positionSmoothness = 0.3f;
-    public float rotationSmoothness = 10f; // Much faster rotation
+    public float rotationSmoothness = 10f;
 
     [Header("Shadow/Direction Indicator")]
     public float shadowDistance = 5f;
@@ -22,15 +23,15 @@ public class UserIndicator : MonoBehaviour
     public Color shadowColor = new Color(0.2f, 0.6f, 1f, 0.3f);
     public Material shadowMaterial;
 
-    [Header("Debug")]
-    public bool enableDebugLogs = false;
-
     private GameObject userIndicatorInstance;
     private GameObject shadowConeInstance;
     private Vector3 lastWorldPos = Vector3.zero;
+    private Vector3 lockedPosition = Vector3.zero;
     private float lastHeading = 0f;
+    private float lockedHeading = 0f;
     private float lastUpdateTime = 0f;
     private bool isInitialized = false;
+    private bool wasLocked = false;
 
     private MapInteraction mapInteraction;
 
@@ -42,13 +43,17 @@ public class UserIndicator : MonoBehaviour
         }
 
         mapInteraction = FindObjectOfType<MapInteraction>();
+        
+        if (pathfindingController == null)
+        {
+            pathfindingController = FindObjectOfType<PathfindingController>();
+        }
     }
 
     private IEnumerator Start()
     {
         if (mapboxMap == null)
         {
-            Debug.LogError("[UserIndicator] MapboxMap not found!");
             yield break;
         }
 
@@ -78,7 +83,6 @@ public class UserIndicator : MonoBehaviour
     {
         if (userIndicatorPrefab == null)
         {
-            Debug.LogError("[UserIndicator] User indicator prefab not assigned!");
             return;
         }
 
@@ -108,7 +112,6 @@ public class UserIndicator : MonoBehaviour
         }
 
         isInitialized = true;
-        Debug.Log("[UserIndicator] ✅ Spawned successfully");
     }
 
     void ApplyShadowAppearance()
@@ -152,9 +155,42 @@ public class UserIndicator : MonoBehaviour
 
         lastUpdateTime = Time.time;
 
-        UpdateUserIndicatorPosition();
-        UpdateUserIndicatorRotation();
+        bool isLocked = IsLocationLocked();
+
+        if (isLocked && !wasLocked)
+        {
+            lockedPosition = userIndicatorInstance.transform.position;
+            lockedHeading = lastHeading;
+        }
+
+        wasLocked = isLocked;
+
+        if (isLocked)
+        {
+            UpdateLockedIndicator();
+        }
+        else
+        {
+            UpdateUserIndicatorPosition();
+            UpdateUserIndicatorRotation();
+        }
+
         UpdateDirectionShadow();
+    }
+
+    private bool IsLocationLocked()
+    {
+        if (pathfindingController != null)
+        {
+            return pathfindingController.IsLocationLocked();
+        }
+        return false;
+    }
+
+    void UpdateLockedIndicator()
+    {
+        userIndicatorInstance.transform.position = lockedPosition;
+        UpdateUserIndicatorRotation();
     }
 
     void UpdateUserIndicatorPosition()
@@ -173,39 +209,25 @@ public class UserIndicator : MonoBehaviour
     {
         if (!GPSManager.Instance.IsCompassReady())
         {
-            if (enableDebugLogs && Time.frameCount % 120 == 0)
-                Debug.LogWarning("[UserIndicator] Compass not ready");
             return;
         }
 
-        // ✅ SIMPLE FIX: Just use compass heading directly, counter the map rotation
-        float compassHeading = GPSManager.Instance.GetHeading(); // Don't use smoothed for snappy response
+        float compassHeading = GPSManager.Instance.GetHeading();
         
-        // Get map bearing
         float mapBearing = 0f;
         if (mapInteraction != null)
         {
             mapBearing = mapInteraction.GetCurrentBearing();
         }
 
-        // ✅ The indicator should point in the compass direction in world space
-        // Since it's a child of the rotated map, we subtract the map's rotation
         float targetHeading = compassHeading - mapBearing;
 
-        // Normalize
         while (targetHeading > 180f) targetHeading -= 360f;
         while (targetHeading < -180f) targetHeading += 360f;
 
-        // Apply rotation directly (snappy like Google Maps)
         userIndicatorInstance.transform.localRotation = Quaternion.Euler(0, targetHeading, 0);
         
         lastHeading = targetHeading;
-
-        // Debug
-        if (enableDebugLogs && Time.frameCount % 60 == 0)
-        {
-            Debug.Log($"[UserIndicator] Compass: {compassHeading:F1}°, Map: {mapBearing:F1}°, Indicator: {targetHeading:F1}°");
-        }
     }
 
     void UpdateDirectionShadow()
@@ -230,8 +252,17 @@ public class UserIndicator : MonoBehaviour
         if (isInitialized)
         {
             lastUpdateTime = 0f;
-            UpdateUserIndicatorPosition();
-            UpdateUserIndicatorRotation();
+            
+            if (IsLocationLocked())
+            {
+                UpdateLockedIndicator();
+            }
+            else
+            {
+                UpdateUserIndicatorPosition();
+                UpdateUserIndicatorRotation();
+            }
+            
             UpdateDirectionShadow();
         }
     }
@@ -245,6 +276,12 @@ public class UserIndicator : MonoBehaviour
 
             Vector3 forward = userIndicatorInstance.transform.forward * 3f;
             Gizmos.DrawRay(userIndicatorInstance.transform.position, forward);
+            
+            if (IsLocationLocked())
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(lockedPosition, 1.5f);
+            }
         }
     }
 }

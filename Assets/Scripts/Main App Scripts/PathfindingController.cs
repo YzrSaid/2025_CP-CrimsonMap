@@ -19,7 +19,8 @@ public class PathfindingController : MonoBehaviour
     [Header("Location Lock Display")]
     public GameObject locationLockDisplay;
     public TextMeshProUGUI locationLockText;
-    public Button locationLockButton;
+    public Button lockButton;
+    public Button unlockButton;
 
     [Header("Confirmation Panel")]
     public GameObject confirmationPanel;
@@ -63,16 +64,14 @@ public class PathfindingController : MonoBehaviour
     public float gpsUpdateInterval = 5f;
     public float qrConflictThresholdMeters = 100f;
 
-    [Header("Settings")]
-    public bool enableDebugLogs = true;
-
     private Dictionary<string, Node> allNodes = new Dictionary<string, Node>();
     private Dictionary<string, string> infraIdToNodeId = new Dictionary<string, string>();
     private string selectedFromNodeId;
     private string selectedToNodeId;
     private Node currentNearestNode;
     private Node qrScannedNode;
-    private bool isQRLocationLocked = false;
+    private bool isLocationLocked = false;
+    private Node lockedNode;
     private bool hasShownConflictPanel = false;
     private float lastGPSUpdateTime;
     private bool nodesLoaded = false;
@@ -106,9 +105,14 @@ public class PathfindingController : MonoBehaviour
             toDropdown.onValueChanged.AddListener(OnToDropdownChanged);
         }
 
-        if (locationLockButton != null)
+        if (lockButton != null)
         {
-            locationLockButton.onClick.AddListener(UnlockFromQR);
+            lockButton.onClick.AddListener(LockCurrentLocation);
+        }
+
+        if (unlockButton != null)
+        {
+            unlockButton.onClick.AddListener(UnlockLocation);
         }
 
         if (confirmRouteButton != null)
@@ -147,6 +151,19 @@ public class PathfindingController : MonoBehaviour
             locationConflictPanel.SetActive(false);
         }
 
+        if (locationLockDisplay != null)
+        {
+            locationLockDisplay.SetActive(true);
+        }
+
+        isLocationLocked = false;
+        UpdateLocationLockUI(false);
+        
+        if (locationLockText != null)
+        {
+            locationLockText.text = "Getting location... 📍";
+        }
+
         if (MapManager.Instance != null)
         {
             MapManager.Instance.OnMapChanged += OnMapChanged;
@@ -155,12 +172,6 @@ public class PathfindingController : MonoBehaviour
         if (gpsManager == null)
         {
             gpsManager = GPSManager.Instance;
-        }
-
-        if (useStaticTesting)
-        {
-            Debug.Log($"[PathfindingController] 🧪 Static Testing ENABLED");
-            Debug.Log($"[PathfindingController] FROM: {staticFromNodeId} → TO: {staticToNodeId}");
         }
     }
 
@@ -174,6 +185,10 @@ public class PathfindingController : MonoBehaviour
             cancelButton.onClick.RemoveListener(OnCancelClicked);
         if (toDropdown != null)
             toDropdown.onValueChanged.RemoveListener(OnToDropdownChanged);
+        if (lockButton != null)
+            lockButton.onClick.RemoveListener(LockCurrentLocation);
+        if (unlockButton != null)
+            unlockButton.onClick.RemoveListener(UnlockLocation);
         if (confirmRouteButton != null)
             confirmRouteButton.onClick.RemoveListener(OnConfirmRouteClicked);
         if (conflictConfirmButton != null)
@@ -188,17 +203,24 @@ public class PathfindingController : MonoBehaviour
 
     void Update()
     {
+        if (nodesLoaded && currentNearestNode == null && !isLocationLocked && useGPSForFromLocation && !useStaticTesting)
+        {
+            UpdateFromLocationByGPS();
+            lastGPSUpdateTime = Time.time;
+        }
+        
         if (useGPSForFromLocation && autoUpdateGPSLocation && !useStaticTesting && nodesLoaded)
         {
-            if (Time.time - lastGPSUpdateTime >= gpsUpdateInterval)
+            if (!isLocationLocked)
             {
-                UpdateFromLocationByGPS();
-                lastGPSUpdateTime = Time.time;
+                if (Time.time - lastGPSUpdateTime >= gpsUpdateInterval)
+                {
+                    UpdateFromLocationByGPS();
+                    lastGPSUpdateTime = Time.time;
+                }
             }
         }
     }
-
-    #region QR Data Handling
 
     private void CheckForScannedQRData()
     {
@@ -232,17 +254,14 @@ public class PathfindingController : MonoBehaviour
                     }
 
                     loadComplete = true;
-                    Debug.Log($"[PathfindingController] Loaded {indoorInfrastructures.Count} indoor infrastructures");
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError($"[PathfindingController] Error loading indoor data: {e.Message}");
                     loadComplete = true;
                 }
             },
             (error) =>
             {
-                Debug.LogError($"[PathfindingController] Failed to load indoor.json: {error}");
                 loadComplete = true;
             }
         ));
@@ -256,8 +275,6 @@ public class PathfindingController : MonoBehaviour
                 indoorNodes[node.node_id] = node;
             }
         }
-
-        Debug.Log($"[PathfindingController] Loaded {indoorNodes.Count} indoor nodes");
     }
 
     private bool IsIndoorNode(string nodeId)
@@ -287,35 +304,64 @@ public class PathfindingController : MonoBehaviour
         return null;
     }
 
-
-
     private void LoadQRScannedNode(string nodeId)
     {
         if (allNodes.TryGetValue(nodeId, out Node node))
         {
             qrScannedNode = node;
+            lockedNode = node;
             selectedFromNodeId = nodeId;
-            isQRLocationLocked = true;
+            isLocationLocked = true;
             hasShownConflictPanel = false;
 
-            if (locationLockDisplay != null)
-            {
-                locationLockDisplay.SetActive(true);
-
-                if (locationLockText != null)
-                {
-                    locationLockText.text = $"{node.name} 🔒";
-                }
-            }
-
-            if (enableDebugLogs)
-            {
-                Debug.Log($"QR scanned node loaded: {node.name} ({nodeId}) - Location LOCKED 🔒");
-            }
+            UpdateLocationLockUI(true);
+            UpdateLocationDisplayText(node);
         }
-        else
+    }
+
+    public void LockCurrentLocation()
+    {
+        if (currentNearestNode != null)
         {
-            Debug.LogWarning($"Scanned node ID {nodeId} not found in loaded nodes");
+            lockedNode = currentNearestNode;
+            selectedFromNodeId = currentNearestNode.node_id;
+            isLocationLocked = true;
+
+            UpdateLocationLockUI(true);
+            UpdateLocationDisplayText(lockedNode);
+        }
+    }
+
+    public void UnlockLocation()
+    {
+        isLocationLocked = false;
+        lockedNode = null;
+        qrScannedNode = null;
+
+        UpdateLocationLockUI(false);
+        UpdateFromLocationByGPS();
+        ClearQRData();
+    }
+
+    private void UpdateLocationLockUI(bool locked)
+    {
+        if (lockButton != null)
+        {
+            lockButton.gameObject.SetActive(!locked);
+        }
+
+        if (unlockButton != null)
+        {
+            unlockButton.gameObject.SetActive(locked);
+        }
+    }
+
+    private void UpdateLocationDisplayText(Node node)
+    {
+        if (locationLockText != null && node != null)
+        {
+            string icon = isLocationLocked ? "🔒" : "📍";
+            locationLockText.text = $"{node.name} {icon}";
         }
     }
 
@@ -331,26 +377,12 @@ public class PathfindingController : MonoBehaviour
         PlayerPrefs.Save();
 
         qrScannedNode = null;
-        isQRLocationLocked = false;
     }
 
     public void UnlockFromQR()
     {
-        isQRLocationLocked = false;
-        qrScannedNode = null;
-
-        if (locationLockDisplay != null)
-        {
-            locationLockDisplay.SetActive(false);
-        }
-
-        UpdateFromLocationByGPS();
-        ClearQRData();
+        UnlockLocation();
     }
-
-    #endregion
-
-    #region Dropdown Handlers
 
     private void OnToDropdownChanged(int index)
     {
@@ -359,28 +391,16 @@ public class PathfindingController : MonoBehaviour
             return;
         }
 
-        // ✅ NEW: Get the selected destination (can be infrastructure or indoor room)
         var (destinationId, destinationType) = infrastructurePopulator.GetSelectedDestinationFromDropdown(toDropdown);
 
         if (string.IsNullOrEmpty(destinationId))
         {
             selectedToNodeId = null;
-            Debug.LogWarning("[PathfindingController] No valid destination selected from dropdown");
             return;
         }
 
-        // ✅ Use the SetDestination method you already have
         SetDestination(destinationId, destinationType);
-
-        Debug.Log($"[PathfindingController] Dropdown changed to: {toDropdown.options[index].text}");
-        Debug.Log($"  - Destination ID: {destinationId}");
-        Debug.Log($"  - Type: {destinationType}");
-        Debug.Log($"  - Selected Node ID: {selectedToNodeId}");
     }
-
-    #endregion
-
-    #region MapManager Integration
 
     private void OnMapChanged(MapInfo mapInfo)
     {
@@ -394,7 +414,6 @@ public class PathfindingController : MonoBehaviour
 
         yield return StartCoroutine(LoadNodesFromJSON(mapId));
 
-        // ✅ NEW: Load indoor data
         yield return StartCoroutine(LoadIndoorData());
 
         yield return StartCoroutine(BuildInfrastructureNodeMapping());
@@ -402,11 +421,12 @@ public class PathfindingController : MonoBehaviour
         if (nodesLoaded)
         {
             CheckForScannedQRData();
-        }
-
-        if (useGPSForFromLocation && !useStaticTesting)
-        {
-            UpdateFromLocationByGPS();
+            
+            if (!isLocationLocked && useGPSForFromLocation && !useStaticTesting)
+            {
+                UpdateFromLocationByGPS();
+                lastGPSUpdateTime = Time.time;
+            }
         }
 
         if (pathfinding != null)
@@ -417,45 +437,27 @@ public class PathfindingController : MonoBehaviour
 
     public void SetDestination(string destinationId, string destinationType)
     {
-        Debug.Log($"[PathfindingController] SetDestination: {destinationId} (Type: {destinationType})");
-
         if (destinationType == "infrastructure")
         {
-            // Find the node with this infra_id
             var infraNode = allNodes.Values.FirstOrDefault(n =>
                 n.type == "infrastructure" && n.related_infra_id == destinationId);
 
             if (infraNode != null)
             {
                 selectedToNodeId = infraNode.node_id;
-                Debug.Log($"[PathfindingController] Selected infrastructure node: {infraNode.name}");
-            }
-            else
-            {
-                Debug.LogError($"[PathfindingController] Infrastructure node not found for: {destinationId}");
             }
         }
         else if (destinationType == "indoorinfra")
         {
-            // Find the node with this room_id
             var indoorNode = allNodes.Values.FirstOrDefault(n =>
                 n.type == "indoorinfra" && n.related_room_id == destinationId);
 
             if (indoorNode != null)
             {
                 selectedToNodeId = indoorNode.node_id;
-                Debug.Log($"[PathfindingController] Selected indoor node: {indoorNode.name}");
-            }
-            else
-            {
-                Debug.LogError($"[PathfindingController] Indoor node not found for: {destinationId}");
             }
         }
     }
-
-    #endregion
-
-    #region Node Loading from JSON
 
     private IEnumerator LoadNodesFromJSON(string mapId)
     {
@@ -494,10 +496,6 @@ public class PathfindingController : MonoBehaviour
         yield return null;
     }
 
-    #endregion
-
-    #region Infrastructure to Node Mapping
-
     private IEnumerator BuildInfrastructureNodeMapping()
     {
         if (allNodes == null || allNodes.Count == 0)
@@ -520,10 +518,6 @@ public class PathfindingController : MonoBehaviour
         yield return null;
     }
 
-    #endregion
-
-    #region GPS Location Handling
-
     private void UpdateFromLocationByGPS()
     {
         if (gpsManager == null)
@@ -536,33 +530,27 @@ public class PathfindingController : MonoBehaviour
             return;
         }
 
+        if (isLocationLocked)
+        {
+            return;
+        }
+
         Vector2 coords = gpsManager.GetSmoothedCoordinates();
 
         Node nearestNode = FindNearestNode(coords.x, coords.y);
 
         if (nearestNode != null)
         {
-            if (isQRLocationLocked && qrScannedNode != null)
-            {
-                float distanceFromQR = CalculateDistance(
-                    qrScannedNode.latitude, qrScannedNode.longitude,
-                    nearestNode.latitude, nearestNode.longitude
-                );
+            selectedFromNodeId = nearestNode.node_id;
+            currentNearestNode = nearestNode;
 
-                if (distanceFromQR > qrConflictThresholdMeters)
-                {
-                    if (!hasShownConflictPanel)
-                    {
-                        hasShownConflictPanel = true;
-                        ShowLocationConflictPanel(qrScannedNode, nearestNode, distanceFromQR);
-                    }
-                    return;
-                }
-            }
-            else
+            UpdateLocationDisplayText(nearestNode);
+        }
+        else
+        {
+            if (locationLockText != null)
             {
-                selectedFromNodeId = nearestNode.node_id;
-                currentNearestNode = nearestNode;
+                locationLockText.text = "Searching for location... 📍";
             }
         }
     }
@@ -609,10 +597,6 @@ public class PathfindingController : MonoBehaviour
         return R * c;
     }
 
-    #endregion
-
-    #region Location Conflict Panel
-
     private void ShowLocationConflictPanel(Node qrNode, Node gpsNode, float distanceMeters)
     {
         if (locationConflictPanel == null)
@@ -639,7 +623,7 @@ public class PathfindingController : MonoBehaviour
         {
             locationConflictPanel.SetActive(false);
         }
-        UnlockFromQR();
+        UnlockLocation();
     }
 
     private void OnLocationConflictCancel()
@@ -649,10 +633,6 @@ public class PathfindingController : MonoBehaviour
             locationConflictPanel.SetActive(false);
         }
     }
-
-    #endregion
-
-    #region Confirmation Panel
 
     private void OnFindPathClicked()
     {
@@ -666,8 +646,15 @@ public class PathfindingController : MonoBehaviour
         }
         else
         {
-            UpdateFromLocationByGPS();
-            fromNodeId = selectedFromNodeId;
+            if (isLocationLocked && lockedNode != null)
+            {
+                fromNodeId = lockedNode.node_id;
+            }
+            else
+            {
+                UpdateFromLocationByGPS();
+                fromNodeId = selectedFromNodeId;
+            }
             toNodeId = selectedToNodeId;
         }
 
@@ -707,7 +694,8 @@ public class PathfindingController : MonoBehaviour
         {
             if (confirmFromText != null)
             {
-                confirmFromText.text = $"<b>From:</b> {fromNode.name}";
+                string lockIndicator = isLocationLocked ? " 🔒" : " 📍";
+                confirmFromText.text = $"<b>From:</b> {fromNode.name}{lockIndicator}";
             }
         }
 
@@ -784,11 +772,6 @@ public class PathfindingController : MonoBehaviour
         }
     }
 
-    #endregion
-
-    #region Pathfinding Trigger
-
-    // ✅ THIS IS THE MAIN METHOD - APPLIES TO REAL USAGE AND TESTING
     private IEnumerator FindAndDisplayPaths(string fromNodeId, string toNodeId)
     {
         if (pathfinding == null)
@@ -801,10 +784,8 @@ public class PathfindingController : MonoBehaviour
             findPathButton.interactable = false;
         }
 
-        // ✅ CRITICAL: Ensure nodes exist
         if (!allNodes.ContainsKey(fromNodeId))
         {
-            Debug.LogError($"[PathfindingController] FROM node not found: {fromNodeId}");
             ShowConfirmationError($"FROM node not found: {fromNodeId}");
             if (findPathButton != null) findPathButton.interactable = true;
             yield break;
@@ -812,13 +793,11 @@ public class PathfindingController : MonoBehaviour
 
         if (!allNodes.ContainsKey(toNodeId))
         {
-            Debug.LogError($"[PathfindingController] TO node not found: {toNodeId}");
             ShowConfirmationError($"TO node not found: {toNodeId}");
             if (findPathButton != null) findPathButton.interactable = true;
             yield break;
         }
 
-        // Check if FROM or TO are indoor nodes
         bool fromIsIndoor = IsIndoorNode(fromNodeId);
         bool toIsIndoor = IsIndoorNode(toNodeId);
 
@@ -828,54 +807,36 @@ public class PathfindingController : MonoBehaviour
         Node fromNode = allNodes[fromNodeId];
         Node toNode = allNodes[toNodeId];
 
-        Debug.Log($"[PathfindingController] FROM: {fromNode.name} (Indoor: {fromIsIndoor})");
-        Debug.Log($"[PathfindingController] TO: {toNode.name} (Indoor: {toIsIndoor})");
-
-        // If FROM is indoor, use building entrance as start
         if (fromIsIndoor && allNodes.TryGetValue(fromNodeId, out Node fromIndoorNode))
         {
             Node entranceNode = GetBuildingEntranceNode(fromIndoorNode);
             if (entranceNode != null)
             {
                 pathStartNodeId = entranceNode.node_id;
-                Debug.Log($"[PathfindingController] FROM is indoor, using entrance: {entranceNode.name}");
             }
         }
 
-        // If TO is indoor, use building entrance as end
         if (toIsIndoor && allNodes.TryGetValue(toNodeId, out Node toIndoorNode))
         {
             Node entranceNode = GetBuildingEntranceNode(toIndoorNode);
             if (entranceNode != null)
             {
                 pathEndNodeId = entranceNode.node_id;
-                Debug.Log($"[PathfindingController] TO is indoor, using entrance: {entranceNode.name}");
             }
         }
 
-        // ✅ SPECIAL CASE: Same building (outdoor to indoor, same building)
         bool isSameBuilding = pathStartNodeId == pathEndNodeId;
 
         if (isSameBuilding)
         {
-            Debug.Log($"[PathfindingController] ✅ Same building navigation detected");
-
-            // Create a single-node "route" for same building
             var singleNodeRoute = CreateSameBuildingRoute(pathStartNodeId, fromNode, toNode);
 
-            // Store original FROM/TO for indoor direction generation
             PlayerPrefs.SetString("ARNavigation_OriginalFromNodeId", fromNodeId);
             PlayerPrefs.SetString("ARNavigation_OriginalToNodeId", toNodeId);
             PlayerPrefs.SetInt("ARNavigation_FromIsIndoor", fromIsIndoor ? 1 : 0);
             PlayerPrefs.SetInt("ARNavigation_ToIsIndoor", toIsIndoor ? 1 : 0);
             PlayerPrefs.SetString("ARNavigation_SameBuilding", "true");
             PlayerPrefs.Save();
-
-            Debug.Log($"[PathfindingController] ✅ Saved PlayerPrefs for same building");
-            Debug.Log($"  - OriginalFromNodeId: {fromNodeId}");
-            Debug.Log($"  - OriginalToNodeId: {toNodeId}");
-            Debug.Log($"  - FromIsIndoor: {fromIsIndoor}");
-            Debug.Log($"  - ToIsIndoor: {toIsIndoor}");
 
             currentRoutes = new List<RouteData> { singleNodeRoute };
 
@@ -888,7 +849,6 @@ public class PathfindingController : MonoBehaviour
             yield break;
         }
 
-        // Normal pathfinding for different buildings
         yield return StartCoroutine(pathfinding.FindMultiplePaths(pathStartNodeId, pathEndNodeId, 3));
 
         if (findPathButton != null)
@@ -904,7 +864,6 @@ public class PathfindingController : MonoBehaviour
             yield break;
         }
 
-        // Store original FROM/TO for indoor direction generation
         PlayerPrefs.SetString("ARNavigation_OriginalFromNodeId", fromNodeId);
         PlayerPrefs.SetString("ARNavigation_OriginalToNodeId", toNodeId);
         PlayerPrefs.SetInt("ARNavigation_FromIsIndoor", fromIsIndoor ? 1 : 0);
@@ -912,13 +871,10 @@ public class PathfindingController : MonoBehaviour
         PlayerPrefs.SetString("ARNavigation_SameBuilding", "false");
         PlayerPrefs.Save();
 
-        Debug.Log("NAKASAVE NA");
-
         currentRoutes = routes;
         DisplayAllRoutes();
     }
 
-    // ✅ NEW: Create a "fake" route for same building navigation
     private RouteData CreateSameBuildingRoute(string buildingNodeId, Node fromNode, Node toNode)
     {
         Node buildingNode = allNodes[buildingNodeId];
@@ -948,10 +904,6 @@ public class PathfindingController : MonoBehaviour
         return routeData;
     }
 
-    #endregion
-
-    #region Result Display
-
     private void DisplayAllRoutes()
     {
         if (resultPanel != null && destinationPanel != null)
@@ -969,14 +921,12 @@ public class PathfindingController : MonoBehaviour
 
         var firstRoute = currentRoutes[0];
 
-        // ✅ Get original FROM and TO nodes for display
         string originalFromId = PlayerPrefs.GetString("ARNavigation_OriginalFromNodeId", "");
         string originalToId = PlayerPrefs.GetString("ARNavigation_OriginalToNodeId", "");
 
         Node displayFromNode = firstRoute.startNode;
         Node displayToNode = firstRoute.endNode;
 
-        // If we have original IDs, use those for display
         if (!string.IsNullOrEmpty(originalFromId) && allNodes.ContainsKey(originalFromId))
         {
             displayFromNode = allNodes[originalFromId];
@@ -989,7 +939,7 @@ public class PathfindingController : MonoBehaviour
 
         if (fromText != null)
         {
-            string lockIndicator = isQRLocationLocked ? " 🔒" : "";
+            string lockIndicator = isLocationLocked ? " 🔒" : " 📍";
             fromText.text = $"<b>From:</b> {displayFromNode.name}{lockIndicator}";
         }
 
@@ -997,7 +947,6 @@ public class PathfindingController : MonoBehaviour
         {
             string toDisplay = displayToNode.name;
 
-            // ✅ If destination is indoor, show building name + room name
             if (displayToNode.type == "indoorinfra")
             {
                 string buildingName = GetBuildingNameFromInfraId(displayToNode.related_infra_id);
@@ -1031,10 +980,8 @@ public class PathfindingController : MonoBehaviour
         }
     }
 
-    // ✅ NEW: Get building name from infra_id
     private string GetBuildingNameFromInfraId(string infraId)
     {
-        // Find the infrastructure node with this infra_id
         foreach (var node in allNodes.Values)
         {
             if (node.type == "infrastructure" && node.related_infra_id == infraId)
@@ -1104,34 +1051,24 @@ public class PathfindingController : MonoBehaviour
 
     private void OnConfirmRouteClicked()
     {
-        Debug.Log("[PathfindingController] 🔵 OnConfirmRouteClicked START");
-
         if (selectedRouteIndex < 0 || selectedRouteIndex >= currentRoutes.Count)
         {
-            Debug.LogError("❌ Invalid route index");
             return;
         }
 
         RouteData selectedRoute = currentRoutes[selectedRouteIndex];
-        Debug.Log($"[PathfindingController] Selected route: {selectedRoute.startNode.name} → {selectedRoute.endNode.name}");
 
-        // Get or create DirectionGenerator
         DirectionGenerator directionGen = GetComponent<DirectionGenerator>();
         if (directionGen == null)
         {
-            Debug.Log("[PathfindingController] Adding DirectionGenerator component");
             directionGen = gameObject.AddComponent<DirectionGenerator>();
         }
 
-        // ✅ FIX: Wait for DirectionGenerator to be ready before generating
         StartCoroutine(GenerateAndSaveDirections(directionGen, selectedRoute));
     }
 
     private IEnumerator GenerateAndSaveDirections(DirectionGenerator directionGen, RouteData selectedRoute)
     {
-        Debug.Log("[PathfindingController] Waiting for DirectionGenerator to load data...");
-
-        // Wait for DirectionGenerator to finish loading data (max 5 seconds)
         float timeout = 5f;
         float elapsed = 0f;
 
@@ -1143,137 +1080,28 @@ public class PathfindingController : MonoBehaviour
 
         if (!directionGen.IsDataLoaded())
         {
-            Debug.LogError("[PathfindingController] ❌ DirectionGenerator failed to load data!");
             yield break;
         }
 
-        Debug.Log("[PathfindingController] ✅ DirectionGenerator ready, generating directions...");
-
         List<NavigationDirection> directions = directionGen.GenerateDirections(selectedRoute);
-        Debug.Log($"[PathfindingController] Generated {directions?.Count ?? 0} directions");
 
         if (directions == null || directions.Count == 0)
         {
-            Debug.LogError("[PathfindingController] ❌ No directions generated!");
             yield break;
         }
 
-        // Log each direction
-        for (int i = 0; i < directions.Count; i++)
-        {
-            Debug.Log($"[PathfindingController] Direction {i}: {directions[i].instruction} (Indoor: {directions[i].isIndoorGrouped})");
-        }
-
-        Debug.Log("[PathfindingController] 🔵 Calling SaveRouteDataForAR...");
         SaveRouteDataForAR(selectedRoute, directions);
-        Debug.Log("[PathfindingController] 🔵 SaveRouteDataForAR completed");
 
-        // Load AR scene
-        Debug.Log("[PathfindingController] Loading AR scene...");
         ARManagerCleanup arCleanup = FindObjectOfType<ARManagerCleanup>();
         if (arCleanup != null)
         {
             arCleanup.LoadARNavigation();
         }
-        else
-        {
-            Debug.LogError("[PathfindingController] ❌ ARManagerCleanup not found!");
-        }
     }
 
-
-    // private void SaveRouteDataForAR(RouteData route, List<NavigationDirection> directions)
-    // {
-    //     // MapId is already saved in OnConfirmRouteClicked(), no need to duplicate here
-
-    //     // ✅ CLEAR OLD DIRECTION DATA FIRST
-    //     int oldDirectionCount = PlayerPrefs.GetInt("ARNavigation_DirectionCount", 0);
-    //     for (int i = 0; i < oldDirectionCount; i++)
-    //     {
-    //         PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_Instruction");
-    //         PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_Turn");
-    //         PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_Distance");
-    //         PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_DestNodeId");
-    //         PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_DestNode");
-    //     }
-
-    //     // Save route info
-    //     PlayerPrefs.SetString("ARNavigation_StartNodeId", route.startNode.node_id);
-    //     PlayerPrefs.SetString("ARNavigation_EndNodeId", route.endNode.node_id);
-    //     PlayerPrefs.SetString("ARNavigation_StartNodeName", route.startNode.name);
-    //     PlayerPrefs.SetString("ARNavigation_EndNodeName", route.endNode.name);
-    //     PlayerPrefs.SetFloat("ARNavigation_TotalDistance", route.totalDistance);
-    //     PlayerPrefs.SetString("ARNavigation_FormattedDistance", route.formattedDistance);
-    //     PlayerPrefs.SetString("ARNavigation_WalkingTime", route.walkingTime);
-    //     PlayerPrefs.SetString("ARNavigation_ViaMode", route.viaMode);
-
-    //     PlayerPrefs.SetInt("ARNavigation_PathNodeCount", route.path.Count);
-
-    //     for (int i = 0; i < route.path.Count; i++)
-    //     {
-    //         PlayerPrefs.SetString($"ARNavigation_PathNode_{i}", route.path[i].node.node_id);
-    //     }
-
-    //     int edgeCount = route.path.Count - 1;
-    //     PlayerPrefs.SetInt("ARNavigation_EdgeCount", edgeCount);
-
-    //     for (int i = 0; i < edgeCount; i++)
-    //     {
-    //         string fromNode = route.path[i].node.node_id;
-    //         string toNode = route.path[i + 1].node.node_id;
-
-    //         PlayerPrefs.SetString($"ARNavigation_Edge_{i}_From", fromNode);
-    //         PlayerPrefs.SetString($"ARNavigation_Edge_{i}_To", toNode);
-    //     }
-
-    //     // ✅ Save directions count FIRST
-    //     PlayerPrefs.SetInt("ARNavigation_DirectionCount", directions.Count);
-
-    //     // Save each direction
-    //     for (int i = 0; i < directions.Count; i++)
-    //     {
-    //         var dir = directions[i];
-    //         PlayerPrefs.SetString($"ARNavigation_Direction_{i}_Instruction", dir.instruction);
-    //         PlayerPrefs.SetString($"ARNavigation_Direction_{i}_Turn", dir.turn.ToString());
-    //         PlayerPrefs.SetFloat($"ARNavigation_Direction_{i}_Distance", dir.distanceInMeters);
-    //         PlayerPrefs.SetString($"ARNavigation_Direction_{i}_DestNodeId", dir.destinationNode.node_id);
-    //         PlayerPrefs.SetString($"ARNavigation_Direction_{i}_DestNode", dir.destinationNode.name);
-    //     }
-
-    //     PlayerPrefs.SetString("ARMode", "Navigation");
-
-    //     // ✅ FORCE SAVE
-    //     PlayerPrefs.Save();
-
-    //     if (enableDebugLogs)
-    //     {
-    //         Debug.Log($"[PathfindingController] ✅ Route data saved for AR: {route.startNode.name} → {route.endNode.name}");
-    //         Debug.Log($"[PathfindingController] ✅ Saved {route.path.Count} path nodes");
-    //         Debug.Log($"[PathfindingController] ✅ Saved {directions.Count} navigation directions");
-    //         Debug.Log($"[PathfindingController] ✅ MapId: {PlayerPrefs.GetString("ARScene_MapId", "NONE")}");
-
-    //         // ✅ NEW: Verify the first direction was saved correctly
-    //         if (directions.Count > 0)
-    //         {
-    //             Debug.Log($"[PathfindingController] ✅ First direction: {PlayerPrefs.GetString("ARNavigation_Direction_0_Instruction", "NOT FOUND")}");
-    //         }
-    //     }
-    // }
     private void SaveRouteDataForAR(RouteData route, List<NavigationDirection> directions)
     {
-        Debug.Log("[PathfindingController] 🔵 SaveRouteDataForAR START");
-        Debug.Log($"[PathfindingController] 🔵 Route: {route.startNode.name} → {route.endNode.name}");
-        Debug.Log($"[PathfindingController] 🔵 Directions count: {directions?.Count ?? 0}");
-
-        if (directions == null || directions.Count == 0)
-        {
-            Debug.LogError("[PathfindingController] ❌ Cannot save - no directions provided!");
-            return;
-        }
-
-        // ✅ CLEAR OLD DIRECTION DATA FIRST
         int oldDirectionCount = PlayerPrefs.GetInt("ARNavigation_DirectionCount", 0);
-        Debug.Log($"[PathfindingController] 🔵 Clearing {oldDirectionCount} old directions");
 
         for (int i = 0; i < oldDirectionCount; i++)
         {
@@ -1286,7 +1114,6 @@ public class PathfindingController : MonoBehaviour
             PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_IsIndoorDirection");
         }
 
-        // Save route info
         PlayerPrefs.SetString("ARNavigation_StartNodeId", route.startNode.node_id);
         PlayerPrefs.SetString("ARNavigation_EndNodeId", route.endNode.node_id);
         PlayerPrefs.SetString("ARNavigation_StartNodeName", route.startNode.name);
@@ -1315,11 +1142,8 @@ public class PathfindingController : MonoBehaviour
             PlayerPrefs.SetString($"ARNavigation_Edge_{i}_To", toNode);
         }
 
-        // ✅ Save directions count FIRST
         PlayerPrefs.SetInt("ARNavigation_DirectionCount", directions.Count);
-        Debug.Log($"[PathfindingController] ✅ Saving {directions.Count} directions");
 
-        // ✅ Save each direction WITH all flags
         for (int i = 0; i < directions.Count; i++)
         {
             var dir = directions[i];
@@ -1330,81 +1154,14 @@ public class PathfindingController : MonoBehaviour
             PlayerPrefs.SetString($"ARNavigation_Direction_{i}_DestNodeId", dir.destinationNode?.node_id ?? "");
             PlayerPrefs.SetString($"ARNavigation_Direction_{i}_DestNode", dir.destinationNode?.name ?? "Unknown");
 
-            // ✅ CRITICAL: Save indoor flags
             PlayerPrefs.SetInt($"ARNavigation_Direction_{i}_IsIndoorGrouped", dir.isIndoorGrouped ? 1 : 0);
             PlayerPrefs.SetInt($"ARNavigation_Direction_{i}_IsIndoorDirection", dir.isIndoorDirection ? 1 : 0);
-
-            Debug.Log($"[PathfindingController] 📝 Direction {i}: {dir.instruction}");
-            Debug.Log($"  - Turn: {dir.turn}");
-            Debug.Log($"  - Indoor Grouped: {dir.isIndoorGrouped}");
-            Debug.Log($"  - Indoor Direction: {dir.isIndoorDirection}");
         }
 
         PlayerPrefs.SetString("ARMode", "Navigation");
 
-        // ✅ FORCE SAVE
         PlayerPrefs.Save();
-
-        Debug.Log($"[PathfindingController] ✅ Route data saved for AR: {route.startNode.name} → {route.endNode.name}");
-        Debug.Log($"[PathfindingController] ✅ Saved {route.path.Count} path nodes");
-        Debug.Log($"[PathfindingController] ✅ Saved {directions.Count} navigation directions");
-        Debug.Log($"[PathfindingController] ✅ MapId: {PlayerPrefs.GetString("ARScene_MapId", "NONE")}");
-
-        // ✅ Verify the first direction was saved correctly
-        if (directions.Count > 0)
-        {
-            string savedInstruction = PlayerPrefs.GetString("ARNavigation_Direction_0_Instruction", "NOT FOUND");
-            Debug.Log($"[PathfindingController] ✅ First direction verified: {savedInstruction}");
-
-            int savedCount = PlayerPrefs.GetInt("ARNavigation_DirectionCount", -1);
-            Debug.Log($"[PathfindingController] ✅ Direction count verified: {savedCount}");
-        }
-
-        Debug.Log("[PathfindingController] 🔵 SaveRouteDataForAR END");
     }
-
-    // ✅ Also add this method to debug what's being called
-    // private void OnConfirmRouteClicked()
-    // {
-    //     Debug.Log("[PathfindingController] 🔵 OnConfirmRouteClicked START");
-
-    //     if (selectedRouteIndex < 0 || selectedRouteIndex >= currentRoutes.Count)
-    //     {
-    //         Debug.LogError("[PathfindingController] ❌ Invalid route index");
-    //         return;
-    //     }
-
-    //     RouteData selectedRoute = currentRoutes[selectedRouteIndex];
-    //     Debug.Log($"[PathfindingController] 🔵 Selected route: {selectedRoute.startNode.name} → {selectedRoute.endNode.name}");
-
-    //     // Generate directions from the route
-    //     DirectionGenerator directionGen = GetComponent<DirectionGenerator>();
-    //     if (directionGen == null)
-    //     {
-    //         Debug.Log("[PathfindingController] 🔵 DirectionGenerator not found, adding component");
-    //         directionGen = gameObject.AddComponent<DirectionGenerator>();
-    //     }
-
-    //     Debug.Log("[PathfindingController] 🔵 Calling GenerateDirections...");
-    //     List<NavigationDirection> directions = directionGen.GenerateDirections(selectedRoute);
-    //     Debug.Log($"[PathfindingController] 🔵 GenerateDirections returned {directions?.Count ?? 0} directions");
-
-    //     if (directions == null || directions.Count == 0)
-    //     {
-    //         Debug.LogError("[PathfindingController] ❌ No directions generated!");
-    //         return;
-    //     }
-
-    //     // Log each direction
-    //     for (int i = 0; i < directions.Count; i++)
-    //     {
-    //         Debug.Log($"[PathfindingController] Direction {i}: {directions[i].instruction} (Indoor: {directions[i].isIndoorGrouped})");
-    //     }
-
-    //     Debug.Log("[PathfindingController] 🔵 Calling SaveRouteDataForAR...");
-    //     SaveRouteDataForAR(selectedRoute, directions);
-    //     Debug.Log("[PathfindingController] 🔵 OnConfirmRouteClicked END");
-    // }
 
     public void HideResults()
     {
@@ -1441,13 +1198,9 @@ public class PathfindingController : MonoBehaviour
         HideResults();
     }
 
-    #endregion
-
-    #region Public Methods for External Integration
-
     public void RefreshGPSLocation()
     {
-        if (useGPSForFromLocation && !useStaticTesting && nodesLoaded)
+        if (useGPSForFromLocation && !useStaticTesting && nodesLoaded && !isLocationLocked)
         {
             UpdateFromLocationByGPS();
         }
@@ -1466,7 +1219,7 @@ public class PathfindingController : MonoBehaviour
     {
         useGPSForFromLocation = useGPS;
 
-        if (useGPS && nodesLoaded)
+        if (useGPS && nodesLoaded && !isLocationLocked)
         {
             UpdateFromLocationByGPS();
         }
@@ -1488,16 +1241,16 @@ public class PathfindingController : MonoBehaviour
 
     public bool IsLocationLocked()
     {
-        return isQRLocationLocked;
+        return isLocationLocked;
     }
-
-    #endregion
-
-    #region Utility Methods
 
     public string GetCurrentFromLocationName()
     {
-        if (currentNearestNode != null)
+        if (isLocationLocked && lockedNode != null)
+        {
+            return lockedNode.name;
+        }
+        else if (currentNearestNode != null)
         {
             return currentNearestNode.name;
         }
@@ -1510,6 +1263,4 @@ public class PathfindingController : MonoBehaviour
                !string.IsNullOrEmpty(selectedFromNodeId) &&
                !string.IsNullOrEmpty(selectedToNodeId);
     }
-
-    #endregion
 }

@@ -439,6 +439,7 @@ public class InfrastructureNode : MonoBehaviour
                 break;
             }
         }
+
     }
 
     void Update()
