@@ -8,70 +8,78 @@ using System.Linq;
 
 public class CategoryDropdown : MonoBehaviour
 {
-    [Header( "UI References" )]
+    [Header("UI References")]
     public GameObject panel;
     public Button categoryButton;
     public Transform panelContent;
 
-    [Header( "CategoryItem Prefab" )]
+    [Header("CategoryItem Prefab")]
     public Button categoryItemPrefab;
     private List<Button> spawnedItems = new List<Button>();
 
-    [Header( "Loading Check" )]
+    [Header("Loading Check")]
     public float maxWaitTime = 30f;
 
     void Start()
     {
-        panel.SetActive( false );
-        StartCoroutine( WaitForDataInitializationThenPopulate() );
+        panel.SetActive(false);
+        StartCoroutine(WaitForDataInitializationThenPopulate());
     }
 
     private IEnumerator WaitForDataInitializationThenPopulate()
     {
         float waitTime = 0f;
 
-        while ( waitTime < maxWaitTime ) {
-            if ( GlobalManager.Instance != null && MapManager.Instance != null && MapManager.Instance.IsReady() && IsDataInitializationComplete() ) {
-                yield return StartCoroutine( PopulatePanel() );
+        while (waitTime < maxWaitTime)
+        {
+            if (GlobalManager.Instance != null && MapManager.Instance != null && MapManager.Instance.IsReady() && IsDataInitializationComplete())
+            {
+                yield return StartCoroutine(PopulatePanel());
                 yield break;
             }
 
             waitTime += Time.deltaTime;
-            yield return new WaitForSeconds( 0.1f );
+            yield return new WaitForSeconds(0.1f);
         }
 
-        yield return StartCoroutine( PopulatePanel() );
+        yield return StartCoroutine(PopulatePanel());
     }
 
     private bool IsDataInitializationComplete()
     {
-        string filePath = GetJsonFilePath( "categories.json" );
+        string filePath = GetJsonFilePath("categories.json");
 
-        if ( !File.Exists( filePath ) ) {
+        if (!File.Exists(filePath))
+        {
             return false;
         }
 
-        try {
-            string content = File.ReadAllText( filePath );
-            if ( string.IsNullOrEmpty( content ) || content.Length < 10 ) {
+        try
+        {
+            string content = File.ReadAllText(filePath);
+            if (string.IsNullOrEmpty(content) || content.Length < 10)
+            {
                 return false;
             }
-        } catch {
+        }
+        catch
+        {
             return false;
         }
 
         return true;
     }
 
-    private string GetJsonFilePath( string fileName )
+    private string GetJsonFilePath(string fileName)
     {
 #if UNITY_EDITOR
-        string streamingPath = Path.Combine( Application.streamingAssetsPath, fileName );
-        if ( File.Exists( streamingPath ) ) {
+        string streamingPath = Path.Combine(Application.streamingAssetsPath, fileName);
+        if (File.Exists(streamingPath))
+        {
             return streamingPath;
         }
 #endif
-        return Path.Combine( Application.persistentDataPath, fileName );
+        return Path.Combine(Application.persistentDataPath, fileName);
     }
 
     IEnumerator PopulatePanel()
@@ -79,7 +87,8 @@ public class CategoryDropdown : MonoBehaviour
         List<string> currentCampusIds = MapManager.Instance.GetCurrentCampusIds();
         string currentMapId = MapManager.Instance.GetCurrentMap()?.map_id;
 
-        if ( string.IsNullOrEmpty( currentMapId ) || currentCampusIds.Count == 0 ) {
+        if (string.IsNullOrEmpty(currentMapId) || currentCampusIds.Count == 0)
+        {
             yield break;
         }
 
@@ -87,74 +96,83 @@ public class CategoryDropdown : MonoBehaviour
         Infrastructure[] allInfrastructures = null;
         CategoryList categoryList = null;
 
-        yield return StartCoroutine( LoadNodesForMap( currentMapId, ( nodes ) => allNodes = nodes ) );
-        yield return StartCoroutine( LoadInfrastructureData( ( infras ) => allInfrastructures = infras ) );
-        yield return StartCoroutine( LoadCategoryData( ( cats ) => categoryList = cats ) );
+        yield return StartCoroutine(LoadNodesForMap(currentMapId, (nodes) => allNodes = nodes));
+        yield return StartCoroutine(LoadInfrastructureData((infras) => allInfrastructures = infras));
+        yield return StartCoroutine(LoadCategoryData((cats) => categoryList = cats));
 
-        if ( allNodes == null || allInfrastructures == null || categoryList == null ) {
+        if (allNodes == null || allInfrastructures == null || categoryList == null)
+        {
             yield break;
         }
 
-        HashSet<string> usedCategoryIds = GetUsedCategoryIds( allNodes, allInfrastructures, currentCampusIds );
+        HashSet<string> usedCategoryIds = GetUsedCategoryIds(allNodes, allInfrastructures, currentCampusIds);
 
-        foreach ( Category category in categoryList.categories ) {
-            if ( !usedCategoryIds.Contains( category.category_id ) ) {
+        foreach (Category category in categoryList.categories)
+        {
+            if (!usedCategoryIds.Contains(category.category_id))
+            {
                 continue;
             }
 
-            Button item = Instantiate( categoryItemPrefab, panelContent );
-            spawnedItems.Add( item );
+            Button item = Instantiate(categoryItemPrefab, panelContent);
+            spawnedItems.Add(item);
 
-            // Set category name
-            TMP_Text label = item.GetComponentInChildren<TMP_Text>();
-            if ( label != null ) {
-                label.text = category.name;
-            }
-
-            // Find and set legend text
+            TMP_Text[] allTexts = item.GetComponentsInChildren<TMP_Text>(true);
             TMP_Text legendText = null;
-            TMP_Text[] allTexts = item.GetComponentsInChildren<TMP_Text>( true );
+            TMP_Text nameText = null;
 
-            foreach ( var txt in allTexts ) {
-                if ( txt.name == "Text_Legend" || txt.name == "LegendText" ||
-                        txt.gameObject.name.Contains( "Legend" ) ) {
+            foreach (var txt in allTexts)
+            {
+                if (txt.name == "Legend")
+                {
                     legendText = txt;
-                    break;
+                }
+                else if (txt.name == "CategoryName")
+                {
+                    nameText = txt;
                 }
             }
 
-            // If no specific legend text found, try to find a second text component
-            if ( legendText == null && allTexts.Length > 1 ) {
-                legendText = allTexts[1];
+            // Set the texts
+            if (nameText != null)
+            {
+                nameText.text = category.name;
             }
 
-            if ( legendText != null && !string.IsNullOrEmpty( category.legend ) ) {
+            if (legendText != null && !string.IsNullOrEmpty(category.legend))
+            {
                 legendText.text = category.legend;
             }
         }
     }
 
-    private HashSet<string> GetUsedCategoryIds( Node[] nodes, Infrastructure[] infrastructures, List<string> currentCampusIds )
+    private HashSet<string> GetUsedCategoryIds(Node[] nodes, Infrastructure[] infrastructures, List<string> currentCampusIds)
     {
         HashSet<string> usedCategories = new HashSet<string>();
 
         Dictionary<string, Infrastructure> infraDict = new Dictionary<string, Infrastructure>();
-        foreach ( var infra in infrastructures ) {
+        foreach (var infra in infrastructures)
+        {
             infraDict[infra.infra_id] = infra;
         }
 
-        foreach ( var node in nodes ) {
-            if ( node.type != "infrastructure" || !node.is_active ) {
+        foreach (var node in nodes)
+        {
+            if (node.type != "infrastructure" || !node.is_active)
+            {
                 continue;
             }
 
-            if ( !currentCampusIds.Contains( node.campus_id ) ) {
+            if (!currentCampusIds.Contains(node.campus_id))
+            {
                 continue;
             }
 
-            if ( !string.IsNullOrEmpty( node.related_infra_id ) && infraDict.TryGetValue( node.related_infra_id, out Infrastructure infra ) ) {
-                if ( !string.IsNullOrEmpty( infra.category_id ) ) {
-                    usedCategories.Add( infra.category_id );
+            if (!string.IsNullOrEmpty(node.related_infra_id) && infraDict.TryGetValue(node.related_infra_id, out Infrastructure infra))
+            {
+                if (!string.IsNullOrEmpty(infra.category_id))
+                {
+                    usedCategories.Add(infra.category_id);
                 }
             }
         }
@@ -162,75 +180,90 @@ public class CategoryDropdown : MonoBehaviour
         return usedCategories;
     }
 
-    private IEnumerator LoadNodesForMap( string mapId, System.Action<Node[]> onComplete )
+    private IEnumerator LoadNodesForMap(string mapId, System.Action<Node[]> onComplete)
     {
         bool loadComplete = false;
         Node[] nodes = null;
 
-        yield return StartCoroutine( CrossPlatformFileLoader.LoadJsonFile(
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             $"nodes_{mapId}.json",
-            ( jsonContent ) => {
-                try {
-                    nodes = JsonHelper.FromJson<Node>( jsonContent );
+            (jsonContent) =>
+            {
+                try
+                {
+                    nodes = JsonHelper.FromJson<Node>(jsonContent);
                     loadComplete = true;
-                } catch ( System.Exception e ) {
+                }
+                catch (System.Exception e)
+                {
                     loadComplete = true;
                 }
             },
-            ( error ) => {
+            (error) =>
+            {
                 loadComplete = true;
             }
-        ) );
+        ));
 
-        yield return new WaitUntil( () => loadComplete );
-        onComplete?.Invoke( nodes );
+        yield return new WaitUntil(() => loadComplete);
+        onComplete?.Invoke(nodes);
     }
 
-    private IEnumerator LoadInfrastructureData( System.Action<Infrastructure[]> onComplete )
+    private IEnumerator LoadInfrastructureData(System.Action<Infrastructure[]> onComplete)
     {
         bool loadComplete = false;
         Infrastructure[] infrastructures = null;
 
-        yield return StartCoroutine( CrossPlatformFileLoader.LoadJsonFile(
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             "infrastructure.json",
-            ( jsonContent ) => {
-                try {
-                    infrastructures = JsonHelper.FromJson<Infrastructure>( jsonContent );
+            (jsonContent) =>
+            {
+                try
+                {
+                    infrastructures = JsonHelper.FromJson<Infrastructure>(jsonContent);
                     loadComplete = true;
-                } catch ( System.Exception e ) {
+                }
+                catch (System.Exception e)
+                {
                     loadComplete = true;
                 }
             },
-            ( error ) => {
+            (error) =>
+            {
                 loadComplete = true;
             }
-        ) );
+        ));
 
-        yield return new WaitUntil( () => loadComplete );
-        onComplete?.Invoke( infrastructures );
+        yield return new WaitUntil(() => loadComplete);
+        onComplete?.Invoke(infrastructures);
     }
 
-    private IEnumerator LoadCategoryData( System.Action<CategoryList> onComplete )
+    private IEnumerator LoadCategoryData(System.Action<CategoryList> onComplete)
     {
         bool loadComplete = false;
         CategoryList categoryList = null;
 
-        yield return StartCoroutine( CrossPlatformFileLoader.LoadJsonFile(
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             "categories.json",
-            ( jsonContent ) => {
-                try {
-                    categoryList = JsonUtility.FromJson<CategoryList>( "{\"categories\":" + jsonContent + "}" );
+            (jsonContent) =>
+            {
+                try
+                {
+                    categoryList = JsonUtility.FromJson<CategoryList>("{\"categories\":" + jsonContent + "}");
                     loadComplete = true;
-                } catch ( System.Exception e ) {
+                }
+                catch (System.Exception e)
+                {
                     loadComplete = true;
                 }
             },
-            ( error ) => {
+            (error) =>
+            {
                 loadComplete = true;
             }
-        ) );
+        ));
 
-        yield return new WaitUntil( () => loadComplete );
-        onComplete?.Invoke( categoryList );
+        yield return new WaitUntil(() => loadComplete);
+        onComplete?.Invoke(categoryList);
     }
 }
