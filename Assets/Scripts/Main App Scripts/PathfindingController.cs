@@ -16,234 +16,6 @@ public class PathfindingController : MonoBehaviour
     public TMP_Dropdown toDropdown;
     public Button findPathButton;
 
-    [Header("Static Testing - Navigation Scenarios")]
-    public bool enableStaticTesting = false;
-    public int testScenarioIndex = 0; // 0-3 for different scenarios
-
-    [Header("Custom Test Node IDs (Override Scenario)")]
-    public bool useCustomNodeIds = false;
-    [Tooltip("Leave empty to use scenario defaults")]
-    public string customFromNodeId = "";
-    [Tooltip("Leave empty to use scenario defaults")]
-    public string customToNodeId = "";
-
-    [System.Serializable]
-    public class TestScenario
-    {
-        public string scenarioName;
-        public string fromNodeId;
-        public string toNodeId;
-        public string description;
-        [TextArea(2, 4)]
-        public string expectedBehavior;
-    }
-
-    [ContextMenu("Run Test Scenario")]
-    public void RunTestFromInspector()
-    {
-        if (!Application.isPlaying)
-        {
-            Debug.LogWarning("⚠️ Must be in Play Mode to run tests");
-            return;
-        }
-
-        RunStaticTest();
-    }
-
-    [ContextMenu("Print All Scenarios")]
-    public void PrintAllScenarios()
-    {
-        Debug.Log("=== AVAILABLE TEST SCENARIOS ===");
-        for (int i = 0; i < testScenarios.Count; i++)
-        {
-            var scenario = testScenarios[i];
-            Debug.Log($"[{i}] {scenario.scenarioName}\n" +
-                      $"    FROM: {scenario.fromNodeId} → TO: {scenario.toNodeId}\n" +
-                      $"    {scenario.description}\n" +
-                      $"    Expected: {scenario.expectedBehavior}\n");
-        }
-    }
-
-    [ContextMenu("Validate Test Node IDs")]
-    public void ValidateTestNodeIds()
-    {
-        if (!nodesLoaded)
-        {
-            Debug.LogWarning("⚠️ Nodes not loaded yet. Wait for map initialization.");
-            return;
-        }
-
-        Debug.Log("=== VALIDATING TEST NODE IDs ===");
-
-        foreach (var scenario in testScenarios)
-        {
-            bool fromExists = allNodes.ContainsKey(scenario.fromNodeId);
-            bool toExists = allNodes.ContainsKey(scenario.toNodeId);
-
-            string status = (fromExists && toExists) ? "✅ VALID" : "❌ INVALID";
-
-            Debug.Log($"{status} {scenario.scenarioName}");
-            if (!fromExists) Debug.LogError($"  ❌ FROM node not found: {scenario.fromNodeId}");
-            if (!toExists) Debug.LogError($"  ❌ TO node not found: {scenario.toNodeId}");
-        }
-
-        // Validate custom IDs if enabled
-        if (useCustomNodeIds)
-        {
-            bool customFromExists = allNodes.ContainsKey(customFromNodeId);
-            bool customToExists = allNodes.ContainsKey(customToNodeId);
-
-            Debug.Log("\n=== CUSTOM NODE IDs ===");
-            Debug.Log($"FROM: {customFromNodeId} - {(customFromExists ? "✅ EXISTS" : "❌ NOT FOUND")}");
-            Debug.Log($"TO: {customToNodeId} - {(customToExists ? "✅ EXISTS" : "❌ NOT FOUND")}");
-        }
-    }
-
-    public void RunStaticTest()
-    {
-        if (!enableStaticTesting)
-        {
-            Debug.LogWarning("⚠️ Static testing is disabled. Enable 'enableStaticTesting' in Inspector.");
-            return;
-        }
-
-        if (testScenarios.Count == 0)
-        {
-            Debug.LogError("❌ No test scenarios available");
-            return;
-        }
-
-        if (testScenarioIndex < 0 || testScenarioIndex >= testScenarios.Count)
-        {
-            Debug.LogError($"❌ Invalid scenario index: {testScenarioIndex} (Valid range: 0-{testScenarios.Count - 1})");
-            return;
-        }
-
-        string fromNodeId;
-        string toNodeId;
-
-        // Use custom node IDs if enabled, otherwise use scenario defaults
-        if (useCustomNodeIds && !string.IsNullOrEmpty(customFromNodeId) && !string.IsNullOrEmpty(customToNodeId))
-        {
-            fromNodeId = customFromNodeId;
-            toNodeId = customToNodeId;
-
-            Debug.Log("=== 🧪 RUNNING CUSTOM TEST ===");
-            Debug.Log($"FROM: {fromNodeId}");
-            Debug.Log($"TO: {toNodeId}");
-        }
-        else
-        {
-            TestScenario scenario = testScenarios[testScenarioIndex];
-            fromNodeId = scenario.fromNodeId;
-            toNodeId = scenario.toNodeId;
-
-            Debug.Log($"=== 🧪 RUNNING TEST SCENARIO [{testScenarioIndex}] ===");
-            Debug.Log($"Scenario: {scenario.scenarioName}");
-            Debug.Log($"FROM: {fromNodeId} → TO: {toNodeId}");
-            Debug.Log($"Description: {scenario.description}");
-            Debug.Log($"Expected: {scenario.expectedBehavior}");
-        }
-
-        // Validate nodes exist
-        if (!allNodes.ContainsKey(fromNodeId))
-        {
-            Debug.LogError($"❌ FROM node not found: {fromNodeId}");
-            return;
-        }
-
-        if (!allNodes.ContainsKey(toNodeId))
-        {
-            Debug.LogError($"❌ TO node not found: {toNodeId}");
-            return;
-        }
-
-        // Get node details
-        Node fromNode = allNodes[fromNodeId];
-        Node toNode = allNodes[toNodeId];
-
-        Debug.Log($"FROM Node: {fromNode.name} (Type: {fromNode.type})");
-        Debug.Log($"TO Node: {toNode.name} (Type: {toNode.type})");
-
-        // Check if indoor nodes
-        bool fromIsIndoor = IsIndoorNode(fromNodeId);
-        bool toIsIndoor = IsIndoorNode(toNodeId);
-
-        Debug.Log($"FROM is Indoor: {fromIsIndoor}");
-        Debug.Log($"TO is Indoor: {toIsIndoor}");
-
-        if (fromIsIndoor)
-        {
-            Debug.Log($"FROM Building: {fromNode.related_infra_id} (Room: {fromNode.related_room_id})");
-        }
-
-        if (toIsIndoor)
-        {
-            Debug.Log($"TO Building: {toNode.related_infra_id} (Room: {toNode.related_room_id})");
-        }
-
-        // Override selected node IDs
-        selectedFromNodeId = fromNodeId;
-        selectedToNodeId = toNodeId;
-
-        Debug.Log("🚀 Starting pathfinding...\n");
-
-        // Trigger pathfinding
-        StartCoroutine(FindAndDisplayPaths(fromNodeId, toNodeId));
-    }
-
-    // Helper: Get node info for debugging
-    public string GetNodeDebugInfo(string nodeId)
-    {
-        if (!allNodes.ContainsKey(nodeId))
-        {
-            return $"❌ Node not found: {nodeId}";
-        }
-
-        Node node = allNodes[nodeId];
-        string info = $"Node: {node.name} ({nodeId})\n";
-        info += $"Type: {node.type}\n";
-
-        if (node.type == "infrastructure")
-        {
-            info += $"GPS: ({node.latitude}, {node.longitude})\n";
-            info += $"Infra ID: {node.related_infra_id}";
-        }
-        else if (node.type == "indoorinfra")
-        {
-            info += $"Building: {node.related_infra_id}\n";
-            info += $"Room: {node.related_room_id}\n";
-            if (node.indoor != null)
-            {
-                info += $"Indoor Pos: ({node.indoor.x}m, {node.indoor.y}m)\n";
-                info += $"Floor: {node.indoor.floor}";
-            }
-        }
-
-        return info;
-    }
-
-    [ContextMenu("Debug Selected Nodes")]
-    public void DebugSelectedNodes()
-    {
-        if (useCustomNodeIds)
-        {
-            Debug.Log("=== CUSTOM FROM NODE ===");
-            Debug.Log(GetNodeDebugInfo(customFromNodeId));
-            Debug.Log("\n=== CUSTOM TO NODE ===");
-            Debug.Log(GetNodeDebugInfo(customToNodeId));
-        }
-        else if (testScenarioIndex >= 0 && testScenarioIndex < testScenarios.Count)
-        {
-            var scenario = testScenarios[testScenarioIndex];
-            Debug.Log($"=== SCENARIO {testScenarioIndex}: {scenario.scenarioName} ===");
-            Debug.Log("\n=== FROM NODE ===");
-            Debug.Log(GetNodeDebugInfo(scenario.fromNodeId));
-            Debug.Log("\n=== TO NODE ===");
-            Debug.Log(GetNodeDebugInfo(scenario.toNodeId));
-        }
-    }
-
     [Header("Location Lock Display")]
     public GameObject locationLockDisplay;
     public TextMeshProUGUI locationLockText;
@@ -281,8 +53,8 @@ public class PathfindingController : MonoBehaviour
 
     [Header("Static Test Settings")]
     public bool useStaticTesting = false;
-    public string staticFromNodeId = "ND-025";
-    public string staticToNodeId = "ND-017";
+    public string staticFromNodeId = "ND-015";
+    public string staticToNodeId = "ND-033";
 
     [Header("GPS Settings")]
     public bool useGPSForFromLocation = true;
@@ -312,8 +84,6 @@ public class PathfindingController : MonoBehaviour
     private List<RouteItem> routeItemInstances = new List<RouteItem>();
     private int selectedRouteIndex = -1;
 
-
-
     void Start()
     {
         if (findPathButton != null)
@@ -335,6 +105,7 @@ public class PathfindingController : MonoBehaviour
         {
             toDropdown.onValueChanged.AddListener(OnToDropdownChanged);
         }
+
         if (locationLockButton != null)
         {
             locationLockButton.onClick.AddListener(UnlockFromQR);
@@ -385,11 +156,11 @@ public class PathfindingController : MonoBehaviour
         {
             gpsManager = GPSManager.Instance;
         }
-        if (enableStaticTesting)
+
+        if (useStaticTesting)
         {
-            // You can manually call RunStaticTest() from inspector or create a button
-            Debug.Log($"[PathfindingController] 🧪 Static Testing ENABLED - {testScenarios.Count} scenarios loaded");
-            Debug.Log($"[PathfindingController] Current Scenario [{testScenarioIndex}]: {testScenarios[testScenarioIndex].scenarioName}");
+            Debug.Log($"[PathfindingController] 🧪 Static Testing ENABLED");
+            Debug.Log($"[PathfindingController] FROM: {staticFromNodeId} → TO: {staticToNodeId}");
         }
     }
 
@@ -438,52 +209,9 @@ public class PathfindingController : MonoBehaviour
             LoadQRScannedNode(scannedNodeId);
         }
     }
-    public List<TestScenario> testScenarios = new List<TestScenario>
-{
-    // Scenario 0: Outdoor to Outdoor
-    new TestScenario
-    {
-        scenarioName = "Outdoor → Outdoor",
-        fromNodeId = "ND-025", // Medicine Building
-        toNodeId = "ND-017",   // Engineering Building
-        description = "Normal A* pathfinding between two infrastructure buildings",
-        expectedBehavior = "Should generate routes using GPS coordinates. Directions show outdoor navigation only."
-    },
-    
-    // Scenario 1: Outdoor to Indoor (Same Building)
-    new TestScenario
-    {
-        scenarioName = "Outdoor → Indoor (Same Building)",
-        fromNodeId = "ND-017", // Engineering Building (outdoor)
-        toNodeId = "ND-119",   // Room inside Engineering (indoorinfra)
-        description = "Routes to building entrance, then indoor navigation",
-        expectedBehavior = "Path ends at building entrance. Indoor directions added: 'Navigate to Floor 1 Stairs. Room is on floor 1.'"
-    },
-    
-    // Scenario 2: Outdoor to Indoor (Different Building)
-    new TestScenario
-    {
-        scenarioName = "Outdoor → Indoor (Different Building)",
-        fromNodeId = "ND-025", // Medicine Building
-        toNodeId = "ND-119",   // Room inside Engineering
-        description = "Routes Medicine → Engineering entrance → Indoor navigation",
-        expectedBehavior = "GPS route to entrance, then indoor directions. System switches to X,Y mode at destination building."
-    },
-    
-    // Scenario 3: Indoor to Indoor (Different Building)
-    new TestScenario
-    {
-        scenarioName = "Indoor → Indoor (Different Building)",
-        fromNodeId = "ND-120", // Room in Medicine (indoorinfra)
-        toNodeId = "ND-119",   // Room in Engineering (indoorinfra)
-        description = "Exit Medicine → Route to Engineering → Enter Engineering",
-        expectedBehavior = "Indoor exit instructions → GPS outdoor route → Indoor entry instructions. All indoor directions grouped."
-    }
-};
 
     private IEnumerator LoadIndoorData()
     {
-        // Load indoor.json
         bool loadComplete = false;
 
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
@@ -521,7 +249,6 @@ public class PathfindingController : MonoBehaviour
 
         yield return new WaitUntil(() => loadComplete);
 
-        // Load indoor nodes from nodes JSON
         foreach (var node in allNodes.Values)
         {
             if (node.type == "indoorinfra")
@@ -532,6 +259,7 @@ public class PathfindingController : MonoBehaviour
 
         Debug.Log($"[PathfindingController] Loaded {indoorNodes.Count} indoor nodes");
     }
+
     private bool IsIndoorNode(string nodeId)
     {
         if (allNodes.TryGetValue(nodeId, out Node node))
@@ -541,7 +269,6 @@ public class PathfindingController : MonoBehaviour
         return indoorNodes.ContainsKey(nodeId);
     }
 
-    // Helper: Get building entrance node from indoor node
     private Node GetBuildingEntranceNode(Node indoorNode)
     {
         if (indoorNode.type != "indoorinfra" || string.IsNullOrEmpty(indoorNode.related_infra_id))
@@ -549,7 +276,6 @@ public class PathfindingController : MonoBehaviour
             return null;
         }
 
-        // Find the infrastructure node with matching infra_id
         foreach (var node in allNodes.Values)
         {
             if (node.type == "infrastructure" && node.related_infra_id == indoorNode.related_infra_id)
@@ -560,6 +286,8 @@ public class PathfindingController : MonoBehaviour
 
         return null;
     }
+
+
 
     private void LoadQRScannedNode(string nodeId)
     {
@@ -617,10 +345,37 @@ public class PathfindingController : MonoBehaviour
         }
 
         UpdateFromLocationByGPS();
-
         ClearQRData();
+    }
 
-        Debug.Log("YAWA KA BAI");
+    #endregion
+
+    #region Dropdown Handlers
+
+    private void OnToDropdownChanged(int index)
+    {
+        if (infrastructurePopulator == null || toDropdown == null)
+        {
+            return;
+        }
+
+        // ✅ NEW: Get the selected destination (can be infrastructure or indoor room)
+        var (destinationId, destinationType) = infrastructurePopulator.GetSelectedDestinationFromDropdown(toDropdown);
+
+        if (string.IsNullOrEmpty(destinationId))
+        {
+            selectedToNodeId = null;
+            Debug.LogWarning("[PathfindingController] No valid destination selected from dropdown");
+            return;
+        }
+
+        // ✅ Use the SetDestination method you already have
+        SetDestination(destinationId, destinationType);
+
+        Debug.Log($"[PathfindingController] Dropdown changed to: {toDropdown.options[index].text}");
+        Debug.Log($"  - Destination ID: {destinationId}");
+        Debug.Log($"  - Type: {destinationType}");
+        Debug.Log($"  - Selected Node ID: {selectedToNodeId}");
     }
 
     #endregion
@@ -638,6 +393,9 @@ public class PathfindingController : MonoBehaviour
         currentCampusIds = campusIds;
 
         yield return StartCoroutine(LoadNodesFromJSON(mapId));
+
+        // ✅ NEW: Load indoor data
+        yield return StartCoroutine(LoadIndoorData());
 
         yield return StartCoroutine(BuildInfrastructureNodeMapping());
 
@@ -657,6 +415,44 @@ public class PathfindingController : MonoBehaviour
         }
     }
 
+    public void SetDestination(string destinationId, string destinationType)
+    {
+        Debug.Log($"[PathfindingController] SetDestination: {destinationId} (Type: {destinationType})");
+
+        if (destinationType == "infrastructure")
+        {
+            // Find the node with this infra_id
+            var infraNode = allNodes.Values.FirstOrDefault(n =>
+                n.type == "infrastructure" && n.related_infra_id == destinationId);
+
+            if (infraNode != null)
+            {
+                selectedToNodeId = infraNode.node_id;
+                Debug.Log($"[PathfindingController] Selected infrastructure node: {infraNode.name}");
+            }
+            else
+            {
+                Debug.LogError($"[PathfindingController] Infrastructure node not found for: {destinationId}");
+            }
+        }
+        else if (destinationType == "indoorinfra")
+        {
+            // Find the node with this room_id
+            var indoorNode = allNodes.Values.FirstOrDefault(n =>
+                n.type == "indoorinfra" && n.related_room_id == destinationId);
+
+            if (indoorNode != null)
+            {
+                selectedToNodeId = indoorNode.node_id;
+                Debug.Log($"[PathfindingController] Selected indoor node: {indoorNode.name}");
+            }
+            else
+            {
+                Debug.LogError($"[PathfindingController] Indoor node not found for: {destinationId}");
+            }
+        }
+    }
+
     #endregion
 
     #region Node Loading from JSON
@@ -668,32 +464,32 @@ public class PathfindingController : MonoBehaviour
         string errorMsg = "";
 
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
-                                         fileName,
-        (jsonContent) =>
-        {
-            try
+            fileName,
+            (jsonContent) =>
             {
-                Node[] nodesArray = JsonHelper.FromJson<Node>(jsonContent);
-
-                allNodes.Clear();
-                foreach (Node node in nodesArray)
+                try
                 {
-                    allNodes[node.node_id] = node;
-                }
+                    Node[] nodesArray = JsonHelper.FromJson<Node>(jsonContent);
 
-                nodesLoaded = true;
-                loadSuccess = true;
-            }
-            catch (System.Exception e)
+                    allNodes.Clear();
+                    foreach (Node node in nodesArray)
+                    {
+                        allNodes[node.node_id] = node;
+                    }
+
+                    nodesLoaded = true;
+                    loadSuccess = true;
+                }
+                catch (System.Exception e)
+                {
+                    errorMsg = $"Error parsing nodes JSON: {e.Message}";
+                }
+            },
+            (error) =>
             {
-                errorMsg = $"Error parsing nodes JSON: {e.Message}";
+                errorMsg = $"Failed to load {fileName}: {error}";
             }
-        },
-        (error) =>
-        {
-            errorMsg = $"Failed to load {fileName}: {error}";
-        }
-                                     ));
+        ));
 
         yield return null;
     }
@@ -746,28 +542,25 @@ public class PathfindingController : MonoBehaviour
 
         if (nearestNode != null)
         {
-            // If QR location is locked, check for conflict
             if (isQRLocationLocked && qrScannedNode != null)
             {
                 float distanceFromQR = CalculateDistance(
-                                           qrScannedNode.latitude, qrScannedNode.longitude,
-                                           nearestNode.latitude, nearestNode.longitude
-                                       );
+                    qrScannedNode.latitude, qrScannedNode.longitude,
+                    nearestNode.latitude, nearestNode.longitude
+                );
 
                 if (distanceFromQR > qrConflictThresholdMeters)
                 {
-                    // Only show panel once per QR lock
                     if (!hasShownConflictPanel)
                     {
                         hasShownConflictPanel = true;
                         ShowLocationConflictPanel(qrScannedNode, nearestNode, distanceFromQR);
                     }
-                    return; // Don't update location, stay locked
+                    return;
                 }
             }
             else
             {
-                // No QR lock - update normally
                 selectedFromNodeId = nearestNode.node_id;
                 currentNearestNode = nearestNode;
             }
@@ -854,35 +647,6 @@ public class PathfindingController : MonoBehaviour
         if (locationConflictPanel != null)
         {
             locationConflictPanel.SetActive(false);
-        }
-    }
-
-    #endregion
-
-    #region Dropdown Handlers
-
-    private void OnToDropdownChanged(int index)
-    {
-        if (infrastructurePopulator == null || toDropdown == null)
-        {
-            return;
-        }
-
-        Infrastructure selectedInfra = infrastructurePopulator.GetSelectedInfrastructure(toDropdown);
-
-        if (selectedInfra == null)
-        {
-            selectedToNodeId = null;
-            return;
-        }
-
-        if (infraIdToNodeId.TryGetValue(selectedInfra.infra_id, out string nodeId))
-        {
-            selectedToNodeId = nodeId;
-        }
-        else
-        {
-            selectedToNodeId = null;
         }
     }
 
@@ -1024,6 +788,7 @@ public class PathfindingController : MonoBehaviour
 
     #region Pathfinding Trigger
 
+    // ✅ THIS IS THE MAIN METHOD - APPLIES TO REAL USAGE AND TESTING
     private IEnumerator FindAndDisplayPaths(string fromNodeId, string toNodeId)
     {
         if (pathfinding == null)
@@ -1036,12 +801,35 @@ public class PathfindingController : MonoBehaviour
             findPathButton.interactable = false;
         }
 
+        // ✅ CRITICAL: Ensure nodes exist
+        if (!allNodes.ContainsKey(fromNodeId))
+        {
+            Debug.LogError($"[PathfindingController] FROM node not found: {fromNodeId}");
+            ShowConfirmationError($"FROM node not found: {fromNodeId}");
+            if (findPathButton != null) findPathButton.interactable = true;
+            yield break;
+        }
+
+        if (!allNodes.ContainsKey(toNodeId))
+        {
+            Debug.LogError($"[PathfindingController] TO node not found: {toNodeId}");
+            ShowConfirmationError($"TO node not found: {toNodeId}");
+            if (findPathButton != null) findPathButton.interactable = true;
+            yield break;
+        }
+
         // Check if FROM or TO are indoor nodes
         bool fromIsIndoor = IsIndoorNode(fromNodeId);
         bool toIsIndoor = IsIndoorNode(toNodeId);
 
         string pathStartNodeId = fromNodeId;
         string pathEndNodeId = toNodeId;
+
+        Node fromNode = allNodes[fromNodeId];
+        Node toNode = allNodes[toNodeId];
+
+        Debug.Log($"[PathfindingController] FROM: {fromNode.name} (Indoor: {fromIsIndoor})");
+        Debug.Log($"[PathfindingController] TO: {toNode.name} (Indoor: {toIsIndoor})");
 
         // If FROM is indoor, use building entrance as start
         if (fromIsIndoor && allNodes.TryGetValue(fromNodeId, out Node fromIndoorNode))
@@ -1065,7 +853,42 @@ public class PathfindingController : MonoBehaviour
             }
         }
 
-        // Run A* pathfinding (only outdoor nodes)
+        // ✅ SPECIAL CASE: Same building (outdoor to indoor, same building)
+        bool isSameBuilding = pathStartNodeId == pathEndNodeId;
+
+        if (isSameBuilding)
+        {
+            Debug.Log($"[PathfindingController] ✅ Same building navigation detected");
+
+            // Create a single-node "route" for same building
+            var singleNodeRoute = CreateSameBuildingRoute(pathStartNodeId, fromNode, toNode);
+
+            // Store original FROM/TO for indoor direction generation
+            PlayerPrefs.SetString("ARNavigation_OriginalFromNodeId", fromNodeId);
+            PlayerPrefs.SetString("ARNavigation_OriginalToNodeId", toNodeId);
+            PlayerPrefs.SetInt("ARNavigation_FromIsIndoor", fromIsIndoor ? 1 : 0);
+            PlayerPrefs.SetInt("ARNavigation_ToIsIndoor", toIsIndoor ? 1 : 0);
+            PlayerPrefs.SetString("ARNavigation_SameBuilding", "true");
+            PlayerPrefs.Save();
+
+            Debug.Log($"[PathfindingController] ✅ Saved PlayerPrefs for same building");
+            Debug.Log($"  - OriginalFromNodeId: {fromNodeId}");
+            Debug.Log($"  - OriginalToNodeId: {toNodeId}");
+            Debug.Log($"  - FromIsIndoor: {fromIsIndoor}");
+            Debug.Log($"  - ToIsIndoor: {toIsIndoor}");
+
+            currentRoutes = new List<RouteData> { singleNodeRoute };
+
+            if (findPathButton != null)
+            {
+                findPathButton.interactable = true;
+            }
+
+            DisplayAllRoutes();
+            yield break;
+        }
+
+        // Normal pathfinding for different buildings
         yield return StartCoroutine(pathfinding.FindMultiplePaths(pathStartNodeId, pathEndNodeId, 3));
 
         if (findPathButton != null)
@@ -1086,11 +909,45 @@ public class PathfindingController : MonoBehaviour
         PlayerPrefs.SetString("ARNavigation_OriginalToNodeId", toNodeId);
         PlayerPrefs.SetInt("ARNavigation_FromIsIndoor", fromIsIndoor ? 1 : 0);
         PlayerPrefs.SetInt("ARNavigation_ToIsIndoor", toIsIndoor ? 1 : 0);
+        PlayerPrefs.SetString("ARNavigation_SameBuilding", "false");
         PlayerPrefs.Save();
+
+        Debug.Log("NAKASAVE NA");
 
         currentRoutes = routes;
         DisplayAllRoutes();
     }
+
+    // ✅ NEW: Create a "fake" route for same building navigation
+    private RouteData CreateSameBuildingRoute(string buildingNodeId, Node fromNode, Node toNode)
+    {
+        Node buildingNode = allNodes[buildingNodeId];
+
+        var routeData = new RouteData
+        {
+            startNode = buildingNode,
+            endNode = buildingNode,
+            path = new List<PathNode>
+            {
+                new PathNode
+                {
+                    node = buildingNode,
+                    worldPosition = Vector3.zero,
+                    isStart = true,
+                    isEnd = true,
+                    distanceToNext = 0f
+                }
+            },
+            totalDistance = 0f,
+            formattedDistance = "Already at building",
+            walkingTime = "< 1 minute",
+            viaMode = "Indoor Navigation",
+            isRecommended = true
+        };
+
+        return routeData;
+    }
+
     #endregion
 
     #region Result Display
@@ -1112,15 +969,42 @@ public class PathfindingController : MonoBehaviour
 
         var firstRoute = currentRoutes[0];
 
+        // ✅ Get original FROM and TO nodes for display
+        string originalFromId = PlayerPrefs.GetString("ARNavigation_OriginalFromNodeId", "");
+        string originalToId = PlayerPrefs.GetString("ARNavigation_OriginalToNodeId", "");
+
+        Node displayFromNode = firstRoute.startNode;
+        Node displayToNode = firstRoute.endNode;
+
+        // If we have original IDs, use those for display
+        if (!string.IsNullOrEmpty(originalFromId) && allNodes.ContainsKey(originalFromId))
+        {
+            displayFromNode = allNodes[originalFromId];
+        }
+
+        if (!string.IsNullOrEmpty(originalToId) && allNodes.ContainsKey(originalToId))
+        {
+            displayToNode = allNodes[originalToId];
+        }
+
         if (fromText != null)
         {
             string lockIndicator = isQRLocationLocked ? " 🔒" : "";
-            fromText.text = $"<b>From:</b> {firstRoute.startNode.name}{lockIndicator}";
+            fromText.text = $"<b>From:</b> {displayFromNode.name}{lockIndicator}";
         }
 
         if (toText != null)
         {
-            toText.text = $"<b>To:</b> {firstRoute.endNode.name}";
+            string toDisplay = displayToNode.name;
+
+            // ✅ If destination is indoor, show building name + room name
+            if (displayToNode.type == "indoorinfra")
+            {
+                string buildingName = GetBuildingNameFromInfraId(displayToNode.related_infra_id);
+                toDisplay = $"{buildingName} ({displayToNode.name})";
+            }
+
+            toText.text = $"<b>To:</b> {toDisplay}";
         }
 
         for (int i = 0; i < currentRoutes.Count; i++)
@@ -1145,6 +1029,20 @@ public class PathfindingController : MonoBehaviour
             Canvas.ForceUpdateCanvases();
             routeScrollView.verticalNormalizedPosition = 1f;
         }
+    }
+
+    // ✅ NEW: Get building name from infra_id
+    private string GetBuildingNameFromInfraId(string infraId)
+    {
+        // Find the infrastructure node with this infra_id
+        foreach (var node in allNodes.Values)
+        {
+            if (node.type == "infrastructure" && node.related_infra_id == infraId)
+            {
+                return node.name;
+            }
+        }
+        return "Building";
     }
 
     private void CreateRouteItem(int index, RouteData routeData)
@@ -1206,31 +1104,177 @@ public class PathfindingController : MonoBehaviour
 
     private void OnConfirmRouteClicked()
     {
+        Debug.Log("[PathfindingController] 🔵 OnConfirmRouteClicked START");
+
         if (selectedRouteIndex < 0 || selectedRouteIndex >= currentRoutes.Count)
         {
-            Debug.Log("YAWA 0");
+            Debug.LogError("❌ Invalid route index");
             return;
         }
 
         RouteData selectedRoute = currentRoutes[selectedRouteIndex];
+        Debug.Log($"[PathfindingController] Selected route: {selectedRoute.startNode.name} → {selectedRoute.endNode.name}");
 
-        // Generate directions from the route
+        // Get or create DirectionGenerator
         DirectionGenerator directionGen = GetComponent<DirectionGenerator>();
         if (directionGen == null)
         {
+            Debug.Log("[PathfindingController] Adding DirectionGenerator component");
             directionGen = gameObject.AddComponent<DirectionGenerator>();
         }
 
-        List<NavigationDirection> directions = directionGen.GenerateDirections(selectedRoute);
-
-        // Save route data and directions to PlayerPrefs for AR scene
-        SaveRouteDataForAR(selectedRoute, directions);
+        // ✅ FIX: Wait for DirectionGenerator to be ready before generating
+        StartCoroutine(GenerateAndSaveDirections(directionGen, selectedRoute));
     }
 
+    private IEnumerator GenerateAndSaveDirections(DirectionGenerator directionGen, RouteData selectedRoute)
+    {
+        Debug.Log("[PathfindingController] Waiting for DirectionGenerator to load data...");
+
+        // Wait for DirectionGenerator to finish loading data (max 5 seconds)
+        float timeout = 5f;
+        float elapsed = 0f;
+
+        while (!directionGen.IsDataLoaded() && elapsed < timeout)
+        {
+            yield return new WaitForSeconds(0.1f);
+            elapsed += 0.1f;
+        }
+
+        if (!directionGen.IsDataLoaded())
+        {
+            Debug.LogError("[PathfindingController] ❌ DirectionGenerator failed to load data!");
+            yield break;
+        }
+
+        Debug.Log("[PathfindingController] ✅ DirectionGenerator ready, generating directions...");
+
+        List<NavigationDirection> directions = directionGen.GenerateDirections(selectedRoute);
+        Debug.Log($"[PathfindingController] Generated {directions?.Count ?? 0} directions");
+
+        if (directions == null || directions.Count == 0)
+        {
+            Debug.LogError("[PathfindingController] ❌ No directions generated!");
+            yield break;
+        }
+
+        // Log each direction
+        for (int i = 0; i < directions.Count; i++)
+        {
+            Debug.Log($"[PathfindingController] Direction {i}: {directions[i].instruction} (Indoor: {directions[i].isIndoorGrouped})");
+        }
+
+        Debug.Log("[PathfindingController] 🔵 Calling SaveRouteDataForAR...");
+        SaveRouteDataForAR(selectedRoute, directions);
+        Debug.Log("[PathfindingController] 🔵 SaveRouteDataForAR completed");
+
+        // Load AR scene
+        Debug.Log("[PathfindingController] Loading AR scene...");
+        ARManagerCleanup arCleanup = FindObjectOfType<ARManagerCleanup>();
+        if (arCleanup != null)
+        {
+            arCleanup.LoadARNavigation();
+        }
+        else
+        {
+            Debug.LogError("[PathfindingController] ❌ ARManagerCleanup not found!");
+        }
+    }
+
+
+    // private void SaveRouteDataForAR(RouteData route, List<NavigationDirection> directions)
+    // {
+    //     // MapId is already saved in OnConfirmRouteClicked(), no need to duplicate here
+
+    //     // ✅ CLEAR OLD DIRECTION DATA FIRST
+    //     int oldDirectionCount = PlayerPrefs.GetInt("ARNavigation_DirectionCount", 0);
+    //     for (int i = 0; i < oldDirectionCount; i++)
+    //     {
+    //         PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_Instruction");
+    //         PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_Turn");
+    //         PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_Distance");
+    //         PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_DestNodeId");
+    //         PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_DestNode");
+    //     }
+
+    //     // Save route info
+    //     PlayerPrefs.SetString("ARNavigation_StartNodeId", route.startNode.node_id);
+    //     PlayerPrefs.SetString("ARNavigation_EndNodeId", route.endNode.node_id);
+    //     PlayerPrefs.SetString("ARNavigation_StartNodeName", route.startNode.name);
+    //     PlayerPrefs.SetString("ARNavigation_EndNodeName", route.endNode.name);
+    //     PlayerPrefs.SetFloat("ARNavigation_TotalDistance", route.totalDistance);
+    //     PlayerPrefs.SetString("ARNavigation_FormattedDistance", route.formattedDistance);
+    //     PlayerPrefs.SetString("ARNavigation_WalkingTime", route.walkingTime);
+    //     PlayerPrefs.SetString("ARNavigation_ViaMode", route.viaMode);
+
+    //     PlayerPrefs.SetInt("ARNavigation_PathNodeCount", route.path.Count);
+
+    //     for (int i = 0; i < route.path.Count; i++)
+    //     {
+    //         PlayerPrefs.SetString($"ARNavigation_PathNode_{i}", route.path[i].node.node_id);
+    //     }
+
+    //     int edgeCount = route.path.Count - 1;
+    //     PlayerPrefs.SetInt("ARNavigation_EdgeCount", edgeCount);
+
+    //     for (int i = 0; i < edgeCount; i++)
+    //     {
+    //         string fromNode = route.path[i].node.node_id;
+    //         string toNode = route.path[i + 1].node.node_id;
+
+    //         PlayerPrefs.SetString($"ARNavigation_Edge_{i}_From", fromNode);
+    //         PlayerPrefs.SetString($"ARNavigation_Edge_{i}_To", toNode);
+    //     }
+
+    //     // ✅ Save directions count FIRST
+    //     PlayerPrefs.SetInt("ARNavigation_DirectionCount", directions.Count);
+
+    //     // Save each direction
+    //     for (int i = 0; i < directions.Count; i++)
+    //     {
+    //         var dir = directions[i];
+    //         PlayerPrefs.SetString($"ARNavigation_Direction_{i}_Instruction", dir.instruction);
+    //         PlayerPrefs.SetString($"ARNavigation_Direction_{i}_Turn", dir.turn.ToString());
+    //         PlayerPrefs.SetFloat($"ARNavigation_Direction_{i}_Distance", dir.distanceInMeters);
+    //         PlayerPrefs.SetString($"ARNavigation_Direction_{i}_DestNodeId", dir.destinationNode.node_id);
+    //         PlayerPrefs.SetString($"ARNavigation_Direction_{i}_DestNode", dir.destinationNode.name);
+    //     }
+
+    //     PlayerPrefs.SetString("ARMode", "Navigation");
+
+    //     // ✅ FORCE SAVE
+    //     PlayerPrefs.Save();
+
+    //     if (enableDebugLogs)
+    //     {
+    //         Debug.Log($"[PathfindingController] ✅ Route data saved for AR: {route.startNode.name} → {route.endNode.name}");
+    //         Debug.Log($"[PathfindingController] ✅ Saved {route.path.Count} path nodes");
+    //         Debug.Log($"[PathfindingController] ✅ Saved {directions.Count} navigation directions");
+    //         Debug.Log($"[PathfindingController] ✅ MapId: {PlayerPrefs.GetString("ARScene_MapId", "NONE")}");
+
+    //         // ✅ NEW: Verify the first direction was saved correctly
+    //         if (directions.Count > 0)
+    //         {
+    //             Debug.Log($"[PathfindingController] ✅ First direction: {PlayerPrefs.GetString("ARNavigation_Direction_0_Instruction", "NOT FOUND")}");
+    //         }
+    //     }
+    // }
     private void SaveRouteDataForAR(RouteData route, List<NavigationDirection> directions)
     {
+        Debug.Log("[PathfindingController] 🔵 SaveRouteDataForAR START");
+        Debug.Log($"[PathfindingController] 🔵 Route: {route.startNode.name} → {route.endNode.name}");
+        Debug.Log($"[PathfindingController] 🔵 Directions count: {directions?.Count ?? 0}");
+
+        if (directions == null || directions.Count == 0)
+        {
+            Debug.LogError("[PathfindingController] ❌ Cannot save - no directions provided!");
+            return;
+        }
+
         // ✅ CLEAR OLD DIRECTION DATA FIRST
         int oldDirectionCount = PlayerPrefs.GetInt("ARNavigation_DirectionCount", 0);
+        Debug.Log($"[PathfindingController] 🔵 Clearing {oldDirectionCount} old directions");
+
         for (int i = 0; i < oldDirectionCount; i++)
         {
             PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_Instruction");
@@ -1238,17 +1282,8 @@ public class PathfindingController : MonoBehaviour
             PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_Distance");
             PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_DestNodeId");
             PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_DestNode");
-        }
-
-        // Save map/campus data so AR scene can access it
-        if (MapManager.Instance != null && MapManager.Instance.GetCurrentMap() != null)
-        {
-            MapInfo currentMap = MapManager.Instance.GetCurrentMap();
-            PlayerPrefs.SetString("ARScene_MapId", currentMap.map_id);
-            PlayerPrefs.SetString("ARScene_MapName", currentMap.map_name);
-
-            string campusIdsJson = string.Join(",", MapManager.Instance.GetCurrentCampusIds());
-            PlayerPrefs.SetString("ARScene_CampusIds", campusIdsJson);
+            PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_IsIndoorGrouped");
+            PlayerPrefs.DeleteKey($"ARNavigation_Direction_{i}_IsIndoorDirection");
         }
 
         // Save route info
@@ -1280,35 +1315,97 @@ public class PathfindingController : MonoBehaviour
             PlayerPrefs.SetString($"ARNavigation_Edge_{i}_To", toNode);
         }
 
-        // ✅ Save directions count FIRST (so AR scene knows how many to expect)
+        // ✅ Save directions count FIRST
         PlayerPrefs.SetInt("ARNavigation_DirectionCount", directions.Count);
+        Debug.Log($"[PathfindingController] ✅ Saving {directions.Count} directions");
 
-        // Save each direction
+        // ✅ Save each direction WITH all flags
         for (int i = 0; i < directions.Count; i++)
         {
             var dir = directions[i];
+
             PlayerPrefs.SetString($"ARNavigation_Direction_{i}_Instruction", dir.instruction);
             PlayerPrefs.SetString($"ARNavigation_Direction_{i}_Turn", dir.turn.ToString());
             PlayerPrefs.SetFloat($"ARNavigation_Direction_{i}_Distance", dir.distanceInMeters);
-            PlayerPrefs.SetString($"ARNavigation_Direction_{i}_DestNodeId", dir.destinationNode.node_id);
-            PlayerPrefs.SetString($"ARNavigation_Direction_{i}_DestNode", dir.destinationNode.name);
+            PlayerPrefs.SetString($"ARNavigation_Direction_{i}_DestNodeId", dir.destinationNode?.node_id ?? "");
+            PlayerPrefs.SetString($"ARNavigation_Direction_{i}_DestNode", dir.destinationNode?.name ?? "Unknown");
+
+            // ✅ CRITICAL: Save indoor flags
+            PlayerPrefs.SetInt($"ARNavigation_Direction_{i}_IsIndoorGrouped", dir.isIndoorGrouped ? 1 : 0);
+            PlayerPrefs.SetInt($"ARNavigation_Direction_{i}_IsIndoorDirection", dir.isIndoorDirection ? 1 : 0);
+
+            Debug.Log($"[PathfindingController] 📝 Direction {i}: {dir.instruction}");
+            Debug.Log($"  - Turn: {dir.turn}");
+            Debug.Log($"  - Indoor Grouped: {dir.isIndoorGrouped}");
+            Debug.Log($"  - Indoor Direction: {dir.isIndoorDirection}");
         }
 
         PlayerPrefs.SetString("ARMode", "Navigation");
 
-        // ✅ FORCE SAVE - This is critical!
+        // ✅ FORCE SAVE
         PlayerPrefs.Save();
 
-        if (enableDebugLogs)
-        {
-            Debug.Log($"[PathfindingController] ✅ Route data saved for AR: {route.startNode.name} → {route.endNode.name}");
-            Debug.Log($"[PathfindingController] ✅ Saved {route.path.Count} path nodes");
-            Debug.Log($"[PathfindingController] ✅ Saved {directions.Count} navigation directions");
+        Debug.Log($"[PathfindingController] ✅ Route data saved for AR: {route.startNode.name} → {route.endNode.name}");
+        Debug.Log($"[PathfindingController] ✅ Saved {route.path.Count} path nodes");
+        Debug.Log($"[PathfindingController] ✅ Saved {directions.Count} navigation directions");
+        Debug.Log($"[PathfindingController] ✅ MapId: {PlayerPrefs.GetString("ARScene_MapId", "NONE")}");
 
-            // ✅ Verify save immediately
-            Debug.Log($"[PathfindingController] ✅ Verification: PlayerPrefs has {PlayerPrefs.GetInt("ARNavigation_DirectionCount", 0)} directions");
+        // ✅ Verify the first direction was saved correctly
+        if (directions.Count > 0)
+        {
+            string savedInstruction = PlayerPrefs.GetString("ARNavigation_Direction_0_Instruction", "NOT FOUND");
+            Debug.Log($"[PathfindingController] ✅ First direction verified: {savedInstruction}");
+
+            int savedCount = PlayerPrefs.GetInt("ARNavigation_DirectionCount", -1);
+            Debug.Log($"[PathfindingController] ✅ Direction count verified: {savedCount}");
         }
+
+        Debug.Log("[PathfindingController] 🔵 SaveRouteDataForAR END");
     }
+
+    // ✅ Also add this method to debug what's being called
+    // private void OnConfirmRouteClicked()
+    // {
+    //     Debug.Log("[PathfindingController] 🔵 OnConfirmRouteClicked START");
+
+    //     if (selectedRouteIndex < 0 || selectedRouteIndex >= currentRoutes.Count)
+    //     {
+    //         Debug.LogError("[PathfindingController] ❌ Invalid route index");
+    //         return;
+    //     }
+
+    //     RouteData selectedRoute = currentRoutes[selectedRouteIndex];
+    //     Debug.Log($"[PathfindingController] 🔵 Selected route: {selectedRoute.startNode.name} → {selectedRoute.endNode.name}");
+
+    //     // Generate directions from the route
+    //     DirectionGenerator directionGen = GetComponent<DirectionGenerator>();
+    //     if (directionGen == null)
+    //     {
+    //         Debug.Log("[PathfindingController] 🔵 DirectionGenerator not found, adding component");
+    //         directionGen = gameObject.AddComponent<DirectionGenerator>();
+    //     }
+
+    //     Debug.Log("[PathfindingController] 🔵 Calling GenerateDirections...");
+    //     List<NavigationDirection> directions = directionGen.GenerateDirections(selectedRoute);
+    //     Debug.Log($"[PathfindingController] 🔵 GenerateDirections returned {directions?.Count ?? 0} directions");
+
+    //     if (directions == null || directions.Count == 0)
+    //     {
+    //         Debug.LogError("[PathfindingController] ❌ No directions generated!");
+    //         return;
+    //     }
+
+    //     // Log each direction
+    //     for (int i = 0; i < directions.Count; i++)
+    //     {
+    //         Debug.Log($"[PathfindingController] Direction {i}: {directions[i].instruction} (Indoor: {directions[i].isIndoorGrouped})");
+    //     }
+
+    //     Debug.Log("[PathfindingController] 🔵 Calling SaveRouteDataForAR...");
+    //     SaveRouteDataForAR(selectedRoute, directions);
+    //     Debug.Log("[PathfindingController] 🔵 OnConfirmRouteClicked END");
+    // }
+
     public void HideResults()
     {
         if (resultPanel != null)

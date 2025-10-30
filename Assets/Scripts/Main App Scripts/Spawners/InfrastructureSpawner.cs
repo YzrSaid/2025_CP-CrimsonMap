@@ -414,13 +414,20 @@ public class InfrastructureNode : MonoBehaviour
 
     private void SetupInfrastructureDisplay()
     {
+        // Update the main label to show the legend instead of full name
         TextMeshPro label3D = GetComponentInChildren<TextMeshPro>();
         if ( label3D != null ) {
-            label3D.text = infrastructureData.Infrastructure.name;
+            if ( infrastructureData.Category != null && !string.IsNullOrEmpty( infrastructureData.Category.legend ) ) {
+                label3D.text = infrastructureData.Category.legend;
+            } else {
+                // Fallback to infrastructure name if no legend
+                label3D.text = infrastructureData.Infrastructure.name;
+            }
         }
 
         SetupCircleBackground();
     }
+
     private void SetupCircleBackground()
     {
         Renderer circleRenderer = null;
@@ -432,27 +439,8 @@ public class InfrastructureNode : MonoBehaviour
                 break;
             }
         }
-
-        if ( circleRenderer == null ) {
-            circleRenderer = GetComponentInChildren<Renderer>();
-            Debug.Log( "Using fallback renderer" );
-        }
-
-        if ( circleRenderer != null ) {
-            Material circleMaterial = circleRenderer.material;
-
-            if ( infrastructureData.Category != null && !string.IsNullOrEmpty( infrastructureData.Category.color ) ) {
-                if ( ColorUtility.TryParseHtmlString( infrastructureData.Category.color, out Color categoryColor ) ) {
-                    circleMaterial.SetColor( "_BaseColor", categoryColor );
-                } else {
-                    circleMaterial.SetColor( "_BaseColor", Color.gray );
-                }
-            } else {
-                circleMaterial.SetColor( "_BaseColor", Color.gray );
-            }
-        } else {
-        }
     }
+
     void Update()
     {
         if ( map != null ) {

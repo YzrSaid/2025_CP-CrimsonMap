@@ -9,7 +9,7 @@ public class Category
 {
     public string category_id;
     public string name;
-    public string color;
+    public string legend;
 }
 
 [System.Serializable]

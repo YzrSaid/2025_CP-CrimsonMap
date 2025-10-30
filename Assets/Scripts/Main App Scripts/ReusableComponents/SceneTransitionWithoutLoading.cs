@@ -26,7 +26,5 @@ public class SceneTransitionWithoutLoading : MonoBehaviour
         {
             GlobalManager.Instance.StartCoroutine(GlobalManager.Instance.SafeARCleanupAndExit(sceneName));
         }
-        // PlayerPrefs.DeleteKey("ARMode");
-        // PlayerPrefs.Save();
     }
 }

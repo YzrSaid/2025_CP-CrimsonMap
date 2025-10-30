@@ -105,30 +105,31 @@ public class CategoryDropdown : MonoBehaviour
             Button item = Instantiate( categoryItemPrefab, panelContent );
             spawnedItems.Add( item );
 
+            // Set category name
             TMP_Text label = item.GetComponentInChildren<TMP_Text>();
             if ( label != null ) {
                 label.text = category.name;
             }
 
-            Image colorImage = null;
-            Image[] allImages = item.GetComponentsInChildren<Image>( true );
+            // Find and set legend text
+            TMP_Text legendText = null;
+            TMP_Text[] allTexts = item.GetComponentsInChildren<TMP_Text>( true );
 
-            foreach ( var img in allImages ) {
-                if ( img.name == "Image_Color" || img.name == "Image" ||
-                        img.gameObject.name.Contains( "Color" ) ) {
-                    colorImage = img;
+            foreach ( var txt in allTexts ) {
+                if ( txt.name == "Text_Legend" || txt.name == "LegendText" ||
+                        txt.gameObject.name.Contains( "Legend" ) ) {
+                    legendText = txt;
                     break;
                 }
             }
 
-            if ( colorImage == null && allImages.Length > 1 ) {
-                colorImage = allImages[1];
+            // If no specific legend text found, try to find a second text component
+            if ( legendText == null && allTexts.Length > 1 ) {
+                legendText = allTexts[1];
             }
 
-            if ( colorImage != null && !string.IsNullOrEmpty( category.color ) ) {
-                if ( ColorUtility.TryParseHtmlString( category.color, out Color parsedColor ) ) {
-                    colorImage.color = parsedColor;
-                }
+            if ( legendText != null && !string.IsNullOrEmpty( category.legend ) ) {
+                legendText.text = category.legend;
             }
         }
     }

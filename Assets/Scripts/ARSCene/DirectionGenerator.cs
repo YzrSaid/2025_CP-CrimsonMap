@@ -1,34 +1,92 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using System.Collections;
 
 public class DirectionGenerator : MonoBehaviour
 {
     [Header("Settings")]
     public float minSegmentDistance = 5f;
     public float turnThresholdDegrees = 15f;
-    public float floorHeightMeters = 3.048f; // 10 feet per floor
+    public float floorHeightMeters = 3.048f;
 
     private Dictionary<string, Node> allNodes = new Dictionary<string, Node>();
     private Dictionary<string, IndoorInfrastructure> indoorData = new Dictionary<string, IndoorInfrastructure>();
+    private bool dataLoaded = false;
+    private bool isLoading = false;
+
+    void Awake()
+    {
+        // Pre-load data on Awake so it's ready when needed
+        StartCoroutine(PreloadData());
+    }
+
+    private IEnumerator PreloadData()
+    {
+        if (isLoading)
+        {
+            Debug.Log("[DirectionGenerator] Already loading data, waiting...");
+            yield return new WaitUntil(() => dataLoaded);
+            yield break;
+        }
+
+        isLoading = true;
+        yield return StartCoroutine(LoadIndoorDataIfNeeded());
+        dataLoaded = true;
+        isLoading = false;
+        Debug.Log("[DirectionGenerator] ✅ Data preloaded successfully");
+    }
 
     public List<NavigationDirection> GenerateDirections(RouteData route)
     {
-        if (route == null || route.path == null || route.path.Count < 2)
+        if (route == null || route.path == null || route.path.Count < 1)
         {
+            Debug.LogWarning("[DirectionGenerator] Invalid route data");
+            return new List<NavigationDirection>();
+        }
+
+        // ✅ If data not loaded yet, wait for it (don't use synchronous loading!)
+        if (!dataLoaded || allNodes.Count == 0)
+        {
+            Debug.LogError("[DirectionGenerator] ❌ Data not loaded! Cannot generate directions.");
+            Debug.LogError("[DirectionGenerator] This should never happen - data should be preloaded in Awake!");
             return new List<NavigationDirection>();
         }
 
         var directions = new List<NavigationDirection>();
-
-        // Load indoor data if needed
-        StartCoroutine(LoadIndoorDataIfNeeded());
 
         // Check if this is an indoor destination
         string originalFromId = PlayerPrefs.GetString("ARNavigation_OriginalFromNodeId", "");
         string originalToId = PlayerPrefs.GetString("ARNavigation_OriginalToNodeId", "");
         bool fromIsIndoor = PlayerPrefs.GetInt("ARNavigation_FromIsIndoor", 0) == 1;
         bool toIsIndoor = PlayerPrefs.GetInt("ARNavigation_ToIsIndoor", 0) == 1;
+        bool isSameBuilding = PlayerPrefs.GetString("ARNavigation_SameBuilding", "false") == "true";
+
+        Debug.Log($"[DirectionGenerator] Generating directions:");
+        Debug.Log($"  FROM: {originalFromId} (Indoor: {fromIsIndoor})");
+        Debug.Log($"  TO: {originalToId} (Indoor: {toIsIndoor})");
+        Debug.Log($"  Same Building: {isSameBuilding}");
+
+        // ✅ SPECIAL CASE: Same building navigation (outdoor to indoor, same building)
+        if (isSameBuilding && toIsIndoor)
+        {
+            Debug.Log("[DirectionGenerator] Same building - generating indoor-only directions");
+
+            if (!string.IsNullOrEmpty(originalToId))
+            {
+                if (allNodes.TryGetValue(originalToId, out Node toNode))
+                {
+                    directions.AddRange(GenerateSameBuildingDirections(toNode));
+                    Debug.Log($"[DirectionGenerator] ✅ Generated {directions.Count} indoor directions");
+                }
+                else
+                {
+                    Debug.LogError($"[DirectionGenerator] ❌ TO node not found: {originalToId}");
+                }
+            }
+
+            return directions;
+        }
 
         // Generate exit directions if starting from indoor
         if (fromIsIndoor && !string.IsNullOrEmpty(originalFromId))
@@ -38,42 +96,46 @@ public class DirectionGenerator : MonoBehaviour
 
         // Generate outdoor path directions (normal A* route)
         var pathNodes = route.path;
-        var segments = GroupPathIntoSegments(pathNodes);
 
-        for (int i = 0; i < segments.Count; i++)
+        if (pathNodes.Count >= 2)
         {
-            var segment = segments[i];
-            
-            if (segment.Count < 2)
-                continue;
+            var segments = GroupPathIntoSegments(pathNodes);
 
-            float segmentHeading = CalculateHeading(segment[0], segment[segment.Count - 1]);
-
-            TurnDirection turn = TurnDirection.Straight;
-            if (i > 0)
+            for (int i = 0; i < segments.Count; i++)
             {
-                var prevSegment = segments[i - 1];
-                float prevHeading = CalculateHeading(prevSegment[0], prevSegment[prevSegment.Count - 1]);
-                turn = DetermineTurn(prevHeading, segmentHeading);
+                var segment = segments[i];
+
+                if (segment.Count < 2)
+                    continue;
+
+                float segmentHeading = CalculateHeading(segment[0], segment[segment.Count - 1]);
+
+                TurnDirection turn = TurnDirection.Straight;
+                if (i > 0)
+                {
+                    var prevSegment = segments[i - 1];
+                    float prevHeading = CalculateHeading(prevSegment[0], prevSegment[prevSegment.Count - 1]);
+                    turn = DetermineTurn(prevHeading, segmentHeading);
+                }
+
+                Node destNode = segment[segment.Count - 1].node;
+                string destName = destNode.name;
+
+                float segmentDistance = CalculateSegmentDistance(segment);
+
+                var direction = new NavigationDirection
+                {
+                    turn = turn,
+                    instruction = BuildInstruction(turn, destName, segmentDistance),
+                    destinationNode = destNode,
+                    distanceInMeters = segmentDistance,
+                    heading = segmentHeading,
+                    pathNodes = segment,
+                    isIndoorDirection = false
+                };
+
+                directions.Add(direction);
             }
-
-            Node destNode = segment[segment.Count - 1].node;
-            string destName = destNode.name;
-            
-            float segmentDistance = CalculateSegmentDistance(segment);
-
-            var direction = new NavigationDirection
-            {
-                turn = turn,
-                instruction = BuildInstruction(turn, destName, segmentDistance),
-                destinationNode = destNode,
-                distanceInMeters = segmentDistance,
-                heading = segmentHeading,
-                pathNodes = segment,
-                isIndoorDirection = false
-            };
-
-            directions.Add(direction);
         }
 
         // Generate entry directions if ending at indoor location
@@ -85,15 +147,70 @@ public class DirectionGenerator : MonoBehaviour
         return directions;
     }
 
-    private System.Collections.IEnumerator LoadIndoorDataIfNeeded()
+    // ✅ NEW: Generate directions for same building (outdoor to indoor)
+    private List<NavigationDirection> GenerateSameBuildingDirections(Node toNode)
     {
-        if (indoorData.Count > 0)
+        var directions = new List<NavigationDirection>();
+
+        if (toNode.type != "indoorinfra" || toNode.indoor == null)
         {
-            yield break; // Already loaded
+            Debug.LogWarning($"[DirectionGenerator] Invalid indoor node: {toNode.name}");
+            return directions;
+        }
+
+        string buildingName = GetBuildingName(toNode.related_infra_id);
+        string roomName = toNode.name;
+        int targetFloor = int.Parse(toNode.indoor.floor);
+
+        Debug.Log($"[DirectionGenerator] Building: {buildingName}, Room: {roomName}, Floor: {targetFloor}");
+
+        // Entry direction
+        string entryInstruction = $"Enter {buildingName}";
+
+        // Add floor navigation if not on ground floor
+        if (targetFloor > 1)
+        {
+            List<string> floorInstructions = new List<string>();
+
+            for (int floor = 1; floor < targetFloor; floor++)
+            {
+                floorInstructions.Add($"Floor {floor}");
+            }
+
+            string floorText = string.Join(" and ", floorInstructions);
+            entryInstruction += $". Navigate to {roomName}. Room is on Floor {targetFloor}, look for stairs on {floorText}.";
+        }
+        else
+        {
+            entryInstruction += $". Navigate to {roomName}. Room is on Floor {targetFloor}.";
+        }
+
+        Debug.Log($"[DirectionGenerator] Generated instruction: {entryInstruction}");
+
+        directions.Add(new NavigationDirection
+        {
+            turn = TurnDirection.Enter,
+            instruction = entryInstruction,
+            destinationNode = toNode,
+            distanceInMeters = 0f,
+            heading = 0f,
+            isIndoorDirection = true,
+            isIndoorGrouped = true
+        });
+
+        return directions;
+    }
+
+    private IEnumerator LoadIndoorDataIfNeeded()
+    {
+        if (dataLoaded && indoorData.Count > 0 && allNodes.Count > 0)
+        {
+            yield break;
         }
 
         bool loadComplete = false;
 
+        // Load indoor.json
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             "indoor.json",
             (jsonContent) =>
@@ -102,7 +219,7 @@ public class DirectionGenerator : MonoBehaviour
                 {
                     IndoorInfrastructure[] indoorArray = JsonHelper.FromJson<IndoorInfrastructure>(jsonContent);
                     indoorData.Clear();
-                    
+
                     foreach (var indoor in indoorArray)
                     {
                         if (!indoor.is_deleted)
@@ -110,8 +227,9 @@ public class DirectionGenerator : MonoBehaviour
                             indoorData[indoor.room_id] = indoor;
                         }
                     }
-                    
+
                     loadComplete = true;
+                    Debug.Log($"[DirectionGenerator] ✅ Loaded {indoorData.Count} indoor infrastructures");
                 }
                 catch (System.Exception e)
                 {
@@ -131,6 +249,7 @@ public class DirectionGenerator : MonoBehaviour
         // Load all nodes
         string mapId = PlayerPrefs.GetString("ARScene_MapId", "MAP-01");
         string nodesFile = $"nodes_{mapId}.json";
+        loadComplete = false;
 
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             nodesFile,
@@ -140,13 +259,14 @@ public class DirectionGenerator : MonoBehaviour
                 {
                     Node[] nodes = JsonHelper.FromJson<Node>(jsonContent);
                     allNodes.Clear();
-                    
+
                     foreach (var node in nodes)
                     {
                         allNodes[node.node_id] = node;
                     }
-                    
+
                     loadComplete = true;
+                    Debug.Log($"[DirectionGenerator] ✅ Loaded {allNodes.Count} nodes");
                 }
                 catch (System.Exception e)
                 {
@@ -160,9 +280,10 @@ public class DirectionGenerator : MonoBehaviour
                 loadComplete = true;
             }
         ));
+
+        yield return new WaitUntil(() => loadComplete);
     }
 
-    // Generate directions for exiting indoor location
     private List<NavigationDirection> GenerateIndoorExitDirections(string fromIndoorNodeId)
     {
         var directions = new List<NavigationDirection>();
@@ -193,7 +314,6 @@ public class DirectionGenerator : MonoBehaviour
         return directions;
     }
 
-    // Generate directions for entering indoor location
     private List<NavigationDirection> GenerateIndoorEntryDirections(string toIndoorNodeId)
     {
         var directions = new List<NavigationDirection>();
@@ -212,25 +332,23 @@ public class DirectionGenerator : MonoBehaviour
         string roomName = toNode.name;
         int targetFloor = int.Parse(toNode.indoor.floor);
 
-        // Entry direction
         string entryInstruction = $"Enter {buildingName}";
-        
-        // Add floor navigation if not on ground floor
+
         if (targetFloor > 1)
         {
             List<string> floorInstructions = new List<string>();
-            
+
             for (int floor = 1; floor < targetFloor; floor++)
             {
                 floorInstructions.Add($"Floor {floor}");
             }
-            
+
             string floorText = string.Join(" and ", floorInstructions);
             entryInstruction += $". Navigate to {roomName}. Room is on Floor {targetFloor}, look for stairs on {floorText}.";
         }
         else
         {
-            entryInstruction += $". Navigate to {roomName}.";
+            entryInstruction += $". Navigate to {roomName}. Room is on Floor {targetFloor}.";
         }
 
         directions.Add(new NavigationDirection
@@ -249,20 +367,17 @@ public class DirectionGenerator : MonoBehaviour
 
     private string GetBuildingName(string infraId)
     {
-        // Try to find infrastructure name from nodes
-        var infraNode = allNodes.Values.FirstOrDefault(n => 
+        var infraNode = allNodes.Values.FirstOrDefault(n =>
             n.type == "infrastructure" && n.related_infra_id == infraId);
-        
+
         if (infraNode != null)
         {
             return infraNode.name;
         }
 
-        // Fallback to infra_id
         return infraId;
     }
 
-    // Rest of the methods remain the same...
     private List<List<PathNode>> GroupPathIntoSegments(List<PathNode> pathNodes)
     {
         var segments = new List<List<PathNode>>();
@@ -290,7 +405,7 @@ public class DirectionGenerator : MonoBehaviour
             segments.Add(currentSegment);
         }
 
-        if (segments.Count == 0)
+        if (segments.Count == 0 && pathNodes.Count >= 2)
         {
             segments.Add(new List<PathNode> { pathNodes[0], pathNodes[pathNodes.Count - 1] });
         }
@@ -302,7 +417,7 @@ public class DirectionGenerator : MonoBehaviour
     {
         Vector3 direction = to.worldPosition - from.worldPosition;
         float heading = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
-        
+
         if (heading < 0)
             heading += 360f;
 
@@ -395,6 +510,11 @@ public class DirectionGenerator : MonoBehaviour
         };
     }
 
+    public bool IsDataLoaded()
+    {
+        return dataLoaded && allNodes.Count > 0 && indoorData.Count > 0;
+    }
+
     public string GetTurnText(TurnDirection turn)
     {
         return turn switch
@@ -414,17 +534,18 @@ public class DirectionGenerator : MonoBehaviour
 [System.Serializable]
 public class NavigationDirection
 {
-    public TurnDirection turn; 
+    public TurnDirection turn;
     public string instruction;
     public Node destinationNode;
     public float distanceInMeters;
     public float heading;
     public List<PathNode> pathNodes;
-    public bool isIndoorDirection; // NEW: Flag for indoor directions
-    public bool isIndoorGrouped; // NEW: Flag to group indoor directions together
-    
+    public bool isIndoorDirection;
+    public bool isIndoorGrouped;
+
     public override string ToString()
     {
         return instruction;
     }
+
 }

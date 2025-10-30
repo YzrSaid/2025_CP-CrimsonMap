@@ -335,7 +335,7 @@ public class UnifiedARManager : MonoBehaviour
                 try
                 {
                     Node[] nodes = JsonHelper.FromJson<Node>(jsonData);
-                    
+
                     // ✅ Direct AR: Only infrastructure and indoorinfra
                     // ✅ Navigation Mode: Also include intermediate (pathway) nodes
                     if (currentARMode == ARMode.DirectAR)
@@ -347,13 +347,13 @@ public class UnifiedARManager : MonoBehaviour
                     else // Navigation Mode
                     {
                         currentNodes = nodes.Where(n =>
-                            (n.type == "infrastructure" || n.type == "indoorinfra" || n.type == "intermediate") && 
+                            (n.type == "infrastructure" || n.type == "indoorinfra" || n.type == "intermediate") &&
                             n.is_active
                         ).ToList();
                     }
-                    
+
                     loadSuccess = true;
-                    
+
                     Debug.Log($"[UnifiedARManager] Loaded {currentNodes.Count} nodes for {currentARMode} mode");
                 }
                 catch (System.Exception e)
@@ -855,7 +855,12 @@ public class UnifiedARManager : MonoBehaviour
         {
             textMeshPro.text = infra.name;
             textMeshPro.fontSize = 8;
-            StartCoroutine(UpdateTextRotation(textMeshPro.transform));
+
+            // ✅ FIX: Check if this GameObject is still active before starting coroutine
+            if (gameObject != null && gameObject.activeInHierarchy && !isExitingAR)
+            {
+                StartCoroutine(UpdateTextRotation(textMeshPro.transform));
+            }
         }
 
         Text nameText = marker.GetComponentInChildren<Text>();
@@ -865,10 +870,9 @@ public class UnifiedARManager : MonoBehaviour
             nameText.fontSize = 12;
         }
     }
-
     IEnumerator UpdateTextRotation(Transform textTransform)
     {
-        while (textTransform != null && !isExitingAR)
+        while (textTransform != null && !isExitingAR && gameObject != null && gameObject.activeInHierarchy)
         {
             if (arCamera != null)
             {
@@ -895,7 +899,7 @@ public class UnifiedARManager : MonoBehaviour
             {
                 Vector2 coords = GPSManager.Instance.GetCoordinates();
                 string lockStatus = isGPSLocked ? $" 🔒 Locked ({gpsLockTimer:F0}s)" : "";
-                
+
                 if (coords.magnitude > 0)
                 {
                     trackingStatusText.text = $"🌍 Outdoor (GPS){lockStatus}\n{coords.x:F5}, {coords.y:F5}";

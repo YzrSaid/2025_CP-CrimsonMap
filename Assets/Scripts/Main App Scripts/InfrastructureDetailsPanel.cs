@@ -7,7 +7,7 @@ public class InfrastructureDetailsPanel : MonoBehaviour
     [Header( "UI References" )]
     public TextMeshProUGUI titleText;
     public TextMeshProUGUI categoryText;
-    public Image categoryColorImage;
+    public TextMeshProUGUI categoryLegendText;
     public Image infrastructureImage;
     public TextMeshProUGUI emailText;
     public TextMeshProUGUI phoneText;
@@ -76,10 +76,9 @@ public class InfrastructureDetailsPanel : MonoBehaviour
             if ( categoryText != null )
                 categoryText.text = category.name;
 
-            if ( categoryColorImage != null && !string.IsNullOrEmpty( category.color ) ) {
-                if ( ColorUtility.TryParseHtmlString( category.color, out Color catColor ) ) {
-                    categoryColorImage.color = catColor;
-                }
+            // Display the legend (letter)
+            if ( categoryLegendText != null && !string.IsNullOrEmpty( category.legend ) ) {
+                categoryLegendText.text = category.legend;
             }
         }
 
@@ -98,7 +97,7 @@ public class InfrastructureDetailsPanel : MonoBehaviour
 
         if ( node != null ) {
             if ( latAndlngText != null )
-                latAndlngText.text = node.latitude.ToString( "F6" ) + " | " + node.latitude.ToString( "F6" );
+                latAndlngText.text = node.latitude.ToString( "F6" ) + " | " + node.longitude.ToString( "F6" );
         }
 
         if ( campus != null ) {

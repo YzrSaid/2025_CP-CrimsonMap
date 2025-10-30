@@ -47,14 +47,14 @@ public class ARManagerCleanup : MonoBehaviour
     {
         PlayerPrefs.SetString("ARMode", "DirectAR");
         PlayerPrefs.Save();
-        CleanupAndLoadAR();
+        StartCoroutine(CleanupAndLoadAR());
     }
 
     public void LoadARNavigation()
     {
         PlayerPrefs.SetString("ARMode", "Navigation");
         PlayerPrefs.Save();
-        CleanupAndLoadAR();
+        StartCoroutine(CleanupAndLoadAR());
     }
 
     public void LoadReadQRCode()

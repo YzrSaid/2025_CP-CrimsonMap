@@ -16,8 +16,9 @@ public class ARUIManager : MonoBehaviour
     public bool enableDebugLogs = true;
 
     public enum ARMode { DirectAR, Navigation }
-    
+
     private ARMode currentARMode = ARMode.DirectAR;
+
 
     void Start()
     {
