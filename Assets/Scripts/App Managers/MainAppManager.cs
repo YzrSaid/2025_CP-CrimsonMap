@@ -27,9 +27,11 @@ public class MainAppManager : MonoBehaviour
     public GameObject explorePanel;
     public GameObject settingsPanel;
 
+    [Header("Lock Location Panel")]
+    public GameObject lockPanel;
+
     private void Awake()
     {
-        // Singleton pattern
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -60,6 +62,12 @@ public class MainAppManager : MonoBehaviour
         homePanel.SetActive(true);
         explorePanel.SetActive(false);
         settingsPanel.SetActive(false);
+
+        // Show the lock panel in home page
+        if (lockPanel != null)
+        {
+            lockPanel.SetActive(true);
+        }
     }
 
     void OnNavigateButtonClicked()
@@ -75,6 +83,12 @@ public class MainAppManager : MonoBehaviour
         homePanel.SetActive(false);
         explorePanel.SetActive(true);
         settingsPanel.SetActive(false);
+
+        // Hide the location panel (only show it in home page)
+        if (lockPanel != null)
+        {
+            lockPanel.SetActive(false);
+        }
     }
 
     void OnSettingsButtonClicked()
@@ -90,5 +104,11 @@ public class MainAppManager : MonoBehaviour
         homePanel.SetActive(false);
         explorePanel.SetActive(false);
         settingsPanel.SetActive(true);
+
+        // Hide the location panel (only show it in home page)
+        if (lockPanel != null)
+        {
+            lockPanel.SetActive(false);
+        }
     }
 }

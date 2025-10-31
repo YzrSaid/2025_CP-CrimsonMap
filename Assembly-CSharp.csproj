@@ -144,6 +144,7 @@
     <Compile Include="Assets/Mapbox/Unity/DataContainers/MapboxEnums.cs" />
     <Compile Include="Assets/Mapbox/Unity/Map/MapVisualizer.cs" />
     <Compile Include="Assets/Scripts/App Managers/AccordionManager.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/PanelOpener.cs" />
     <Compile Include="Assets/Mapbox/Core/Plugins/Android/UniAndroidPermission/UniAndroidPermission.cs" />
     <Compile Include="Assets/Mapbox/Examples/8_VoxelMap/Scripts/VoxelTile.cs" />
     <Compile Include="Assets/MobileARTemplateAssets/Scripts/ARTemplateMenuManager.cs" />
