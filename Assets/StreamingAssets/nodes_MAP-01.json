@@ -886,8 +886,8 @@
         "related_room_id": "",
         "is_active": true,
         "node_id": "ND-046",
-        "y_coordinate": -2.22389853290574,
-        "x_coordinate": -7.72703156359906
+        "y_coordinate": -5.30591999995622,
+        "x_coordinate": -12.7086878176656
     },
 {
         "longitude": 122.11928,
@@ -905,8 +905,8 @@
         "related_room_id": "",
         "is_active": true,
         "node_id": "ND-047",
-        "y_coordinate": 7.78364486512072,
-        "x_coordinate": 1.10386165239092
+        "y_coordinate": 7.7378000000016,
+        "x_coordinate": 1.10510328890235
     },
 {
         "longitude": 122.119155,
@@ -924,8 +924,8 @@
         "related_room_id": "",
         "is_active": true,
         "node_id": "ND-048",
-        "y_coordinate": 15.5672897302414,
-        "x_coordinate": -4.41544660799499
+        "y_coordinate": 14.7018199999932,
+        "x_coordinate": -12.7086878176656
     },
 {
         "y_coordinate": -29.8002403407592,
@@ -2268,8 +2268,8 @@
         "campus_id": "CAMP-02"
     },
 {
-        "y_coordinate": 149.001201703697,
-        "x_coordinate": 6118.83221584489,
+        "y_coordinate": 5.63754000000257,
+        "x_coordinate": -16.1345080129488,
         "node_id": "ND-127",
         "is_active": true,
         "related_room_id": null,
@@ -2283,8 +2283,8 @@
         "campus_id": "CAMP-02"
     },
 {
-        "y_coordinate": 151.558685016583,
-        "x_coordinate": 6126.5592684882,
+        "y_coordinate": 8.17996000006341,
+        "x_coordinate": -8.39878499377329,
         "node_id": "ND-128",
         "is_active": true,
         "related_room_id": null,

@@ -209,9 +209,22 @@ public class FirestoreManager : MonoBehaviour
                     };
 
                     LocalVersionCache localCache = GetLocalVersionCache(mapId);
-                    bool needsUpdate = localCache == null ||
-                                      string.IsNullOrEmpty(localCache.cached_version) ||
-                                      localCache.cached_version != serverVersion.current_version;
+                    
+                    // Check if version has changed
+                    bool versionChanged = localCache == null ||
+                                         string.IsNullOrEmpty(localCache.cached_version) ||
+                                         localCache.cached_version != serverVersion.current_version;
+
+                    // If version is the same, check if current_version_updated flag is true
+                    bool versionUpdatedFlag = false;
+                    if (!versionChanged && localCache != null)
+                    {
+                        versionUpdatedFlag = data.ContainsKey("current_version_updated") && 
+                                            data["current_version_updated"] is bool && 
+                                            (bool)data["current_version_updated"];
+                    }
+
+                    bool needsUpdate = versionChanged || versionUpdatedFlag;
 
                     onComplete?.Invoke(needsUpdate, serverVersion);
                 }
@@ -316,6 +329,9 @@ public class FirestoreManager : MonoBehaviour
         yield return new WaitUntil(() => completedSyncs >= totalSyncs);
 
         UpdateLocalVersionCache(mapVersion);
+
+        // Reset the current_version_updated flag in Firebase after successful sync
+        ResetMapVersionUpdatedFlag(mapVersion.map_id);
 
         onComplete?.Invoke();
     }
@@ -936,6 +952,29 @@ public class FirestoreManager : MonoBehaviour
         }
 
         return "{\n" + string.Join(",\n", keyValuePairs) + "\n" + indent + "}";
+    }
+
+    private void ResetMapVersionUpdatedFlag(string mapId)
+    {
+        DocumentReference mapRef = db.Collection(MAP_VERSIONS_COLLECTION).Document(mapId);
+
+        var resetData = new Dictionary<string, object>
+        {
+            { "current_version_updated", false },
+            { "last_sync", DateTimeOffset.UtcNow.ToUnixTimeSeconds() }
+        };
+
+        mapRef.SetAsync(resetData, SetOptions.MergeAll).ContinueWithOnMainThread(task =>
+        {
+            if (task.IsCompletedSuccessfully)
+            {
+                Debug.Log($"Successfully reset current_version_updated flag for map {mapId}");
+            }
+            else
+            {
+                Debug.LogError($"Failed to reset current_version_updated flag for map {mapId}: {task.Exception?.Message}");
+            }
+        });
     }
 
     public void FetchDocument(string collectionName, string documentId, System.Action<Dictionary<string, object>> onComplete)

@@ -2440,10 +2440,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ea37884b19aec9c19b91b821e957a12, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  panelsToClose:
-  - {fileID: 654494066}
-  - {fileID: 1259183061}
-  button: {fileID: 0}
 --- !u!114 &336797205
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6039,10 +6035,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ea37884b19aec9c19b91b821e957a12, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  panelsToClose:
-  - {fileID: 1177314504}
-  - {fileID: 1259183061}
-  button: {fileID: 0}
 --- !u!114 &767062750
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12184,7 +12176,6 @@ MonoBehaviour:
   autoUpdateGPSLocation: 1
   gpsUpdateInterval: 5
   qrConflictThresholdMeters: 100
-  enableDebugLogs: 1
 --- !u!114 &1465186293
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13884,6 +13875,7 @@ MonoBehaviour:
   mapboxMap: {fileID: 1699060734}
   userIndicatorPrefab: {fileID: 2531190016571084963, guid: 4a7abfc3061df376ab00315da1deb1cd, type: 3}
   shadowConePrefab: {fileID: 5720313531753482208, guid: 22769e8ad43aabd6492c58e34bf5e09b, type: 3}
+  pathfindingController: {fileID: 0}
   heightOffset: 2
   updateInterval: 0.2
   positionSmoothness: 0.3
@@ -13892,7 +13884,6 @@ MonoBehaviour:
   shadowAngle: 45
   shadowColor: {r: 0.72156864, g: 0.0627451, b: 0.07450981, a: 1}
   shadowMaterial: {fileID: 0}
-  enableDebugLogs: 1
 --- !u!1 &1723283726
 GameObject:
   m_ObjectHideFlags: 0
