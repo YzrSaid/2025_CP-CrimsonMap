@@ -64,7 +64,7 @@ public class PanelCloser : MonoBehaviour
                 // Animate to scale zero with ease out
                 panel.transform.DOScale(Vector3.zero, animationDuration)
                     .SetEase(easeType)
-                    .SetUpdate(true) // Use unscaled time
+                    .SetUpdate(true) 
                     .OnComplete(() =>
                     {
                         panel.SetActive(false);

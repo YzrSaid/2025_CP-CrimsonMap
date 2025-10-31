@@ -185,7 +185,7 @@ public class MapVersionInfo
     public string map_id;
     public string current_version;
     public string map_name;
-    public long last_updated; // Unix timestamp
+    public long last_updated;
 }
 
 [System.Serializable]
