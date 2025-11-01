@@ -12950,7 +12950,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114478715909612932, guid: e6b749c6d877f4c19a5a5c3c0783d53b, type: 3}
       propertyPath: _previewOptions.isPreviewEnabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 114478715909612932, guid: e6b749c6d877f4c19a5a5c3c0783d53b, type: 3}
       propertyPath: _imagery._layerProperty.sourceType
@@ -15303,7 +15303,7 @@ MonoBehaviour:
   progressPanel: {fileID: 1606277912}
   progressBar: {fileID: 1752954960}
   progressText: {fileID: 937182224}
-  cancelButton: {fileID: 0}
+  cancelButton: {fileID: 1228554910}
   cancelButtonText: {fileID: 0}
   deleteConfirmPanel: {fileID: 1918317096}
   confirmDeleteButton: {fileID: 454109028}
@@ -17306,15 +17306,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mapboxMap: {fileID: 1699060734}
-  userIndicatorPrefab: {fileID: 2531190016571084963, guid: 4a7abfc3061df376ab00315da1deb1cd, type: 3}
+  userIndicatorPrefab: {fileID: 7190762585855250911, guid: 77855d0dc288654f491e45e13bd6de6a, type: 3}
   shadowConePrefab: {fileID: 5720313531753482208, guid: 22769e8ad43aabd6492c58e34bf5e09b, type: 3}
-  pathfindingController: {fileID: 0}
-  heightOffset: 2
+  heightOffset: 7
   updateInterval: 0.2
   positionSmoothness: 0.3
   rotationSmoothness: 0.5
-  shadowDistance: 5
-  shadowAngle: 45
+  userIndicatorColor: {r: 0.6862745, g: 0.1764706, b: 0.1882353, a: 1}
+  userIndicatorMaterial: {fileID: 0}
+  useTransparentIndicator: 0
+  userIndicatorAlpha: 1
+  shadowDistance: 4
+  shadowAngle: 70
   shadowColor: {r: 0.72156864, g: 0.0627451, b: 0.07450981, a: 1}
   shadowMaterial: {fileID: 0}
 --- !u!1 &1699998751

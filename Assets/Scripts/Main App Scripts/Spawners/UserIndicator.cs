@@ -9,13 +9,19 @@ public class UserIndicator : MonoBehaviour
     public AbstractMap mapboxMap;
     public GameObject userIndicatorPrefab;
     public GameObject shadowConePrefab;
-    public PathfindingController pathfindingController;
 
     [Header("Settings")]
     public float heightOffset = 2f;
     public float updateInterval = 0.05f;
     public float positionSmoothness = 0.3f;
     public float rotationSmoothness = 10f;
+
+    [Header("User Indicator Appearance")]
+    public Color userIndicatorColor = new Color(0.2f, 0.6f, 1f, 1f); // Blue by default
+    public Material userIndicatorMaterial; // Optional: custom material
+    public bool useTransparentIndicator = false; // Make indicator semi-transparent
+    [Range(0f, 1f)]
+    public float userIndicatorAlpha = 1f; // Alpha when transparent mode enabled
 
     [Header("Shadow/Direction Indicator")]
     public float shadowDistance = 5f;
@@ -26,12 +32,9 @@ public class UserIndicator : MonoBehaviour
     private GameObject userIndicatorInstance;
     private GameObject shadowConeInstance;
     private Vector3 lastWorldPos = Vector3.zero;
-    private Vector3 lockedPosition = Vector3.zero;
     private float lastHeading = 0f;
-    private float lockedHeading = 0f;
     private float lastUpdateTime = 0f;
     private bool isInitialized = false;
-    private bool wasLocked = false;
 
     private MapInteraction mapInteraction;
 
@@ -43,11 +46,6 @@ public class UserIndicator : MonoBehaviour
         }
 
         mapInteraction = FindObjectOfType<MapInteraction>();
-        
-        if (pathfindingController == null)
-        {
-            pathfindingController = FindObjectOfType<PathfindingController>();
-        }
     }
 
     private IEnumerator Start()
@@ -89,6 +87,9 @@ public class UserIndicator : MonoBehaviour
         userIndicatorInstance = Instantiate(userIndicatorPrefab, Vector3.zero, Quaternion.identity, mapboxMap.transform);
         userIndicatorInstance.name = "UserIndicatorInstance";
 
+        // Apply user indicator appearance
+        ApplyUserIndicatorAppearance();
+
         if (shadowConePrefab != null)
         {
             shadowConeInstance = Instantiate(shadowConePrefab, Vector3.zero, Quaternion.identity, mapboxMap.transform);
@@ -96,12 +97,14 @@ public class UserIndicator : MonoBehaviour
             ApplyShadowAppearance();
         }
 
+        // Set render queue for user indicator (on top)
         Renderer[] renderers = userIndicatorInstance.GetComponentsInChildren<Renderer>();
         foreach (var renderer in renderers)
         {
             renderer.material.renderQueue = 3001;
         }
 
+        // Set render queue for shadow (below user indicator)
         if (shadowConeInstance != null)
         {
             Renderer[] shadowRenderers = shadowConeInstance.GetComponentsInChildren<Renderer>();
@@ -112,6 +115,74 @@ public class UserIndicator : MonoBehaviour
         }
 
         isInitialized = true;
+    }
+
+    void ApplyUserIndicatorAppearance()
+    {
+        if (userIndicatorInstance == null) return;
+
+        Renderer[] renderers = userIndicatorInstance.GetComponentsInChildren<Renderer>();
+        foreach (var renderer in renderers)
+        {
+            // Use custom material if provided, otherwise modify existing
+            if (userIndicatorMaterial != null)
+            {
+                renderer.material = userIndicatorMaterial;
+            }
+
+            if (renderer.material != null)
+            {
+                // Set color with alpha
+                Color finalColor = userIndicatorColor;
+                if (useTransparentIndicator)
+                {
+                    finalColor.a = userIndicatorAlpha;
+                }
+
+                renderer.material.color = finalColor;
+
+                // If transparent, set up material for transparency
+                if (useTransparentIndicator && finalColor.a < 1f)
+                {
+                    SetupTransparentMaterial(renderer.material);
+                }
+                else
+                {
+                    // Opaque material
+                    SetupOpaqueMaterial(renderer.material);
+                }
+            }
+        }
+    }
+
+    void SetupTransparentMaterial(Material mat)
+    {
+        if (mat.HasProperty("_Mode"))
+        {
+            mat.SetFloat("_Mode", 3); // Transparent mode
+            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            mat.SetInt("_ZWrite", 0);
+            mat.DisableKeyword("_ALPHATEST_ON");
+            mat.EnableKeyword("_ALPHABLEND_ON");
+            mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            mat.renderQueue = 3000;
+        }
+    }
+
+    void SetupOpaqueMaterial(Material mat)
+    {
+        if (mat.HasProperty("_Mode"))
+        {
+            mat.SetFloat("_Mode", 0); // Opaque mode
+            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
+            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
+            mat.SetInt("_ZWrite", 1);
+            mat.DisableKeyword("_ALPHATEST_ON");
+            mat.DisableKeyword("_ALPHABLEND_ON");
+            mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            mat.renderQueue = -1;
+        }
     }
 
     void ApplyShadowAppearance()
@@ -155,42 +226,9 @@ public class UserIndicator : MonoBehaviour
 
         lastUpdateTime = Time.time;
 
-        bool isLocked = IsLocationLocked();
-
-        if (isLocked && !wasLocked)
-        {
-            lockedPosition = userIndicatorInstance.transform.position;
-            lockedHeading = lastHeading;
-        }
-
-        wasLocked = isLocked;
-
-        if (isLocked)
-        {
-            UpdateLockedIndicator();
-        }
-        else
-        {
-            UpdateUserIndicatorPosition();
-            UpdateUserIndicatorRotation();
-        }
-
-        UpdateDirectionShadow();
-    }
-
-    private bool IsLocationLocked()
-    {
-        if (pathfindingController != null)
-        {
-            return pathfindingController.IsLocationLocked();
-        }
-        return false;
-    }
-
-    void UpdateLockedIndicator()
-    {
-        userIndicatorInstance.transform.position = lockedPosition;
+        UpdateUserIndicatorPosition();
         UpdateUserIndicatorRotation();
+        UpdateDirectionShadow();
     }
 
     void UpdateUserIndicatorPosition()
@@ -252,18 +290,39 @@ public class UserIndicator : MonoBehaviour
         if (isInitialized)
         {
             lastUpdateTime = 0f;
-            
-            if (IsLocationLocked())
-            {
-                UpdateLockedIndicator();
-            }
-            else
-            {
-                UpdateUserIndicatorPosition();
-                UpdateUserIndicatorRotation();
-            }
-            
+            UpdateUserIndicatorPosition();
+            UpdateUserIndicatorRotation();
             UpdateDirectionShadow();
+        }
+    }
+
+    // Call this at runtime to change user indicator color
+    public void SetUserIndicatorColor(Color newColor)
+    {
+        userIndicatorColor = newColor;
+        if (isInitialized)
+        {
+            ApplyUserIndicatorAppearance();
+        }
+    }
+
+    // Call this at runtime to change shadow color
+    public void SetShadowColor(Color newColor)
+    {
+        shadowColor = newColor;
+        if (isInitialized && shadowConeInstance != null)
+        {
+            ApplyShadowAppearance();
+        }
+    }
+
+    // Call this to refresh all appearances (useful after changing settings in inspector during play mode)
+    public void RefreshAppearance()
+    {
+        if (isInitialized)
+        {
+            ApplyUserIndicatorAppearance();
+            ApplyShadowAppearance();
         }
     }
 
@@ -271,17 +330,11 @@ public class UserIndicator : MonoBehaviour
     {
         if (userIndicatorInstance != null && Application.isPlaying)
         {
-            Gizmos.color = Color.blue;
+            Gizmos.color = userIndicatorColor;
             Gizmos.DrawWireSphere(userIndicatorInstance.transform.position, 1f);
 
             Vector3 forward = userIndicatorInstance.transform.forward * 3f;
             Gizmos.DrawRay(userIndicatorInstance.transform.position, forward);
-            
-            if (IsLocationLocked())
-            {
-                Gizmos.color = Color.red;
-                Gizmos.DrawWireSphere(lockedPosition, 1.5f);
-            }
         }
     }
 }
