@@ -198,6 +198,7 @@
     <Compile Include="Assets/Mapbox/Unity/Utilities/Runnable.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/SubLayerDarkStyle.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/DragableDirectionWaypoint.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/IndoorInfrastructureItem.cs" />
     <Compile Include="Assets/Mapbox/Unity/Map/TileProviders/RangeTileProvider.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Factories/DirectionsFactory.cs" />
     <Compile Include="Assets/Mapbox/Unity/Map/Interfaces/ITileProvider.cs" />
