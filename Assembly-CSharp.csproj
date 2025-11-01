@@ -213,6 +213,7 @@
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/MapUtils.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/SpawnPrefabOptions.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/EditorLocationProvider.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/Map/SmartMapDownloadButton.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Data/VectorFeatureUnity.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/MergedModifierStack.cs" />
     <Compile Include="Assets/Scripts/App Managers/ARTrackingManager.cs" />
@@ -442,6 +443,7 @@
     <Compile Include="Assets/Mapbox/Unity/Utilities/MapVisualizerPerformance.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/SceneUtilitySetup.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/TileResource.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/Map/OfflineCacheCoordinator.cs" />
     <Compile Include="Assets/Mapbox/Unity/Map/TileProviders/QuadTreeMapVisualizer.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/TextureMonoBehaviourModifier.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/MapboxStylesColorModifier.cs" />

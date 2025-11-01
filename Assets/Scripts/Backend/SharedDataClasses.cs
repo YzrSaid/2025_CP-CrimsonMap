@@ -176,6 +176,8 @@ public class MapInfo
 {
     public string map_id;
     public string map_name;
+    public double center_lat;
+    public double center_lng;
     public List<string> campus_included;
 }
 
