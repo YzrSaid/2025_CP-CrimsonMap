@@ -41,6 +41,7 @@ public class RouteData
     public string walkingTime;
     public Node startNode;
     public string viaMode;
+    public string routeName;
     public bool isRecommended;
     public Node endNode;
 }

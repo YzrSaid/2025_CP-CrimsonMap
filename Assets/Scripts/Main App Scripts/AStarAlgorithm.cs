@@ -11,17 +11,7 @@ public class AStarPathfinding : MonoBehaviour
     public AbstractMap mapboxMap;
 
     [Header("Settings")]
-    public bool enableDebugLogs = true;
-    public float alternativePathPenalty = 0.3f;
-
-    [Header("Debug Visualization")]
-    public bool showPathInScene = true;
-    public Color pathDebugColor = Color.green;
-    public Color startNodeColor = Color.blue;
-    public Color endNodeColor = Color.red;
-    public float debugSphereSize = 1f;
-    public float debugLineWidth = 0.5f;
-    public float pathHeightOffset = 2f;
+    public float alternativePathPenalty = 0.5f;
 
     private string currentMapId;
     private List<string> currentCampusIds = new List<string>();
@@ -65,8 +55,6 @@ public class AStarPathfinding : MonoBehaviour
         }
     }
 
-    #region MapManager Integration
-
     public void SetCurrentMapData(string mapId, List<string> campusIds)
     {
         currentMapId = mapId;
@@ -94,10 +82,6 @@ public class AStarPathfinding : MonoBehaviour
         SetCurrentMapData(mapId, campusIds);
         yield return StartCoroutine(LoadGraphData());
     }
-
-    #endregion
-
-    #region Graph Data Loading
 
     private IEnumerator LoadGraphData()
     {
@@ -204,8 +188,6 @@ public class AStarPathfinding : MonoBehaviour
             adjacencyList[nodeId] = new List<GraphEdge>();
         }
 
-        int addedEdges = 0;
-
         foreach (var edge in edges)
         {
             if (edge == null || !edge.is_active) continue;
@@ -228,14 +210,8 @@ public class AStarPathfinding : MonoBehaviour
                 cost = distance,
                 edgeData = edge
             });
-
-            addedEdges += 2;
         }
     }
-
-    #endregion
-
-    #region Multiple Path Finding
 
     public IEnumerator FindMultiplePaths(string startNodeId, string endNodeId, int maxPaths = 3)
     {
@@ -275,7 +251,6 @@ public class AStarPathfinding : MonoBehaviour
             yield break;
         }
 
-        // Find multiple alternative paths
         List<List<string>> paths = FindAlternativePaths(startNodeId, endNodeId, maxPaths);
 
         if (paths == null || paths.Count == 0)
@@ -284,7 +259,6 @@ public class AStarPathfinding : MonoBehaviour
             yield break;
         }
 
-        // Convert to RouteData
         foreach (var path in paths)
         {
             var routeData = new RouteData
@@ -302,7 +276,6 @@ public class AStarPathfinding : MonoBehaviour
             allRoutes.Add(routeData);
         }
 
-        // Mark the shortest route as recommended
         if (allRoutes.Count > 0)
         {
             float shortestDistance = allRoutes.Min(r => r.totalDistance);
@@ -310,6 +283,15 @@ public class AStarPathfinding : MonoBehaviour
             if (shortestRoute != null)
             {
                 shortestRoute.isRecommended = true;
+                shortestRoute.routeName = $"Route 1 (Recommended)";
+            }
+            
+            for (int i = 0; i < allRoutes.Count; i++)
+            {
+                if (!allRoutes[i].isRecommended)
+                {
+                    allRoutes[i].routeName = $"Route {i + 1}";
+                }
             }
         }
 
@@ -322,34 +304,52 @@ public class AStarPathfinding : MonoBehaviour
     {
         var allPaths = new List<List<string>>();
         var usedEdges = new HashSet<string>();
+        var blockedEdges = new HashSet<string>();
+        var usedCrossings = new HashSet<string>();
+        var foundPathTypes = new HashSet<string>();
 
-        for (int i = 0; i < maxPaths; i++)
+        int maxAttempts = maxPaths * 5;
+        
+        for (int i = 0; i < maxAttempts && allPaths.Count < maxPaths; i++)
         {
-            // Find path with penalty for used edges
-            List<string> path = AStarWithPenalty(startId, goalId, usedEdges);
+            List<string> path = AStarWithPenalty(startId, goalId, usedEdges, blockedEdges);
 
             if (path == null || path.Count == 0)
             {
-                break; // No more paths available
+                break;
             }
 
-            // Check if this path is significantly different from existing paths
+            string pathType = DetermineViaMode(path);
+            string crossingEdge = FindCrossCampusEdge(path);
+            
+            bool isNewPathType = !foundPathTypes.Contains(pathType);
+            bool isNewCrossing = !string.IsNullOrEmpty(crossingEdge) && !usedCrossings.Contains(crossingEdge);
+            
             bool isDifferent = true;
-            foreach (var existingPath in allPaths)
+            if (allPaths.Count > 0 && !isNewPathType && !isNewCrossing)
             {
-                float similarity = CalculatePathSimilarity(path, existingPath);
-                if (similarity > 0.7f) // 70% similar
+                foreach (var existingPath in allPaths)
                 {
-                    isDifferent = false;
-                    break;
+                    float similarity = CalculatePathSimilarity(path, existingPath);
+                    if (similarity > 0.5f)
+                    {
+                        isDifferent = false;
+                        break;
+                    }
                 }
             }
 
-            if (isDifferent || allPaths.Count == 0)
+            if (allPaths.Count == 0 || isNewPathType || isNewCrossing || isDifferent)
             {
                 allPaths.Add(path);
-
-                // Mark edges as used for next iteration
+                foundPathTypes.Add(pathType);
+                
+                if (!string.IsNullOrEmpty(crossingEdge))
+                {
+                    usedCrossings.Add(crossingEdge);
+                    blockedEdges.Add(crossingEdge);
+                }
+                
                 for (int j = 0; j < path.Count - 1; j++)
                 {
                     string edgeKey = GetEdgeKey(path[j], path[j + 1]);
@@ -358,17 +358,51 @@ public class AStarPathfinding : MonoBehaviour
             }
             else
             {
-                // Force marking some edges to find different path
-                if (path.Count > 2)
+                if (!string.IsNullOrEmpty(crossingEdge) && usedCrossings.Contains(crossingEdge))
                 {
-                    int midIndex = path.Count / 2;
-                    string edgeKey = GetEdgeKey(path[midIndex], path[midIndex + 1]);
-                    usedEdges.Add(edgeKey);
+                    blockedEdges.Add(crossingEdge);
+                }
+                
+                if (path.Count > 4)
+                {
+                    int[] positions = { path.Count / 4, path.Count / 2, (path.Count * 3) / 4 };
+                    foreach (int pos in positions)
+                    {
+                        if (pos > 0 && pos < path.Count - 1)
+                        {
+                            string edgeKey = GetEdgeKey(path[pos], path[pos + 1]);
+                            usedEdges.Add(edgeKey);
+                        }
+                    }
                 }
             }
         }
 
         return allPaths;
+    }
+    
+    private string FindCrossCampusEdge(List<string> path)
+    {
+        for (int i = 0; i < path.Count - 1; i++)
+        {
+            string fromId = path[i];
+            string toId = path[i + 1];
+
+            if (adjacencyList.ContainsKey(fromId))
+            {
+                var edge = adjacencyList[fromId].FirstOrDefault(e => e.toNodeId == toId);
+                if (edge != null && edge.edgeData != null)
+                {
+                    string pathType = edge.edgeData.path_type;
+                    if (pathType == "via_gate" || pathType == "via_overpass")
+                    {
+                        return GetEdgeKey(fromId, toId);
+                    }
+                }
+            }
+        }
+        
+        return null;
     }
 
     private float CalculatePathSimilarity(List<string> path1, List<string> path2)
@@ -392,18 +426,18 @@ public class AStarPathfinding : MonoBehaviour
 
     private string GetEdgeKey(string from, string to)
     {
-        // Create bidirectional edge key
         if (string.Compare(from, to) < 0)
             return from + "-" + to;
         else
             return to + "-" + from;
     }
 
-    private List<string> AStarWithPenalty(string startId, string goalId, HashSet<string> penalizedEdges)
+    private List<string> AStarWithPenalty(string startId, string goalId, HashSet<string> penalizedEdges, HashSet<string> blockedEdges = null)
     {
         var openSet = new PriorityQueue<AStarNode>();
         var openSetHash = new HashSet<string>();
         var closedSet = new HashSet<string>();
+        
         var gScore = new Dictionary<string, float>();
         var fScore = new Dictionary<string, float>();
         var cameFrom = new Dictionary<string, string>();
@@ -445,10 +479,15 @@ public class AStarPathfinding : MonoBehaviour
                 if (closedSet.Contains(neighborId))
                     continue;
 
+                string edgeKey = GetEdgeKey(current.nodeId, neighborId);
+                
+                if (blockedEdges != null && blockedEdges.Contains(edgeKey))
+                {
+                    continue;
+                }
+
                 float edgeCost = edge.cost;
 
-                // Apply penalty to used edges
-                string edgeKey = GetEdgeKey(current.nodeId, neighborId);
                 if (penalizedEdges.Contains(edgeKey))
                 {
                     edgeCost *= (1.0f + alternativePathPenalty);
@@ -478,19 +517,10 @@ public class AStarPathfinding : MonoBehaviour
         return null;
     }
 
-    #endregion
-
-    #region Legacy Single Path Finding (for backward compatibility)
-
     public IEnumerator FindPath(string startNodeId, string endNodeId)
     {
-        // Use FindMultiplePaths but only get first result
         yield return StartCoroutine(FindMultiplePaths(startNodeId, endNodeId, 1));
     }
-
-    #endregion
-
-    #region A* Helper Methods
 
     private List<string> ReconstructPath(Dictionary<string, string> cameFrom, string current)
     {
@@ -504,10 +534,7 @@ public class AStarPathfinding : MonoBehaviour
 
         return path;
     }
-
-    #endregion
-
-    #region Heuristic and Distance Calculations
+    
     private string DetermineViaMode(List<string> path)
     {
         if (path == null || path.Count <= 1)
@@ -534,9 +561,9 @@ public class AStarPathfinding : MonoBehaviour
             }
         }
 
-        if (pathTypes.Contains("overpass"))
+        if (pathTypes.Contains("via_overpass"))
             return "Via Overpass";
-        else if (pathTypes.Contains("gate"))
+        else if (pathTypes.Contains("via_gate"))
             return "Via Gate";
         else
             return "Via Walkway";
@@ -582,7 +609,7 @@ public class AStarPathfinding : MonoBehaviour
 
     private string CalculateWalkingTime(float distance)
     {
-        float walkingSpeed = 1.4f; // m/s (average walking speed)
+        float walkingSpeed = 1.4f;
         float timeInSeconds = distance / walkingSpeed;
         float timeInMinutes = timeInSeconds / 60f;
 
@@ -597,10 +624,6 @@ public class AStarPathfinding : MonoBehaviour
             return $"{hours}h {minutes}m";
         }
     }
-
-    #endregion
-
-    #region Path Conversion and Management
 
     private List<PathNode> ConvertToPathNodes(List<string> nodeIds)
     {
@@ -647,7 +670,6 @@ public class AStarPathfinding : MonoBehaviour
             new Vector2d(node.latitude, node.longitude),
             false
         );
-        pos.y = pathHeightOffset;
         return pos;
     }
 
@@ -662,10 +684,6 @@ public class AStarPathfinding : MonoBehaviour
         allNodes.Clear();
         adjacencyList.Clear();
     }
-
-    #endregion
-
-    #region Public Access Methods - Multiple Routes
 
     public List<RouteData> GetAllRoutes()
     {
@@ -688,10 +706,6 @@ public class AStarPathfinding : MonoBehaviour
         }
         return null;
     }
-
-    #endregion
-
-    #region Public Access Methods - Legacy (for backward compatibility)
 
     public List<PathNode> GetCurrentPath()
     {
@@ -760,10 +774,6 @@ public class AStarPathfinding : MonoBehaviour
 
     public Dictionary<string, Node> GetAllNodes() => new Dictionary<string, Node>(allNodes);
 
-    #endregion
-
-    #region File Name Generation
-
     private string GetNodesFileName()
     {
         if (string.IsNullOrEmpty(currentMapId))
@@ -778,65 +788,13 @@ public class AStarPathfinding : MonoBehaviour
         return $"edges_{currentMapId}.json";
     }
 
-    #endregion
-
-    #region Debug Visualization
-
-    void OnDrawGizmos()
-    {
-        if (!showPathInScene || allRoutes == null || allRoutes.Count == 0)
-            return;
-
-        var activeRoute = GetActiveRoute();
-        if (activeRoute == null || activeRoute.path == null || activeRoute.path.Count == 0)
-            return;
-
-        var currentPath = activeRoute.path;
-
-        Gizmos.color = pathDebugColor;
-        for (int i = 0; i < currentPath.Count - 1; i++)
-        {
-            Gizmos.DrawLine(currentPath[i].worldPosition, currentPath[i + 1].worldPosition);
-
-            Color waypointColor = pathDebugColor;
-            waypointColor.a = 0.6f;
-            Gizmos.color = waypointColor;
-            Gizmos.DrawSphere(currentPath[i].worldPosition, debugSphereSize * 0.4f);
-        }
-
-        if (currentPath.Count > 0)
-        {
-            Gizmos.color = startNodeColor;
-            Gizmos.DrawSphere(currentPath[0].worldPosition, debugSphereSize);
-
-            Gizmos.color = endNodeColor;
-            Gizmos.DrawSphere(currentPath[currentPath.Count - 1].worldPosition, debugSphereSize);
-        }
-    }
-
-    #endregion
-
-    #region Utility Methods
-
     private bool IsValidCoordinate(float lat, float lon)
     {
         return !float.IsNaN(lat) && !float.IsNaN(lon) &&
                !float.IsInfinity(lat) && !float.IsInfinity(lon) &&
                lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
     }
-
-    private void DebugLog(string message)
-    {
-        if (enableDebugLogs)
-        {
-            Debug.Log($"[AStarPathfinding] {message}");
-        }
-    }
-
-    #endregion
 }
-
-#region Supporting Classes
 
 public class AStarNode : System.IComparable<AStarNode>
 {
@@ -912,5 +870,3 @@ public class PriorityQueue<T> where T : System.IComparable<T>
         get { return data.Count; }
     }
 }
-
-#endregion

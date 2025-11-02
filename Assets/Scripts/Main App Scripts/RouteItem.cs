@@ -38,7 +38,12 @@ public class RouteItem : MonoBehaviour
         onRouteSelected = selectCallback;
 
         if ( titleText != null ) {
-            titleText.text = $"Route #{index + 1}";
+            // FIXED: Use routeName from RouteData if available, otherwise fallback to "Route #X"
+            if ( !string.IsNullOrEmpty( routeData.routeName ) ) {
+                titleText.text = routeData.routeName;
+            } else {
+                titleText.text = $"Route #{index + 1}";
+            }
         }
 
         if ( distanceText != null ) {
