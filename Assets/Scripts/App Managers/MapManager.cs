@@ -179,6 +179,8 @@ public class MapManager : MonoBehaviour
         {
             PlayerPrefs.SetString("ARScene_MapId", currentMap.map_id);
             PlayerPrefs.SetString("ARScene_MapName", currentMap.map_name);
+            PlayerPrefs.SetFloat("ARScene_CenterLat", (float)currentMap.center_lat);
+            PlayerPrefs.SetFloat("ARScene_CenterLng", (float)currentMap.center_lng);
 
             string campusIdsJson = string.Join(",", currentCampusIds);
             PlayerPrefs.SetString("ARScene_CampusIds", campusIdsJson);

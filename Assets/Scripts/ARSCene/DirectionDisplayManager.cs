@@ -16,6 +16,7 @@ public class DirectionDisplayManager : MonoBehaviour
     public GameObject turnLeftImage;
     public GameObject walkStraightImage;
     public GameObject enterImage;
+    public GameObject turnIconsContainer;
 
     [Header("Compass Arrow")]
     public CompassNavigationArrow compassArrow;
@@ -231,10 +232,10 @@ public class DirectionDisplayManager : MonoBehaviour
             // Display grouped instructions
             if (directionText != null)
             {
-                directionText.text = "🏢 Indoor Navigation:\n\n" + groupedInstructions.Trim();
+                directionText.text = groupedInstructions.Trim();
             }
 
-            ShowTurnIcon(TurnDirection.Enter);
+            HideAllTurnIcons();
 
             // Set compass to final indoor destination
             if (groupedTargets.Count > 0)
@@ -249,15 +250,13 @@ public class DirectionDisplayManager : MonoBehaviour
             }
 
             hasAutoProgressed = false;
-
-            // For indoor, we don't auto-progress since AR tracking isn't accurate
-            // User must manually progress (or we can disable auto-progress for indoor)
             return;
         }
 
         // Normal outdoor direction display
         if (directionText != null)
             directionText.text = currentDir.instruction;
+
 
         ShowTurnIcon(currentDir.turn);
 
@@ -272,17 +271,23 @@ public class DirectionDisplayManager : MonoBehaviour
         hasAutoProgressed = false;
     }
 
+    public void ShowTurnIconContainer()
+    {
+        if (turnIconsContainer != null)
+        {
+            turnIconsContainer.SetActive(true);
+        }
+    }
+
     private void HideAllTurnIcons()
     {
-        if (turnRightImage != null) turnRightImage.SetActive(false);
-        if (turnLeftImage != null) turnLeftImage.SetActive(false);
-        if (walkStraightImage != null) walkStraightImage.SetActive(false);
-        if (enterImage != null) enterImage.SetActive(false);
+        if (turnIconsContainer != null) turnIconsContainer.SetActive(false);
     }
 
     private void ShowTurnIcon(TurnDirection turn)
     {
         HideAllTurnIcons();
+        ShowTurnIconContainer();
 
         switch (turn)
         {
@@ -400,7 +405,7 @@ public class DirectionDisplayManager : MonoBehaviour
         isNavigationActive = false;
 
         if (directionText != null)
-            directionText.text = "🎉 You have arrived at your destination!";
+            directionText.text = "You have arrived at your destination!";
 
         HideAllTurnIcons();
         if (enterImage != null)
@@ -432,15 +437,12 @@ public class DirectionDisplayManager : MonoBehaviour
             return;
         }
 
-        string debugText = $"<b>🧭 ALL DIRECTIONS ({allDirections.Count} total)</b>\n\n";
+        string debugText = $"<b>ALL DIRECTIONS ({allDirections.Count} total)</b>\n\n";
 
         for (int i = 0; i < allDirections.Count; i++)
         {
             var dir = allDirections[i];
             string highlight = (i == currentDirectionIndex) ? "<color=yellow>→ </color>" : "  ";
-            string iconEmoji = GetIconEmoji(dir.turn);
-
-            debugText += $"{highlight}<b>{i + 1}.</b> {iconEmoji} {dir.turn}\n";
             debugText += $"     {dir.instruction}\n";
             debugText += $"     Distance: {dir.distanceInMeters:F0}m | To: {dir.destinationNode?.name ?? "Unknown"}\n\n";
         }
@@ -448,25 +450,6 @@ public class DirectionDisplayManager : MonoBehaviour
         debugAllDirectionsText.text = debugText;
     }
 
-    private string GetIconEmoji(TurnDirection turn)
-    {
-        switch (turn)
-        {
-            case TurnDirection.Right:
-            case TurnDirection.SlightRight:
-                return "➡️";
-            case TurnDirection.Left:
-            case TurnDirection.SlightLeft:
-                return "⬅️";
-            case TurnDirection.Straight:
-                return "⬆️";
-            case TurnDirection.Enter:
-            case TurnDirection.Arrive:
-                return "🚪";
-            default:
-                return "⬆️";
-        }
-    }
 
     private float CalculateDistanceGPS(Vector2 coord1, Vector2 coord2)
     {

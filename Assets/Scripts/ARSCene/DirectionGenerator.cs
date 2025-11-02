@@ -17,7 +17,6 @@ public class DirectionGenerator : MonoBehaviour
 
     void Awake()
     {
-        // Pre-load data on Awake so it's ready when needed
         StartCoroutine(PreloadData());
     }
 
@@ -45,17 +44,8 @@ public class DirectionGenerator : MonoBehaviour
             return new List<NavigationDirection>();
         }
 
-        // ✅ If data not loaded yet, wait for it (don't use synchronous loading!)
-        if (!dataLoaded || allNodes.Count == 0)
-        {
-            Debug.LogError("[DirectionGenerator] ❌ Data not loaded! Cannot generate directions.");
-            Debug.LogError("[DirectionGenerator] This should never happen - data should be preloaded in Awake!");
-            return new List<NavigationDirection>();
-        }
-
         var directions = new List<NavigationDirection>();
 
-        // Check if this is an indoor destination
         string originalFromId = PlayerPrefs.GetString("ARNavigation_OriginalFromNodeId", "");
         string originalToId = PlayerPrefs.GetString("ARNavigation_OriginalToNodeId", "");
         bool fromIsIndoor = PlayerPrefs.GetInt("ARNavigation_FromIsIndoor", 0) == 1;
@@ -67,34 +57,24 @@ public class DirectionGenerator : MonoBehaviour
         Debug.Log($"  TO: {originalToId} (Indoor: {toIsIndoor})");
         Debug.Log($"  Same Building: {isSameBuilding}");
 
-        // ✅ SPECIAL CASE: Same building navigation (outdoor to indoor, same building)
         if (isSameBuilding && toIsIndoor)
         {
-            Debug.Log("[DirectionGenerator] Same building - generating indoor-only directions");
-
             if (!string.IsNullOrEmpty(originalToId))
             {
                 if (allNodes.TryGetValue(originalToId, out Node toNode))
                 {
                     directions.AddRange(GenerateSameBuildingDirections(toNode));
-                    Debug.Log($"[DirectionGenerator] ✅ Generated {directions.Count} indoor directions");
-                }
-                else
-                {
-                    Debug.LogError($"[DirectionGenerator] ❌ TO node not found: {originalToId}");
                 }
             }
 
             return directions;
         }
 
-        // Generate exit directions if starting from indoor
-        if (fromIsIndoor && !string.IsNullOrEmpty(originalFromId))
+        if (fromIsIndoor && !isSameBuilding && !string.IsNullOrEmpty(originalFromId))
         {
             directions.AddRange(GenerateIndoorExitDirections(originalFromId));
         }
 
-        // Generate outdoor path directions (normal A* route)
         var pathNodes = route.path;
 
         if (pathNodes.Count >= 2)
@@ -138,7 +118,6 @@ public class DirectionGenerator : MonoBehaviour
             }
         }
 
-        // Generate entry directions if ending at indoor location
         if (toIsIndoor && !string.IsNullOrEmpty(originalToId))
         {
             directions.AddRange(GenerateIndoorEntryDirections(originalToId));
@@ -147,7 +126,6 @@ public class DirectionGenerator : MonoBehaviour
         return directions;
     }
 
-    // ✅ NEW: Generate directions for same building (outdoor to indoor)
     private List<NavigationDirection> GenerateSameBuildingDirections(Node toNode)
     {
         var directions = new List<NavigationDirection>();
@@ -158,34 +136,10 @@ public class DirectionGenerator : MonoBehaviour
             return directions;
         }
 
-        string buildingName = GetBuildingName(toNode.related_infra_id);
         string roomName = toNode.name;
         int targetFloor = int.Parse(toNode.indoor.floor);
 
-        Debug.Log($"[DirectionGenerator] Building: {buildingName}, Room: {roomName}, Floor: {targetFloor}");
-
-        // Entry direction
-        string entryInstruction = $"Enter {buildingName}";
-
-        // Add floor navigation if not on ground floor
-        if (targetFloor > 1)
-        {
-            List<string> floorInstructions = new List<string>();
-
-            for (int floor = 1; floor < targetFloor; floor++)
-            {
-                floorInstructions.Add($"Floor {floor}");
-            }
-
-            string floorText = string.Join(" and ", floorInstructions);
-            entryInstruction += $". Navigate to {roomName}. Room is on Floor {targetFloor}, look for stairs on {floorText}.";
-        }
-        else
-        {
-            entryInstruction += $". Navigate to {roomName}. Room is on Floor {targetFloor}.";
-        }
-
-        Debug.Log($"[DirectionGenerator] Generated instruction: {entryInstruction}");
+        string entryInstruction = $"Navigate the building. {roomName} is located on Floor {targetFloor}.";
 
         directions.Add(new NavigationDirection
         {
@@ -210,7 +164,6 @@ public class DirectionGenerator : MonoBehaviour
 
         bool loadComplete = false;
 
-        // Load indoor.json
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             "indoor.json",
             (jsonContent) =>
@@ -229,7 +182,6 @@ public class DirectionGenerator : MonoBehaviour
                     }
 
                     loadComplete = true;
-                    Debug.Log($"[DirectionGenerator] ✅ Loaded {indoorData.Count} indoor infrastructures");
                 }
                 catch (System.Exception e)
                 {
@@ -246,7 +198,6 @@ public class DirectionGenerator : MonoBehaviour
 
         yield return new WaitUntil(() => loadComplete);
 
-        // Load all nodes
         string mapId = PlayerPrefs.GetString("ARScene_MapId", "MAP-01");
         string nodesFile = $"nodes_{mapId}.json";
         loadComplete = false;
@@ -303,7 +254,7 @@ public class DirectionGenerator : MonoBehaviour
         directions.Add(new NavigationDirection
         {
             turn = TurnDirection.Enter,
-            instruction = $"Exit {buildingName} and head outside",
+            instruction = $"Navigate and go out of {buildingName}",
             destinationNode = fromNode,
             distanceInMeters = 0f,
             heading = 0f,
@@ -328,28 +279,10 @@ public class DirectionGenerator : MonoBehaviour
             return directions;
         }
 
-        string buildingName = GetBuildingName(toNode.related_infra_id);
         string roomName = toNode.name;
         int targetFloor = int.Parse(toNode.indoor.floor);
 
-        string entryInstruction = $"Enter {buildingName}";
-
-        if (targetFloor > 1)
-        {
-            List<string> floorInstructions = new List<string>();
-
-            for (int floor = 1; floor < targetFloor; floor++)
-            {
-                floorInstructions.Add($"Floor {floor}");
-            }
-
-            string floorText = string.Join(" and ", floorInstructions);
-            entryInstruction += $". Navigate to {roomName}. Room is on Floor {targetFloor}, look for stairs on {floorText}.";
-        }
-        else
-        {
-            entryInstruction += $". Navigate to {roomName}. Room is on Floor {targetFloor}.";
-        }
+        string entryInstruction = $"Navigate and look for {roomName}. Room is located on Floor {targetFloor}.";
 
         directions.Add(new NavigationDirection
         {
@@ -495,39 +428,9 @@ public class DirectionGenerator : MonoBehaviour
             return $"{meters / 1000:F2}km";
     }
 
-    public string GetTurnSymbol(TurnDirection turn)
-    {
-        return turn switch
-        {
-            TurnDirection.Straight => "↑",
-            TurnDirection.Left => "←",
-            TurnDirection.Right => "→",
-            TurnDirection.SlightLeft => "↖",
-            TurnDirection.SlightRight => "↗",
-            TurnDirection.Enter => "🚪",
-            TurnDirection.Arrive => "🎯",
-            _ => "?"
-        };
-    }
-
     public bool IsDataLoaded()
     {
         return dataLoaded && allNodes.Count > 0 && indoorData.Count > 0;
-    }
-
-    public string GetTurnText(TurnDirection turn)
-    {
-        return turn switch
-        {
-            TurnDirection.Straight => "Straight",
-            TurnDirection.Left => "Left",
-            TurnDirection.Right => "Right",
-            TurnDirection.SlightLeft => "Slight Left",
-            TurnDirection.SlightRight => "Slight Right",
-            TurnDirection.Enter => "Enter",
-            TurnDirection.Arrive => "Arrive",
-            _ => "Unknown"
-        };
     }
 }
 
@@ -547,5 +450,4 @@ public class NavigationDirection
     {
         return instruction;
     }
-
 }

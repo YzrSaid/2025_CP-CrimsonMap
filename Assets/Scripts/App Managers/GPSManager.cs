@@ -11,6 +11,9 @@ public class GPSManager : MonoBehaviour
     public bool useMockLocationInEditor = true;
 
     [Header("Mock GPS Settings (Editor Only)")]
+    // private float mockLatitude = 6.91261f;
+    // private float mockLongitude = 122.06359f;
+
     private float mockLatitude = 6.91261f;
     private float mockLongitude = 122.06359f;
     private float mockHeading = 0f;

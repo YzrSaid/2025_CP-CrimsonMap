@@ -141,18 +141,20 @@ public class ARMapManager : MonoBehaviour
 
     private IEnumerator WaitForMapManagerAndUpdateCenter()
     {
-        while (MapManager.Instance == null || !MapManager.Instance.IsReady())
-        {
-            yield return new WaitForSeconds(0.1f);
-        }
-
-        MapInfo currentMap = MapManager.Instance.GetCurrentMap();
+        float centerLat = PlayerPrefs.GetFloat("ARScene_CenterLat", 6.9131464621345629f);
+        float centerLng = PlayerPrefs.GetFloat("ARScene_CenterLng", 122.06465815697084f);
         
-        if (currentMap != null && arMapboxMap != null)
+        if (arMapboxMap != null)
         {
-            Vector2d newCenter = new Vector2d(currentMap.center_lat, currentMap.center_lng);
-            arMapboxMap.SetCenterLatitudeLongitude(newCenter);
+            Vector2d newCenter = new Vector2d(centerLat, centerLng);
+            
+            int zoom = (int)arMapboxMap.Zoom;
+            if (zoom == 0) zoom = 16;
+            
+            arMapboxMap.Initialize(newCenter, zoom);
         }
+        
+        yield break;
     }
 
     private RouteData ReconstructRouteFromPlayerPrefs()

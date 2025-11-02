@@ -1,20 +1,20 @@
 [
   {
     "map_name": "WMSU MAP 2",
+    "center_lng": 121.9276753,
+    "center_lat": 7.0077403,
     "map_id": "MAP-02",
     "createdAt": {},
     "campus_included": [
       "CAMP-03"
     ],
-    " center_lng": 121.9276753,
-    " center_lat": 7.0077403,
     "id": "3xwjdI85vwotZyjkEamg"
   },
   {
     "updatedAt": {},
     "map_name": "WMSU MAP",
-    "center_lng": 122.06465815697084,
-    "center_lat": 6.9131464621345629,
+    "center_lng": 122.06465044780079,
+    "center_lat": 6.9131483930759012,
     "map_id": "MAP-01",
     "createdAt": {},
     "campus_included": [

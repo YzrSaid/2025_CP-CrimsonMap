@@ -47,6 +47,8 @@ public class QRScanner : MonoBehaviour
     private Texture2D cameraImageTexture;
     private int frameCount = 0;
     private int qrDetectCount = 0;
+    private Dictionary<string, IndoorInfrastructure> indoorInfrastructures = new Dictionary<string, IndoorInfrastructure>();
+    private Dictionary<string, Infrastructure> infrastructures = new Dictionary<string, Infrastructure>();
 
     private IBarcodeReader barcodeReader = new BarcodeReader {
         AutoRotate = false,
@@ -90,6 +92,8 @@ public class QRScanner : MonoBehaviour
     IEnumerator InitializeScanner()
     {
         yield return StartCoroutine( LoadAvailableMaps() );
+        yield return StartCoroutine( LoadIndoorData() );
+        yield return StartCoroutine( LoadInfrastructureData() );
 
         if ( arCameraManager == null ) {
             if ( instructionsText != null ) {
@@ -139,6 +143,80 @@ public class QRScanner : MonoBehaviour
             Debug.LogError( "Error: " + error );
         }
                                      ) );
+    }
+
+    IEnumerator LoadIndoorData()
+    {
+        bool loadComplete = false;
+
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
+            "indoor.json",
+            (jsonContent) =>
+            {
+                try
+                {
+                    IndoorInfrastructure[] indoorArray = JsonHelper.FromJson<IndoorInfrastructure>(jsonContent);
+                    indoorInfrastructures.Clear();
+
+                    foreach (var indoor in indoorArray)
+                    {
+                        if (!indoor.is_deleted)
+                        {
+                            indoorInfrastructures[indoor.room_id] = indoor;
+                        }
+                    }
+
+                    loadComplete = true;
+                }
+                catch (System.Exception e)
+                {
+                    loadComplete = true;
+                }
+            },
+            (error) =>
+            {
+                loadComplete = true;
+            }
+        ));
+
+        yield return new WaitUntil(() => loadComplete);
+    }
+
+    IEnumerator LoadInfrastructureData()
+    {
+        bool loadComplete = false;
+
+        yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
+            "infrastructure.json",
+            (jsonContent) =>
+            {
+                try
+                {
+                    Infrastructure[] infraArray = JsonHelper.FromJson<Infrastructure>(jsonContent);
+                    infrastructures.Clear();
+
+                    foreach (var infra in infraArray)
+                    {
+                        if (!infra.is_deleted)
+                        {
+                            infrastructures[infra.infra_id] = infra;
+                        }
+                    }
+
+                    loadComplete = true;
+                }
+                catch (System.Exception e)
+                {
+                    loadComplete = true;
+                }
+            },
+            (error) =>
+            {
+                loadComplete = true;
+            }
+        ));
+
+        yield return new WaitUntil(() => loadComplete);
     }
 
     void OnCameraFrameReceived( ARCameraFrameEventArgs eventArgs )
@@ -319,8 +397,39 @@ public class QRScanner : MonoBehaviour
         }
 
         if ( confirmationText != null ) {
-            confirmationText.text = $"The QR code you scanned is referring to [{scannedNodeInfo.name}], use this as your current location?";
+            string displayText = "";
+            
+            if (scannedNodeInfo.type == "indoorinfra")
+            {
+                string buildingName = GetBuildingName(scannedNodeInfo.related_infra_id);
+                displayText = $"The QR code you scanned is referring to [{scannedNodeInfo.name}] ({buildingName}), use this as your current location?";
+            }
+            else
+            {
+                displayText = $"The QR code you scanned is referring to [{scannedNodeInfo.name}], use this as your current location?";
+            }
+            
+            confirmationText.text = displayText;
         }
+    }
+
+    string GetBuildingName(string infraId)
+    {
+        if (indoorInfrastructures.ContainsKey(scannedNodeInfo.related_room_id))
+        {
+            var indoor = indoorInfrastructures[scannedNodeInfo.related_room_id];
+            return GetInfraName(indoor.infra_id);
+        }
+        return GetInfraName(infraId);
+    }
+
+    string GetInfraName(string infraId)
+    {
+        if (infrastructures.ContainsKey(infraId))
+        {
+            return infrastructures[infraId].name;
+        }
+        return infraId;
     }
 
     void ShowError( string errorMessage )
@@ -337,11 +446,30 @@ public class QRScanner : MonoBehaviour
     {
         PlayerPrefs.SetString( "ScannedNodeID", scannedNodeInfo.node_id );
         PlayerPrefs.SetString( "ScannedLocationName", scannedNodeInfo.name );
-        PlayerPrefs.SetFloat( "ScannedLat", scannedNodeInfo.latitude );
-        PlayerPrefs.SetFloat( "ScannedLng", scannedNodeInfo.longitude );
+        PlayerPrefs.SetString( "ScannedNodeType", scannedNodeInfo.type );
+        
+        if (scannedNodeInfo.type == "indoorinfra")
+        {
+            if (scannedNodeInfo.indoor != null)
+            {
+                PlayerPrefs.SetFloat( "ScannedX", scannedNodeInfo.indoor.x );
+                PlayerPrefs.SetFloat( "ScannedY", scannedNodeInfo.indoor.y );
+                PlayerPrefs.SetString( "ScannedFloor", scannedNodeInfo.indoor.floor );
+            }
+            PlayerPrefs.SetString( "ScannedRelatedInfraId", scannedNodeInfo.related_infra_id );
+            PlayerPrefs.SetString( "ScannedRelatedRoomId", scannedNodeInfo.related_room_id );
+            PlayerPrefs.SetFloat( "ScannedLat", 0 );
+            PlayerPrefs.SetFloat( "ScannedLng", 0 );
+        }
+        else
+        {
+            PlayerPrefs.SetFloat( "ScannedLat", scannedNodeInfo.latitude );
+            PlayerPrefs.SetFloat( "ScannedLng", scannedNodeInfo.longitude );
+            PlayerPrefs.SetFloat( "ScannedX", scannedNodeInfo.x_coordinate );
+            PlayerPrefs.SetFloat( "ScannedY", scannedNodeInfo.y_coordinate );
+        }
+        
         PlayerPrefs.SetString( "ScannedCampusID", scannedNodeInfo.campus_id );
-        PlayerPrefs.SetFloat( "ScannedX", scannedNodeInfo.x_coordinate );
-        PlayerPrefs.SetFloat( "ScannedY", scannedNodeInfo.y_coordinate );
         PlayerPrefs.Save();
 
         SceneTransitionWithoutLoading.GoToTargetSceneSimple( "MainAppScene" );

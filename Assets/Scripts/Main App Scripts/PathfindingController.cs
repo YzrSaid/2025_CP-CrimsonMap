@@ -158,7 +158,7 @@ public class PathfindingController : MonoBehaviour
 
         isLocationLocked = false;
         UpdateLocationLockUI(false);
-        
+
         if (locationLockText != null)
         {
             locationLockText.text = "Getting location... 📍";
@@ -208,7 +208,7 @@ public class PathfindingController : MonoBehaviour
             UpdateFromLocationByGPS();
             lastGPSUpdateTime = Time.time;
         }
-        
+
         if (useGPSForFromLocation && autoUpdateGPSLocation && !useStaticTesting && nodesLoaded)
         {
             if (!isLocationLocked)
@@ -303,6 +303,13 @@ public class PathfindingController : MonoBehaviour
 
         return null;
     }
+    private void UpdateLocationDisplayTextIndoor(Node node, string buildingName)
+    {
+        if (locationLockText != null && node != null)
+        {
+            locationLockText.text = $"{node.name} ({buildingName})";
+        }
+    }
 
     private void LoadQRScannedNode(string nodeId)
     {
@@ -315,7 +322,16 @@ public class PathfindingController : MonoBehaviour
             hasShownConflictPanel = false;
 
             UpdateLocationLockUI(true);
-            UpdateLocationDisplayText(node);
+
+            if (node.type == "indoorinfra")
+            {
+                string buildingName = GetBuildingNameFromInfraId(node.related_infra_id);
+                UpdateLocationDisplayTextIndoor(node, buildingName);
+            }
+            else
+            {
+                UpdateLocationDisplayText(node);
+            }
         }
     }
 
@@ -360,8 +376,7 @@ public class PathfindingController : MonoBehaviour
     {
         if (locationLockText != null && node != null)
         {
-            string icon = isLocationLocked ? "🔒" : "📍";
-            locationLockText.text = $"{node.name} {icon}";
+            locationLockText.text = $"{node.name}";
         }
     }
 
@@ -421,7 +436,7 @@ public class PathfindingController : MonoBehaviour
         if (nodesLoaded)
         {
             CheckForScannedQRData();
-            
+
             if (!isLocationLocked && useGPSForFromLocation && !useStaticTesting)
             {
                 UpdateFromLocationByGPS();
@@ -694,8 +709,7 @@ public class PathfindingController : MonoBehaviour
         {
             if (confirmFromText != null)
             {
-                string lockIndicator = isLocationLocked ? " 🔒" : " 📍";
-                confirmFromText.text = $"<b>From:</b> {fromNode.name}{lockIndicator}";
+                confirmFromText.text = $"<b>From:</b> {fromNode.name}";
             }
         }
 
@@ -939,8 +953,7 @@ public class PathfindingController : MonoBehaviour
 
         if (fromText != null)
         {
-            string lockIndicator = isLocationLocked ? " 🔒" : " 📍";
-            fromText.text = $"<b>From:</b> {displayFromNode.name}{lockIndicator}";
+            fromText.text = $"<b>From:</b> {displayFromNode.name}";
         }
 
         if (toText != null)
