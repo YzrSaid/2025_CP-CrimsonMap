@@ -22,10 +22,6 @@ public class ARMapManager : MonoBehaviour
     public Color navigationNodeColor = new Color(0.74f, 0.06f, 0.18f, 1f);
     public float navigationNodeSize = 4f;
 
-    [Header("Settings")]
-    public bool enableDebugLogs = true;
-
-    // ✅ Event for spawning completion
     public static event System.Action OnSpawningComplete;
 
     private string currentMapId;
@@ -39,7 +35,7 @@ public class ARMapManager : MonoBehaviour
 
     private RouteData activeRoute;
     private bool isInitialized = false;
-    private bool spawningComplete = false; // ✅ Track spawning status
+    private bool spawningComplete = false;
 
     public static ARMapManager Instance { get; private set; }
 
@@ -65,7 +61,6 @@ public class ARMapManager : MonoBehaviour
     {
         if (arMapboxMap == null)
         {
-            DebugLog("❌ No Mapbox map found!");
             return;
         }
 
@@ -95,7 +90,6 @@ public class ARMapManager : MonoBehaviour
         
         if (pathNodeCount == 0)
         {
-            DebugLog("No navigation route found in PlayerPrefs");
             return null;
         }
 
@@ -104,7 +98,6 @@ public class ARMapManager : MonoBehaviour
 
         if (string.IsNullOrEmpty(startNodeId) || string.IsNullOrEmpty(endNodeId))
         {
-            DebugLog("⚠️ Invalid route data - missing start/end nodes");
             return null;
         }
 
@@ -118,7 +111,6 @@ public class ARMapManager : MonoBehaviour
 
         route.path = new List<PathNode>();
         
-        DebugLog($"✅ Route loaded: {startNodeId} → {endNodeId} ({route.formattedDistance})");
         return route;
     }
 
@@ -128,41 +120,39 @@ public class ARMapManager : MonoBehaviour
         currentCampusIds.Clear();
         currentCampusIds.AddRange(campusIds);
 
-        DebugLog("🚀 Starting AR scene initialization...");
+        yield return StartCoroutine(WaitForMapManagerAndUpdateCenter());
 
-        // ✅ STEP 1: Initialize spawners first
         yield return StartCoroutine(InitializeSpawners(mapId, campusIds));
 
-        // ✅ STEP 2: Wait for spawning to complete
-        DebugLog("⏳ Waiting for spawning to complete...");
         yield return new WaitUntil(() => spawningComplete);
-        
-        DebugLog("✅ Spawning complete, proceeding with navigation setup");
 
-        // ✅ STEP 3: Setup navigation if route exists
         if (route != null)
         {
-            DebugLog("📍 Loading nodes for navigation...");
             yield return StartCoroutine(LoadAllNodesForAR());
             
             RouteData fullRoute = ReconstructRouteFromPlayerPrefs();
             
             if (fullRoute != null)
             {
-                DebugLog("🗺️ Initializing AR navigation...");
                 InitializeARNavigation(mapId, campusIds, fullRoute);
             }
-            else
-            {
-                DebugLog("⚠️ Could not reconstruct full route");
-            }
         }
-        else
+    }
+
+    private IEnumerator WaitForMapManagerAndUpdateCenter()
+    {
+        while (MapManager.Instance == null || !MapManager.Instance.IsReady())
         {
-            DebugLog("ℹ️ No navigation route - map-only mode");
+            yield return new WaitForSeconds(0.1f);
         }
 
-        DebugLog("🎉 AR scene initialization complete!");
+        MapInfo currentMap = MapManager.Instance.GetCurrentMap();
+        
+        if (currentMap != null && arMapboxMap != null)
+        {
+            Vector2d newCenter = new Vector2d(currentMap.center_lat, currentMap.center_lng);
+            arMapboxMap.SetCenterLatitudeLongitude(newCenter);
+        }
     }
 
     private RouteData ReconstructRouteFromPlayerPrefs()
@@ -175,7 +165,6 @@ public class ARMapManager : MonoBehaviour
 
         if (!allNodes.ContainsKey(startNodeId) || !allNodes.ContainsKey(endNodeId))
         {
-            DebugLog($"⚠️ Start/End nodes not found: {startNodeId}, {endNodeId}");
             return null;
         }
 
@@ -183,7 +172,6 @@ public class ARMapManager : MonoBehaviour
 
         if (pathNodeIds == null || pathNodeIds.Count == 0)
         {
-            DebugLog("⚠️ No path node IDs found");
             return null;
         }
 
@@ -214,7 +202,6 @@ public class ARMapManager : MonoBehaviour
             viaMode = PlayerPrefs.GetString("ARNavigation_ViaMode", "")
         };
 
-        DebugLog($"✅ Route reconstructed: {pathNodes.Count} nodes");
         return route;
     }
 
@@ -239,14 +226,12 @@ public class ARMapManager : MonoBehaviour
             }
         }
 
-        DebugLog($"📋 Extracted {pathNodeIds.Count} path nodes from directions");
         return pathNodeIds;
     }
 
-    // ✅ FIXED: Fire event when ALL spawning is done
     private IEnumerator InitializeSpawners(string mapId, List<string> campusIds)
     {
-        spawningComplete = false; // Reset flag
+        spawningComplete = false;
 
         if (pathRenderer != null)
             pathRenderer.SetCurrentMapData(mapId, campusIds);
@@ -255,26 +240,19 @@ public class ARMapManager : MonoBehaviour
         if (infrastructureSpawner != null)
             infrastructureSpawner.SetCurrentMapData(mapId, campusIds);
 
-        DebugLog("📊 Loading paths...");
         if (pathRenderer != null)
             yield return StartCoroutine(pathRenderer.LoadAndRenderPathsForMap(mapId, campusIds));
 
-        DebugLog("🚧 Loading barriers...");
         if (barrierSpawner != null)
             yield return StartCoroutine(barrierSpawner.LoadAndSpawnForMap(mapId, campusIds));
 
-        DebugLog("🏛️ Loading infrastructure...");
         if (infrastructureSpawner != null)
             yield return StartCoroutine(infrastructureSpawner.LoadAndSpawnForCampuses(campusIds));
 
-        // ✅ Wait one more frame to ensure everything is fully spawned
         yield return null;
 
-        // ✅ Mark spawning as complete
         spawningComplete = true;
 
-        // ✅ Fire event
-        DebugLog("🎉 All spawning complete - firing OnSpawningComplete event");
         OnSpawningComplete?.Invoke();
     }
 
@@ -282,13 +260,11 @@ public class ARMapManager : MonoBehaviour
     {
         if (!isInitialized)
         {
-            DebugLog("⚠️ ARMapManager not initialized");
             return;
         }
 
         if (route == null || route.path == null || route.path.Count == 0)
         {
-            DebugLog("⚠️ Invalid route data");
             return;
         }
 
@@ -296,8 +272,6 @@ public class ARMapManager : MonoBehaviour
         currentCampusIds.Clear();
         currentCampusIds.AddRange(campusIds);
         activeRoute = route;
-
-        DebugLog($"🎯 Initializing navigation: {route.path.Count} waypoints");
 
         ClearNavigationHighlights();
         StartCoroutine(SetupNavigationHighlighting(route));
@@ -315,14 +289,10 @@ public class ARMapManager : MonoBehaviour
             navigationEdgeIds.Add(edgeKey);
         }
 
-        DebugLog($"🎨 Highlighting {navigationEdgeIds.Count} edges and {navigationNodeIds.Count} nodes");
-
         yield return new WaitForSeconds(0.5f);
 
         yield return StartCoroutine(HighlightNavigationPaths());
         yield return StartCoroutine(HighlightNavigationNodes());
-
-        DebugLog("✅ Navigation highlighting complete");
     }
 
     private IEnumerator LoadAllNodesForAR()
@@ -347,18 +317,15 @@ public class ARMapManager : MonoBehaviour
                         }
                     }
 
-                    DebugLog($"✅ Loaded {allNodes.Count} nodes for AR");
                     loadCompleted = true;
                 }
                 catch (System.Exception e)
                 {
-                    DebugLog($"❌ Error loading nodes: {e.Message}");
                     loadCompleted = true;
                 }
             },
             (error) =>
             {
-                DebugLog($"❌ Failed to load nodes: {error}");
                 loadCompleted = true;
             }
         ));
@@ -370,7 +337,6 @@ public class ARMapManager : MonoBehaviour
     {
         if (pathRenderer == null)
         {
-            DebugLog("⚠️ PathRenderer not found");
             yield break;
         }
 
@@ -411,7 +377,6 @@ public class ARMapManager : MonoBehaviour
             }
         }
 
-        DebugLog($"✅ Highlighted {highlightedCount} navigation paths");
         yield break;
     }
 
@@ -419,7 +384,6 @@ public class ARMapManager : MonoBehaviour
     {
         if (infrastructureSpawner == null)
         {
-            DebugLog("⚠️ InfrastructureSpawner not found");
             yield break;
         }
 
@@ -457,7 +421,6 @@ public class ARMapManager : MonoBehaviour
             }
         }
 
-        DebugLog($"✅ Highlighted {highlightedCount} navigation nodes");
         yield break;
     }
 
@@ -468,8 +431,6 @@ public class ARMapManager : MonoBehaviour
         navigationNodeIds.Clear();
         navigationEdgeIds.Clear();
         activeRoute = null;
-
-        DebugLog("🧹 Navigation highlights cleared");
     }
 
     private string GetEdgeKey(string from, string to)
@@ -505,13 +466,5 @@ public class ARMapManager : MonoBehaviour
     public bool IsSpawningComplete()
     {
         return spawningComplete;
-    }
-
-    private void DebugLog(string message)
-    {
-        if (enableDebugLogs)
-        {
-            Debug.Log($"[ARMapManager] {message}");
-        }
     }
 }
