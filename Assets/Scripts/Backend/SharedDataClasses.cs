@@ -135,8 +135,8 @@ public class Node
 public class IndoorCoordinates
 {
     public float x;
-    public float y; 
-    public string floor; 
+    public float y;
+    public string floor;
 }
 
 [System.Serializable]
@@ -246,6 +246,16 @@ public enum TurnDirection
     SlightRight,
     Enter,
     Arrive
+}
+
+public class MarkerAnchor
+{
+    public Node node;
+    public float nodeX;
+    public float nodeY;
+    public float nodeLatitude;
+    public float nodeLongitude;
+    public GameObject markerGameObject;
 }
 
 // Helper class for JSON array parsing (Unity's JsonUtility doesn't handle arrays directly)

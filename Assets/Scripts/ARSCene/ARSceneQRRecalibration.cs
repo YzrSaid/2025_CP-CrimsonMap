@@ -22,7 +22,6 @@ public class ARSceneQRRecalibration : MonoBehaviour
 
     [Header("UI References")]
     public GameObject scanTriggerButton;
-    public GameObject scanTriggerButton2;
     public TextMeshProUGUI scanButtonText;
     public GameObject qrFrameContainer;
     public TextMeshProUGUI debugText;
@@ -88,13 +87,6 @@ public class ARSceneQRRecalibration : MonoBehaviour
         if (scanTriggerButton != null)
         {
             Button btn = scanTriggerButton.GetComponent<Button>();
-            if (btn != null)
-                btn.onClick.AddListener(ToggleScanMode);
-        }
-
-        if (scanTriggerButton2 != null)
-        {
-            Button btn = scanTriggerButton2.GetComponent<Button>();
             if (btn != null)
                 btn.onClick.AddListener(ToggleScanMode);
         }
@@ -405,8 +397,8 @@ public class ARSceneQRRecalibration : MonoBehaviour
 
         if (isIndoorNode)
         {
-            string buildingName = unifiedARManager != null ? 
-                unifiedARManager.GetInfrastructureName(scannedNodeInfo.related_infra_id) : 
+            string buildingName = unifiedARManager != null ?
+                unifiedARManager.GetInfrastructureName(scannedNodeInfo.related_infra_id) :
                 scannedNodeInfo.related_infra_id;
 
             bool currentlyIndoor = unifiedARManager != null && unifiedARManager.IsIndoorMode();
@@ -445,12 +437,27 @@ public class ARSceneQRRecalibration : MonoBehaviour
                         $"Floor: {scannedNodeInfo.indoor.floor}";
                 }
 
-                confirmationMessage = $"<b>Indoor Location Detected</b>\n\n" +
-                    $"<b>{scannedNodeInfo.name}</b>\n" +
-                    $"Building: {buildingName}\n\n" +
-                    $"<color=yellow>Please stand at the building entrance before confirming.</color>\n\n" +
-                    $"{coordinateInfo}\n\n" +
-                    $"Switching from GPS to Indoor AR tracking.";
+                string arMode = PlayerPrefs.GetString("ARMode", "DirectAR");
+                bool isDirectARMode = arMode == "DirectAR";
+
+                if (isDirectARMode)
+                {
+                    confirmationMessage = $"<b>Indoor Location Detected</b>\n\n" +
+                        $"<b>{scannedNodeInfo.name}</b>\n" +
+                        $"Building: {buildingName}\n\n" +
+                        $"<color=yellow>Please stand at the building entrance before confirming.</color>\n\n" +
+                        $"{coordinateInfo}\n\n" +
+                        $"<color=orange>⚠️ WARNING: Confirming will stop GPS tracking and show only markers inside {buildingName}. To return to GPS mode, scan an outdoor QR code.</color>";
+                }
+                else
+                {
+                    confirmationMessage = $"<b>Indoor Location Detected</b>\n\n" +
+                        $"<b>{scannedNodeInfo.name}</b>\n" +
+                        $"Building: {buildingName}\n\n" +
+                        $"<color=yellow>Please stand at the building entrance before confirming.</color>\n\n" +
+                        $"{coordinateInfo}\n\n" +
+                        $"Switching from GPS to Indoor AR tracking.";
+                }
             }
         }
         else

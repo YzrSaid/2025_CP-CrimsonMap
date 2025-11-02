@@ -10,8 +10,6 @@ using Unity.XR.CoreUtils;
 
 public class UnifiedARManager : MonoBehaviour
 {
-    [Header("AR Exit Settings")]
-    [SerializeField] private Button backToMainButton;
     [SerializeField] private string mainSceneName = "MainAppScene";
     private bool isExitingAR = false;
 
@@ -24,10 +22,10 @@ public class UnifiedARManager : MonoBehaviour
     public Camera arCamera;
 
     [Header("Marker Settings")]
-    public float maxVisibleDistance = 500f; // 500m default - increase if markers too far
-    public float maxVisibleDistanceIndoor = 100f; // Indoor has shorter range
+    public float maxVisibleDistance = 500f;
+    public float maxVisibleDistanceIndoor = 100f;
     public float markerScale = 0.3f;
-    public float minMarkerDistance = 2f; // Only for Navigation mode
+    public float minMarkerDistance = 2f;
     public float markerHeightOffset = 0.1f;
 
     [Header("Visibility Settings")]
@@ -38,21 +36,30 @@ public class UnifiedARManager : MonoBehaviour
     private TrackingState lastTrackingState = TrackingState.None;
     public bool requireGoodTracking = true;
 
-    [Header("UI References")]
+    [Header("Top Panel UI - Main Display")]
+    public TextMeshProUGUI gpsModeText;
+    public TextMeshProUGUI fromLocationText;
+    public TextMeshProUGUI toDestinationText;
+    public TextMeshProUGUI currentLocationText;
+
+    [Header("Debug Panel UI - Toggleable")]
+    public GameObject debugPanel;
+    public Button debugToggleButton;
     public TextMeshProUGUI trackingStatusText;
-    public TextMeshProUGUI debugText;
+    public TextMeshProUGUI debugInfoText;
     public TextMeshProUGUI loadingText;
 
     [Header("GPS Settings")]
     public int gpsHistorySize = 5;
     public float positionUpdateThreshold = 1f;
     public float positionSmoothingFactor = 0.3f;
+    public float nearestNodeSearchRadius = 500f;
     private Queue<Vector2> gpsLocationHistory = new Queue<Vector2>();
     private Vector2 lastStableGPSLocation;
     private bool gpsInitialized = false;
 
     [Header("GPS Lock Timer (AR Scene Only)")]
-    public float gpsLockDuration = 7f; // 5-10 seconds after scanning outdoor QR
+    public float gpsLockDuration = 7f;
     private float gpsLockTimer = 0f;
     private bool isGPSLocked = false;
 
@@ -75,10 +82,15 @@ public class UnifiedARManager : MonoBehaviour
     private Vector2 userXY;
     private Vector3 lastARCameraPosition;
     private Vector3 smoothedARPosition;
+    private Node currentNearestNode;
 
     [Header("Mode Configuration")]
     private ARMode currentARMode = ARMode.DirectAR;
     private bool isTrackingStarted = false;
+    private bool isDebugPanelVisible = false;
+
+    private string navigationFromNodeId = "";
+    private string navigationToNodeId = "";
 
     private enum ARMode { DirectAR, Navigation }
 
@@ -88,7 +100,8 @@ public class UnifiedARManager : MonoBehaviour
     {
         InitializeComponents();
         DetermineARMode();
-        SetupBackButton();
+        SetupDebugToggle();
+        LoadNavigationData();
 
         UpdateLoadingUI("Initializing AR...");
         StartCoroutine(InitializeARScene());
@@ -109,21 +122,37 @@ public class UnifiedARManager : MonoBehaviour
         currentARMode = arModeString == "Navigation" ? ARMode.Navigation : ARMode.DirectAR;
     }
 
-    private void SetupBackButton()
+    private void SetupDebugToggle()
     {
-        if (backToMainButton == null)
+        if (debugPanel != null)
         {
-            GameObject backBtn = GameObject.Find("BackButton") ??
-                                 GameObject.Find("Back Button") ??
-                                 GameObject.Find("ExitARButton");
-            if (backBtn != null)
-                backToMainButton = backBtn.GetComponent<Button>();
+            debugPanel.SetActive(false);
+            isDebugPanelVisible = false;
         }
 
-        if (backToMainButton != null)
+        if (debugToggleButton != null)
         {
-            backToMainButton.onClick.RemoveAllListeners();
-            backToMainButton.onClick.AddListener(ExitARScene);
+            debugToggleButton.onClick.AddListener(ToggleDebugPanel);
+        }
+
+        UpdateTopPanelVisibility();
+    }
+
+    private void ToggleDebugPanel()
+    {
+        isDebugPanelVisible = !isDebugPanelVisible;
+        if (debugPanel != null)
+        {
+            debugPanel.SetActive(isDebugPanelVisible);
+        }
+    }
+
+    private void LoadNavigationData()
+    {
+        if (currentARMode == ARMode.Navigation)
+        {
+            navigationFromNodeId = PlayerPrefs.GetString("ARNavigation_OriginalFromNodeId", "");
+            navigationToNodeId = PlayerPrefs.GetString("ARNavigation_OriginalToNodeId", "");
         }
     }
 
@@ -206,6 +235,7 @@ public class UnifiedARManager : MonoBehaviour
 
         isTrackingStarted = true;
         InvokeRepeating(nameof(UpdateMarkers), 2f, 0.2f);
+        InvokeRepeating(nameof(UpdateNearestNode), 1f, 2f);
     }
 
     private void SetIndoorReference(Vector2 nodeXY, string infraId)
@@ -221,67 +251,46 @@ public class UnifiedARManager : MonoBehaviour
         currentIndoorInfraId = infraId;
         userXY = referenceNodeXY;
 
-        Debug.Log($"Indoor mode activated - Infra: {infraId}, Reference XY: {referenceNodeXY}");
+        UpdateTopPanelUI();
     }
 
-    // Called by ARSceneQRRecalibration after user confirms
     public void OnQRCodeScanned(Node scannedNode)
     {
         bool isIndoorNode = scannedNode.type == "indoorinfra";
 
         if (isIndoorNode)
         {
-            // INDOOR QR SCANNED
             if (scannedNode.indoor == null)
             {
-                Debug.LogError("Indoor node missing indoor coordinates!");
                 return;
             }
 
-            // Check if switching buildings
-            if (isIndoorMode && currentIndoorInfraId != scannedNode.related_infra_id)
-            {
-                // Switching to different building - this is handled by confirmation panel
-                Debug.Log($"Switching from building {currentIndoorInfraId} to {scannedNode.related_infra_id}");
-            }
-
-            // Switch to indoor mode (works for both Direct AR and Navigation)
             Vector2 indoorXY = new Vector2(scannedNode.indoor.x, scannedNode.indoor.y);
             SetIndoorReference(indoorXY, scannedNode.related_infra_id);
-
-            Debug.Log($"Switched to INDOOR mode - {scannedNode.name} at X:{indoorXY.x}, Y:{indoorXY.y}");
         }
         else
         {
-            // OUTDOOR QR SCANNED
             userLocation = new Vector2(scannedNode.latitude, scannedNode.longitude);
             lastStableGPSLocation = userLocation;
             gpsLocationHistory.Clear();
             gpsLocationHistory.Enqueue(userLocation);
             gpsInitialized = true;
 
-            // Activate GPS lock timer (prevents GPS from updating for X seconds)
             isGPSLocked = true;
             gpsLockTimer = gpsLockDuration;
 
-            // Exit indoor mode if we were in it
             if (isIndoorMode)
             {
                 isIndoorMode = false;
                 currentIndoorInfraId = "";
-                Debug.Log($"Switched back to OUTDOOR GPS mode - {scannedNode.name}");
-            }
-            else
-            {
-                Debug.Log($"GPS position updated and locked for {gpsLockDuration}s - {scannedNode.name}");
             }
         }
 
+        UpdateTopPanelUI();
         UpdateTrackingStatusUI();
         UpdateDebugInfo();
     }
 
-    // Helper method to get infrastructure name for confirmation messages
     public string GetInfrastructureName(string infraId)
     {
         Infrastructure infra = currentInfrastructures.FirstOrDefault(i => i.infra_id == infraId);
@@ -336,15 +345,13 @@ public class UnifiedARManager : MonoBehaviour
                 {
                     Node[] nodes = JsonHelper.FromJson<Node>(jsonData);
 
-                    // ✅ Direct AR: Only infrastructure and indoorinfra
-                    // ✅ Navigation Mode: Also include intermediate (pathway) nodes
                     if (currentARMode == ARMode.DirectAR)
                     {
                         currentNodes = nodes.Where(n =>
                             (n.type == "infrastructure" || n.type == "indoorinfra") && n.is_active
                         ).ToList();
                     }
-                    else // Navigation Mode
+                    else
                     {
                         currentNodes = nodes.Where(n =>
                             (n.type == "infrastructure" || n.type == "indoorinfra" || n.type == "intermediate") &&
@@ -353,18 +360,14 @@ public class UnifiedARManager : MonoBehaviour
                     }
 
                     loadSuccess = true;
-
-                    Debug.Log($"[UnifiedARManager] Loaded {currentNodes.Count} nodes for {currentARMode} mode");
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError($"[UnifiedARManager] Error loading nodes: {e.Message}");
                     loadSuccess = false;
                 }
             },
             (error) =>
             {
-                Debug.LogError($"[UnifiedARManager] Failed to load {fileName}: {error}");
                 loadSuccess = false;
             }
         ));
@@ -417,14 +420,12 @@ public class UnifiedARManager : MonoBehaviour
 
     void UpdateMarkersGPS()
     {
-        // Handle GPS lock countdown
         if (isGPSLocked)
         {
             gpsLockTimer -= Time.deltaTime;
             if (gpsLockTimer <= 0)
             {
                 isGPSLocked = false;
-                Debug.Log("GPS lock released - resuming normal GPS tracking");
             }
         }
 
@@ -435,17 +436,16 @@ public class UnifiedARManager : MonoBehaviour
             return;
         }
 
-        // Only update GPS if not locked
         if (!isGPSLocked)
         {
             userLocation = StabilizeGPSLocation(rawGpsLocation);
         }
-        // If locked, keep using the scanned QR position
 
         UpdateTrackingStatusUI();
         UpdateAnchoredMarkerPositionsGPS();
         ReconcileVisibleMarkersGPS();
         UpdateDebugInfo();
+        UpdateTopPanelUI();
     }
 
     private Vector2 StabilizeGPSLocation(Vector2 rawLocation)
@@ -479,6 +479,34 @@ public class UnifiedARManager : MonoBehaviour
         }
 
         return lastStableGPSLocation;
+    }
+
+    private void UpdateNearestNode()
+    {
+        if (isIndoorMode || currentNodes == null || currentNodes.Count == 0)
+        {
+            currentNearestNode = null;
+            return;
+        }
+
+        Node nearestNode = null;
+        float nearestDistance = float.MaxValue;
+
+        foreach (Node node in currentNodes)
+        {
+            if (node.type == "indoorinfra") continue;
+
+            float distance = CalculateDistanceGPS(userLocation, new Vector2(node.latitude, node.longitude));
+
+            if (distance < nearestDistance && distance <= nearestNodeSearchRadius)
+            {
+                nearestDistance = distance;
+                nearestNode = node;
+            }
+        }
+
+        currentNearestNode = nearestNode;
+        UpdateTopPanelUI();
     }
 
     private void UpdateAnchoredMarkerPositionsGPS()
@@ -549,11 +577,9 @@ public class UnifiedARManager : MonoBehaviour
 
         if (currentARMode == ARMode.DirectAR)
         {
-            // ✅ Direct AR: Show ALL markers within range (no minimum distance)
             return distance <= maxVisibleDistance;
         }
 
-        // Navigation mode: Hide markers too close
         return distance <= maxVisibleDistance && distance >= minMarkerDistance;
     }
 
@@ -649,6 +675,7 @@ public class UnifiedARManager : MonoBehaviour
         UpdateAnchoredMarkerPositionsIndoor();
         ReconcileVisibleMarkersIndoor();
         UpdateDebugInfo();
+        UpdateTopPanelUI();
 
         lastARCameraPosition = currentARPosition;
     }
@@ -725,25 +752,16 @@ public class UnifiedARManager : MonoBehaviour
             .Where(n => n.type == "indoorinfra" &&
                        n.related_infra_id == currentIndoorInfraId &&
                        n.indoor != null)
-            .GroupBy(n => n.related_infra_id)
-            .ToDictionary(g => g.Key, g => g.ToList());
+            .ToList();
 
-        foreach (var infraGroup in nodesInCurrentBuilding)
+        foreach (Node node in nodesInCurrentBuilding)
         {
-            string infraId = infraGroup.Key;
-            List<Node> infraNodes = infraGroup.Value;
+            if (markerAnchors.ContainsKey(node.node_id))
+                continue;
 
-            bool alreadyHasMarker = markerAnchors.Values.Any(a => a.node.related_infra_id == infraId);
-
-            if (alreadyHasMarker) continue;
-
-            Node closestNode = infraNodes
-                .OrderBy(n => CalculateDistanceXY(userXY, new Vector2(n.indoor.x, n.indoor.y)))
-                .FirstOrDefault();
-
-            if (closestNode != null && ShouldShowMarkerIndoor(closestNode))
+            if (ShouldShowMarkerIndoor(node))
             {
-                CreateMarkerForNodeIndoor(closestNode);
+                CreateMarkerForNodeIndoor(node);
             }
         }
     }
@@ -760,7 +778,6 @@ public class UnifiedARManager : MonoBehaviour
 
         if (currentARMode == ARMode.DirectAR)
         {
-            // ✅ Use shorter range for indoor
             return distance <= maxVisibleDistanceIndoor;
         }
 
@@ -856,7 +873,6 @@ public class UnifiedARManager : MonoBehaviour
             textMeshPro.text = infra.name;
             textMeshPro.fontSize = 8;
 
-            // ✅ FIX: Check if this GameObject is still active before starting coroutine
             if (gameObject != null && gameObject.activeInHierarchy && !isExitingAR)
             {
                 StartCoroutine(UpdateTextRotation(textMeshPro.transform));
@@ -870,6 +886,7 @@ public class UnifiedARManager : MonoBehaviour
             nameText.fontSize = 12;
         }
     }
+
     IEnumerator UpdateTextRotation(Transform textTransform)
     {
         while (textTransform != null && !isExitingAR && gameObject != null && gameObject.activeInHierarchy)
@@ -880,6 +897,118 @@ public class UnifiedARManager : MonoBehaviour
                 textTransform.Rotate(0, 180, 0);
             }
             yield return new WaitForSeconds(0.1f);
+        }
+    }
+
+    private void UpdateTopPanelUI()
+    {
+        UpdateGPSModeText();
+        UpdateCurrentLocationText();
+        UpdateNavigationTexts();
+    }
+
+    private void UpdateTopPanelVisibility()
+    {
+        if (fromLocationText != null)
+        {
+            fromLocationText.gameObject.SetActive(currentARMode == ARMode.Navigation);
+        }
+
+        if (toDestinationText != null)
+        {
+            toDestinationText.gameObject.SetActive(currentARMode == ARMode.Navigation);
+        }
+
+        if (currentLocationText != null)
+        {
+            currentLocationText.gameObject.SetActive(!isIndoorMode);
+        }
+    }
+
+    private void UpdateGPSModeText()
+    {
+        if (gpsModeText == null) return;
+
+        string modeType = isIndoorMode ? "OFFLINE/INDOOR" : "GPS";
+        string arModeType = currentARMode == ARMode.DirectAR ? "AR DIRECT" : "AR NAVIGATION";
+
+        gpsModeText.text = $"{modeType} | {arModeType}";
+    }
+
+    private void UpdateCurrentLocationText()
+    {
+        if (currentLocationText == null) return;
+
+        if (isIndoorMode)
+        {
+            currentLocationText.gameObject.SetActive(false);
+            return;
+        }
+
+        currentLocationText.gameObject.SetActive(true);
+
+        Vector2 coords = userLocation;
+        string locationDisplay = $"({coords.x:F5}, {coords.y:F5})";
+
+        if (currentNearestNode != null)
+        {
+            locationDisplay += $" | {currentNearestNode.name}";
+        }
+
+        currentLocationText.text = locationDisplay;
+    }
+
+    private void UpdateNavigationTexts()
+    {
+        if (currentARMode != ARMode.Navigation)
+        {
+            if (fromLocationText != null) fromLocationText.gameObject.SetActive(false);
+            if (toDestinationText != null) toDestinationText.gameObject.SetActive(false);
+            return;
+        }
+
+        if (fromLocationText != null)
+        {
+            fromLocationText.gameObject.SetActive(true);
+
+            if (!string.IsNullOrEmpty(navigationFromNodeId) && currentNodes != null)
+            {
+                Node fromNode = currentNodes.FirstOrDefault(n => n.node_id == navigationFromNodeId);
+                if (fromNode != null)
+                {
+                    fromLocationText.text = $"FROM: {fromNode.name}";
+                }
+                else
+                {
+                    fromLocationText.text = "FROM: Unknown";
+                }
+            }
+            else
+            {
+                fromLocationText.text = "FROM: Not Set";
+            }
+        }
+
+        if (toDestinationText != null)
+        {
+            toDestinationText.gameObject.SetActive(true);
+
+            if (!string.IsNullOrEmpty(navigationToNodeId) && currentNodes != null)
+            {
+                Node toNode = currentNodes.FirstOrDefault(n => n.node_id == navigationToNodeId);
+                if (toNode != null)
+                {
+                    toDestinationText.text = $"TO: {toNode.name}";
+                }
+                else
+                {
+                    toDestinationText.text = "TO: Unknown";
+                }
+            }
+            else
+            {
+                toDestinationText.text = "TO: Not Set";
+            }
         }
     }
 
@@ -916,25 +1045,25 @@ public class UnifiedARManager : MonoBehaviour
 
     void UpdateDebugInfo()
     {
-        if (debugText != null)
+        if (debugInfoText != null)
         {
             string modeText = currentARMode == ARMode.DirectAR ? "🗺️ Direct AR" : "🧭 Navigation";
 
             if (isIndoorMode)
             {
                 string trackingState = lastTrackingState.ToString();
-                debugText.text = $"{modeText} + 🏢 Indoor (Building: {currentIndoorInfraId})\n" +
-                                 $"AR Tracking: {trackingState}\n" +
-                                 $"User XY: {userXY.x:F2}m, {userXY.y:F2}m\n" +
-                                 $"Ground Y: {groundPlaneY:F2}m\n" +
-                                 $"Active Markers: {markerAnchors.Count}";
+                debugInfoText.text = $"{modeText} + 🏢 Indoor (Building: {currentIndoorInfraId})\n" +
+                                     $"AR Tracking: {trackingState}\n" +
+                                     $"User XY: {userXY.x:F2}m, {userXY.y:F2}m\n" +
+                                     $"Ground Y: {groundPlaneY:F2}m\n" +
+                                     $"Active Markers: {markerAnchors.Count}";
             }
             else
             {
                 string lockStatus = isGPSLocked ? $" (Locked: {gpsLockTimer:F1}s)" : "";
-                debugText.text = $"{modeText} + 🌍 Outdoor (GPS){lockStatus}\n" +
-                                 $"User: {userLocation.x:F5}, {userLocation.y:F5}\n" +
-                                 $"Active Markers: {markerAnchors.Count}";
+                debugInfoText.text = $"{modeText} + 🌍 Outdoor (GPS){lockStatus}\n" +
+                                     $"User: {userLocation.x:F5}, {userLocation.y:F5}\n" +
+                                     $"Active Markers: {markerAnchors.Count}";
             }
         }
     }
@@ -972,6 +1101,11 @@ public class UnifiedARManager : MonoBehaviour
         CancelInvoke();
         ClearMarkers();
         StopAllCoroutines();
+
+        if (debugToggleButton != null)
+        {
+            debugToggleButton.onClick.RemoveListener(ToggleDebugPanel);
+        }
     }
 
     public Vector2 GetUserXY()
@@ -994,15 +1128,5 @@ public class UnifiedARManager : MonoBehaviour
     public string GetCurrentIndoorInfraId()
     {
         return currentIndoorInfraId;
-    }
-
-    private class MarkerAnchor
-    {
-        public Node node;
-        public float nodeX;
-        public float nodeY;
-        public float nodeLatitude;
-        public float nodeLongitude;
-        public GameObject markerGameObject;
     }
 }

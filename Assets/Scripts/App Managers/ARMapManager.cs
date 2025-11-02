@@ -141,8 +141,8 @@ public class ARMapManager : MonoBehaviour
 
     private IEnumerator WaitForMapManagerAndUpdateCenter()
     {
-        float centerLat = PlayerPrefs.GetFloat("ARScene_CenterLat", 6.9131464621345629f);
-        float centerLng = PlayerPrefs.GetFloat("ARScene_CenterLng", 122.06465815697084f);
+        float centerLat = PlayerPrefs.GetFloat("ARScene_CenterLat");
+        float centerLng = PlayerPrefs.GetFloat("ARScene_CenterLng");
         
         if (arMapboxMap != null)
         {
