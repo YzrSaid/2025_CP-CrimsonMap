@@ -12,6 +12,10 @@ Packages/com.unity.collab-proxy/
 # Firebase SDK
 Assets/Firebase/
 
+#LoadingScreen
+Assets/Animated Loading Icons
+Assets/LoadingScreenAsset.meta
+
 # Firebase configs (DO NOT push to public repos)
 Assets/Firebase Config/google-services.json
 Assets/Firebase Config/GoogleService-Info.plist
