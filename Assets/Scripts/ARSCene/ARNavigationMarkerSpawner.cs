@@ -14,13 +14,13 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
 
     [Header("AR Camera & Plane Detection")]
     public Camera arCamera;
-    public ARRaycastManager arRaycastManager; // ADD THIS
-    public ARPlaneManager arPlaneManager; // ADD THIS
+    public ARRaycastManager arRaycastManager;
+    public ARPlaneManager arPlaneManager;
 
     [Header("Marker Settings")]
     public float markerScale = 1.5f;
     public float circleMarkerScale = 0.5f; 
-    public float markerHeightOffset = 0.05f; // REDUCED - just slightly above ground
+    public float markerHeightOffset = 0.05f;
     public float circleSpacing = 5f;
     public float nodeMarkerDistance = 3f;
     public float circleVisibilityDistance = 50f;
@@ -41,7 +41,6 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
     private DirectionDisplayManager directionManager;
     private bool isARNavigationMode = false;
 
-    // For AR Raycasting
     private List<ARRaycastHit> arRaycastHits = new List<ARRaycastHit>();
 
     void Start()
@@ -49,7 +48,6 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
         if (arCamera == null)
             arCamera = Camera.main;
 
-        // Find AR components
         if (arRaycastManager == null)
             arRaycastManager = FindObjectOfType<ARRaycastManager>();
         
@@ -184,7 +182,6 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
                 {
                     Vector3 worldPos = GPSToWorldPosition(node.latitude, node.longitude);
                     
-                    // FIXED: Find ground plane at this position
                     worldPos = GetGroundPosition(worldPos);
 
                     GameObject marker = Instantiate(prefab, worldPos, Quaternion.identity);
@@ -257,7 +254,6 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
             {
                 Vector3 worldPos = GPSToWorldPosition(lat, lng);
                 
-                // FIXED: Find ground plane for circle
                 worldPos = GetGroundPosition(worldPos);
 
                 GameObject circle = Instantiate(circleMarkerPrefab, worldPos, Quaternion.identity);
@@ -275,41 +271,30 @@ public class ARNavigationMarkerSpawner : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// NEW METHOD: Find the actual ground plane position using AR Raycast
-    /// </summary>
     private Vector3 GetGroundPosition(Vector3 targetWorldPos)
     {
         if (arRaycastManager == null || arCamera == null)
         {
-            // Fallback: Use camera height as ground reference
             targetWorldPos.y = arCamera.transform.position.y + markerHeightOffset;
             return targetWorldPos;
         }
 
-        // Raycast from above the target position downward to find ground
         Vector3 rayOrigin = targetWorldPos;
-        rayOrigin.y = arCamera.transform.position.y + 2f; // Start from above
+        rayOrigin.y = arCamera.transform.position.y + 2f;
 
         Vector3 rayDirection = Vector3.down;
 
-        // Try to hit an AR plane
-        Ray ray = new Ray(rayOrigin, rayDirection);
-        
-        // Alternative: Try screen-space raycast if available
         Vector3 screenPoint = arCamera.WorldToScreenPoint(targetWorldPos);
         
         arRaycastHits.Clear();
         if (arRaycastManager.Raycast(screenPoint, arRaycastHits, TrackableType.PlaneWithinPolygon))
         {
-            // Found a plane! Use its position
             Vector3 groundPos = arRaycastHits[0].pose.position;
-            groundPos.y += markerHeightOffset; // Slight offset above ground
+            groundPos.y += markerHeightOffset;
             return groundPos;
         }
 
-        // Fallback: Use camera's Y position as reference (assuming user is standing)
-        targetWorldPos.y = arCamera.transform.position.y - 1.5f + markerHeightOffset; // Ground is ~1.5m below camera
+        targetWorldPos.y = arCamera.transform.position.y - 1.5f + markerHeightOffset;
         return targetWorldPos;
     }
 

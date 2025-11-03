@@ -37,7 +37,6 @@ public class PanelCloser : MonoBehaviour
         int panelsToAnimate = 0;
         int animationsCompleted = 0;
 
-        // Count how many panels need animation
         foreach (GameObject panel in panelsToClose)
         {
             if (panel != null && panel.activeSelf)
@@ -46,7 +45,6 @@ public class PanelCloser : MonoBehaviour
             }
         }
 
-        // If no panels to animate, just close background
         if (panelsToAnimate == 0)
         {
             if (BackgroundForPanel != null)
@@ -56,12 +54,10 @@ public class PanelCloser : MonoBehaviour
             return;
         }
 
-        // Animate panels closing
         foreach (GameObject panel in panelsToClose)
         {
             if (panel != null && panel.activeSelf)
             {
-                // Animate to scale zero with ease out
                 panel.transform.DOScale(Vector3.zero, animationDuration)
                     .SetEase(easeType)
                     .SetUpdate(true)
@@ -71,7 +67,6 @@ public class PanelCloser : MonoBehaviour
                         panel.transform.localScale = Vector3.one;
                         animationsCompleted++;
 
-                        // Close background after all panels are closed
                         if (animationsCompleted >= panelsToAnimate)
                         {
                             if (BackgroundForPanel != null)

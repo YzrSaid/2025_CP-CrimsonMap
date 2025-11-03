@@ -34,7 +34,7 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
     public bool showWaypointMarkers = true;
 
     [Header("Floor Settings")]
-    public float floorHeightMeters = 3.048f; // 10 feet per floor
+    public float floorHeightMeters = 3.048f; 
 
     private List<Node> pathNodes = new List<Node>();
     private Dictionary<string, GameObject> spawnedNodeMarkers = new Dictionary<string, GameObject>();
@@ -407,10 +407,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         worldPos.x += deltaX;
         worldPos.z += deltaY;
 
-        // ✅ ADD FLOOR HEIGHT
-        // Floor 1 = 0m (ground level)
-        // Floor 2 = 3.048m (10 feet)
-        // Floor 3 = 6.096m (20 feet)
         if (floor > 1)
         {
             worldPos.y += (floor - 1) * floorHeightMeters;

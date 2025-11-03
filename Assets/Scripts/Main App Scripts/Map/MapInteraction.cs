@@ -35,23 +35,19 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     public bool useSmoothedCoordinates = true;
     public bool enableLocationDebugging = true;
 
-    // Single touch drag variables
     private Vector2 lastPointerPosition;
     private Vector2 initialPointerPosition;
     private bool isDragging = false;
     private bool hasStartedDragging = false;
 
-    // Multi-touch pinch zoom variables
     private bool isPinching = false;
     private float lastPinchDistance = 0f;
     private Vector2 lastPinchCenter;
 
-    // Rotation variables
     private bool isRotating = false;
     private float lastRotationAngle = 0f;
     private float currentMapBearing = 0f;
 
-    // Input System references
     private InputAction touchPositionAction;
     private InputAction touchContactAction;
 
@@ -65,7 +61,6 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         touchPositionAction.Enable();
         touchContactAction.Enable();
 
-        // Enable compass hardware
         Input.compass.enabled = true;
     }
 
@@ -81,22 +76,18 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         var rawImage = GetComponent<UnityEngine.UI.RawImage>();
         if (rawImage == null)
         {
-            Debug.LogError("MapInteraction script must be on a RawImage component!");
         }
 
         if (mapboxMap != null)
         {
-            Debug.Log($"Map initialized with zoom: {mapboxMap.Zoom}");
             currentMapBearing = 0f;
         }
         else
         {
-            Debug.LogError("MapboxMap reference is null!");
         }
 
         if (FindObjectOfType<EventSystem>() == null)
         {
-            Debug.LogError("No EventSystem found in scene!");
         }
     }
 
@@ -122,35 +113,22 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
             float currentDistance = Vector2.Distance(touch1Pos, touch2Pos);
             Vector2 currentCenter = (touch1Pos + touch2Pos) / 2f;
 
-            // Calculate rotation angle
             Vector2 currentDirection = (touch2Pos - touch1Pos).normalized;
             float currentAngle = Mathf.Atan2(currentDirection.y, currentDirection.x) * Mathf.Rad2Deg;
 
             if (!isPinching && !isRotating)
             {
-                // Start pinching/rotating
                 isPinching = true;
                 isRotating = enableTwoFingerRotation;
                 lastPinchDistance = currentDistance;
                 lastPinchCenter = currentCenter;
                 lastRotationAngle = currentAngle;
 
-                // Stop single finger dragging
                 isDragging = false;
                 hasStartedDragging = false;
-
-                if (enablePinchZoomDebugging)
-                {
-                    Debug.Log($"[Pinch] Started - Distance: {currentDistance}");
-                }
-                if (enableRotationDebugging && isRotating)
-                {
-                    Debug.Log($"[Rotation] Started - Angle: {currentAngle:F1}°");
-                }
             }
             else
             {
-                // Handle Zoom
                 float distanceDelta = currentDistance - lastPinchDistance;
                 if (Mathf.Abs(distanceDelta) > pinchZoomDeadzone)
                 {
@@ -159,37 +137,26 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
                     lastPinchDistance = currentDistance;
                 }
 
-                // Handle Rotation
                 if (isRotating && enableTwoFingerRotation)
                 {
                     float angleDelta = Mathf.DeltaAngle(lastRotationAngle, currentAngle);
 
                     if (Mathf.Abs(angleDelta) > rotationDeadzone)
                     {
-                        // Apply rotation - negative because screen rotation is opposite
                         currentMapBearing -= angleDelta * rotationSensitivity;
 
-                        // Normalize bearing to -180 to 180
                         while (currentMapBearing > 180f) currentMapBearing -= 360f;
                         while (currentMapBearing < -180f) currentMapBearing += 360f;
 
-                        // ✅ Y-AXIS ROTATION for 3D map
                         mapboxMap.transform.rotation = Quaternion.Euler(0, currentMapBearing, 0);
-
-                        if (enableRotationDebugging)
-                        {
-                            Debug.Log($"[Rotation] Angle Delta: {angleDelta:F1}°, Map Bearing: {currentMapBearing:F1}°");
-                        }
 
                         lastRotationAngle = currentAngle;
                     }
                 }
 
-                // Handle Panning during pinch
                 Vector2 centerDelta = currentCenter - lastPinchCenter;
                 if (centerDelta.magnitude > 1f)
                 {
-                    // Transform the screen delta based on current map rotation
                     Vector2 rotatedDelta = RotateVector2(centerDelta, -currentMapBearing);
 
                     float latOffset = -rotatedDelta.y * dragSensitivity;
@@ -208,18 +175,8 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         }
         else if ((isPinching || isRotating) && activeTouches.Count < 2)
         {
-            // End pinching/rotating
             isPinching = false;
             isRotating = false;
-
-            if (enablePinchZoomDebugging)
-            {
-                Debug.Log("[Pinch] Ended");
-            }
-            if (enableRotationDebugging)
-            {
-                Debug.Log($"[Rotation] Ended - Final Bearing: {currentMapBearing:F1}°");
-            }
         }
     }
 
@@ -258,12 +215,9 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
             hasStartedDragging = true;
         }
 
-
-
         Vector2 deltaPosition = eventData.position - lastPointerPosition;
         lastPointerPosition = eventData.position;
 
-        // ✅ FIX: Account for map rotation when dragging
         Vector2 rotatedDelta = RotateVector2(deltaPosition, -currentMapBearing);
 
         float latOffset = -rotatedDelta.y * dragSensitivity;
@@ -284,6 +238,7 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         float zoomDelta = eventData.scrollDelta.y * zoomSensitivity;
         ZoomMap(zoomDelta);
     }
+
     private Vector2 RotateVector2(Vector2 v, float degrees)
     {
         float radians = degrees * Mathf.Deg2Rad;
@@ -320,13 +275,11 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     {
         if (mapboxMap == null)
         {
-            Debug.LogError("MapboxMap is null!");
             return;
         }
 
         if (GPSManager.Instance == null)
         {
-            Debug.LogError("GPSManager not found!");
             return;
         }
 
@@ -336,14 +289,8 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
         var myLocation = new Mapbox.Utils.Vector2d(coords.x, coords.y);
 
-        // Center map and preserve rotation
         mapboxMap.UpdateMap(myLocation, myLocationZoomLevel);
         mapboxMap.transform.rotation = Quaternion.Euler(0, currentMapBearing, 0);
-
-        if (enableLocationDebugging)
-        {
-            Debug.Log($"[My Location] Centered on: {coords.x}, {coords.y} at zoom {myLocationZoomLevel}");
-        }
     }
 
     public void ResetMapBearing()
@@ -354,8 +301,6 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         {
             mapboxMap.transform.rotation = Quaternion.identity;
         }
-
-        Debug.Log("[Map] Bearing reset to North (0°)");
     }
 
     public float GetCurrentBearing()

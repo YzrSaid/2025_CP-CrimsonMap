@@ -10,16 +10,16 @@ using UnityEngine.UI;
 public class InfrastructurePopulator : MonoBehaviour
 {
     [Header("UI References")]
-    public TMP_Dropdown dropdownTo; // Legacy dropdown (still works)
-    public ScrollRect destinationScrollView; // NEW: For accordion UI
-    public Transform destinationListContent; // NEW: Container for buttons
+    public TMP_Dropdown dropdownTo;
+    public ScrollRect destinationScrollView;
+    public Transform destinationListContent;
 
     [Header("Data")]
     public InfrastructureList infrastructureList;
     public IndoorInfrastructureList indoorList;
 
     [Header("Settings")]
-    public bool useAccordionUI = false; // Toggle: false = dropdown, true = accordion
+    public bool useAccordionUI = false;
     public float maxWaitTime = 30f;
 
     private Dictionary<string, List<IndoorInfrastructure>> infraToRoomsMap = new Dictionary<string, List<IndoorInfrastructure>>();
@@ -73,7 +73,6 @@ public class InfrastructurePopulator : MonoBehaviour
             return false;
         }
 
-        // Indoor.json is optional (some maps might not have indoor data)
         return true;
     }
 
@@ -89,13 +88,11 @@ public class InfrastructurePopulator : MonoBehaviour
         return Path.Combine(Application.persistentDataPath, fileName);
     }
 
-    // ✅ Load both infrastructure and indoor data
     private IEnumerator LoadAllData()
     {
         bool infraLoaded = false;
         bool indoorLoaded = false;
 
-        // Load infrastructure.json
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             "infrastructure.json",
             (jsonContent) => {
@@ -103,14 +100,12 @@ public class InfrastructurePopulator : MonoBehaviour
                 infraLoaded = true;
             },
             (error) => {
-                Debug.LogError($"Failed to load infrastructure.json: {error}");
                 infraLoaded = true;
             }
         ));
 
         yield return new WaitUntil(() => infraLoaded);
 
-        // Load indoor.json (optional)
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             "indoor.json",
             (jsonContent) => {
@@ -118,17 +113,14 @@ public class InfrastructurePopulator : MonoBehaviour
                 indoorLoaded = true;
             },
             (error) => {
-                Debug.LogWarning($"indoor.json not found (optional): {error}");
                 indoorLoaded = true;
             }
         ));
 
         yield return new WaitUntil(() => indoorLoaded);
 
-        // Build the mapping
         BuildInfraToRoomsMapping();
 
-        // Populate UI
         if (useAccordionUI && destinationScrollView != null && destinationListContent != null)
         {
             PopulateAccordionUI();
@@ -145,11 +137,9 @@ public class InfrastructurePopulator : MonoBehaviour
         {
             string wrappedJson = "{\"infrastructures\":" + jsonContent + "}";
             infrastructureList = JsonUtility.FromJson<InfrastructureList>(wrappedJson);
-            Debug.Log($"[InfrastructurePopulator] ✅ Loaded {infrastructureList.infrastructures.Length} infrastructures");
         }
         catch (Exception e)
         {
-            Debug.LogError($"Error parsing infrastructure JSON: {e.Message}");
         }
     }
 
@@ -158,24 +148,19 @@ public class InfrastructurePopulator : MonoBehaviour
         try
         {
             IndoorInfrastructure[] indoorArray = JsonHelper.FromJson<IndoorInfrastructure>(jsonContent);
-            
             indoorList = new IndoorInfrastructureList { indoors = indoorArray };
-            Debug.Log($"[InfrastructurePopulator] ✅ Loaded {indoorArray.Length} indoor infrastructures");
         }
         catch (Exception e)
         {
-            Debug.LogError($"Error parsing indoor JSON: {e.Message}");
         }
     }
 
-    // ✅ Build a mapping of infra_id -> list of rooms
     private void BuildInfraToRoomsMapping()
     {
         infraToRoomsMap.Clear();
 
         if (indoorList == null || indoorList.indoors == null)
         {
-            Debug.Log("[InfrastructurePopulator] No indoor data available");
             return;
         }
 
@@ -191,20 +176,15 @@ public class InfrastructurePopulator : MonoBehaviour
 
             infraToRoomsMap[indoor.infra_id].Add(indoor);
         }
-
-        Debug.Log($"[InfrastructurePopulator] ✅ Mapped {infraToRoomsMap.Count} infrastructures with indoor rooms");
     }
 
-    // ✅ ACCORDION UI - NO PREFABS NEEDED!
     private void PopulateAccordionUI()
     {
         if (destinationListContent == null)
         {
-            Debug.LogError("[InfrastructurePopulator] destinationListContent is null");
             return;
         }
 
-        // Clear existing
         foreach (Transform child in destinationListContent)
         {
             Destroy(child.gameObject);
@@ -221,7 +201,6 @@ public class InfrastructurePopulator : MonoBehaviour
             bool hasRooms = infraToRoomsMap.ContainsKey(infra.infra_id) && 
                            infraToRoomsMap[infra.infra_id].Count > 0;
 
-            // Create main infrastructure button (programmatically)
             GameObject infraButton = CreateInfrastructureButton(infra.name, hasRooms);
             infraButton.transform.SetParent(destinationListContent, false);
 
@@ -230,7 +209,6 @@ public class InfrastructurePopulator : MonoBehaviour
 
             if (hasRooms)
             {
-                // Create container for rooms
                 GameObject roomsContainer = new GameObject("Rooms_" + infra.infra_id);
                 roomsContainer.transform.SetParent(destinationListContent, false);
                 
@@ -238,7 +216,7 @@ public class InfrastructurePopulator : MonoBehaviour
                 containerRect.anchorMin = new Vector2(0, 1);
                 containerRect.anchorMax = new Vector2(1, 1);
                 containerRect.pivot = new Vector2(0.5f, 1);
-                containerRect.sizeDelta = new Vector2(0, 0); // Auto-size
+                containerRect.sizeDelta = new Vector2(0, 0);
 
                 VerticalLayoutGroup layout = roomsContainer.AddComponent<VerticalLayoutGroup>();
                 layout.childAlignment = TextAnchor.UpperLeft;
@@ -247,14 +225,13 @@ public class InfrastructurePopulator : MonoBehaviour
                 layout.childForceExpandWidth = true;
                 layout.childForceExpandHeight = false;
                 layout.spacing = 2f;
-                layout.padding = new RectOffset(30, 0, 0, 0); // Indent rooms
+                layout.padding = new RectOffset(30, 0, 0, 0);
 
                 ContentSizeFitter fitter = roomsContainer.AddComponent<ContentSizeFitter>();
                 fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-                roomsContainer.SetActive(false); // Hidden by default
+                roomsContainer.SetActive(false);
 
-                // Create room buttons
                 foreach (var room in infraToRoomsMap[infra.infra_id])
                 {
                     GameObject roomButton = CreateRoomButton(room.name);
@@ -267,23 +244,19 @@ public class InfrastructurePopulator : MonoBehaviour
 
                 accordionInstances[infra.infra_id] = roomsContainer;
 
-                // Toggle accordion on click
                 string infraId = infra.infra_id;
                 btn.onClick.AddListener(() => ToggleAccordion(infraId, arrowIcon));
             }
             else
             {
-                // No rooms - select infrastructure directly
                 string infraId = infra.infra_id;
                 btn.onClick.AddListener(() => OnDestinationSelected(infraId, "infrastructure", infra.name));
             }
         }
 
-        // Force layout rebuild
         Canvas.ForceUpdateCanvases();
     }
 
-    // ✅ Create infrastructure button programmatically (no prefab)
     private GameObject CreateInfrastructureButton(string text, bool hasArrow)
     {
         GameObject buttonObj = new GameObject("Infra_" + text);
@@ -294,11 +267,9 @@ public class InfrastructurePopulator : MonoBehaviour
         rect.pivot = new Vector2(0.5f, 1);
         rect.sizeDelta = new Vector2(0, 50);
 
-        // Background image
         Image bgImage = buttonObj.AddComponent<Image>();
         bgImage.color = new Color(1f, 1f, 1f, 1f);
 
-        // Button component
         Button button = buttonObj.AddComponent<Button>();
         button.targetGraphic = bgImage;
         ColorBlock colors = button.colors;
@@ -307,7 +278,6 @@ public class InfrastructurePopulator : MonoBehaviour
         colors.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f);
         button.colors = colors;
 
-        // Horizontal layout
         HorizontalLayoutGroup layout = buttonObj.AddComponent<HorizontalLayoutGroup>();
         layout.childAlignment = TextAnchor.MiddleLeft;
         layout.padding = new RectOffset(15, 15, 10, 10);
@@ -315,7 +285,6 @@ public class InfrastructurePopulator : MonoBehaviour
         layout.childControlWidth = false;
         layout.childControlHeight = true;
 
-        // Text
         GameObject textObj = new GameObject("Text");
         textObj.transform.SetParent(buttonObj.transform, false);
         
@@ -332,14 +301,13 @@ public class InfrastructurePopulator : MonoBehaviour
         textLayout.flexibleWidth = 1;
         textLayout.preferredHeight = 30;
 
-        // Arrow icon (if has rooms)
         if (hasArrow)
         {
             GameObject arrowObj = new GameObject("Arrow");
             arrowObj.transform.SetParent(buttonObj.transform, false);
             
             TextMeshProUGUI arrowText = arrowObj.AddComponent<TextMeshProUGUI>();
-            arrowText.text = "▶"; // Right arrow
+            arrowText.text = "▶";
             arrowText.fontSize = 14;
             arrowText.color = new Color(0.5f, 0.5f, 0.5f, 1f);
             arrowText.alignment = TextAlignmentOptions.Center;
@@ -356,7 +324,6 @@ public class InfrastructurePopulator : MonoBehaviour
         return buttonObj;
     }
 
-    // ✅ Create room button programmatically (no prefab)
     private GameObject CreateRoomButton(string text)
     {
         GameObject buttonObj = new GameObject("Room_" + text);
@@ -367,11 +334,9 @@ public class InfrastructurePopulator : MonoBehaviour
         rect.pivot = new Vector2(0.5f, 1);
         rect.sizeDelta = new Vector2(0, 45);
 
-        // Background image
         Image bgImage = buttonObj.AddComponent<Image>();
         bgImage.color = new Color(0.95f, 0.95f, 0.95f, 1f);
 
-        // Button component
         Button button = buttonObj.AddComponent<Button>();
         button.targetGraphic = bgImage;
         ColorBlock colors = button.colors;
@@ -380,14 +345,12 @@ public class InfrastructurePopulator : MonoBehaviour
         colors.pressedColor = new Color(0.75f, 0.75f, 0.75f, 1f);
         button.colors = colors;
 
-        // Horizontal layout
         HorizontalLayoutGroup layout = buttonObj.AddComponent<HorizontalLayoutGroup>();
         layout.childAlignment = TextAnchor.MiddleLeft;
         layout.padding = new RectOffset(15, 15, 10, 10);
         layout.childControlWidth = true;
         layout.childControlHeight = true;
 
-        // Text
         GameObject textObj = new GameObject("Text");
         textObj.transform.SetParent(buttonObj.transform, false);
         
@@ -412,16 +375,13 @@ public class InfrastructurePopulator : MonoBehaviour
         GameObject roomsContainer = accordionInstances[infraId];
         bool isOpen = roomsContainer.activeSelf;
 
-        // Close all other accordions
         foreach (var kvp in accordionInstances)
         {
             kvp.Value.SetActive(false);
         }
 
-        // Toggle this one
         roomsContainer.SetActive(!isOpen);
 
-        // Rotate arrow
         if (arrowIcon != null)
         {
             TextMeshProUGUI arrowText = arrowIcon.GetComponent<TextMeshProUGUI>();
@@ -431,7 +391,6 @@ public class InfrastructurePopulator : MonoBehaviour
             }
         }
 
-        // Force layout rebuild
         Canvas.ForceUpdateCanvases();
         if (destinationScrollView != null)
         {
@@ -444,9 +403,6 @@ public class InfrastructurePopulator : MonoBehaviour
         selectedDestinationId = id;
         selectedDestinationType = type;
 
-        Debug.Log($"[InfrastructurePopulator] ✅ Selected: {displayName} (ID: {id}, Type: {type})");
-
-        // Notify PathfindingController
         PathfindingController pathfinding = FindObjectOfType<PathfindingController>();
         if (pathfinding != null)
         {
@@ -454,7 +410,6 @@ public class InfrastructurePopulator : MonoBehaviour
         }
     }
 
-    // ✅ DROPDOWN UI (Original - still works)
     private void PopulateDropdown(TMP_Dropdown dropdown)
     {
         dropdown.ClearOptions();
@@ -470,12 +425,11 @@ public class InfrastructurePopulator : MonoBehaviour
         {
             options.Add(infra.name);
 
-            // Add rooms under this infrastructure (indented)
             if (infraToRoomsMap.ContainsKey(infra.infra_id))
             {
                 foreach (var room in infraToRoomsMap[infra.infra_id])
                 {
-                    options.Add("    → " + room.name);
+                    options.Add("    " + room.name);
                 }
             }
         }
@@ -483,7 +437,6 @@ public class InfrastructurePopulator : MonoBehaviour
         dropdown.AddOptions(options);
     }
 
-    // ✅ Get selected infrastructure (for backward compatibility)
     public Infrastructure GetSelectedInfrastructure(TMP_Dropdown dropdown)
     {
         int index = dropdown.value;
@@ -494,7 +447,6 @@ public class InfrastructurePopulator : MonoBehaviour
         return null;
     }
 
-    // ✅ NEW: Get selected destination from dropdown (supports both infra and indoor)
     public (string id, string type) GetSelectedDestinationFromDropdown(TMP_Dropdown dropdown)
     {
         if (dropdown == null || infrastructureList == null)
@@ -504,44 +456,34 @@ public class InfrastructurePopulator : MonoBehaviour
 
         int selectedIndex = dropdown.value;
         string selectedText = dropdown.options[selectedIndex].text;
-
-        Debug.Log($"[InfrastructurePopulator] Dropdown index {selectedIndex}: '{selectedText}'");
-
-        // Check if it's an indoor room (has the "    → " prefix)
-        if (selectedText.Contains("→"))
+        
+        if (selectedText.StartsWith("    "))
         {
-            // It's an indoor room
-            string roomName = selectedText.Replace("    → ", "").Trim();
-            
-            // Find the room by name
+            string roomName = selectedText.Trim();
+
             if (indoorList != null && indoorList.indoors != null)
             {
                 foreach (var indoor in indoorList.indoors)
                 {
                     if (!indoor.is_deleted && indoor.name == roomName)
                     {
-                        Debug.Log($"[InfrastructurePopulator] Found indoor room: {indoor.name} (ID: {indoor.room_id})");
                         return (indoor.room_id, "indoorinfra");
                     }
                 }
             }
             
-            Debug.LogWarning($"[InfrastructurePopulator] Indoor room not found: {roomName}");
             return (null, null);
         }
         else
         {
-            // It's an infrastructure
             foreach (var infra in infrastructureList.infrastructures)
             {
                 if (infra.name == selectedText)
                 {
-                    Debug.Log($"[InfrastructurePopulator] Found infrastructure: {infra.name} (ID: {infra.infra_id})");
                     return (infra.infra_id, "infrastructure");
                 }
             }
             
-            Debug.LogWarning($"[InfrastructurePopulator] Infrastructure not found: {selectedText}");
             return (null, null);
         }
     }
@@ -552,7 +494,6 @@ public class InfrastructurePopulator : MonoBehaviour
     }
 }
 
-// ✅ Data structure for indoor list
 [System.Serializable]
 public class IndoorInfrastructureList
 {
