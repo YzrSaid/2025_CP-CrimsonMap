@@ -194,7 +194,7 @@ public class CategoryDropdown : MonoBehaviour
                     nodes = JsonHelper.FromJson<Node>(jsonContent);
                     loadComplete = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadComplete = true;
                 }
@@ -223,7 +223,7 @@ public class CategoryDropdown : MonoBehaviour
                     infrastructures = JsonHelper.FromJson<Infrastructure>(jsonContent);
                     loadComplete = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadComplete = true;
                 }
@@ -252,7 +252,7 @@ public class CategoryDropdown : MonoBehaviour
                     categoryList = JsonUtility.FromJson<CategoryList>("{\"categories\":" + jsonContent + "}");
                     loadComplete = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadComplete = true;
                 }

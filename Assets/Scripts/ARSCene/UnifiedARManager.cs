@@ -361,7 +361,7 @@ public class UnifiedARManager : MonoBehaviour
 
                     loadSuccess = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadSuccess = false;
                 }
@@ -390,7 +390,7 @@ public class UnifiedARManager : MonoBehaviour
                     currentInfrastructures = infrastructures.Where(i => !i.is_deleted).ToList();
                     loadSuccess = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadSuccess = false;
                 }

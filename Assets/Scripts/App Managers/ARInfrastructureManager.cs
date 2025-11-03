@@ -178,7 +178,7 @@ public class ARInfrastructureManager : MonoBehaviour
                 }
             }
         }
-        catch (System.Exception ex)
+        catch (System.Exception)
         {
         }
 
@@ -207,7 +207,7 @@ public class ARInfrastructureManager : MonoBehaviour
                 }
             }
         }
-        catch (System.Exception ex)
+        catch (System.Exception)
         {
         }
 
@@ -289,7 +289,7 @@ public class ARInfrastructureManager : MonoBehaviour
                     currentNodes = nodes.Where(n => n.type == "infrastructure" && n.is_active).ToList();
                     loadSuccess = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadSuccess = false;
                 }
@@ -318,7 +318,7 @@ public class ARInfrastructureManager : MonoBehaviour
                     currentInfrastructures = infrastructures.Where(i => !i.is_deleted).ToList();
                     loadSuccess = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadSuccess = false;
                 }

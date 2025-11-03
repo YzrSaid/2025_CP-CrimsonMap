@@ -130,7 +130,7 @@ public class FirestoreManager : MonoBehaviour
                     var mapsArray = JsonConvert.DeserializeObject<List<MapInfo>>(mapsJson);
                     availableMaps.AddRange(mapsArray);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                 }
             }
@@ -370,7 +370,7 @@ public class FirestoreManager : MonoBehaviour
                 JSONFileManager.Instance.WriteJSONFile(fileName, jsonContent);
             }
         }
-        catch (System.Exception ex)
+        catch (System.Exception)
         {
         }
 
@@ -583,7 +583,7 @@ public class FirestoreManager : MonoBehaviour
                             onComplete?.Invoke(false);
                         }
                     }
-                    catch (System.Exception ex)
+                    catch (System.Exception)
                     {
                         onComplete?.Invoke(false);
                     }
@@ -699,7 +699,7 @@ public class FirestoreManager : MonoBehaviour
                 {
                     return JsonUtility.FromJson<LocalVersionCache>(cacheContent);
                 }
-                catch (System.Exception ex)
+                catch (System.Exception)
                 {
                 }
             }
@@ -736,7 +736,7 @@ public class FirestoreManager : MonoBehaviour
                 {
                     return JsonUtility.FromJson<LocalStaticDataCache>(cacheContent);
                 }
-                catch (System.Exception ex)
+                catch (System.Exception)
                 {
                 }
             }

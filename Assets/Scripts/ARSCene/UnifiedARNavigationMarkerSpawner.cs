@@ -132,7 +132,7 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
 
                     loadComplete = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadComplete = true;
                 }

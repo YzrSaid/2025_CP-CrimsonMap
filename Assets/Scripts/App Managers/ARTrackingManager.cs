@@ -263,7 +263,7 @@ public class ARTrackingManager : MonoBehaviour
                     currentNodes = nodes.Where(n => n.type == "infrastructure" && n.is_active).ToList();
                     loadSuccess = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadSuccess = false;
                 }
@@ -292,7 +292,7 @@ public class ARTrackingManager : MonoBehaviour
                     currentInfrastructures = infrastructures.Where(i => !i.is_deleted).ToList();
                     loadSuccess = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadSuccess = false;
                 }

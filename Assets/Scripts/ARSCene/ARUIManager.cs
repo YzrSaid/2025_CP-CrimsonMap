@@ -19,7 +19,6 @@ public class ARUIManager : MonoBehaviour
 
     private ARMode currentARMode = ARMode.DirectAR;
 
-
     void Start()
     {
         DetermineARMode();
@@ -30,40 +29,23 @@ public class ARUIManager : MonoBehaviour
     {
         string arModeString = PlayerPrefs.GetString("ARMode", "DirectAR");
         currentARMode = arModeString == "Navigation" ? ARMode.Navigation : ARMode.DirectAR;
-
-        if (enableDebugLogs)
-        {
-            Debug.Log($"ARUIManager: Current AR Mode = {currentARMode}");
-        }
     }
 
     private void ConfigureUIForMode()
     {
         if (currentARMode == ARMode.DirectAR)
         {
-            // Direct AR Mode - Show map and stop button, hide direction panel
             SetUIElementActive(mapPanel, true);
             SetUIElementActive(stopDirectARButton, true);
             SetUIElementActive(directionPanel, false);
             SetUIElementActive(topPanel, true);
-
-            if (enableDebugLogs)
-            {
-                Debug.Log("ARUIManager: Configured for Direct AR Mode");
-            }
         }
         else if (currentARMode == ARMode.Navigation)
         {
-            // Navigation Mode - Show map and direction panel, hide stop button
             SetUIElementActive(mapPanel, true);
             SetUIElementActive(directionPanel, true);
             SetUIElementActive(stopDirectARButton, false);
             SetUIElementActive(topPanel, true);
-
-            if (enableDebugLogs)
-            {
-                Debug.Log("ARUIManager: Configured for Navigation Mode");
-            }
         }
     }
 
@@ -73,10 +55,6 @@ public class ARUIManager : MonoBehaviour
         {
             uiElement.SetActive(active);
         }
-        else if (enableDebugLogs)
-        {
-            Debug.LogWarning($"ARUIManager: UI Element is null, cannot set active to {active}");
-        }
     }
 
     public void SwitchToDirectARMode()
@@ -85,11 +63,6 @@ public class ARUIManager : MonoBehaviour
         PlayerPrefs.SetString("ARMode", "DirectAR");
         PlayerPrefs.Save();
         ConfigureUIForMode();
-
-        if (enableDebugLogs)
-        {
-            Debug.Log("ARUIManager: Switched to Direct AR Mode");
-        }
     }
 
     public void SwitchToNavigationMode()
@@ -98,11 +71,6 @@ public class ARUIManager : MonoBehaviour
         PlayerPrefs.SetString("ARMode", "Navigation");
         PlayerPrefs.Save();
         ConfigureUIForMode();
-
-        if (enableDebugLogs)
-        {
-            Debug.Log("ARUIManager: Switched to Navigation Mode");
-        }
     }
 
     public bool IsNavigationMode()

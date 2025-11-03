@@ -63,7 +63,8 @@ public class AccordionSpawner : MonoBehaviour
             }
 
             return true;
-        } catch ( Exception e ) {
+        } catch (Exception)
+        {
             return false;
         }
     }
@@ -97,7 +98,8 @@ public class AccordionSpawner : MonoBehaviour
             foreach ( Category cat in categoryList.categories ) {
                 SpawnAccordionItem( cat.name, cat.category_id );
             }
-        } catch ( Exception e ) {
+        } catch (Exception)
+        {
         }
     }
 

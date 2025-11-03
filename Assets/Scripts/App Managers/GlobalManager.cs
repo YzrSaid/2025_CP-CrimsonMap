@@ -289,7 +289,7 @@ public class GlobalManager : MonoBehaviour
 
                     OnAvailableMapsChanged?.Invoke(availableMaps);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                 }
             }
@@ -328,7 +328,7 @@ public class GlobalManager : MonoBehaviour
                     this.onboardingComplete = false;
                 }
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 this.onboardingComplete = false;
             }
@@ -349,7 +349,7 @@ public class GlobalManager : MonoBehaviour
             string json = JsonUtility.ToJson(data, true);
             File.WriteAllText(onboardingSavePath, json);
         }
-        catch (System.Exception ex)
+        catch (System.Exception)
         {
         }
     }
@@ -639,7 +639,7 @@ public class GlobalManager : MonoBehaviour
             SubsystemManager.GetInstances(planeSubsystems);
             SubsystemManager.GetInstances(raycastSubsystems);
         }
-        catch (System.Exception ex)
+        catch (System.Exception)
         {
         }
 
@@ -744,7 +744,7 @@ public class GlobalManager : MonoBehaviour
             shouldRecreateJSON = ARManagerCleanup.ShouldRecreateJSONManager() && JSONFileManager.Instance == null;
             shouldRecreateFirestore = ARManagerCleanup.ShouldRecreateFirestoreManager() && FirestoreManager.Instance == null;
         }
-        catch (System.Exception ex)
+        catch (System.Exception)
         {
             success = false;
         }
@@ -765,7 +765,7 @@ public class GlobalManager : MonoBehaviour
                 }
                 DontDestroyOnLoad(jsonManager);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 success = false;
             }
@@ -787,7 +787,7 @@ public class GlobalManager : MonoBehaviour
                 }
                 DontDestroyOnLoad(firestoreManager);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 success = false;
             }
@@ -840,7 +840,7 @@ public class GlobalManager : MonoBehaviour
             shouldRecreateJSON = ARManagerCleanup.ShouldRecreateJSONManager() && JSONFileManager.Instance == null;
             shouldRecreateFirestore = ARManagerCleanup.ShouldRecreateFirestoreManager() && FirestoreManager.Instance == null;
         }
-        catch (System.Exception ex)
+        catch (System.Exception)
         {
         }
 
@@ -861,7 +861,7 @@ public class GlobalManager : MonoBehaviour
                 }
                 DontDestroyOnLoad(jsonManager);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
             }
         }
@@ -883,7 +883,7 @@ public class GlobalManager : MonoBehaviour
                 }
                 DontDestroyOnLoad(firestoreManager);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
             }
         }

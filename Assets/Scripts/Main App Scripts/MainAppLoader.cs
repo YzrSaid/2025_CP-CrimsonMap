@@ -108,7 +108,7 @@ public class MainAppLoader : MonoBehaviour
             UpdateLoadingUI("Creating managers...", 0.5f);
             GlobalManager.Instance.InitializeDataSystems();
         }
-        catch (System.Exception ex)
+        catch (System.Exception)
         {
             GlobalManager.Instance.OnDataInitializationComplete -= onComplete;
             ShowError("Failed to load map data. Check your internet connection.", false);

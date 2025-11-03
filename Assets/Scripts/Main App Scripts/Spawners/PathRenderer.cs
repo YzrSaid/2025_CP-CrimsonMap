@@ -148,7 +148,8 @@ public class PathRenderer : MonoBehaviour
 
         try {
             ClearSpawnedPaths();
-        } catch ( System.Exception e ) {
+        } catch (System.Exception)
+        {
             errorOccurred = true;
         } finally {
             isRendering = false;
@@ -208,7 +209,8 @@ public class PathRenderer : MonoBehaviour
                 }
 
                 loadCompleted = true;
-            } catch ( System.Exception e ) {
+            } catch (System.Exception)
+            {
                 loadCompleted = true;
             }
         },
@@ -231,7 +233,8 @@ public class PathRenderer : MonoBehaviour
             try {
                 edges = JsonHelper.FromJson<Edge>( jsonContent );
                 loadCompleted = true;
-            } catch ( System.Exception e ) {
+            } catch (System.Exception)
+            {
                 loadCompleted = true;
             }
         },
@@ -288,7 +291,8 @@ public class PathRenderer : MonoBehaviour
                 if ( renderedCount % 10 == 0 ) {
                     shouldYield = true;
                 }
-            } catch ( System.Exception e ) {
+            } catch (System.Exception)
+            {
             }
 
             if ( shouldYield ) {

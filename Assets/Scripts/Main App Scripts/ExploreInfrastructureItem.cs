@@ -63,7 +63,7 @@ public class ExploreInfrastructureItem : MonoBehaviour
                     categoriesLoaded = true;
                     loadComplete = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadComplete = true;
                 }
@@ -96,7 +96,7 @@ public class ExploreInfrastructureItem : MonoBehaviour
                     campusesLoaded = true;
                     loadComplete = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadComplete = true;
                 }
@@ -174,7 +174,6 @@ public class ExploreInfrastructureItem : MonoBehaviour
 
     private IEnumerator SearchNodeAcrossAllMaps(string infraId)
     {
-        bool searchComplete = false;
         List<string> mapIds = new List<string>();
 
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
@@ -189,7 +188,7 @@ public class ExploreInfrastructureItem : MonoBehaviour
                         mapIds.Add(map.map_id);
                     }
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                 }
             },
@@ -223,7 +222,7 @@ public class ExploreInfrastructureItem : MonoBehaviour
                             }
                         }
                     }
-                    catch (System.Exception e)
+                    catch (System.Exception)
                     {
                     }
                 },

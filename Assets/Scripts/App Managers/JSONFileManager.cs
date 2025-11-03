@@ -127,7 +127,7 @@ public class JSONFileManager : MonoBehaviour
 #endif
             }
         }
-        catch (System.Exception ex)
+        catch (System.Exception)
         {
         }
     }
@@ -155,7 +155,7 @@ public class JSONFileManager : MonoBehaviour
 #endif
             }
         }
-        catch (System.Exception ex)
+        catch (System.Exception)
         {
         }
     }
@@ -237,7 +237,7 @@ public class JSONFileManager : MonoBehaviour
             {
                 return File.ReadAllText(filePath);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 return null;
             }
@@ -263,7 +263,7 @@ public class JSONFileManager : MonoBehaviour
 #endif
             }
         }
-        catch (System.Exception ex)
+        catch (System.Exception)
         {
         }
     }
@@ -288,7 +288,7 @@ public class JSONFileManager : MonoBehaviour
                 
                 return ageHours < maxAgeHours;
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
             }
         }
@@ -307,7 +307,7 @@ public class JSONFileManager : MonoBehaviour
                 var mapsArray = JsonHelper.FromJson<MapInfo>(mapsJson);
                 mapIds.AddRange(mapsArray.Select(m => m.map_id));
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
             }
         }
@@ -382,7 +382,7 @@ public class JSONFileManager : MonoBehaviour
                 WriteJSONFile("recent_destinations.json", updatedJson);
             }
         }
-        catch (System.Exception ex)
+        catch (System.Exception)
         {
         }
     }
@@ -409,7 +409,7 @@ public class JSONFileManager : MonoBehaviour
                 }
             }
         }
-        catch (System.Exception ex)
+        catch (System.Exception)
         {
         }
     }
@@ -431,7 +431,7 @@ public class JSONFileManager : MonoBehaviour
                 WriteJSONFile("saved_destinations.json", updatedJson);
             }
         }
-        catch (System.Exception ex)
+        catch (System.Exception)
         {
         }
     }
@@ -473,7 +473,7 @@ public class JSONFileManager : MonoBehaviour
             {
                 return JsonUtility.FromJson<LocalVersionCache>(cacheContent);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
             }
         }

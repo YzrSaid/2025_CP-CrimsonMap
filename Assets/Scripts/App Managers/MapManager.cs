@@ -128,7 +128,7 @@ public class MapManager : MonoBehaviour
                 }
                 loadCompleted = true;
             }
-            catch (System.Exception e)
+            catch (System.Exception)
             {
                 loadCompleted = true;
             }

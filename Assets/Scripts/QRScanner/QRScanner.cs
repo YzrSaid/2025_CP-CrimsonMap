@@ -168,7 +168,7 @@ public class QRScanner : MonoBehaviour
 
                     loadComplete = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadComplete = true;
                 }
@@ -205,7 +205,7 @@ public class QRScanner : MonoBehaviour
 
                     loadComplete = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadComplete = true;
                 }

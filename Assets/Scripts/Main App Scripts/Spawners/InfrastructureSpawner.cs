@@ -164,7 +164,8 @@ public class InfrastructureSpawner : MonoBehaviour
             } else {
                 infrastructureToSpawn = BuildInfrastructureData( nodes, infrastructures, categories, currentCampusIds );
             }
-        } catch ( System.Exception e ) {
+        } catch (System.Exception)
+        {
             errorOccurred = true;
         } finally {
             isSpawning = false;
@@ -188,7 +189,8 @@ public class InfrastructureSpawner : MonoBehaviour
             try {
                 nodes = JsonHelper.FromJson<Node>( jsonContent );
                 loadCompleted = true;
-            } catch ( System.Exception e ) {
+            } catch (System.Exception)
+            {
                 loadCompleted = true;
             }
         },
@@ -212,7 +214,8 @@ public class InfrastructureSpawner : MonoBehaviour
             try {
                 infrastructures = JsonHelper.FromJson<Infrastructure>( jsonContent );
                 loadCompleted = true;
-            } catch ( System.Exception e ) {
+            } catch (System.Exception)
+            {
                 loadCompleted = true;
             }
         },
@@ -236,7 +239,8 @@ public class InfrastructureSpawner : MonoBehaviour
             try {
                 categories = JsonHelper.FromJson<Category>( jsonContent );
                 loadCompleted = true;
-            } catch ( System.Exception e ) {
+            } catch (System.Exception)
+            {
                 loadCompleted = true;
             }
         },
@@ -337,7 +341,8 @@ public class InfrastructureSpawner : MonoBehaviour
                 if ( spawnedCount % 5 == 0 ) {
                     shouldYield = true;
                 }
-            } catch ( System.Exception e ) {
+            } catch (System.Exception)
+            {
             }
 
             if ( shouldYield ) {

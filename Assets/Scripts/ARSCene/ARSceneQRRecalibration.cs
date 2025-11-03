@@ -188,7 +188,7 @@ public class ARSceneQRRecalibration : MonoBehaviour
                         }
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                 }
             },
@@ -256,7 +256,7 @@ public class ARSceneQRRecalibration : MonoBehaviour
                     debugText.text = $"Scanning... (Frame: {frameCount})";
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
         }
     }
@@ -368,7 +368,7 @@ public class ARSceneQRRecalibration : MonoBehaviour
                 return foundNode;
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
         }
 

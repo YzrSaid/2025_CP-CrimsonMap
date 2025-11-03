@@ -255,7 +255,7 @@ public class PathfindingController : MonoBehaviour
 
                     loadComplete = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadComplete = true;
                 }
@@ -477,7 +477,6 @@ public class PathfindingController : MonoBehaviour
     private IEnumerator LoadNodesFromJSON(string mapId)
     {
         string fileName = $"nodes_{mapId}.json";
-        bool loadSuccess = false;
         string errorMsg = "";
 
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
@@ -495,7 +494,6 @@ public class PathfindingController : MonoBehaviour
                     }
 
                     nodesLoaded = true;
-                    loadSuccess = true;
                 }
                 catch (System.Exception e)
                 {

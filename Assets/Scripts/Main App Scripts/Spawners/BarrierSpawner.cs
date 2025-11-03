@@ -220,7 +220,7 @@ public class BarrierSpawner : MonoBehaviour
         {
             ClearSpawnedNodes();
         }
-        catch (System.Exception e)
+        catch (System.Exception)
         {
             isSpawning = false;
             yield break;
@@ -389,7 +389,7 @@ public class BarrierSpawner : MonoBehaviour
                     shouldYield = true;
                 }
             }
-            catch (System.Exception e)
+            catch (System.Exception)
             {
             }
             if (shouldYield)
@@ -432,7 +432,7 @@ public class BarrierSpawner : MonoBehaviour
                     shouldYield = true;
                 }
             }
-            catch (System.Exception e)
+            catch (System.Exception)
             {
             }
 

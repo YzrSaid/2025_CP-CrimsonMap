@@ -126,7 +126,7 @@ public class DirectionDisplayManager : MonoBehaviour
                     allNodes = JsonHelper.FromJson<Node>(jsonContent);
                     loadComplete = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadComplete = true;
                 }

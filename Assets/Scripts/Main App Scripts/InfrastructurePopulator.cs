@@ -138,7 +138,7 @@ public class InfrastructurePopulator : MonoBehaviour
             string wrappedJson = "{\"infrastructures\":" + jsonContent + "}";
             infrastructureList = JsonUtility.FromJson<InfrastructureList>(wrappedJson);
         }
-        catch (Exception e)
+        catch (Exception)
         {
         }
     }
@@ -150,7 +150,7 @@ public class InfrastructurePopulator : MonoBehaviour
             IndoorInfrastructure[] indoorArray = JsonHelper.FromJson<IndoorInfrastructure>(jsonContent);
             indoorList = new IndoorInfrastructureList { indoors = indoorArray };
         }
-        catch (Exception e)
+        catch (Exception)
         {
         }
     }

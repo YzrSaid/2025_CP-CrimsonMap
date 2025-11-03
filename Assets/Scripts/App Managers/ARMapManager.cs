@@ -321,7 +321,7 @@ public class ARMapManager : MonoBehaviour
 
                     loadCompleted = true;
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
                     loadCompleted = true;
                 }

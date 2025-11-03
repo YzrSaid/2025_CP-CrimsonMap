@@ -90,6 +90,7 @@
     <Compile Include="Assets/Mapbox/Unity/DataContainers/ColliderOptions.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Data/AtlasInfo.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Geocoding/GeocodeResource.cs" />
+    <Compile Include="Assets/Scripts/ARSCene/ARLoadingManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/TileStats.cs" />
     <Compile Include="Assets/Mapbox/Unity/Map/Strategies/MapPlacementAtTileCenterStrategy.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/MeshModifiers/ChamferHeightModifier.cs" />
@@ -262,7 +263,6 @@
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/TileJSON/TileJSONObjectVectorLayer.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/MapScalingOptions.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Geocoding/Response/Geometry.cs" />
-    <Compile Include="Assets/Scripts/ARSCene/ARLocalizationModeSelector.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/ClassicRetinaRasterTile.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Directions/RoutingProfile.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/ReverseGeocodeUserInput.cs" />
@@ -271,7 +271,6 @@
     <Compile Include="Assets/Mapbox/Unity/DataContainers/ImageryRasterOptions.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/ISubLayerDarkStyle.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/Map.cs" />
-    <Compile Include="Assets/Scripts/ARSCene/ARNavigationMarkerSpawner.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/Map/MapDropdown.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/Logging/LocationLogAbstractBase.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/CameraBoundsTileProviderOptions.cs" />
