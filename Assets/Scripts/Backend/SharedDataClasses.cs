@@ -82,6 +82,7 @@ public class Infrastructure
     public string email;
     public bool is_deleted;
     public string phone;
+    public bool is_bookmark;
 }
 
 [System.Serializable]
@@ -298,6 +299,12 @@ public class SavedDirection
     public string destNode;
     public bool isIndoorGrouped;
     public bool isIndoorDirection;
+}
+
+[Serializable]
+public class BookmarkData
+{
+    public List<string> bookmarked_infra_ids = new List<string>();
 }
 
 // Helper class for JSON array parsing (Unity's JsonUtility doesn't handle arrays directly)

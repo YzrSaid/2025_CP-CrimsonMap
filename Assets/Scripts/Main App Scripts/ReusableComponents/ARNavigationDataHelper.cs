@@ -6,7 +6,7 @@ using System.IO;
 
 public static class ARNavigationDataHelper
 {
-    private const string SAVED_DESTINATIONS_FILE = "saved_destinations.json";
+    private const string RECENT_DESTINATIONS_FILE = "recent_destinations.json";
 
     public static void SaveAndClearARNavigationData()
     {
@@ -165,9 +165,9 @@ public static class ARNavigationDataHelper
     private static string GetFilePath()
     {
         #if UNITY_EDITOR
-            return Path.Combine(Application.streamingAssetsPath, SAVED_DESTINATIONS_FILE);
+            return Path.Combine(Application.streamingAssetsPath, RECENT_DESTINATIONS_FILE);
         #else
-            return Path.Combine(Application.persistentDataPath, SAVED_DESTINATIONS_FILE);
+            return Path.Combine(Application.persistentDataPath, RECENT_DESTINATIONS_FILE);
         #endif
     }
 

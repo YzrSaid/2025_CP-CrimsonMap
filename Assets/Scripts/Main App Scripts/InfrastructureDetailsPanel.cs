@@ -4,6 +4,8 @@ using TMPro;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 public class InfrastructureDetailsPanel : MonoBehaviour
 {
@@ -17,6 +19,10 @@ public class InfrastructureDetailsPanel : MonoBehaviour
     public TextMeshProUGUI latAndlngText;
     public TextMeshProUGUI campusText;
     public Button closeButton;
+
+    [Header("Bookmark Buttons")]
+    public Button bookmarkEmptyButton;
+    public Button bookmarkFilledButton;
 
     [Header("Indoor Infrastructure Dropdowns")]
     public TMP_Dropdown roomsDropdown;
@@ -33,11 +39,19 @@ public class InfrastructureDetailsPanel : MonoBehaviour
     private CampusData campus;
     private Transform backgroundTransform;
     private List<IndoorInfrastructure> indoorList = new List<IndoorInfrastructure>();
+    private bool isBookmarked = false;
 
     void Awake()
     {
         if (closeButton != null)
             closeButton.onClick.AddListener(Close);
+        
+        if (bookmarkEmptyButton != null)
+            bookmarkEmptyButton.onClick.AddListener(OnBookmarkClicked);
+        
+        if (bookmarkFilledButton != null)
+            bookmarkFilledButton.onClick.AddListener(OnUnbookmarkClicked);
+        
         SetupBackground();
     }
 
@@ -76,10 +90,114 @@ public class InfrastructureDetailsPanel : MonoBehaviour
         category = cat;
         node = nodeData;
         campus = campusData;
+        
+        CheckBookmarkStatus();
+        UpdateBookmarkUI();
         PopulateUI();
 
-        // Load indoor infrastructures
         StartCoroutine(LoadIndoorInfrastructures());
+    }
+
+    private void CheckBookmarkStatus()
+    {
+        if (infrastructure == null) return;
+
+        BookmarkData bookmarkData = LoadBookmarkData();
+        isBookmarked = bookmarkData.bookmarked_infra_ids.Contains(infrastructure.infra_id);
+    }
+
+    private void UpdateBookmarkUI()
+    {
+        if (bookmarkEmptyButton != null)
+            bookmarkEmptyButton.gameObject.SetActive(!isBookmarked);
+        
+        if (bookmarkFilledButton != null)
+            bookmarkFilledButton.gameObject.SetActive(isBookmarked);
+    }
+
+    private void OnBookmarkClicked()
+    {
+        if (infrastructure == null) return;
+
+        BookmarkData bookmarkData = LoadBookmarkData();
+        
+        if (!bookmarkData.bookmarked_infra_ids.Contains(infrastructure.infra_id))
+        {
+            bookmarkData.bookmarked_infra_ids.Add(infrastructure.infra_id);
+            SaveBookmarkData(bookmarkData);
+            isBookmarked = true;
+            UpdateBookmarkUI();
+            Debug.Log($"Bookmarked: {infrastructure.name}");
+        }
+    }
+
+    private void OnUnbookmarkClicked()
+    {
+        if (infrastructure == null) return;
+
+        BookmarkData bookmarkData = LoadBookmarkData();
+        
+        if (bookmarkData.bookmarked_infra_ids.Contains(infrastructure.infra_id))
+        {
+            bookmarkData.bookmarked_infra_ids.Remove(infrastructure.infra_id);
+            SaveBookmarkData(bookmarkData);
+            isBookmarked = false;
+            UpdateBookmarkUI();
+            Debug.Log($"Unbookmarked: {infrastructure.name}");
+        }
+    }
+
+    private BookmarkData LoadBookmarkData()
+    {
+        string filePath = GetBookmarkFilePath();
+        
+        if (File.Exists(filePath))
+        {
+            try
+            {
+                string json = File.ReadAllText(filePath);
+                BookmarkData data = JsonUtility.FromJson<BookmarkData>(json);
+                return data ?? new BookmarkData();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error loading bookmarks: {e.Message}");
+                return new BookmarkData();
+            }
+        }
+        
+        return new BookmarkData();
+    }
+
+    private void SaveBookmarkData(BookmarkData data)
+    {
+        try
+        {
+            string json = JsonUtility.ToJson(data, true);
+            string filePath = GetBookmarkFilePath();
+            
+            string directory = Path.GetDirectoryName(filePath);
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+            
+            File.WriteAllText(filePath, json);
+            Debug.Log($"Saved bookmarks to: {filePath}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error saving bookmarks: {e.Message}");
+        }
+    }
+
+    private string GetBookmarkFilePath()
+    {
+        #if UNITY_EDITOR
+            return Path.Combine(Application.streamingAssetsPath, "bookmarks.json");
+        #else
+            return Path.Combine(Application.persistentDataPath, "bookmarks.json");
+        #endif
     }
 
     void PopulateUI()
@@ -129,7 +247,6 @@ public class InfrastructureDetailsPanel : MonoBehaviour
             yield break;
         }
 
-        // Clear existing dropdown options
         ClearDropdown(roomsDropdown);
         ClearDropdown(emergencyExitDropdown);
         ClearDropdown(stairsDropdown);
@@ -138,7 +255,6 @@ public class InfrastructureDetailsPanel : MonoBehaviour
 
         bool loadComplete = false;
 
-        // Load indoor.json file
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             "indoor.json",
             (jsonContent) =>
@@ -185,13 +301,11 @@ public class InfrastructureDetailsPanel : MonoBehaviour
     {
         if (indoorList.Count == 0)
         {
-            // No indoor infrastructures found - show message and hide dropdowns
             if (noIndoorText != null)
             {
                 noIndoorText.SetActive(true);
             }
 
-            // Hide all dropdowns
             if (roomsDropdown != null)
                 roomsDropdown.gameObject.SetActive(false);
             if (emergencyExitDropdown != null)
@@ -199,20 +313,17 @@ public class InfrastructureDetailsPanel : MonoBehaviour
             if (stairsDropdown != null)
                 stairsDropdown.gameObject.SetActive(false);
 
-            // Force layout rebuild
             ForceLayoutRebuild();
 
             Debug.Log($"No indoor infrastructures found for {infrastructure.name}");
             return;
         }
 
-        // Hide no indoor text
         if (noIndoorText != null)
         {
             noIndoorText.SetActive(false);
         }
 
-        // Separate by type
         List<IndoorInfrastructure> rooms = new List<IndoorInfrastructure>();
         List<IndoorInfrastructure> emergencyExits = new List<IndoorInfrastructure>();
         List<IndoorInfrastructure> stairs = new List<IndoorInfrastructure>();
@@ -238,12 +349,10 @@ public class InfrastructureDetailsPanel : MonoBehaviour
             }
         }
 
-        // Populate each dropdown (also handles showing/hiding based on content)
         PopulateDropdown(roomsDropdown, rooms, "Rooms");
         PopulateDropdown(emergencyExitDropdown, emergencyExits, "Emergency Exits");
         PopulateDropdown(stairsDropdown, stairs, "Stairs");
 
-        // Force layout rebuild after all dropdowns are populated
         ForceLayoutRebuild();
 
         Debug.Log($"Populated dropdowns - Rooms: {rooms.Count}, Emergency Exits: {emergencyExits.Count}, Stairs: {stairs.Count}");
@@ -257,23 +366,19 @@ public class InfrastructureDetailsPanel : MonoBehaviour
             return;
         }
 
-        // If no items, hide the dropdown
         if (items.Count == 0)
         {
             dropdown.gameObject.SetActive(false);
             return;
         }
 
-        // Show the dropdown if it has items
         dropdown.gameObject.SetActive(true);
         dropdown.ClearOptions();
 
         List<string> options = new List<string>();
 
-        // Add title as first item (will be displayed as label)
         options.Add(titleText);
 
-        // Add all indoor items
         foreach (IndoorInfrastructure indoor in items)
         {
             options.Add(indoor.name);
@@ -281,26 +386,21 @@ public class InfrastructureDetailsPanel : MonoBehaviour
 
         dropdown.AddOptions(options);
 
-        // Set dropdown to show title (index 0)
         dropdown.value = 0;
         dropdown.RefreshShownValue();
 
-        // Clear previous listeners to avoid duplicates
         dropdown.onValueChanged.RemoveAllListeners();
 
-        // Make first option (title) non-interactable by listening to value changes
         dropdown.onValueChanged.AddListener((int index) =>
         {
             if (index == 0)
             {
-                // User clicked title, reset to title
                 dropdown.value = 0;
                 dropdown.RefreshShownValue();
             }
             else
             {
-                // User selected an actual item
-                OnIndoorItemSelected(items[index - 1]); // -1 because first item is title
+                OnIndoorItemSelected(items[index - 1]);
             }
         });
 
@@ -310,9 +410,6 @@ public class InfrastructureDetailsPanel : MonoBehaviour
     private void OnIndoorItemSelected(IndoorInfrastructure selectedIndoor)
     {
         Debug.Log($"Selected indoor item: {selectedIndoor.name} (ID: {selectedIndoor.room_id}, Type: {selectedIndoor.indoor_type})");
-
-        // TODO: Open your panel here with selected indoor data
-        // Example: OpenIndoorDetailsPanel(selectedIndoor);
     }
 
     private void LoadBase64Image(string base64String)
@@ -339,12 +436,10 @@ public class InfrastructureDetailsPanel : MonoBehaviour
 
     private void ForceLayoutRebuild()
     {
-        // Force the layout to rebuild after hiding/showing dropdowns
         Canvas.ForceUpdateCanvases();
-
-        // Rebuild the layout of this panel
         LayoutRebuilder.ForceRebuildLayoutImmediate(GetComponent<RectTransform>());
     }
+
     void Close()
     {
         Destroy(gameObject);

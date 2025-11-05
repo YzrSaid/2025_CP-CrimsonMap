@@ -610,6 +610,60 @@ public class PathfindingController : MonoBehaviour
         return R * c;
     }
 
+    public void NavigateToInfrastructure(string infraId)
+    {
+        if (string.IsNullOrEmpty(infraId))
+        {
+            Debug.LogError("Infrastructure ID is null or empty!");
+            return;
+        }
+
+        SetDestination(infraId, "infrastructure");
+
+        string fromNodeId;
+        string toNodeId;
+
+        if (useStaticTesting)
+        {
+            fromNodeId = staticFromNodeId;
+            toNodeId = staticToNodeId;
+        }
+        else
+        {
+            if (isLocationLocked && lockedNode != null)
+            {
+                fromNodeId = lockedNode.node_id;
+            }
+            else
+            {
+                UpdateFromLocationByGPS();
+                fromNodeId = selectedFromNodeId;
+            }
+            toNodeId = selectedToNodeId;
+        }
+
+        if (string.IsNullOrEmpty(toNodeId))
+        {
+            ShowConfirmationError("Destination not found in current map");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(fromNodeId))
+        {
+            ShowConfirmationError("Cannot determine your location. Please check GPS.");
+            return;
+        }
+
+        if (fromNodeId == toNodeId)
+        {
+            ShowConfirmationError("You are already at this location!");
+            return;
+        }
+
+        // Show confirmation panel
+        ShowConfirmationPanel(fromNodeId, toNodeId);
+    }
+
     private void ShowLocationConflictPanel(Node qrNode, Node gpsNode, float distanceMeters)
     {
         if (locationConflictPanel == null)

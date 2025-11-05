@@ -21,7 +21,8 @@ public class JSONFileManager : MonoBehaviour
         "recent_destinations.json",
         "saved_destinations.json",
         "static_data_cache.json",
-        "indoor.json"
+        "indoor.json",
+        "bookmarks.json"
     };
 
     void Awake()

@@ -145,7 +145,22 @@ public class ExploreInfrastructureItem : MonoBehaviour
 
     void OnNavigateClicked()
     {
-        Debug.Log($"Navigate to: {infrastructureData.name}");
+        if (infrastructureData == null)
+        {
+            Debug.LogError("Infrastructure data is null!");
+            return;
+        }
+
+        PathfindingController pathfindingController = FindObjectOfType<PathfindingController>();
+        
+        if (pathfindingController != null)
+        {
+            pathfindingController.NavigateToInfrastructure(infrastructureData.infra_id);
+        }
+        else
+        {
+            Debug.LogError("PathfindingController not found in scene!");
+        }
     }
 
     void OnViewDetailsClicked()
