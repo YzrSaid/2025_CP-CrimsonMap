@@ -258,6 +258,48 @@ public class MarkerAnchor
     public GameObject markerGameObject;
 }
 
+[Serializable]
+public class SavedNavigationHistory
+{
+    public List<SavedNavigation> navigations = new List<SavedNavigation>();
+}
+
+[Serializable]
+public class SavedNavigation
+{
+    public string timestamp;
+    public string startNodeId;
+    public string endNodeId;
+    public string startNodeName;
+    public string endNodeName;
+    public float totalDistance;
+    public string formattedDistance;
+    public string walkingTime;
+    public string viaMode;
+    public List<string> pathNodes = new List<string>();
+    public List<SavedEdge> edges = new List<SavedEdge>();
+    public List<SavedDirection> directions = new List<SavedDirection>();
+}
+
+[Serializable]
+public class SavedEdge
+{
+    public string fromNode;
+    public string toNode;
+}
+
+[Serializable]
+public class SavedDirection
+{
+    public string instruction;
+    public string turn;
+    public float distance;
+    public string destNodeId;
+    public string destNode;
+    public bool isIndoorGrouped;
+    public bool isIndoorDirection;
+}
+
 // Helper class for JSON array parsing (Unity's JsonUtility doesn't handle arrays directly)
 public static class JsonHelper
 {

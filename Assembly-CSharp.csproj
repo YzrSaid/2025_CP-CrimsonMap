@@ -204,6 +204,7 @@
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Factories/DirectionsFactory.cs" />
     <Compile Include="Assets/Mapbox/Unity/Map/Interfaces/ITileProvider.cs" />
     <Compile Include="Assets/Mapbox/Unity/Utilities/GameObjectExtensions.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/ARNavigationDataHelper.cs" />
     <Compile Include="Assets/Mapbox/Unity/Telemetry/TelemetryFallback.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/ModifierStack.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/SubLayerRealisticStyle.cs" />
@@ -255,6 +256,7 @@
     <Compile Include="Assets/Mapbox/Examples/Scripts/FeatureSelectionDetector.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/ISubLayerTexturing.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/TileJSON/TileJSON.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/ARModeHelper.cs" />
     <Compile Include="Assets/Mapbox/Unity/LayerProperties/LayerProperties.cs" />
     <Compile Include="Assets/Mapbox/Unity/Telemetry/TelemetryEditor.cs" />
     <Compile Include="Assets/Scripts/App Managers/ARMapManager.cs" />

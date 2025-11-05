@@ -19,7 +19,6 @@ public class ARLoadingManager : MonoBehaviour
     private bool isMapReady = false;
     private bool isCameraSetupReady = false;
     private bool isNavigationReady = false;
-    private bool isARModeNavigation = false;
 
     void Awake()
     {
@@ -28,9 +27,6 @@ public class ARLoadingManager : MonoBehaviour
 
         if (loadingAnimation != null)
             loadingAnimation.SetActive(true);
-
-        string arMode = PlayerPrefs.GetString("ARMode", "DirectAR");
-        isARModeNavigation = (arMode == "Navigation");
 
         FindReferences();
     }
@@ -66,7 +62,7 @@ public class ARLoadingManager : MonoBehaviour
 
         yield return StartCoroutine(WaitForCameraSetup());
 
-        if (isARModeNavigation)
+        if (ARModeHelper.IsNavigationMode())
         {
             yield return StartCoroutine(WaitForNavigationMarkers());
         }
@@ -189,6 +185,6 @@ public class ARLoadingManager : MonoBehaviour
     public bool IsLoadingComplete()
     {
         return isARReady && isMapReady && isCameraSetupReady && 
-               (!isARModeNavigation || isNavigationReady);
+               (!ARModeHelper.IsNavigationMode() || isNavigationReady);
     }
 }

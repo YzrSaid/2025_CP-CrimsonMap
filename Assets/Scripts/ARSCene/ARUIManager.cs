@@ -15,32 +15,29 @@ public class ARUIManager : MonoBehaviour
     [Header("Settings")]
     public bool enableDebugLogs = true;
 
-    public enum ARMode { DirectAR, Navigation }
+    private ARModeHelper.ARMode currentARMode;
 
-    private ARMode currentARMode = ARMode.DirectAR;
 
     void Start()
     {
         DetermineARMode();
         ConfigureUIForMode();
     }
-
     private void DetermineARMode()
     {
-        string arModeString = PlayerPrefs.GetString("ARMode", "DirectAR");
-        currentARMode = arModeString == "Navigation" ? ARMode.Navigation : ARMode.DirectAR;
+        currentARMode = ARModeHelper.GetCurrentARMode();
     }
 
     private void ConfigureUIForMode()
     {
-        if (currentARMode == ARMode.DirectAR)
+        if (currentARMode == ARModeHelper.ARMode.DirectAR)
         {
             SetUIElementActive(mapPanel, true);
             SetUIElementActive(stopDirectARButton, true);
             SetUIElementActive(directionPanel, false);
-            SetUIElementActive(topPanel, true);
+            SetUIElementActive(topPanel, false);
         }
-        else if (currentARMode == ARMode.Navigation)
+        else if (currentARMode == ARModeHelper.ARMode.Navigation)
         {
             SetUIElementActive(mapPanel, true);
             SetUIElementActive(directionPanel, true);
@@ -55,36 +52,5 @@ public class ARUIManager : MonoBehaviour
         {
             uiElement.SetActive(active);
         }
-    }
-
-    public void SwitchToDirectARMode()
-    {
-        currentARMode = ARMode.DirectAR;
-        PlayerPrefs.SetString("ARMode", "DirectAR");
-        PlayerPrefs.Save();
-        ConfigureUIForMode();
-    }
-
-    public void SwitchToNavigationMode()
-    {
-        currentARMode = ARMode.Navigation;
-        PlayerPrefs.SetString("ARMode", "Navigation");
-        PlayerPrefs.Save();
-        ConfigureUIForMode();
-    }
-
-    public bool IsNavigationMode()
-    {
-        return currentARMode == ARMode.Navigation;
-    }
-
-    public bool IsDirectARMode()
-    {
-        return currentARMode == ARMode.DirectAR;
-    }
-
-    public ARMode GetCurrentARMode()
-    {
-        return currentARMode;
     }
 }

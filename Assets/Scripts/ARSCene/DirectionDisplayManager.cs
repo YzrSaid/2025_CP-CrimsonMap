@@ -43,6 +43,10 @@ public class DirectionDisplayManager : MonoBehaviour
 
     private UnifiedARManager arManager;
 
+    public enum ARMode { DirectAR, Navigation }
+
+    private ARModeHelper.ARMode currentARMode;
+
     void Start()
     {
         arManager = FindObjectOfType<UnifiedARManager>();
@@ -179,8 +183,9 @@ public class DirectionDisplayManager : MonoBehaviour
         }
 
         UpdateDebugAllDirections();
+        
 
-        if (allDirections.Count > 0)
+        if (allDirections.Count > 0 && ARModeHelper.IsNavigationMode())
         {
             StartNavigation();
         }

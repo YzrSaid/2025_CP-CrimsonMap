@@ -1134,6 +1134,8 @@ public class PathfindingController : MonoBehaviour
         PlayerPrefs.SetString("ARNavigation_WalkingTime", route.walkingTime);
         PlayerPrefs.SetString("ARNavigation_ViaMode", route.viaMode);
 
+        // This is for saving the nodes and edges part of the route and will be highlighted in the map
+
         PlayerPrefs.SetInt("ARNavigation_PathNodeCount", route.path.Count);
 
         for (int i = 0; i < route.path.Count; i++)
@@ -1153,6 +1155,7 @@ public class PathfindingController : MonoBehaviour
             PlayerPrefs.SetString($"ARNavigation_Edge_{i}_To", toNode);
         }
 
+        // This is for saving the directions
         PlayerPrefs.SetInt("ARNavigation_DirectionCount", directions.Count);
 
         for (int i = 0; i < directions.Count; i++)
@@ -1169,6 +1172,7 @@ public class PathfindingController : MonoBehaviour
             PlayerPrefs.SetInt($"ARNavigation_Direction_{i}_IsIndoorDirection", dir.isIndoorDirection ? 1 : 0);
         }
 
+        // This is to save/update the AR Mode 
         PlayerPrefs.SetString("ARMode", "Navigation");
 
         PlayerPrefs.Save();
