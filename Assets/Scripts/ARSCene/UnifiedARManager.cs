@@ -299,23 +299,20 @@ public class UnifiedARManager : MonoBehaviour
 
     private string GetCurrentMapId()
     {
-        if (MapManager.Instance != null && MapManager.Instance.GetCurrentMap() != null)
+        if (PlayerPrefs.HasKey("ARScene_MapId"))
         {
-            return MapManager.Instance.GetCurrentMap().map_id;
+            return PlayerPrefs.GetString("ARScene_MapId");
         }
 
-        if (PlayerPrefs.HasKey("CurrentMapId"))
-        {
-            return PlayerPrefs.GetString("CurrentMapId");
-        }
-
-        return "MAP-01";
+        return null;
     }
 
     IEnumerator LoadCurrentMapData(string currentMapId)
     {
         bool nodesLoaded = false;
         bool infraLoaded = false;
+
+        Debug.Log($"Yawa ito na ang mga currentmapid {currentMapId}");
 
         UpdateLoadingUI($"Loading nodes for map {currentMapId}...");
 

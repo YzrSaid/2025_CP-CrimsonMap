@@ -53,7 +53,7 @@ public class InfrastructurePopulator : MonoBehaviour
     private bool IsDataInitializationComplete()
     {
         string infraPath = GetJsonFilePath("infrastructure.json");
-        
+
         if (!File.Exists(infraPath))
         {
             return false;
@@ -62,7 +62,7 @@ public class InfrastructurePopulator : MonoBehaviour
         try
         {
             string infraContent = File.ReadAllText(infraPath);
-            
+
             if (string.IsNullOrEmpty(infraContent) || infraContent.Length < 10)
             {
                 return false;
@@ -95,11 +95,13 @@ public class InfrastructurePopulator : MonoBehaviour
 
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             "infrastructure.json",
-            (jsonContent) => {
+            (jsonContent) =>
+            {
                 OnInfrastructureDataLoaded(jsonContent);
                 infraLoaded = true;
             },
-            (error) => {
+            (error) =>
+            {
                 infraLoaded = true;
             }
         ));
@@ -108,11 +110,13 @@ public class InfrastructurePopulator : MonoBehaviour
 
         yield return StartCoroutine(CrossPlatformFileLoader.LoadJsonFile(
             "indoor.json",
-            (jsonContent) => {
+            (jsonContent) =>
+            {
                 OnIndoorDataLoaded(jsonContent);
                 indoorLoaded = true;
             },
-            (error) => {
+            (error) =>
+            {
                 indoorLoaded = true;
             }
         ));
@@ -168,6 +172,9 @@ public class InfrastructurePopulator : MonoBehaviour
         {
             if (indoor.is_deleted)
                 continue;
+            string indoorType = indoor.indoor_type?.ToLower();
+            if (indoorType != "room" && indoorType != "fire_exit")
+                continue;
 
             if (!infraToRoomsMap.ContainsKey(indoor.infra_id))
             {
@@ -198,7 +205,7 @@ public class InfrastructurePopulator : MonoBehaviour
 
         foreach (var infra in infrastructureList.infrastructures)
         {
-            bool hasRooms = infraToRoomsMap.ContainsKey(infra.infra_id) && 
+            bool hasRooms = infraToRoomsMap.ContainsKey(infra.infra_id) &&
                            infraToRoomsMap[infra.infra_id].Count > 0;
 
             GameObject infraButton = CreateInfrastructureButton(infra.name, hasRooms);
@@ -211,7 +218,7 @@ public class InfrastructurePopulator : MonoBehaviour
             {
                 GameObject roomsContainer = new GameObject("Rooms_" + infra.infra_id);
                 roomsContainer.transform.SetParent(destinationListContent, false);
-                
+
                 RectTransform containerRect = roomsContainer.AddComponent<RectTransform>();
                 containerRect.anchorMin = new Vector2(0, 1);
                 containerRect.anchorMax = new Vector2(1, 1);
@@ -260,7 +267,7 @@ public class InfrastructurePopulator : MonoBehaviour
     private GameObject CreateInfrastructureButton(string text, bool hasArrow)
     {
         GameObject buttonObj = new GameObject("Infra_" + text);
-        
+
         RectTransform rect = buttonObj.AddComponent<RectTransform>();
         rect.anchorMin = new Vector2(0, 1);
         rect.anchorMax = new Vector2(1, 1);
@@ -287,13 +294,13 @@ public class InfrastructurePopulator : MonoBehaviour
 
         GameObject textObj = new GameObject("Text");
         textObj.transform.SetParent(buttonObj.transform, false);
-        
+
         TextMeshProUGUI textComp = textObj.AddComponent<TextMeshProUGUI>();
         textComp.text = text;
         textComp.fontSize = 16;
         textComp.color = Color.black;
         textComp.alignment = TextAlignmentOptions.MidlineLeft;
-        
+
         RectTransform textRect = textObj.GetComponent<RectTransform>();
         textRect.sizeDelta = new Vector2(300, 30);
 
@@ -305,13 +312,13 @@ public class InfrastructurePopulator : MonoBehaviour
         {
             GameObject arrowObj = new GameObject("Arrow");
             arrowObj.transform.SetParent(buttonObj.transform, false);
-            
+
             TextMeshProUGUI arrowText = arrowObj.AddComponent<TextMeshProUGUI>();
             arrowText.text = "▶";
             arrowText.fontSize = 14;
             arrowText.color = new Color(0.5f, 0.5f, 0.5f, 1f);
             arrowText.alignment = TextAlignmentOptions.Center;
-            
+
             RectTransform arrowRect = arrowObj.GetComponent<RectTransform>();
             arrowRect.sizeDelta = new Vector2(20, 20);
 
@@ -327,7 +334,7 @@ public class InfrastructurePopulator : MonoBehaviour
     private GameObject CreateRoomButton(string text)
     {
         GameObject buttonObj = new GameObject("Room_" + text);
-        
+
         RectTransform rect = buttonObj.AddComponent<RectTransform>();
         rect.anchorMin = new Vector2(0, 1);
         rect.anchorMax = new Vector2(1, 1);
@@ -353,13 +360,13 @@ public class InfrastructurePopulator : MonoBehaviour
 
         GameObject textObj = new GameObject("Text");
         textObj.transform.SetParent(buttonObj.transform, false);
-        
+
         TextMeshProUGUI textComp = textObj.AddComponent<TextMeshProUGUI>();
         textComp.text = text;
         textComp.fontSize = 14;
         textComp.color = new Color(0.2f, 0.2f, 0.2f, 1f);
         textComp.alignment = TextAlignmentOptions.MidlineLeft;
-        
+
         LayoutElement textLayout = textObj.AddComponent<LayoutElement>();
         textLayout.flexibleWidth = 1;
         textLayout.preferredHeight = 25;
@@ -420,7 +427,7 @@ public class InfrastructurePopulator : MonoBehaviour
         }
 
         List<string> options = new List<string>();
-        
+
         foreach (var infra in infrastructureList.infrastructures)
         {
             options.Add(infra.name);
@@ -456,7 +463,7 @@ public class InfrastructurePopulator : MonoBehaviour
 
         int selectedIndex = dropdown.value;
         string selectedText = dropdown.options[selectedIndex].text;
-        
+
         if (selectedText.StartsWith("    "))
         {
             string roomName = selectedText.Trim();
@@ -471,7 +478,7 @@ public class InfrastructurePopulator : MonoBehaviour
                     }
                 }
             }
-            
+
             return (null, null);
         }
         else
@@ -483,7 +490,7 @@ public class InfrastructurePopulator : MonoBehaviour
                     return (infra.infra_id, "infrastructure");
                 }
             }
-            
+
             return (null, null);
         }
     }

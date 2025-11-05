@@ -319,12 +319,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mapboxMap: {fileID: 4371021}
-  infrastructurePrefab: {fileID: 7190762585855250911, guid: f7c39f0e539e3b57a881c93c1a5791f2, type: 3}
+  infrastructurePrefab: {fileID: 384402045527793405, guid: df571a0471cd1e517bc8f83794a26e97, type: 3}
   infrastructureFileName: infrastructure.json
   categoriesFileName: categories.json
   enableDebugLogs: 1
   infrastructureSize: 2
-  heightOffset: 1
+  heightOffset: 3
 --- !u!114 &4371025
 MonoBehaviour:
   m_ObjectHideFlags: 0

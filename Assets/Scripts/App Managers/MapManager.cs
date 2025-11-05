@@ -82,7 +82,7 @@ public class MapManager : MonoBehaviour
 
     private void LoadLastSelectedMap()
     {
-        string savedMapId = PlayerPrefs.GetString("ARScene_MapId", "");
+        string savedMapId = PlayerPrefs.GetString("ARScene_MapId");
 
         if (!string.IsNullOrEmpty(savedMapId))
         {

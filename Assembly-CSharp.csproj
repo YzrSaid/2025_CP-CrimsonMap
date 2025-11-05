@@ -219,7 +219,6 @@
     <Compile Include="Assets/Scripts/Main App Scripts/Map/SmartMapDownloadButton.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Data/VectorFeatureUnity.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/MergedModifierStack.cs" />
-    <Compile Include="Assets/Scripts/App Managers/ARTrackingManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/LayerProperties/ImageryLayerProperties.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/TileErrorEventArgs.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Data/KdTree/KDTree.cs" />
@@ -230,7 +229,6 @@
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/GameObjectModifiers/NoiseOffsetModifier.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/MakiHelper.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/ReusableComponents/SceneTransitionWithoutLoading.cs" />
-    <Compile Include="Assets/Scripts/App Managers/ARInfrastructureManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Modifiers/MeshModifier.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Tokens/MapboxTokenApi.cs" />
     <Compile Include="Assets/Mapbox/Unity/Utilities/SingletonScriptableObject.cs" />

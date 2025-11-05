@@ -73,7 +73,7 @@ public class ARMapManager : MonoBehaviour
 
         isInitialized = true;
 
-        string mapId = PlayerPrefs.GetString("ARScene_MapId", "MAP-01");
+        string mapId = PlayerPrefs.GetString("ARScene_MapId");
         string campusIdsStr = PlayerPrefs.GetString("ARScene_CampusIds", "");
         List<string> campusIds = string.IsNullOrEmpty(campusIdsStr)
             ? new List<string>()
