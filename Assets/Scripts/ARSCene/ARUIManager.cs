@@ -35,7 +35,7 @@ public class ARUIManager : MonoBehaviour
             SetUIElementActive(mapPanel, true);
             SetUIElementActive(stopDirectARButton, true);
             SetUIElementActive(directionPanel, false);
-            SetUIElementActive(topPanel, false);
+            SetUIElementActive(topPanel, true);
         }
         else if (currentARMode == ARModeHelper.ARMode.Navigation)
         {

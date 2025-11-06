@@ -18,6 +18,8 @@ public class ARCameraLayerManager : MonoBehaviour
     public bool enableDebugLogs = true;
 
     private Vector3 originalMapPosition;
+    private Coroutine backupLayerCoroutine;
+    private bool hasAssignedLayers = false;
 
     void Awake()
     {
@@ -41,27 +43,43 @@ public class ARCameraLayerManager : MonoBehaviour
     void Start()
     {
         ARMapManager.OnSpawningComplete += OnMapSpawningComplete;
-        StartCoroutine(BackupLayerAssignment());
+        backupLayerCoroutine = StartCoroutine(BackupLayerAssignment());
     }
 
     private void OnDestroy()
     {
         ARMapManager.OnSpawningComplete -= OnMapSpawningComplete;
+        if (backupLayerCoroutine != null)
+        {
+            StopCoroutine(backupLayerCoroutine);
+        }
     }
 
     private void OnMapSpawningComplete()
     {
         AssignLayersNow();
+        hasAssignedLayers = true;
+        
+        // Stop backup coroutine since we've already assigned
+        if (backupLayerCoroutine != null)
+        {
+            StopCoroutine(backupLayerCoroutine);
+            backupLayerCoroutine = null;
+        }
     }
 
     private IEnumerator BackupLayerAssignment()
     {
         yield return new WaitForSeconds(10f);
 
-        if (mapboxMapRoot != null && mapboxMapRoot.transform.childCount > 0)
+        // Only assign if we haven't already
+        if (!hasAssignedLayers && mapboxMapRoot != null && mapboxMapRoot.transform.childCount > 0)
         {
             AssignLayersNow();
+            hasAssignedLayers = true;
         }
+        
+        backupLayerCoroutine = null;
     }
 
     private void AssignLayersNow()
@@ -70,6 +88,22 @@ public class ARCameraLayerManager : MonoBehaviour
         if (mapboxLayer != -1 && mapboxMapRoot != null)
         {
             AssignMapTerrainToLayer(mapboxMapRoot, mapboxLayer);
+            
+            // Ensure UI layer is NOT affected
+            PreserveUILayers();
+        }
+    }
+
+    private void PreserveUILayers()
+    {
+        // Make sure AR camera can still see UI layer
+        if (arCamera != null)
+        {
+            int uiLayer = LayerMask.NameToLayer("UI");
+            if (uiLayer != -1)
+            {
+                arCamera.cullingMask |= (1 << uiLayer);
+            }
         }
     }
 
@@ -131,7 +165,14 @@ public class ARCameraLayerManager : MonoBehaviour
 
         arCamera.clearFlags = CameraClearFlags.SolidColor;
         arCamera.backgroundColor = new Color(0, 0, 0, 0);
+        
+        // Exclude Mapbox layer but INCLUDE UI layer
+        int uiLayer = LayerMask.NameToLayer("UI");
         arCamera.cullingMask = ~(1 << mapboxLayer);
+        if (uiLayer != -1)
+        {
+            arCamera.cullingMask |= (1 << uiLayer);
+        }
 
         if (mapboxMapRoot != null)
         {
@@ -194,99 +235,10 @@ public class ARCameraLayerManager : MonoBehaviour
         }
     }
 
-    private void DebugLog(string message)
-    {
-        if (enableDebugLogs)
-        {
-            Debug.Log($"[URP ARCameraLayer] {message}");
-        }
-    }
-
     [ContextMenu("Apply URP Layer Fix")]
     public void ApplyLayerFix()
     {
         FindCameras();
         SetupURPCameras();
-    }
-
-    [ContextMenu("Debug: Check Camera Settings")]
-    public void DebugCameraSettings()
-    {
-        if (arCamera != null)
-        {
-            var arCamData = arCamera.GetUniversalAdditionalCameraData();
-        }
-
-        if (mapboxCamera != null)
-        {
-            var mapCamData = mapboxCamera.GetUniversalAdditionalCameraData();
-        }
-    }
-
-    [ContextMenu("Debug: Check Spawned Objects")]
-    public void CheckSpawnedObjects()
-    {
-        if (mapboxMapRoot == null)
-        {
-            return;
-        }
-
-        int pathCount = 0;
-        int nodeCount = 0;
-        int barrierCount = 0;
-
-        foreach (Transform child in mapboxMapRoot.transform)
-        {
-            string name = child.name.ToLower();
-
-            if (name.Contains("pathway") || name.Contains("path") || name.Contains("edge"))
-            {
-                pathCount++;
-            }
-            else if (name.Contains("node") || name.Contains("infrastructure"))
-            {
-                nodeCount++;
-            }
-            else if (name.Contains("barrier"))
-            {
-                barrierCount++;
-            }
-        }
-    }
-
-    [ContextMenu("Debug: List All Map Children")]
-    public void ListAllMapChildren()
-    {
-        if (mapboxMapRoot == null)
-        {
-            return;
-        }
-
-        int count = 0;
-        foreach (Transform child in mapboxMapRoot.transform)
-        {
-            count++;
-            if (count >= 20)
-            {
-                break;
-            }
-        }
-    }
-
-    private string LayerMaskToString(int mask)
-    {
-        string result = "";
-        for (int i = 0; i < 32; i++)
-        {
-            if ((mask & (1 << i)) != 0)
-            {
-                string layerName = LayerMask.LayerToName(i);
-                if (!string.IsNullOrEmpty(layerName))
-                {
-                    result += layerName + ", ";
-                }
-            }
-        }
-        return string.IsNullOrEmpty(result) ? "Nothing" : result.TrimEnd(',', ' ');
     }
 }

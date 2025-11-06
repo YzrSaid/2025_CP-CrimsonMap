@@ -24,7 +24,6 @@ public class ARSceneQRRecalibration : MonoBehaviour
     public GameObject scanTriggerButton;
     public TextMeshProUGUI scanButtonText;
     public GameObject qrFrameContainer;
-    public TextMeshProUGUI debugText;
 
     [Header("Confirmation Panel")]
     public GameObject confirmationPanel;
@@ -245,15 +244,7 @@ public class ARSceneQRRecalibration : MonoBehaviour
 
             if (result != null)
             {
-                if (debugText != null)
-                    debugText.text = $"QR FOUND: {result.Text}";
-
                 OnQRCodeScanned(result.Text);
-            }
-            else
-            {
-                if (debugText != null && frameCount % 30 == 0)
-                    debugText.text = $"Scanning... (Frame: {frameCount})";
             }
         }
         catch (Exception)
@@ -267,7 +258,7 @@ public class ARSceneQRRecalibration : MonoBehaviour
 
         if (!ValidateQRCode(qrData, out string nodeId))
         {
-            ShowError("Invalid QR code. Please scan a valid CRIMSON campus QR code.");
+            StartCoroutine(ShowErrorAndResume("Invalid QR code. Please scan a valid CRIMSON campus QR code."));
             return;
         }
 
@@ -344,7 +335,7 @@ public class ARSceneQRRecalibration : MonoBehaviour
 
             if (isNavigationMode && isIndoorNode)
             {
-                ShowError("Indoor QR codes cannot be used during Navigation mode. Please scan an outdoor QR code or cancel navigation.");
+                StartCoroutine(ShowErrorAndResume("Indoor QR codes cannot be used during Navigation mode. Please scan an outdoor QR code or cancel navigation."));
                 yield break;
             }
 
@@ -352,7 +343,7 @@ public class ARSceneQRRecalibration : MonoBehaviour
         }
         else
         {
-            ShowError("Location not found. This QR code may not be registered in the system.");
+            StartCoroutine(ShowErrorAndResume("Location not found. This QR code may not be registered in the system."));
         }
     }
 
@@ -489,12 +480,11 @@ public class ARSceneQRRecalibration : MonoBehaviour
         }
     }
 
-    void ShowError(string errorMessage)
+    IEnumerator ShowErrorAndResume(string errorMessage)
     {
-        if (debugText != null)
-            debugText.text = errorMessage;
-
-        Invoke(nameof(ResumeScanning), 2f);
+        Debug.LogWarning($"QR Scan Error: {errorMessage}");
+        yield return new WaitForSeconds(2f);
+        ResumeScanning();
     }
 
     void ResumeScanning()
@@ -528,13 +518,6 @@ public class ARSceneQRRecalibration : MonoBehaviour
         }
 
         StopScanning();
-
-        if (debugText != null)
-        {
-            string locationType = scannedNodeInfo.type == "indoorinfra" ? "Indoor" : "Outdoor";
-            debugText.text = $"Position calibrated successfully! ({locationType})";
-            StartCoroutine(HideDebugTextAfterDelay(3f));
-        }
     }
 
     void OnCancelRecalibration()
@@ -555,14 +538,6 @@ public class ARSceneQRRecalibration : MonoBehaviour
 
         if (qrFrameContainer != null)
             qrFrameContainer.SetActive(true);
-    }
-
-    IEnumerator HideDebugTextAfterDelay(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-
-        if (debugText != null)
-            debugText.text = "";
     }
 
     void OnDestroy()

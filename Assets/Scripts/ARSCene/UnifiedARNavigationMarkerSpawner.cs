@@ -34,7 +34,7 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
     public bool showWaypointMarkers = true;
 
     [Header("Floor Settings")]
-    public float floorHeightMeters = 3.048f; 
+    public float floorHeightMeters = 3.048f;
 
     private List<Node> pathNodes = new List<Node>();
     private Dictionary<string, GameObject> spawnedNodeMarkers = new Dictionary<string, GameObject>();
@@ -229,7 +229,19 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
                 if (prefab != null)
                 {
                     Vector3 worldPos = GetNodeWorldPosition(node, isIndoor);
+
+                    float floorHeight = 0f;
+                    if (isIndoor && node.indoor != null && !string.IsNullOrEmpty(node.indoor.floor))
+                    {
+                        if (int.TryParse(node.indoor.floor, out int parsedFloor) && parsedFloor > 1)
+                        {
+                            floorHeight = (parsedFloor - 1) * floorHeightMeters;
+                        }
+                    }
+
                     worldPos = GetGroundPosition(worldPos);
+
+                    worldPos.y += floorHeight;
 
                     GameObject marker = Instantiate(prefab, worldPos, Quaternion.identity);
                     marker.transform.localScale = Vector3.one * markerScale;
@@ -266,7 +278,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
     {
         if (isIndoor)
         {
-            // Indoor navigation uses X,Y coordinates
             Vector2 nodeXY;
             if (node.indoor != null)
             {
@@ -280,7 +291,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         }
         else
         {
-            // Outdoor navigation uses GPS
             Vector2 nodeGPS = new Vector2(node.latitude, node.longitude);
             return CalculateDistanceGPS(userLocation, nodeGPS);
         }
@@ -290,12 +300,10 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
     {
         if (isIndoor)
         {
-            // Indoor uses X,Y coordinates with floor height
             float nodeX = node.indoor != null ? node.indoor.x : node.x_coordinate;
             float nodeY = node.indoor != null ? node.indoor.y : node.y_coordinate;
 
-            // ✅ GET FLOOR NUMBER
-            int floor = 1; // Default to floor 1
+            int floor = 1;
             if (node.indoor != null && !string.IsNullOrEmpty(node.indoor.floor))
             {
                 if (int.TryParse(node.indoor.floor, out int parsedFloor))
@@ -308,10 +316,10 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         }
         else
         {
-            // Outdoor uses GPS
             return GPSToWorldPosition(node.latitude, node.longitude);
         }
     }
+
     private Vector3 GetGroundPosition(Vector3 targetWorldPos)
     {
         if (arRaycastManager == null || arCamera == null)
@@ -414,9 +422,6 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
 
         return worldPos;
     }
-
-
-
 
     private float CalculateDistanceXY(Vector2 point1, Vector2 point2)
     {

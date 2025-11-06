@@ -7,6 +7,7 @@ public static class ARModeHelper
     public static ARMode GetCurrentARMode()
     {
         string arModeString = PlayerPrefs.GetString("ARMode");
+        Debug.Log($"ang mode karon ay part two{arModeString}");
         return arModeString == "Navigation" ? ARMode.Navigation : ARMode.DirectAR;
     }
 

@@ -91,6 +91,52 @@
                     "isIndoorDirection": false
                 }
             ]
+        },
+        {
+            "timestamp": "2025-11-06 23:26:07",
+            "startNodeId": "ND-015",
+            "endNodeId": "ND-011",
+            "startNodeName": "College of Computing Studies",
+            "endNodeName": "CCJE",
+            "totalDistance": 53.619998931884769,
+            "formattedDistance": "53.6m",
+            "walkingTime": "< 1 minute",
+            "viaMode": "Via Walkway",
+            "pathNodes": [
+                "ND-015",
+                "ND-028",
+                "ND-011"
+            ],
+            "edges": [
+                {
+                    "fromNode": "ND-015",
+                    "toNode": "ND-028"
+                },
+                {
+                    "fromNode": "ND-028",
+                    "toNode": "ND-011"
+                }
+            ],
+            "directions": [
+                {
+                    "instruction": "Head straight to Intermediate 5 (12m)",
+                    "turn": "Straight",
+                    "distance": 11.939831733703614,
+                    "destNodeId": "ND-028",
+                    "destNode": "Intermediate 5",
+                    "isIndoorGrouped": false,
+                    "isIndoorDirection": false
+                },
+                {
+                    "instruction": "Turn right toward CCJE (6m)",
+                    "turn": "Right",
+                    "distance": 5.804446220397949,
+                    "destNodeId": "ND-011",
+                    "destNode": "CCJE",
+                    "isIndoorGrouped": false,
+                    "isIndoorDirection": false
+                }
+            ]
         }
     ]
 }

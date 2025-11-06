@@ -256,6 +256,7 @@ public class MarkerAnchor
     public float nodeY;
     public float nodeLatitude;
     public float nodeLongitude;
+    public int floor = 1;
     public GameObject markerGameObject;
 }
 

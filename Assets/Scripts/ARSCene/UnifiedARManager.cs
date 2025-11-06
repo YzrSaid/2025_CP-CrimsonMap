@@ -31,6 +31,7 @@ public class UnifiedARManager : MonoBehaviour
     [Header("Visibility Settings")]
     public float fieldOfViewAngle = 90f;
     public float forwardDotThreshold = 0.3f;
+    public float floorHeightMeters = 3.048f;
 
     [Header("Tracking Quality")]
     private TrackingState lastTrackingState = TrackingState.None;
@@ -71,6 +72,8 @@ public class UnifiedARManager : MonoBehaviour
     public int positionHistorySize = 5;
     private Queue<Vector3> positionHistory = new Queue<Vector3>();
     private string currentIndoorInfraId = "";
+    private bool justSwitchedMode = false;
+    private bool allowMarkerUpdates = true;
 
     [Header("Data")]
     private List<Node> currentNodes = new List<Node>();
@@ -118,7 +121,7 @@ public class UnifiedARManager : MonoBehaviour
 
     private void DetermineARMode()
     {
-        string arModeString = PlayerPrefs.GetString("ARMode", "DirectAR");
+        string arModeString = PlayerPrefs.GetString("ARMode");
         currentARMode = arModeString == "Navigation" ? ARMode.Navigation : ARMode.DirectAR;
     }
 
@@ -265,11 +268,39 @@ public class UnifiedARManager : MonoBehaviour
                 return;
             }
 
+            ClearMarkers();
+
+            justSwitchedMode = true;
+
+            lastARCameraPosition = Vector3.zero;
+            lastTrackingState = TrackingState.Tracking;
+
             Vector2 indoorXY = new Vector2(scannedNode.indoor.x, scannedNode.indoor.y);
-            SetIndoorReference(indoorXY, scannedNode.related_infra_id);
+            referenceNodeXY = indoorXY;
+            referenceWorldPosition = arCamera.transform.position;
+            smoothedARPosition = referenceWorldPosition;
+
+            positionHistory.Clear();
+            positionHistory.Enqueue(referenceWorldPosition);
+
+            isIndoorMode = true;
+            currentIndoorInfraId = scannedNode.related_infra_id;
+            userXY = referenceNodeXY;
+
+            StartCoroutine(InitializeIndoorMarkersAfterScan());
+
+            UpdateTopPanelUI();
+            UpdateTrackingStatusUI();
+            UpdateDebugInfo();
         }
         else
         {
+            ClearMarkers();
+
+            justSwitchedMode = true;
+
+            lastARCameraPosition = Vector3.zero;
+
             userLocation = new Vector2(scannedNode.latitude, scannedNode.longitude);
             lastStableGPSLocation = userLocation;
             gpsLocationHistory.Clear();
@@ -284,11 +315,37 @@ public class UnifiedARManager : MonoBehaviour
                 isIndoorMode = false;
                 currentIndoorInfraId = "";
             }
-        }
 
-        UpdateTopPanelUI();
-        UpdateTrackingStatusUI();
-        UpdateDebugInfo();
+            StartCoroutine(InitializeOutdoorMarkersAfterScan());
+
+            UpdateTopPanelUI();
+            UpdateTrackingStatusUI();
+            UpdateDebugInfo();
+        }
+    }
+
+    private IEnumerator InitializeIndoorMarkersAfterScan()
+    {
+        yield return null;
+        yield return null;
+
+        ReconcileVisibleMarkersIndoor();
+
+        lastARCameraPosition = arCamera.transform.position;
+
+        yield return new WaitForSeconds(1.5f);
+        justSwitchedMode = false;
+    }
+
+    private IEnumerator InitializeOutdoorMarkersAfterScan()
+    {
+        yield return null;
+        yield return null;
+
+        ReconcileVisibleMarkersGPS();
+
+        yield return new WaitForSeconds(1.5f);
+        justSwitchedMode = false;
     }
 
     public string GetInfrastructureName(string infraId)
@@ -607,6 +664,72 @@ public class UnifiedARManager : MonoBehaviour
         markerAnchors[node.node_id] = anchor;
     }
 
+    void CreateMarkerForNodeIndoor(Node node)
+    {
+        if (buildingMarkerPrefab == null || node.indoor == null)
+        {
+            return;
+        }
+
+        int floor = 1;
+        if (!string.IsNullOrEmpty(node.indoor.floor))
+        {
+            if (int.TryParse(node.indoor.floor, out int parsedFloor))
+            {
+                floor = parsedFloor;
+            }
+        }
+
+        Vector3 worldPosition = XYToWorldPositionWithFloor(node.indoor.x, node.indoor.y, floor);
+
+        float floorHeight = (floor > 1) ? (floor - 1) * floorHeightMeters : 0f;
+
+        worldPosition = GetGroundPosition(worldPosition);
+
+        worldPosition.y += floorHeight;
+
+        GameObject marker = Instantiate(buildingMarkerPrefab);
+        marker.transform.position = worldPosition;
+        marker.transform.localScale = Vector3.one * markerScale;
+
+        UpdateMarkerTextIndoor(marker, node.name);
+
+        MarkerAnchor anchor = new MarkerAnchor
+        {
+            node = node,
+            nodeX = node.indoor.x,
+            nodeY = node.indoor.y,
+            floor = floor,
+            nodeLatitude = node.latitude,
+            nodeLongitude = node.longitude,
+            markerGameObject = marker
+        };
+
+        markerAnchors[node.node_id] = anchor;
+    }
+
+    void UpdateMarkerTextIndoor(GameObject marker, string roomName)
+    {
+        TextMeshPro textMeshPro = marker.GetComponentInChildren<TextMeshPro>();
+        if (textMeshPro != null)
+        {
+            textMeshPro.text = roomName;
+            textMeshPro.fontSize = 8;
+
+            if (gameObject != null && gameObject.activeInHierarchy && !isExitingAR)
+            {
+                StartCoroutine(UpdateTextRotation(textMeshPro.transform));
+            }
+        }
+
+        Text nameText = marker.GetComponentInChildren<Text>();
+        if (nameText != null && textMeshPro == null)
+        {
+            nameText.text = roomName;
+            nameText.fontSize = 12;
+        }
+    }
+
     Vector3 GPSToWorldPosition(float latitude, float longitude)
     {
         Vector2 userCoords = userLocation;
@@ -642,18 +765,22 @@ public class UnifiedARManager : MonoBehaviour
 
         Vector3 currentARPosition = arCamera.transform.position;
 
-        if (requireGoodTracking && arCamera != null)
+        if (requireGoodTracking && arCamera != null && lastARCameraPosition != Vector3.zero && !justSwitchedMode)
         {
             bool isTracking = Vector3.Distance(currentARPosition, lastARCameraPosition) > 0.0001f
                              || Time.frameCount < 100;
 
-            if (!isTracking && lastARCameraPosition != Vector3.zero)
+            if (!isTracking)
             {
                 lastTrackingState = TrackingState.Limited;
                 UpdateTrackingStatusUI();
                 return;
             }
 
+            lastTrackingState = TrackingState.Tracking;
+        }
+        else
+        {
             lastTrackingState = TrackingState.Tracking;
         }
 
@@ -696,17 +823,19 @@ public class UnifiedARManager : MonoBehaviour
 
             if (anchor.markerGameObject == null) continue;
 
-            Vector3 newWorldPos = XYToWorldPosition(anchor.nodeX, anchor.nodeY);
+            Vector3 newWorldPos = XYToWorldPositionWithFloor(anchor.nodeX, anchor.nodeY, anchor.floor);
+
+            float floorHeight = (anchor.floor > 1) ? (anchor.floor - 1) * floorHeightMeters : 0f;
+
             newWorldPos = GetGroundPosition(newWorldPos);
 
-            anchor.markerGameObject.transform.position = Vector3.Lerp(
-                anchor.markerGameObject.transform.position,
-                newWorldPos,
-                positionSmoothingFactor
-            );
+            newWorldPos.y += floorHeight;
 
-            bool isVisible = IsMarkerVisible(newWorldPos);
-            anchor.markerGameObject.SetActive(isVisible);
+            anchor.markerGameObject.transform.position = Vector3.Lerp(
+              anchor.markerGameObject.transform.position,
+              newWorldPos,
+              positionSmoothingFactor
+          );
         }
     }
 
@@ -722,7 +851,10 @@ public class UnifiedARManager : MonoBehaviour
 
     private void ReconcileVisibleMarkersIndoor()
     {
-        if (currentNodes == null || currentNodes.Count == 0) return;
+        if (currentNodes == null || currentNodes.Count == 0)
+        {
+            return;
+        }
 
         List<string> nodesToRemove = new List<string>();
 
@@ -764,10 +896,14 @@ public class UnifiedARManager : MonoBehaviour
     bool ShouldShowMarkerIndoor(Node node)
     {
         if (node.type != "indoorinfra" || node.indoor == null)
+        {
             return false;
+        }
 
         if (node.related_infra_id != currentIndoorInfraId)
+        {
             return false;
+        }
 
         float distance = CalculateDistanceXY(userXY, new Vector2(node.indoor.x, node.indoor.y));
 
@@ -779,43 +915,12 @@ public class UnifiedARManager : MonoBehaviour
         return distance <= maxVisibleDistanceIndoor && distance >= minMarkerDistance;
     }
 
-    void CreateMarkerForNodeIndoor(Node node)
+    Vector3 XYToWorldPosition(float nodeX, float nodeY)
     {
-        if (buildingMarkerPrefab == null || node.indoor == null)
-        {
-            return;
-        }
-
-        Infrastructure infra = currentInfrastructures.FirstOrDefault(i => i.infra_id == node.related_infra_id);
-
-        if (infra == null)
-        {
-            return;
-        }
-
-        Vector3 worldPosition = XYToWorldPosition(node.indoor.x, node.indoor.y);
-        worldPosition = GetGroundPosition(worldPosition);
-
-        GameObject marker = Instantiate(buildingMarkerPrefab);
-        marker.transform.position = worldPosition;
-        marker.transform.localScale = Vector3.one * markerScale;
-
-        UpdateMarkerText(marker, infra);
-
-        MarkerAnchor anchor = new MarkerAnchor
-        {
-            node = node,
-            nodeX = node.indoor.x,
-            nodeY = node.indoor.y,
-            nodeLatitude = node.latitude,
-            nodeLongitude = node.longitude,
-            markerGameObject = marker
-        };
-
-        markerAnchors[node.node_id] = anchor;
+        return XYToWorldPositionWithFloor(nodeX, nodeY, 1);
     }
 
-    Vector3 XYToWorldPosition(float nodeX, float nodeY)
+    Vector3 XYToWorldPositionWithFloor(float nodeX, float nodeY, int floor)
     {
         float deltaX = nodeX - userXY.x;
         float deltaY = nodeY - userXY.y;
@@ -823,6 +928,11 @@ public class UnifiedARManager : MonoBehaviour
         Vector3 worldPos = smoothedARPosition;
         worldPos.x += deltaX;
         worldPos.z += deltaY;
+
+        if (floor > 1)
+        {
+            worldPos.y += (floor - 1) * floorHeightMeters;
+        }
 
         return worldPos;
     }

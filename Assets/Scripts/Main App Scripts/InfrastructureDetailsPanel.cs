@@ -24,11 +24,15 @@ public class InfrastructureDetailsPanel : MonoBehaviour
     public Button bookmarkEmptyButton;
     public Button bookmarkFilledButton;
 
-    [Header("Indoor Infrastructure Dropdowns")]
-    public TMP_Dropdown roomsDropdown;
-    public TMP_Dropdown emergencyExitDropdown;
-    public TMP_Dropdown stairsDropdown;
+    [Header("Indoor Infrastructure ScrollViews")]
+    public ScrollRect roomsScrollView;
+    public ScrollRect fireExitsScrollView;
+    public GameObject roomsListObject;
+    public GameObject fireExitsListObject;
     public GameObject noIndoorText;
+
+    [Header("Indoor Item Prefab")]
+    public GameObject indoorItemPrefab;
 
     [Header("Background Settings")]
     public string backgroundPanelName = "BackgroundForExplorePanel";
@@ -40,9 +44,12 @@ public class InfrastructureDetailsPanel : MonoBehaviour
     private Transform backgroundTransform;
     private List<IndoorInfrastructure> indoorList = new List<IndoorInfrastructure>();
     private bool isBookmarked = false;
+    private RectTransform rectTransform;
 
     void Awake()
     {
+        rectTransform = GetComponent<RectTransform>();
+        
         if (closeButton != null)
             closeButton.onClick.AddListener(Close);
         
@@ -127,7 +134,6 @@ public class InfrastructureDetailsPanel : MonoBehaviour
             SaveBookmarkData(bookmarkData);
             isBookmarked = true;
             UpdateBookmarkUI();
-            Debug.Log($"Bookmarked: {infrastructure.name}");
         }
     }
 
@@ -143,7 +149,6 @@ public class InfrastructureDetailsPanel : MonoBehaviour
             SaveBookmarkData(bookmarkData);
             isBookmarked = false;
             UpdateBookmarkUI();
-            Debug.Log($"Unbookmarked: {infrastructure.name}");
         }
     }
 
@@ -183,7 +188,6 @@ public class InfrastructureDetailsPanel : MonoBehaviour
             }
             
             File.WriteAllText(filePath, json);
-            Debug.Log($"Saved bookmarks to: {filePath}");
         }
         catch (Exception e)
         {
@@ -243,13 +247,11 @@ public class InfrastructureDetailsPanel : MonoBehaviour
     {
         if (infrastructure == null)
         {
-            Debug.LogWarning("Infrastructure is null");
             yield break;
         }
 
-        ClearDropdown(roomsDropdown);
-        ClearDropdown(emergencyExitDropdown);
-        ClearDropdown(stairsDropdown);
+        ClearScrollViewContent(roomsScrollView);
+        ClearScrollViewContent(fireExitsScrollView);
 
         indoorList.Clear();
 
@@ -272,7 +274,6 @@ public class InfrastructureDetailsPanel : MonoBehaviour
                     }
 
                     loadComplete = true;
-                    Debug.Log($"Found {indoorList.Count} indoor items for {infrastructure.name}");
                 }
                 catch (System.Exception e)
                 {
@@ -288,16 +289,23 @@ public class InfrastructureDetailsPanel : MonoBehaviour
         ));
 
         yield return new WaitUntil(() => loadComplete);
-        PopulateDropdownsByType();
+        PopulateListsByType();
+        
+        yield return null;
+        RecenterPanel();
     }
 
-    private void ClearDropdown(TMP_Dropdown dropdown)
+    private void ClearScrollViewContent(ScrollRect scrollView)
     {
-        if (dropdown == null) return;
-        dropdown.ClearOptions();
+        if (scrollView == null || scrollView.content == null) return;
+        
+        foreach (Transform child in scrollView.content)
+        {
+            Destroy(child.gameObject);
+        }
     }
 
-    private void PopulateDropdownsByType()
+    private void PopulateListsByType()
     {
         if (indoorList.Count == 0)
         {
@@ -306,16 +314,11 @@ public class InfrastructureDetailsPanel : MonoBehaviour
                 noIndoorText.SetActive(true);
             }
 
-            if (roomsDropdown != null)
-                roomsDropdown.gameObject.SetActive(false);
-            if (emergencyExitDropdown != null)
-                emergencyExitDropdown.gameObject.SetActive(false);
-            if (stairsDropdown != null)
-                stairsDropdown.gameObject.SetActive(false);
+            if (roomsListObject != null)
+                roomsListObject.SetActive(false);
+            if (fireExitsListObject != null)
+                fireExitsListObject.SetActive(false);
 
-            ForceLayoutRebuild();
-
-            Debug.Log($"No indoor infrastructures found for {infrastructure.name}");
             return;
         }
 
@@ -325,91 +328,76 @@ public class InfrastructureDetailsPanel : MonoBehaviour
         }
 
         List<IndoorInfrastructure> rooms = new List<IndoorInfrastructure>();
-        List<IndoorInfrastructure> emergencyExits = new List<IndoorInfrastructure>();
-        List<IndoorInfrastructure> stairs = new List<IndoorInfrastructure>();
+        List<IndoorInfrastructure> fireExits = new List<IndoorInfrastructure>();
 
         foreach (IndoorInfrastructure indoor in indoorList)
         {
             string type = indoor.indoor_type?.ToLower();
 
-            switch (type)
+            if (type == "room")
             {
-                case "room":
-                    rooms.Add(indoor);
-                    break;
-                case "fire_exit":
-                    emergencyExits.Add(indoor);
-                    break;
-                case "stairs":
-                    stairs.Add(indoor);
-                    break;
-                default:
-                    Debug.LogWarning($"Unknown indoor type: {indoor.indoor_type} for {indoor.name}");
-                    break;
+                rooms.Add(indoor);
+            }
+            else if (type == "fire_exit")
+            {
+                fireExits.Add(indoor);
             }
         }
 
-        PopulateDropdown(roomsDropdown, rooms, "Rooms");
-        PopulateDropdown(emergencyExitDropdown, emergencyExits, "Emergency Exits");
-        PopulateDropdown(stairsDropdown, stairs, "Stairs");
-
-        ForceLayoutRebuild();
-
-        Debug.Log($"Populated dropdowns - Rooms: {rooms.Count}, Emergency Exits: {emergencyExits.Count}, Stairs: {stairs.Count}");
+        PopulateScrollViewList(roomsScrollView, roomsListObject, rooms);
+        PopulateScrollViewList(fireExitsScrollView, fireExitsListObject, fireExits);
     }
 
-    private void PopulateDropdown(TMP_Dropdown dropdown, List<IndoorInfrastructure> items, string titleText)
+    private void PopulateScrollViewList(ScrollRect scrollView, GameObject listObject, List<IndoorInfrastructure> items)
     {
-        if (dropdown == null)
+        if (scrollView == null || listObject == null)
         {
-            Debug.LogWarning($"Dropdown for {titleText} is not assigned");
             return;
         }
 
         if (items.Count == 0)
         {
-            dropdown.gameObject.SetActive(false);
+            listObject.SetActive(false);
             return;
         }
 
-        dropdown.gameObject.SetActive(true);
-        dropdown.ClearOptions();
+        listObject.SetActive(true);
+        ClearScrollViewContent(scrollView);
 
-        List<string> options = new List<string>();
-
-        options.Add(titleText);
+        Transform content = scrollView.content;
 
         foreach (IndoorInfrastructure indoor in items)
         {
-            options.Add(indoor.name);
+            GameObject itemObject = Instantiate(indoorItemPrefab, content);
+            IndoorInfrastructureItem itemScript = itemObject.GetComponent<IndoorInfrastructureItem>();
+            
+            if (itemScript != null)
+            {
+                itemScript.SetData(indoor);
+                
+                Button button = itemObject.GetComponent<Button>();
+                if (button != null)
+                {
+                    button.onClick.AddListener(() => OnIndoorItemSelected(indoor));
+                }
+            }
         }
-
-        dropdown.AddOptions(options);
-
-        dropdown.value = 0;
-        dropdown.RefreshShownValue();
-
-        dropdown.onValueChanged.RemoveAllListeners();
-
-        dropdown.onValueChanged.AddListener((int index) =>
-        {
-            if (index == 0)
-            {
-                dropdown.value = 0;
-                dropdown.RefreshShownValue();
-            }
-            else
-            {
-                OnIndoorItemSelected(items[index - 1]);
-            }
-        });
-
-        Debug.Log($"Added {items.Count} items to {titleText} dropdown");
     }
 
     private void OnIndoorItemSelected(IndoorInfrastructure selectedIndoor)
     {
-        Debug.Log($"Selected indoor item: {selectedIndoor.name} (ID: {selectedIndoor.room_id}, Type: {selectedIndoor.indoor_type})");
+        Debug.Log($"Selected: {selectedIndoor.name} (Type: {selectedIndoor.indoor_type})");
+    }
+
+    private void RecenterPanel()
+    {
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
+        
+        if (rectTransform != null)
+        {
+            rectTransform.anchoredPosition = Vector2.zero;
+        }
     }
 
     private void LoadBase64Image(string base64String)
@@ -432,12 +420,6 @@ public class InfrastructureDetailsPanel : MonoBehaviour
 
             infrastructureImage.sprite = sprite;
         }
-    }
-
-    private void ForceLayoutRebuild()
-    {
-        Canvas.ForceUpdateCanvases();
-        LayoutRebuilder.ForceRebuildLayoutImmediate(GetComponent<RectTransform>());
     }
 
     void Close()
