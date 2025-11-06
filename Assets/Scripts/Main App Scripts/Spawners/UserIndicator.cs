@@ -17,11 +17,11 @@ public class UserIndicator : MonoBehaviour
     public float rotationSmoothness = 10f;
 
     [Header("User Indicator Appearance")]
-    public Color userIndicatorColor = new Color(0.2f, 0.6f, 1f, 1f); // Blue by default
-    public Material userIndicatorMaterial; // Optional: custom material
-    public bool useTransparentIndicator = false; // Make indicator semi-transparent
+    public Color userIndicatorColor = new Color(0.2f, 0.6f, 1f, 1f);
+    public Material userIndicatorMaterial;
+    public bool useTransparentIndicator = false;
     [Range(0f, 1f)]
-    public float userIndicatorAlpha = 1f; // Alpha when transparent mode enabled
+    public float userIndicatorAlpha = 1f;
 
     [Header("Shadow/Direction Indicator")]
     public float shadowDistance = 5f;
@@ -37,6 +37,7 @@ public class UserIndicator : MonoBehaviour
     private bool isInitialized = false;
 
     private MapInteraction mapInteraction;
+    private bool isMapDragging = false;
 
     void Awake()
     {
@@ -87,7 +88,6 @@ public class UserIndicator : MonoBehaviour
         userIndicatorInstance = Instantiate(userIndicatorPrefab, Vector3.zero, Quaternion.identity, mapboxMap.transform);
         userIndicatorInstance.name = "UserIndicatorInstance";
 
-        // Apply user indicator appearance
         ApplyUserIndicatorAppearance();
 
         if (shadowConePrefab != null)
@@ -97,14 +97,12 @@ public class UserIndicator : MonoBehaviour
             ApplyShadowAppearance();
         }
 
-        // Set render queue for user indicator (on top)
         Renderer[] renderers = userIndicatorInstance.GetComponentsInChildren<Renderer>();
         foreach (var renderer in renderers)
         {
             renderer.material.renderQueue = 3001;
         }
 
-        // Set render queue for shadow (below user indicator)
         if (shadowConeInstance != null)
         {
             Renderer[] shadowRenderers = shadowConeInstance.GetComponentsInChildren<Renderer>();
@@ -124,7 +122,6 @@ public class UserIndicator : MonoBehaviour
         Renderer[] renderers = userIndicatorInstance.GetComponentsInChildren<Renderer>();
         foreach (var renderer in renderers)
         {
-            // Use custom material if provided, otherwise modify existing
             if (userIndicatorMaterial != null)
             {
                 renderer.material = userIndicatorMaterial;
@@ -132,7 +129,6 @@ public class UserIndicator : MonoBehaviour
 
             if (renderer.material != null)
             {
-                // Set color with alpha
                 Color finalColor = userIndicatorColor;
                 if (useTransparentIndicator)
                 {
@@ -141,14 +137,12 @@ public class UserIndicator : MonoBehaviour
 
                 renderer.material.color = finalColor;
 
-                // If transparent, set up material for transparency
                 if (useTransparentIndicator && finalColor.a < 1f)
                 {
                     SetupTransparentMaterial(renderer.material);
                 }
                 else
                 {
-                    // Opaque material
                     SetupOpaqueMaterial(renderer.material);
                 }
             }
@@ -159,7 +153,7 @@ public class UserIndicator : MonoBehaviour
     {
         if (mat.HasProperty("_Mode"))
         {
-            mat.SetFloat("_Mode", 3); // Transparent mode
+            mat.SetFloat("_Mode", 3);
             mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
             mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
             mat.SetInt("_ZWrite", 0);
@@ -174,7 +168,7 @@ public class UserIndicator : MonoBehaviour
     {
         if (mat.HasProperty("_Mode"))
         {
-            mat.SetFloat("_Mode", 0); // Opaque mode
+            mat.SetFloat("_Mode", 0);
             mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
             mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
             mat.SetInt("_ZWrite", 1);
@@ -221,14 +215,25 @@ public class UserIndicator : MonoBehaviour
         if (!isInitialized || GPSManager.Instance == null || userIndicatorInstance == null || mapboxMap == null)
             return;
 
-        if (Time.time - lastUpdateTime < updateInterval)
-            return;
+        // When dragging, update EVERY frame with no delay for instant response
+        if (isMapDragging)
+        {
+            UpdateUserIndicatorPosition();
+            UpdateUserIndicatorRotation();
+            UpdateDirectionShadow();
+        }
+        else
+        {
+            // When not dragging, use the update interval to save performance
+            if (Time.time - lastUpdateTime < updateInterval)
+                return;
 
-        lastUpdateTime = Time.time;
+            lastUpdateTime = Time.time;
 
-        UpdateUserIndicatorPosition();
-        UpdateUserIndicatorRotation();
-        UpdateDirectionShadow();
+            UpdateUserIndicatorPosition();
+            UpdateUserIndicatorRotation();
+            UpdateDirectionShadow();
+        }
     }
 
     void UpdateUserIndicatorPosition()
@@ -238,9 +243,19 @@ public class UserIndicator : MonoBehaviour
         Vector3 worldPos = mapboxMap.GeoToWorldPosition(new Vector2d(gpsCoords.x, gpsCoords.y), false);
         worldPos.y = heightOffset;
 
-        Vector3 smoothedPos = Vector3.Lerp(lastWorldPos, worldPos, positionSmoothness);
-        userIndicatorInstance.transform.position = smoothedPos;
-        lastWorldPos = smoothedPos;
+        // When dragging, use instant positioning (no lerp smoothing)
+        // When not dragging, use smooth lerp for natural movement
+        if (isMapDragging)
+        {
+            userIndicatorInstance.transform.position = worldPos;
+            lastWorldPos = worldPos;
+        }
+        else
+        {
+            Vector3 smoothedPos = Vector3.Lerp(lastWorldPos, worldPos, positionSmoothness);
+            userIndicatorInstance.transform.position = smoothedPos;
+            lastWorldPos = smoothedPos;
+        }
     }
 
     void UpdateUserIndicatorRotation()
@@ -285,6 +300,20 @@ public class UserIndicator : MonoBehaviour
         shadowConeInstance.transform.localScale = shadowScale;
     }
 
+    public void SetMapDragging(bool isDragging)
+    {
+        isMapDragging = isDragging;
+    }
+
+    public void UpdatePosition()
+    {
+        // This method can be called from MapInteraction during drag for immediate updates
+        if (isInitialized)
+        {
+            UpdateUserIndicatorPosition();
+        }
+    }
+
     public void ForceUpdate()
     {
         if (isInitialized)
@@ -296,7 +325,6 @@ public class UserIndicator : MonoBehaviour
         }
     }
 
-    // Call this at runtime to change user indicator color
     public void SetUserIndicatorColor(Color newColor)
     {
         userIndicatorColor = newColor;
@@ -306,7 +334,6 @@ public class UserIndicator : MonoBehaviour
         }
     }
 
-    // Call this at runtime to change shadow color
     public void SetShadowColor(Color newColor)
     {
         shadowColor = newColor;
@@ -316,7 +343,6 @@ public class UserIndicator : MonoBehaviour
         }
     }
 
-    // Call this to refresh all appearances (useful after changing settings in inspector during play mode)
     public void RefreshAppearance()
     {
         if (isInitialized)

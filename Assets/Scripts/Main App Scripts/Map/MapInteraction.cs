@@ -30,6 +30,10 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     public float rotationDeadzone = 2.0f;
     public bool enableRotationDebugging = false;
 
+    [Header("Keyboard Controls (Editor Testing)")]
+    public bool enableKeyboardControls = true;
+    public float keyboardRotationSpeed = 30f;
+
     [Header("My Location Settings")]
     public float myLocationZoomLevel = 20f;
     public bool useSmoothedCoordinates = true;
@@ -50,6 +54,11 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     private InputAction touchPositionAction;
     private InputAction touchContactAction;
+    
+    private InputAction rotateLeftAction;
+    private InputAction rotateRightAction;
+
+    private UserIndicator userIndicator;
 
     private void OnEnable()
     {
@@ -61,6 +70,15 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         touchPositionAction.Enable();
         touchContactAction.Enable();
 
+        if (enableKeyboardControls)
+        {
+            rotateLeftAction = new InputAction(type: InputActionType.Button, binding: "<Keyboard>/q");
+            rotateRightAction = new InputAction(type: InputActionType.Button, binding: "<Keyboard>/e");
+            
+            rotateLeftAction.Enable();
+            rotateRightAction.Enable();
+        }
+
         Input.compass.enabled = true;
     }
 
@@ -68,6 +86,10 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     {
         touchPositionAction?.Disable();
         touchContactAction?.Disable();
+        
+        rotateLeftAction?.Disable();
+        rotateRightAction?.Disable();
+        
         EnhancedTouchSupport.Disable();
     }
 
@@ -89,11 +111,42 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         if (FindObjectOfType<EventSystem>() == null)
         {
         }
+
+        userIndicator = FindObjectOfType<UserIndicator>();
     }
 
     private void Update()
     {
         HandleMultiTouch();
+        HandleKeyboardControls();
+    }
+
+    private void HandleKeyboardControls()
+    {
+        if (!enableKeyboardControls || mapboxMap == null) return;
+
+        if (rotateLeftAction != null && rotateLeftAction.IsPressed())
+        {
+            RotateMap(-keyboardRotationSpeed * Time.deltaTime);
+        }
+        
+        if (rotateRightAction != null && rotateRightAction.IsPressed())
+        {
+            RotateMap(keyboardRotationSpeed * Time.deltaTime);
+        }
+    }
+
+    private void RotateMap(float angleDelta)
+    {
+        currentMapBearing += angleDelta;
+
+        while (currentMapBearing > 180f) currentMapBearing -= 360f;
+        while (currentMapBearing < -180f) currentMapBearing += 360f;
+
+        if (mapboxMap != null)
+        {
+            mapboxMap.transform.rotation = Quaternion.Euler(0, currentMapBearing, 0);
+        }
     }
 
     private void HandleMultiTouch()
@@ -126,6 +179,8 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
                 isDragging = false;
                 hasStartedDragging = false;
+
+                NotifyUserIndicatorDragStart();
             }
             else
             {
@@ -143,13 +198,7 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
                     if (Mathf.Abs(angleDelta) > rotationDeadzone)
                     {
-                        currentMapBearing -= angleDelta * rotationSensitivity;
-
-                        while (currentMapBearing > 180f) currentMapBearing -= 360f;
-                        while (currentMapBearing < -180f) currentMapBearing += 360f;
-
-                        mapboxMap.transform.rotation = Quaternion.Euler(0, currentMapBearing, 0);
-
+                        RotateMap(-angleDelta * rotationSensitivity);
                         lastRotationAngle = currentAngle;
                     }
                 }
@@ -157,7 +206,7 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
                 Vector2 centerDelta = currentCenter - lastPinchCenter;
                 if (centerDelta.magnitude > 1f)
                 {
-                    Vector2 rotatedDelta = RotateVector2(centerDelta, -currentMapBearing);
+                    Vector2 rotatedDelta = RotateVector2(centerDelta, currentMapBearing);
 
                     float latOffset = -rotatedDelta.y * dragSensitivity;
                     float lngOffset = -rotatedDelta.x * dragSensitivity;
@@ -177,6 +226,7 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         {
             isPinching = false;
             isRotating = false;
+            NotifyUserIndicatorDragEnd();
         }
     }
 
@@ -194,8 +244,12 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        isDragging = false;
-        hasStartedDragging = false;
+        if (isDragging)
+        {
+            isDragging = false;
+            hasStartedDragging = false;
+            NotifyUserIndicatorDragEnd();
+        }
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -213,12 +267,13 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
                 return;
             }
             hasStartedDragging = true;
+            NotifyUserIndicatorDragStart();
         }
 
         Vector2 deltaPosition = eventData.position - lastPointerPosition;
         lastPointerPosition = eventData.position;
 
-        Vector2 rotatedDelta = RotateVector2(deltaPosition, -currentMapBearing);
+        Vector2 rotatedDelta = RotateVector2(deltaPosition, currentMapBearing);
 
         float latOffset = -rotatedDelta.y * dragSensitivity;
         float lngOffset = -rotatedDelta.x * dragSensitivity;
@@ -237,6 +292,22 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         if (mapboxMap == null) return;
         float zoomDelta = eventData.scrollDelta.y * zoomSensitivity;
         ZoomMap(zoomDelta);
+    }
+
+    private void NotifyUserIndicatorDragStart()
+    {
+        if (userIndicator != null)
+        {
+            userIndicator.SetMapDragging(true);
+        }
+    }
+
+    private void NotifyUserIndicatorDragEnd()
+    {
+        if (userIndicator != null)
+        {
+            userIndicator.SetMapDragging(false);
+        }
     }
 
     private Vector2 RotateVector2(Vector2 v, float degrees)

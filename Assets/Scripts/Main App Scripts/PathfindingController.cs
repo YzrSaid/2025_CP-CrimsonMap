@@ -15,6 +15,7 @@ public class PathfindingController : MonoBehaviour
     [Header("UI Elements")]
     public TMP_Dropdown toDropdown;
     public Button findPathButton;
+    public GameObject BGPanel;
 
     [Header("Location Lock Display")]
     public GameObject locationLockDisplay;
@@ -755,6 +756,10 @@ public class PathfindingController : MonoBehaviour
             cancelButton.GetComponentInChildren<TextMeshProUGUI>().text = "Cancel";
             confirmationPanel.SetActive(true);
             confirmErrorText.gameObject.SetActive(false);
+            if (BGPanel != null)
+            {
+                BGPanel.SetActive(true);
+            }
         }
 
         if (allNodes.TryGetValue(fromNodeId, out Node fromNode))
@@ -786,6 +791,10 @@ public class PathfindingController : MonoBehaviour
             confirmationPanel.transform.Find("Title").GetComponent<TextMeshProUGUI>().text = "Error";
             cancelButton.GetComponentInChildren<TextMeshProUGUI>().text = "Close";
             confirmationPanel.SetActive(true);
+            if (BGPanel != null)
+            {
+                BGPanel.SetActive(true);
+            }
             confirmButton.gameObject.SetActive(false);
             confirmErrorText.gameObject.SetActive(true);
         }
@@ -827,6 +836,11 @@ public class PathfindingController : MonoBehaviour
             confirmationPanel.SetActive(false);
         }
 
+        if (BGPanel != null)
+        {
+            BGPanel.SetActive(false);
+        }
+
         StartCoroutine(FindAndDisplayPaths(fromNodeId, toNodeId));
     }
 
@@ -835,6 +849,10 @@ public class PathfindingController : MonoBehaviour
         if (confirmationPanel != null)
         {
             confirmationPanel.SetActive(false);
+        }
+        if (BGPanel != null)
+        {
+            BGPanel.SetActive(false);
         }
     }
 
@@ -976,6 +994,10 @@ public class PathfindingController : MonoBehaviour
         {
             resultPanel.SetActive(true);
             destinationPanel.SetActive(true);
+            if (BGPanel != null)
+            {
+                BGPanel.SetActive(true);
+            }
         }
 
         ClearRouteItems();
@@ -1242,6 +1264,11 @@ public class PathfindingController : MonoBehaviour
         if (destinationPanel != null)
         {
             destinationPanel.SetActive(false);
+        }
+
+        if(BGPanel != null)
+        {
+            BGPanel.SetActive(false);
         }
 
         ClearRouteItems();

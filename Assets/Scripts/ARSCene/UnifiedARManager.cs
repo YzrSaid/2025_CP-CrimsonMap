@@ -312,8 +312,6 @@ public class UnifiedARManager : MonoBehaviour
         bool nodesLoaded = false;
         bool infraLoaded = false;
 
-        Debug.Log($"Yawa ito na ang mga currentmapid {currentMapId}");
-
         UpdateLoadingUI($"Loading nodes for map {currentMapId}...");
 
         yield return StartCoroutine(LoadNodesData(currentMapId, (success) =>

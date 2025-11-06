@@ -31,7 +31,7 @@
     "name": "Lecture Room 2",
     "is_deleted": false,
     "infra_id": "INFRA-14",
-    "indoor_type": "room\n",
+    "indoor_type": "room",
     "createdAt": {},
     "id": "8RapT9ISmE1EINoYbhVm"
   },
@@ -181,15 +181,6 @@
     "indoor_type": "stairs",
     "createdAt": {},
     "id": "PKMp02eLXL9R5YPOpeLL"
-  },
-  {
-    "room_id": "IND-053",
-    "name": "sample indoor infra",
-    "is_deleted": false,
-    "infra_id": "INFRA-41",
-    "indoor_type": "room",
-    "createdAt": {},
-    "id": "QjnJFuZMvMEJtgo1cuMX"
   },
   {
     "room_id": "IND-048",
