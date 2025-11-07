@@ -239,7 +239,17 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
                         }
                     }
 
-                    worldPos = GetGroundPosition(worldPos);
+                    // Apply ground position based on mode
+                    if (isIndoor)
+                    {
+                        // INDOOR: Use AR raycasting for accurate ground detection
+                        worldPos = GetGroundPosition(worldPos);
+                    }
+                    else
+                    {
+                        // GPS/OUTDOOR: Use simple ground plane Y, no raycasting
+                        worldPos.y = groundPlaneY + markerHeightOffset;
+                    }
 
                     worldPos.y += floorHeight;
 
@@ -322,7 +332,10 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
 
     private Vector3 GetGroundPosition(Vector3 targetWorldPos)
     {
-        if (arRaycastManager == null || arCamera == null)
+        // ONLY use AR raycasting for INDOOR mode
+        bool isIndoor = (unifiedARManager != null && unifiedARManager.IsIndoorMode());
+        
+        if (!isIndoor || arRaycastManager == null || arCamera == null)
         {
             targetWorldPos.y = groundPlaneY + markerHeightOffset;
             return targetWorldPos;

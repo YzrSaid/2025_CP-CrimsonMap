@@ -29,8 +29,6 @@ public class UnifiedARManager : MonoBehaviour
     public float markerHeightOffset = 0.1f;
 
     [Header("Visibility Settings")]
-    public float fieldOfViewAngle = 90f;
-    public float forwardDotThreshold = 0.3f;
     public float floorHeightMeters = 3.048f;
 
     [Header("Tracking Quality")]
@@ -570,7 +568,9 @@ public class UnifiedARManager : MonoBehaviour
             if (anchor.markerGameObject == null) continue;
 
             Vector3 newWorldPos = GPSToWorldPosition(anchor.nodeLatitude, anchor.nodeLongitude);
-            newWorldPos = GetGroundPosition(newWorldPos);
+            
+            // GPS MODE: Use simple ground plane Y, no raycasting needed
+            newWorldPos.y = groundPlaneY + markerHeightOffset;
 
             anchor.markerGameObject.transform.position = Vector3.Lerp(
                 anchor.markerGameObject.transform.position,
@@ -643,7 +643,9 @@ public class UnifiedARManager : MonoBehaviour
         if (infra == null) return;
 
         Vector3 worldPosition = GPSToWorldPosition(node.latitude, node.longitude);
-        worldPosition = GetGroundPosition(worldPosition);
+        
+        // GPS MODE: Use simple ground plane Y, no raycasting needed
+        worldPosition.y = groundPlaneY + markerHeightOffset;
 
         GameObject marker = Instantiate(buildingMarkerPrefab);
         marker.transform.position = worldPosition;
@@ -684,6 +686,7 @@ public class UnifiedARManager : MonoBehaviour
 
         float floorHeight = (floor > 1) ? (floor - 1) * floorHeightMeters : 0f;
 
+        // INDOOR MODE: Use ground position detection for accurate placement
         worldPosition = GetGroundPosition(worldPosition);
 
         worldPosition.y += floorHeight;
@@ -827,6 +830,7 @@ public class UnifiedARManager : MonoBehaviour
 
             float floorHeight = (anchor.floor > 1) ? (anchor.floor - 1) * floorHeightMeters : 0f;
 
+            // INDOOR MODE: Use ground position detection for accurate placement
             newWorldPos = GetGroundPosition(newWorldPos);
 
             newWorldPos.y += floorHeight;
@@ -837,16 +841,6 @@ public class UnifiedARManager : MonoBehaviour
               positionSmoothingFactor
           );
         }
-    }
-
-    private bool IsMarkerVisible(Vector3 markerWorldPos)
-    {
-        Vector3 directionToMarker = markerWorldPos - arCamera.transform.position;
-        float distance = directionToMarker.magnitude;
-
-        float dotProduct = Vector3.Dot(arCamera.transform.forward, directionToMarker.normalized);
-
-        return dotProduct > forwardDotThreshold && distance <= maxVisibleDistance;
     }
 
     private void ReconcileVisibleMarkersIndoor()
@@ -909,6 +903,7 @@ public class UnifiedARManager : MonoBehaviour
 
         if (currentARMode == ARMode.DirectAR)
         {
+            // INDOOR MODE: Show all markers within distance, no field of view restriction
             return distance <= maxVisibleDistanceIndoor;
         }
 
@@ -944,7 +939,8 @@ public class UnifiedARManager : MonoBehaviour
 
     private Vector3 GetGroundPosition(Vector3 targetWorldPos)
     {
-        if (arRaycastManager == null || arCamera == null)
+        // ONLY use AR raycasting for INDOOR mode where we need accurate ground detection
+        if (!isIndoorMode || arRaycastManager == null || arCamera == null)
         {
             targetWorldPos.y = groundPlaneY + markerHeightOffset;
             return targetWorldPos;

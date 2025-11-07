@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 1920
     height: 989
   m_ShowMode: 4
-  m_Title: Hierarchy
+  m_Title: Simulator
   m_RootView: {fileID: 8}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -127,7 +127,7 @@ MonoBehaviour:
   m_MinSize: {x: 400, y: 100}
   m_MaxSize: {x: 32384, y: 16192}
   vertical: 0
-  controlID: 105
+  controlID: 16
   draggingID: 0
 --- !u!114 &6
 MonoBehaviour:
@@ -148,8 +148,8 @@ MonoBehaviour:
     y: 0
     width: 473
     height: 939
-  m_MinSize: {x: 275, y: 50}
-  m_MaxSize: {x: 4000, y: 4000}
+  m_MinSize: {x: 276, y: 71}
+  m_MaxSize: {x: 4001, y: 4021}
   m_ActualView: {fileID: 15}
   m_Panes:
   - {fileID: 15}
@@ -165,7 +165,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 1
   m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: ConsoleWindow
+  m_Name: ProjectBrowser
   m_EditorClassIdentifier: 
   m_Children: []
   m_Position:
@@ -174,14 +174,14 @@ MonoBehaviour:
     y: 639
     width: 1447
     height: 300
-  m_MinSize: {x: 100, y: 100}
-  m_MaxSize: {x: 4000, y: 4000}
-  m_ActualView: {fileID: 18}
+  m_MinSize: {x: 231, y: 271}
+  m_MaxSize: {x: 10001, y: 10021}
+  m_ActualView: {fileID: 14}
   m_Panes:
   - {fileID: 14}
   - {fileID: 18}
-  m_Selected: 1
-  m_LastSelected: 0
+  m_Selected: 0
+  m_LastSelected: 1
 --- !u!114 &8
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -277,7 +277,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 1
-  controlID: 34
+  controlID: 17
   draggingID: 0
 --- !u!114 &12
 MonoBehaviour:
@@ -304,7 +304,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 50}
   m_MaxSize: {x: 24288, y: 8096}
   vertical: 0
-  controlID: 35
+  controlID: 18
   draggingID: 0
 --- !u!114 &13
 MonoBehaviour:
@@ -435,10 +435,10 @@ MonoBehaviour:
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
-    scrollPos: {x: 0, y: 540}
-    m_SelectedIDs: 1e970000
-    m_LastClickedID: 38686
-    m_ExpandedIDs: 000000007496000076960000789600007a9600007c9600007e96000080960000829600008496000086960000889600008a9600008c9600008e96000090960000929600009496000096960000989600000c97000000ca9a3bffffff7f
+    scrollPos: {x: 0, y: 399}
+    m_SelectedIDs: 148c0000
+    m_LastClickedID: 35860
+    m_ExpandedIDs: 00000000688600006a8600006c8600006e86000070860000728600007486000076860000788600007a8600007c8600007e86000080860000828600008486000086860000888600008a8600008c86000000ca9a3bffffff7f
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -466,7 +466,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 000000007496000076960000789600007a9600007c9600007e96000080960000829600008496000086960000889600008a9600008c9600008e9600009096000092960000949600009696000098960000
+    m_ExpandedIDs: 00000000688600006a8600006c8600006e86000070860000728600007486000076860000788600007a8600007c8600007e86000080860000828600008486000086860000888600008a8600008c860000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -493,7 +493,7 @@ MonoBehaviour:
   m_ListAreaState:
     m_SelectedInstanceIDs: 
     m_LastClickedInstanceID: 0
-    m_HadKeyboardFocusLastEvent: 1
+    m_HadKeyboardFocusLastEvent: 0
     m_ExpandedInstanceIDs: c62300005689000000000000609900006a8a0000648a00008c800000309f0000c6890000f6900000308a0000e6c1000010b70100f28f00005090000038870000dc890000f0890000188700002e8700003a8700005a87000016870000bc900000ee9b00007aa100005a8a0000569000007a900000988a00008e8a0000aabf000014bf0000d24c0100a884000088940000d68d0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -606,9 +606,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 727bf4ff
-      m_LastClickedID: -754830
-      m_ExpandedIDs: 807bf4ff9a7bf4ffb47bf4ff0699f4ffeaa8f5ff40faf5ffb66af6ffee84f6ff908af6ff5a62f8ff3c99f8ffc643f9ff3c79f9ff2aecf9ff6206faff480afaff1a0bfaff940ffaff8810faff062ffaffcc49faffd04dfaffba4efafffc53faff825dfaff625dfbff4698fbff44bffbffecd2fbffc6d3fbff86d4fbff920efcffa00efcff4a14fcff0815fcffc219fcff6e6bfcff1670fcfff070fcff40bbfcffa2bbfcffa0e1fcff6af1fcffc0f1fcff1000fdff1e00fdff781bfdff381ffdff9a1ffdff8845fdff9446fdff224bfdffa64efdfffc4efdff2078fdff36defdff40defdff52defdff04dffdffea04feff7428feff7e28feff8828feff9a28feff4c29feff3a4ffeff4650feff545cfeffee62feff0e63feff7463feff7e63feff8863feff9a63feff4c64feff3a8afeff468bfeffcabdfeff68eefeff86eefeffdceefeffe8eefeff9aeffeff8015ffff8e5dffff28fbfffff4ffffff40160100604c01001e6301004a7a0100d0a80100e0ba0100c6c20100a2d10100121702008e170200c618020058190200fe1b0200da1c0200f01c0200641d0200c81d0200223b02009a3c02000a3e0200523e0200aa3e02004c5f0200665f020002600200a6600200dc60020038620200d46202004a6b02001c6e0200b86e020046a80200e2a8020076070300f8090300f0120300721503002a360300ac380300a44103002644030044aa0300faaa0300c0ab030030ad0300ccad03007eb7030000ba0300d4ce030056d1030036e20300b8e40300
+      m_SelectedIDs: 
+      m_LastClickedID: 0
+      m_ExpandedIDs: 1639ffffd439ffffba3fffff2043ffff8e43ffffac43ffffc843ffff7066ffff1cfbffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1001,9 +1001,9 @@ MonoBehaviour:
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: 482.09534, y: 1460.4364, z: -40.99918}
+    m_Target: {x: 527.6044, y: 1637.5133, z: -17.619776}
     speed: 2
-    m_Value: {x: 482.09534, y: 1460.4364, z: -40.99918}
+    m_Value: {x: 527.6044, y: 1637.5133, z: -17.619776}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1053,9 +1053,9 @@ MonoBehaviour:
     speed: 2
     m_Value: {x: -0.05810826, y: 0.029043168, z: -0.0016947106, w: -0.99788624}
   m_Size:
-    m_Target: 538.4464
+    m_Target: 1086.7328
     speed: 2
-    m_Value: 538.4464
+    m_Value: 1086.7328
   m_Ortho:
     m_Target: 1
     speed: 2
@@ -1151,7 +1151,7 @@ MonoBehaviour:
   m_SerializedViewNames:
   - UnityEditor.GameView
   m_SerializedViewValues:
-  - /home/yazar/Unity Projects/Crimson Map/Library/PlayModeViewStates/7f20548141e40e8e68355ef2d898ca36
+  - /home/yazar/Unity Projects/Crimson Map/Library/PlayModeViewStates/268182d7019e634d4b2daa9f6ad9900b
   m_PlayModeViewName: Device Simulator
   m_ShowGizmos: 0
   m_TargetDisplay: 0

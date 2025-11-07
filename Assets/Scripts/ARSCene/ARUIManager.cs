@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ARUIManager : MonoBehaviour
 {
@@ -11,6 +12,7 @@ public class ARUIManager : MonoBehaviour
 
     [Header("Shared UI Elements")]
     public GameObject topPanel;
+    public GameObject destinationPanel;
 
     [Header("Settings")]
     public bool enableDebugLogs = true;
@@ -23,6 +25,7 @@ public class ARUIManager : MonoBehaviour
         DetermineARMode();
         ConfigureUIForMode();
     }
+    
     private void DetermineARMode()
     {
         currentARMode = ARModeHelper.GetCurrentARMode();
@@ -35,6 +38,7 @@ public class ARUIManager : MonoBehaviour
             SetUIElementActive(mapPanel, true);
             SetUIElementActive(stopDirectARButton, true);
             SetUIElementActive(directionPanel, false);
+            SetUIElementActive(destinationPanel, false);
             SetUIElementActive(topPanel, true);
         }
         else if (currentARMode == ARModeHelper.ARMode.Navigation)
@@ -42,8 +46,11 @@ public class ARUIManager : MonoBehaviour
             SetUIElementActive(mapPanel, true);
             SetUIElementActive(directionPanel, true);
             SetUIElementActive(stopDirectARButton, false);
+            SetUIElementActive(destinationPanel, true);
             SetUIElementActive(topPanel, true);
         }
+        
+        RebuildTopPanelLayout();
     }
 
     private void SetUIElementActive(GameObject uiElement, bool active)
@@ -51,6 +58,14 @@ public class ARUIManager : MonoBehaviour
         if (uiElement != null)
         {
             uiElement.SetActive(active);
+        }
+    }
+
+    private void RebuildTopPanelLayout()
+    {
+        if (topPanel != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(topPanel.GetComponent<RectTransform>());
         }
     }
 }
