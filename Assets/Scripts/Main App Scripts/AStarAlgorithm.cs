@@ -453,7 +453,7 @@ public class AStarPathfinding : MonoBehaviour
         openSetHash.Add(startId);
 
         int iterations = 0;
-        int maxIterations = 10000;
+        int maxIterations = 200;
 
         while (openSet.Count > 0 && iterations < maxIterations)
         {

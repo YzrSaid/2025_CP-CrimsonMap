@@ -331,13 +331,12 @@ public class ARSceneQRRecalibration : MonoBehaviour
 
         if (foundNode)
         {
-            string arMode = PlayerPrefs.GetString("ARMode", "DirectAR");
-            bool isNavigationMode = arMode == "Navigation";
             bool isIndoorNode = scannedNodeInfo.type == "indoorinfra";
 
-            if (isNavigationMode && isIndoorNode)
+            // Reject indoor QR codes
+            if (isIndoorNode)
             {
-                StartCoroutine(ShowErrorAndResume("Indoor QR codes cannot be used during Navigation mode. Please scan an outdoor QR code or cancel navigation."));
+                StartCoroutine(ShowErrorAndResume("Indoor QR codes are not supported in Navigation mode. Please scan an outdoor QR code."));
                 yield break;
             }
 
@@ -385,104 +384,15 @@ public class ARSceneQRRecalibration : MonoBehaviour
             canvasGroup.DOFade(1, 0.5f).SetEase(Ease.OutQuad);
         }
 
-        bool isIndoorNode = scannedNodeInfo.type == "indoorinfra";
-        string titleText = "";
-        string bodyText = "";
-        string noteText = "";
+        // Only outdoor nodes now
+        string coordinateInfo = $"GPS: {scannedNodeInfo.latitude:F6}, {scannedNodeInfo.longitude:F6}";
 
-        if (isIndoorNode)
-        {
-            string buildingName = unifiedARManager != null ?
-                unifiedARManager.GetInfrastructureName(scannedNodeInfo.related_infra_id) :
-                scannedNodeInfo.related_infra_id;
-
-            bool currentlyIndoor = unifiedARManager != null && unifiedARManager.IsIndoorMode();
-            string currentBuildingId = unifiedARManager != null ? unifiedARManager.GetCurrentIndoorInfraId() : "";
-
-            if (currentlyIndoor && currentBuildingId != scannedNodeInfo.related_infra_id)
-            {
-                titleText = "<b>Building Switch Detected</b>";
-                
-                bodyText = $"You are currently in a different building.\n\n" +
-                    $"<b>New Location:</b> {scannedNodeInfo.name}\n" +
-                    $"<b>Building:</b> {buildingName}";
-                
-                noteText = $"Please stand at the entrance of {buildingName} before confirming.</color>\n\n" +
-                    $"The entrance (0,0) will be used as your reference point.";
-            }
-            else if (currentlyIndoor && currentBuildingId == scannedNodeInfo.related_infra_id)
-            {
-                titleText = "<b>Recalibrate Indoor Position</b>";
-                
-                string coordinateInfo = "";
-                if (scannedNodeInfo.indoor != null)
-                {
-                    coordinateInfo = $"Position: X:{scannedNodeInfo.indoor.x:F2}m, Y:{scannedNodeInfo.indoor.y:F2}m\n" +
-                        $"Floor: {scannedNodeInfo.indoor.floor}";
-                }
-
-                bodyText = $"<b>{scannedNodeInfo.name}</b>\n" +
-                    $"Building: {buildingName}\n\n" +
-                    $"{coordinateInfo}";
-                
-                noteText = "Your position will be updated to this location.";
-            }
-            else
-            {
-                titleText = "<b>Indoor Location Detected</b>";
-                
-                string coordinateInfo = "";
-                if (scannedNodeInfo.indoor != null)
-                {
-                    coordinateInfo = $"Position: X:{scannedNodeInfo.indoor.x:F2}m, Y:{scannedNodeInfo.indoor.y:F2}m\n" +
-                        $"Floor: {scannedNodeInfo.indoor.floor}";
-                }
-
-                bodyText = $"<b>{scannedNodeInfo.name}</b>\n" +
-                    $"Building: {buildingName}\n\n" +
-                    $"{coordinateInfo}";
-
-                string arMode = PlayerPrefs.GetString("ARMode", "DirectAR");
-                bool isDirectARMode = arMode == "DirectAR";
-
-                if (isDirectARMode)
-                {
-                    noteText = $"Please stand at the building entrance before confirming.</color>\n\n" +
-                        $"WARNING: Confirming will stop GPS tracking and show only markers inside {buildingName}. To return to GPS mode, scan an outdoor QR code.</color>";
-                }
-                else
-                {
-                    noteText = $"Please stand at the building entrance before confirming.</color>\n\n" +
-                        $"Switching from GPS to Indoor AR tracking.";
-                }
-            }
-        }
-        else
-        {
-            string coordinateInfo = $"GPS: {scannedNodeInfo.latitude:F6}, {scannedNodeInfo.longitude:F6}";
-
-            bool wasIndoor = unifiedARManager != null && unifiedARManager.IsIndoorMode();
-
-            if (wasIndoor)
-            {
-                titleText = "<b>Outdoor Location Detected</b>";
-                
-                bodyText = $"<b>{scannedNodeInfo.name}</b>\n\n" +
-                    $"{coordinateInfo}";
-                
-                noteText = "Switching from Indoor to GPS tracking.\n" +
-                    "Your position will be locked for a few seconds.";
-            }
-            else
-            {
-                titleText = "<b>Recalibrate GPS Position</b>";
-                
-                bodyText = $"<b>{scannedNodeInfo.name}</b>\n\n" +
-                    $"{coordinateInfo}";
-                
-                noteText = "Your GPS position will be updated and locked for a few seconds.";
-            }
-        }
+        string titleText = "<b>Recalibrate GPS Position</b>";
+        
+        string bodyText = $"<b>{scannedNodeInfo.name}</b>\n\n" +
+            $"{coordinateInfo}";
+        
+        string noteText = "Your GPS position will be updated and locked for a few seconds.";
 
         if (confirmationTitle != null)
             confirmationTitle.text = titleText;

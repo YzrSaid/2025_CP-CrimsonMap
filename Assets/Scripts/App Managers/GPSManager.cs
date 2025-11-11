@@ -63,44 +63,44 @@ public class GPSManager : MonoBehaviour
             if (magnetometer != null)
             {
                 InputSystem.EnableDevice(magnetometer);
-                Debug.Log("[GPSManager] ✅ Magnetometer enabled");
+                Debug.Log("[GPSManager] Magnetometer enabled");
             }
             else
             {
-                Debug.LogWarning("[GPSManager] ⚠️ Magnetometer not found!");
+                Debug.LogWarning("[GPSManager] Magnetometer not found!");
             }
 
             accelerometer = Accelerometer.current;
             if (accelerometer != null)
             {
                 InputSystem.EnableDevice(accelerometer);
-                Debug.Log("[GPSManager] ✅ Accelerometer enabled");
+                Debug.Log("[GPSManager] Accelerometer enabled");
             }
             else
             {
-                Debug.LogWarning("[GPSManager] ⚠️ Accelerometer not found!");
+                Debug.LogWarning("[GPSManager] Accelerometer not found!");
             }
 
             gyroscope = UnityEngine.InputSystem.Gyroscope.current;
             if (gyroscope != null)
             {
                 InputSystem.EnableDevice(gyroscope);
-                Debug.Log("[GPSManager] ✅ Gyroscope enabled");
+                Debug.Log("[GPSManager] Gyroscope enabled");
             }
             else
             {
-                Debug.LogWarning("[GPSManager] ⚠️ Gyroscope not found (optional)");
+                Debug.LogWarning("[GPSManager]  Gyroscope not found (optional)");
             }
 
             sensorsInitialized = (magnetometer != null && accelerometer != null);
 
             if (sensorsInitialized)
             {
-                Debug.Log("[GPSManager] 🎉 Sensors initialized successfully!");
+                Debug.Log("[GPSManager] Sensors initialized successfully!");
             }
             else
             {
-                Debug.LogError("[GPSManager] ❌ Failed to initialize required sensors");
+                Debug.LogError("[GPSManager]  Failed to initialize required sensors");
             }
         }
         catch (System.Exception e)
@@ -222,19 +222,17 @@ public class GPSManager : MonoBehaviour
             magnetic.Normalize();
             accel.Normalize();
 
-            // --- Tilt compensation ---
-            // --- Tilt compensation ---
             float pitch = Mathf.Asin(-accel.x);
             float roll = Mathf.Asin(accel.y / Mathf.Cos(pitch));
 
             // Compensate the magnetometer readings based on tilt
             float magX = magnetic.x * Mathf.Cos(pitch) + magnetic.z * Mathf.Sin(pitch);
-            float magY = -magnetic.x * Mathf.Sin(roll) * Mathf.Sin(pitch)   // ✅ flipped sign here
+            float magY = -magnetic.x * Mathf.Sin(roll) * Mathf.Sin(pitch)  
                          + magnetic.y * Mathf.Cos(roll)
                          + magnetic.z * Mathf.Sin(roll) * Mathf.Cos(pitch);
 
             // Compute heading in degrees
-            float heading = Mathf.Atan2(-magY, -magX) * Mathf.Rad2Deg + 90f; // ✅ Rotate +90° to fix offset
+            float heading = Mathf.Atan2(-magY, -magX) * Mathf.Rad2Deg + 90f; 
 
 
             // Apply axis correction

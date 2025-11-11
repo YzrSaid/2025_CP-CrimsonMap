@@ -49,6 +49,10 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
 
     private List<ARRaycastHit> arRaycastHits = new List<ARRaycastHit>();
 
+    // NEW: Fixed AR origin from UnifiedARManager
+    private Vector2 referenceGPS;
+    private Vector3 referenceARWorldPosition;
+
     void Start()
     {
         if (arCamera == null)
@@ -155,6 +159,16 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
             yield break;
         }
 
+        // NEW: Wait for UnifiedARManager to initialize AR origin
+        yield return new WaitUntil(() => unifiedARManager != null);
+        yield return new WaitForSeconds(0.5f); // Give it time to set up reference
+
+        // Get fixed reference from UnifiedARManager
+        referenceGPS = unifiedARManager.GetReferenceGPS();
+        referenceARWorldPosition = unifiedARManager.GetReferenceARWorldPosition();
+
+        Debug.Log($"[NavigationMarkerSpawner] Using fixed AR origin: GPS {referenceGPS}, World {referenceARWorldPosition}");
+
         markersInitialized = true;
 
         InvokeRepeating(nameof(UpdateNavigationSystem), 0.5f, 0.2f);
@@ -239,15 +253,12 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
                         }
                     }
 
-                    // Apply ground position based on mode
                     if (isIndoor)
                     {
-                        // INDOOR: Use AR raycasting for accurate ground detection
                         worldPos = GetGroundPosition(worldPos);
                     }
                     else
                     {
-                        // GPS/OUTDOOR: Use simple ground plane Y, no raycasting
                         worldPos.y = groundPlaneY + markerHeightOffset;
                     }
 
@@ -265,6 +276,8 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
                     }
 
                     spawnedNodeMarkers[markerId] = marker;
+                    
+                    Debug.Log($"[NavigationMarkerSpawner] Created marker for {node.node_id} at {worldPos}");
                 }
             }
             else if (!shouldShow && spawnedNodeMarkers.ContainsKey(markerId))
@@ -326,13 +339,13 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         }
         else
         {
+            // NEW: Use fixed reference GPS
             return GPSToWorldPosition(node.latitude, node.longitude);
         }
     }
 
     private Vector3 GetGroundPosition(Vector3 targetWorldPos)
     {
-        // ONLY use AR raycasting for INDOOR mode
         bool isIndoor = (unifiedARManager != null && unifiedARManager.IsIndoorMode());
         
         if (!isIndoor || arRaycastManager == null || arCamera == null)
@@ -378,17 +391,23 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         spawnedNodeMarkers.Clear();
     }
 
+    // MODIFIED: Now uses fixed reference GPS
     private Vector3 GPSToWorldPosition(float latitude, float longitude)
     {
-        Vector2 userCoords = userLocation;
-        float deltaLat = latitude - userCoords.x;
-        float deltaLng = longitude - userCoords.y;
+        // Calculate position relative to FIXED reference GPS
+        float deltaLat = latitude - referenceGPS.x;
+        float deltaLng = longitude - referenceGPS.y;
 
         float meterPerDegree = 111000f;
-        float x = deltaLng * meterPerDegree * Mathf.Cos(userCoords.x * Mathf.Deg2Rad);
+        float x = deltaLng * meterPerDegree * Mathf.Cos(referenceGPS.x * Mathf.Deg2Rad);
         float z = deltaLat * meterPerDegree;
 
-        return new Vector3(x, 0, z);
+        // Position relative to FIXED AR world origin
+        Vector3 worldPos = referenceARWorldPosition;
+        worldPos.x += x;
+        worldPos.z += z;
+
+        return worldPos;
     }
 
     private float CalculateDistanceGPS(Vector2 coord1, Vector2 coord2)
@@ -399,8 +418,8 @@ public class UnifiedARNavigationMarkerSpawner : MonoBehaviour
         float deltaLngRad = (coord2.y - coord1.y) * Mathf.Deg2Rad;
 
         float a = Mathf.Sin(deltaLatRad / 2) * Mathf.Sin(deltaLatRad / 2) +
-                  Mathf.Cos(lat1Rad) * Mathf.Cos(lat2Rad) *
-                  Mathf.Sin(deltaLngRad / 2) * Mathf.Sin(deltaLngRad / 2);
+                Mathf.Cos(lat1Rad) * Mathf.Cos(lat2Rad) *
+                Mathf.Sin(deltaLngRad / 2) * Mathf.Sin(deltaLngRad / 2);
 
         float c = 2 * Mathf.Atan2(Mathf.Sqrt(a), Mathf.Sqrt(1 - a));
 
