@@ -322,6 +322,15 @@ public class PathfindingController : MonoBehaviour
             isLocationLocked = true;
             hasShownConflictPanel = false;
 
+            if (GPSManager.Instance != null && node.type != "indoorinfra")
+            {
+                GPSManager.Instance.LockLocationForPathfinding(
+                    node.latitude,
+                    node.longitude
+                );
+                Debug.Log($"[PathfindingController] QR location locked at: {node.name} ({node.latitude}, {node.longitude})");
+            }
+
             UpdateLocationLockUI(true);
 
             if (node.type == "indoorinfra")
@@ -336,6 +345,7 @@ public class PathfindingController : MonoBehaviour
         }
     }
 
+
     public void LockCurrentLocation()
     {
         if (currentNearestNode != null)
@@ -344,8 +354,19 @@ public class PathfindingController : MonoBehaviour
             selectedFromNodeId = currentNearestNode.node_id;
             isLocationLocked = true;
 
+            // ✅ NEW: Tell GPSManager to lock this location
+            if (GPSManager.Instance != null)
+            {
+                GPSManager.Instance.LockLocationForPathfinding(
+                    currentNearestNode.latitude,
+                    currentNearestNode.longitude
+                );
+            }
+
             UpdateLocationLockUI(true);
             UpdateLocationDisplayText(lockedNode);
+
+            Debug.Log($"[PathfindingController] Location locked at: {lockedNode.name}");
         }
     }
 
@@ -355,9 +376,18 @@ public class PathfindingController : MonoBehaviour
         lockedNode = null;
         qrScannedNode = null;
 
+        // ✅ NEW: Tell GPSManager to unlock
+        if (GPSManager.Instance != null)
+        {
+            GPSManager.Instance.UnlockLocationForPathfinding();
+            GPSManager.Instance.ClearQRLocationOverride();
+        }
+
         UpdateLocationLockUI(false);
         UpdateFromLocationByGPS();
         ClearQRData();
+
+        Debug.Log("[PathfindingController] Location unlocked");
     }
 
     private void UpdateLocationLockUI(bool locked)
@@ -1266,7 +1296,7 @@ public class PathfindingController : MonoBehaviour
             destinationPanel.SetActive(false);
         }
 
-        if(BGPanel != null)
+        if (BGPanel != null)
         {
             BGPanel.SetActive(false);
         }

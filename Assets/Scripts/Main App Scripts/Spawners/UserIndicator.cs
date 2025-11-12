@@ -13,8 +13,6 @@ public class UserIndicator : MonoBehaviour
     [Header("Settings")]
     public float heightOffset = 2f;
     public float updateInterval = 0.05f;
-    public float positionSmoothness = 0.3f;
-    public float rotationSmoothness = 5f;
 
     [Header("User Indicator Appearance")]
     public Color userIndicatorColor = new Color(0.2f, 0.6f, 1f, 1f);
@@ -31,11 +29,8 @@ public class UserIndicator : MonoBehaviour
 
     private GameObject userIndicatorInstance;
     private GameObject shadowConeInstance;
-    private Vector3 lastWorldPos = Vector3.zero;
-    private float lastHeading = 0f;
     private float lastUpdateTime = 0f;
     private bool isInitialized = false;
-
     private bool isMapDragging = false;
 
     void Awake()
@@ -235,20 +230,10 @@ public class UserIndicator : MonoBehaviour
     {
         Vector2 gpsCoords = GPSManager.Instance.GetSmoothedCoordinates();
 
-        Vector3 localPos = mapboxMap.GeoToWorldPosition(new Vector2d(gpsCoords.x, gpsCoords.y), false);
-        localPos.y = heightOffset;
+        Vector3 worldPos = mapboxMap.GeoToWorldPosition(new Vector2d(gpsCoords.x, gpsCoords.y), false);
+        worldPos.y = heightOffset;
 
-        if (isMapDragging)
-        {
-            userIndicatorInstance.transform.localPosition = localPos;
-            lastWorldPos = localPos;
-        }
-        else
-        {
-            Vector3 smoothedPos = Vector3.Lerp(lastWorldPos, localPos, positionSmoothness);
-            userIndicatorInstance.transform.localPosition = smoothedPos;
-            lastWorldPos = smoothedPos;
-        }
+        userIndicatorInstance.transform.position = worldPos;
     }
 
     void UpdateUserIndicatorRotation()
@@ -259,28 +244,18 @@ public class UserIndicator : MonoBehaviour
         }
 
         float compassHeading = GPSManager.Instance.GetHeading();
-
-        Quaternion targetRotation = Quaternion.Euler(0, compassHeading, 0);
-        
-        // Smooth rotation for nice feel
-        userIndicatorInstance.transform.localRotation = Quaternion.Slerp(
-            userIndicatorInstance.transform.localRotation,
-            targetRotation,
-            Time.deltaTime * rotationSmoothness
-        );
-        
-        lastHeading = compassHeading;
+        userIndicatorInstance.transform.rotation = Quaternion.Euler(0, compassHeading, 0);
     }
 
     void UpdateDirectionShadow()
     {
         if (shadowConeInstance == null || userIndicatorInstance == null) return;
 
-        Vector3 shadowPos = userIndicatorInstance.transform.localPosition;
+        Vector3 shadowPos = userIndicatorInstance.transform.position;
         shadowPos.y = heightOffset - 0.1f;
-        shadowConeInstance.transform.localPosition = shadowPos;
+        shadowConeInstance.transform.position = shadowPos;
 
-        shadowConeInstance.transform.localRotation = userIndicatorInstance.transform.localRotation;
+        shadowConeInstance.transform.rotation = userIndicatorInstance.transform.rotation;
 
         Vector3 shadowScale = shadowConeInstance.transform.localScale;
         shadowScale.z = shadowDistance;
@@ -307,7 +282,13 @@ public class UserIndicator : MonoBehaviour
         if (isInitialized)
         {
             lastUpdateTime = 0f;
-            UpdateUserIndicatorPosition();
+            
+            Vector2 gpsCoords = GPSManager.Instance.GetSmoothedCoordinates();
+            Vector3 worldPos = mapboxMap.GeoToWorldPosition(new Vector2d(gpsCoords.x, gpsCoords.y), false);
+            worldPos.y = heightOffset;
+            
+            userIndicatorInstance.transform.position = worldPos;
+            
             UpdateUserIndicatorRotation();
             UpdateDirectionShadow();
         }
