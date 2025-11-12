@@ -151,7 +151,6 @@ public class DirectionDisplayManager : MonoBehaviour
                 turn = (TurnDirection)System.Enum.Parse(typeof(TurnDirection),
                        PlayerPrefs.GetString($"ARNavigation_Direction_{i}_Turn", "Straight")),
                 distanceInMeters = PlayerPrefs.GetFloat($"ARNavigation_Direction_{i}_Distance", 0f),
-                // ✅ CRITICAL: Load the indoor flags
                 isIndoorGrouped = PlayerPrefs.GetInt($"ARNavigation_Direction_{i}_IsIndoorGrouped", 0) == 1,
                 isIndoorDirection = PlayerPrefs.GetInt($"ARNavigation_Direction_{i}_IsIndoorDirection", 0) == 1
             };

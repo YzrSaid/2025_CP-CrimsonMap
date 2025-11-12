@@ -97,8 +97,8 @@ public class CompassDebugUI : MonoBehaviour
         MapInteraction mapInteraction = FindObjectOfType<MapInteraction>();
         if (mapInteraction != null)
         {
-            float mapBearing = mapInteraction.GetCurrentBearing();
-            mapData += $"Map Bearing: {mapBearing:F1}°";
+            // float mapBearing = mapInteraction.GetCurrentBearing();
+            // mapData += $"Map Bearing: {mapBearing:F1}°";
         }
         else
         {

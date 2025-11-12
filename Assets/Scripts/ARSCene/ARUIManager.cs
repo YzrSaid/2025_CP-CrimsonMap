@@ -19,7 +19,6 @@ public class ARUIManager : MonoBehaviour
     
     private void ConfigureUIForNavigationMode()
     {
-        // Only Navigation mode now - show all navigation UI
         SetUIElementActive(mapPanel, true);
         SetUIElementActive(directionPanel, true);
         SetUIElementActive(destinationPanel, true);

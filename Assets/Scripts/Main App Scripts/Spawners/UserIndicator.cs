@@ -14,7 +14,7 @@ public class UserIndicator : MonoBehaviour
     public float heightOffset = 2f;
     public float updateInterval = 0.05f;
     public float positionSmoothness = 0.3f;
-    public float rotationSmoothness = 10f;
+    public float rotationSmoothness = 5f;
 
     [Header("User Indicator Appearance")]
     public Color userIndicatorColor = new Color(0.2f, 0.6f, 1f, 1f);
@@ -36,7 +36,6 @@ public class UserIndicator : MonoBehaviour
     private float lastUpdateTime = 0f;
     private bool isInitialized = false;
 
-    private MapInteraction mapInteraction;
     private bool isMapDragging = false;
 
     void Awake()
@@ -45,8 +44,6 @@ public class UserIndicator : MonoBehaviour
         {
             mapboxMap = FindObjectOfType<AbstractMap>();
         }
-
-        mapInteraction = FindObjectOfType<MapInteraction>();
     }
 
     private IEnumerator Start()
@@ -215,7 +212,6 @@ public class UserIndicator : MonoBehaviour
         if (!isInitialized || GPSManager.Instance == null || userIndicatorInstance == null || mapboxMap == null)
             return;
 
-        // When dragging, update EVERY frame with no delay for instant response
         if (isMapDragging)
         {
             UpdateUserIndicatorPosition();
@@ -224,7 +220,6 @@ public class UserIndicator : MonoBehaviour
         }
         else
         {
-            // When not dragging, use the update interval to save performance
             if (Time.time - lastUpdateTime < updateInterval)
                 return;
 
@@ -240,20 +235,18 @@ public class UserIndicator : MonoBehaviour
     {
         Vector2 gpsCoords = GPSManager.Instance.GetSmoothedCoordinates();
 
-        Vector3 worldPos = mapboxMap.GeoToWorldPosition(new Vector2d(gpsCoords.x, gpsCoords.y), false);
-        worldPos.y = heightOffset;
+        Vector3 localPos = mapboxMap.GeoToWorldPosition(new Vector2d(gpsCoords.x, gpsCoords.y), false);
+        localPos.y = heightOffset;
 
-        // When dragging, use instant positioning (no lerp smoothing)
-        // When not dragging, use smooth lerp for natural movement
         if (isMapDragging)
         {
-            userIndicatorInstance.transform.position = worldPos;
-            lastWorldPos = worldPos;
+            userIndicatorInstance.transform.localPosition = localPos;
+            lastWorldPos = localPos;
         }
         else
         {
-            Vector3 smoothedPos = Vector3.Lerp(lastWorldPos, worldPos, positionSmoothness);
-            userIndicatorInstance.transform.position = smoothedPos;
+            Vector3 smoothedPos = Vector3.Lerp(lastWorldPos, localPos, positionSmoothness);
+            userIndicatorInstance.transform.localPosition = smoothedPos;
             lastWorldPos = smoothedPos;
         }
     }
@@ -266,10 +259,15 @@ public class UserIndicator : MonoBehaviour
         }
 
         float compassHeading = GPSManager.Instance.GetHeading();
+
+        Quaternion targetRotation = Quaternion.Euler(0, compassHeading, 0);
         
-        // ✅ FIXED: Use WORLD rotation instead of local rotation
-        // This way the indicator doesn't rotate when the map rotates!
-        userIndicatorInstance.transform.rotation = Quaternion.Euler(0, compassHeading, 0);
+        // Smooth rotation for nice feel
+        userIndicatorInstance.transform.localRotation = Quaternion.Slerp(
+            userIndicatorInstance.transform.localRotation,
+            targetRotation,
+            Time.deltaTime * rotationSmoothness
+        );
         
         lastHeading = compassHeading;
     }
@@ -278,12 +276,11 @@ public class UserIndicator : MonoBehaviour
     {
         if (shadowConeInstance == null || userIndicatorInstance == null) return;
 
-        Vector3 shadowPos = userIndicatorInstance.transform.position;
+        Vector3 shadowPos = userIndicatorInstance.transform.localPosition;
         shadowPos.y = heightOffset - 0.1f;
-        shadowConeInstance.transform.position = shadowPos;
+        shadowConeInstance.transform.localPosition = shadowPos;
 
-        // ✅ FIXED: Use world rotation
-        shadowConeInstance.transform.rotation = userIndicatorInstance.transform.rotation;
+        shadowConeInstance.transform.localRotation = userIndicatorInstance.transform.localRotation;
 
         Vector3 shadowScale = shadowConeInstance.transform.localScale;
         shadowScale.z = shadowDistance;
@@ -299,7 +296,6 @@ public class UserIndicator : MonoBehaviour
 
     public void UpdatePosition()
     {
-        // This method can be called from MapInteraction during drag for immediate updates
         if (isInitialized)
         {
             UpdateUserIndicatorPosition();

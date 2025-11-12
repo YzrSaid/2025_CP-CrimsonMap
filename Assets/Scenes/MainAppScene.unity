@@ -16441,7 +16441,8 @@ MonoBehaviour:
   pinchZoomDeadzone: 5
   enableCompassRotation: 1
   rotationSmoothness: 5
-  myLocationZoomLevel: 16
+  rotationDeadzone: 5
+  myLocationZoomLevel: 18
   useSmoothedCoordinates: 1
 --- !u!1 &1630633559
 GameObject:
@@ -17482,7 +17483,6 @@ MonoBehaviour:
   heightOffset: 7
   updateInterval: 0.2
   positionSmoothness: 0.3
-  rotationSmoothness: 0.5
   userIndicatorColor: {r: 0.6862745, g: 0.1764706, b: 0.1882353, a: 1}
   userIndicatorMaterial: {fileID: 0}
   useTransparentIndicator: 0
