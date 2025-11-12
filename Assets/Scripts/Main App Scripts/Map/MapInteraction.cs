@@ -22,22 +22,17 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     [Header("Pinch Zoom Settings")]
     public float pinchZoomSensitivity = 2.0f;
     public float pinchZoomDeadzone = 5.0f;
-    public bool enablePinchZoomDebugging = false;
 
-    [Header("Rotation Settings")]
-    public bool enableTwoFingerRotation = true;
-    public float rotationSensitivity = 0.5f;
-    public float rotationDeadzone = 2.0f;
-    public bool enableRotationDebugging = false;
-
-    [Header("Keyboard Controls (Editor Testing)")]
-    public bool enableKeyboardControls = true;
-    public float keyboardRotationSpeed = 30f;
-
+    [Header("Compass-Based Rotation (Google Maps Style)")]
+    public bool enableCompassRotation = true;
+    [Range(0.1f, 10f)]
+    public float rotationSmoothness = 1.5f; 
+    [Range(0f, 30f)]
+    public float rotationDeadzone = 5f; 
+    
     [Header("My Location Settings")]
-    public float myLocationZoomLevel = 20f;
+    public float myLocationZoomLevel = 17f;
     public bool useSmoothedCoordinates = true;
-    public bool enableLocationDebugging = true;
 
     private Vector2 lastPointerPosition;
     private Vector2 initialPointerPosition;
@@ -48,15 +43,11 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     private float lastPinchDistance = 0f;
     private Vector2 lastPinchCenter;
 
-    private bool isRotating = false;
-    private float lastRotationAngle = 0f;
     private float currentMapBearing = 0f;
+    private float targetMapBearing = 0f; // ✅ Target bearing for smooth interpolation
 
     private InputAction touchPositionAction;
     private InputAction touchContactAction;
-    
-    private InputAction rotateLeftAction;
-    private InputAction rotateRightAction;
 
     private UserIndicator userIndicator;
 
@@ -70,15 +61,6 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         touchPositionAction.Enable();
         touchContactAction.Enable();
 
-        if (enableKeyboardControls)
-        {
-            rotateLeftAction = new InputAction(type: InputActionType.Button, binding: "<Keyboard>/q");
-            rotateRightAction = new InputAction(type: InputActionType.Button, binding: "<Keyboard>/e");
-            
-            rotateLeftAction.Enable();
-            rotateRightAction.Enable();
-        }
-
         Input.compass.enabled = true;
     }
 
@@ -87,29 +69,15 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         touchPositionAction?.Disable();
         touchContactAction?.Disable();
         
-        rotateLeftAction?.Disable();
-        rotateRightAction?.Disable();
-        
         EnhancedTouchSupport.Disable();
     }
 
     private void Start()
     {
-        var rawImage = GetComponent<UnityEngine.UI.RawImage>();
-        if (rawImage == null)
-        {
-        }
-
         if (mapboxMap != null)
         {
             currentMapBearing = 0f;
-        }
-        else
-        {
-        }
-
-        if (FindObjectOfType<EventSystem>() == null)
-        {
+            targetMapBearing = 0f;
         }
 
         userIndicator = FindObjectOfType<UserIndicator>();
@@ -118,34 +86,23 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
     private void Update()
     {
         HandleMultiTouch();
-        HandleKeyboardControls();
-    }
-
-    private void HandleKeyboardControls()
-    {
-        if (!enableKeyboardControls || mapboxMap == null) return;
-
-        if (rotateLeftAction != null && rotateLeftAction.IsPressed())
-        {
-            RotateMap(-keyboardRotationSpeed * Time.deltaTime);
-        }
         
-        if (rotateRightAction != null && rotateRightAction.IsPressed())
+        if (enableCompassRotation && GPSManager.Instance != null && GPSManager.Instance.IsCompassReady())
         {
-            RotateMap(keyboardRotationSpeed * Time.deltaTime);
-        }
-    }
-
-    private void RotateMap(float angleDelta)
-    {
-        currentMapBearing += angleDelta;
-
-        while (currentMapBearing > 180f) currentMapBearing -= 360f;
-        while (currentMapBearing < -180f) currentMapBearing += 360f;
-
-        if (mapboxMap != null)
-        {
-            mapboxMap.transform.rotation = Quaternion.Euler(0, currentMapBearing, 0);
+            float compassHeading = GPSManager.Instance.GetHeading();
+            
+            float headingDelta = Mathf.Abs(Mathf.DeltaAngle(targetMapBearing, compassHeading));
+            if (headingDelta > rotationDeadzone)
+            {
+                targetMapBearing = compassHeading;
+            }
+            
+            currentMapBearing = Mathf.LerpAngle(currentMapBearing, targetMapBearing, Time.deltaTime * rotationSmoothness);
+            
+            if (mapboxMap != null)
+            {
+                mapboxMap.transform.rotation = Quaternion.Euler(0, currentMapBearing, 0);
+            }
         }
     }
 
@@ -166,16 +123,11 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
             float currentDistance = Vector2.Distance(touch1Pos, touch2Pos);
             Vector2 currentCenter = (touch1Pos + touch2Pos) / 2f;
 
-            Vector2 currentDirection = (touch2Pos - touch1Pos).normalized;
-            float currentAngle = Mathf.Atan2(currentDirection.y, currentDirection.x) * Mathf.Rad2Deg;
-
-            if (!isPinching && !isRotating)
+            if (!isPinching)
             {
                 isPinching = true;
-                isRotating = enableTwoFingerRotation;
                 lastPinchDistance = currentDistance;
                 lastPinchCenter = currentCenter;
-                lastRotationAngle = currentAngle;
 
                 isDragging = false;
                 hasStartedDragging = false;
@@ -190,17 +142,6 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
                     float zoomDelta = (distanceDelta / Screen.dpi) * pinchZoomSensitivity;
                     ZoomMap(zoomDelta);
                     lastPinchDistance = currentDistance;
-                }
-
-                if (isRotating && enableTwoFingerRotation)
-                {
-                    float angleDelta = Mathf.DeltaAngle(lastRotationAngle, currentAngle);
-
-                    if (Mathf.Abs(angleDelta) > rotationDeadzone)
-                    {
-                        RotateMap(-angleDelta * rotationSensitivity);
-                        lastRotationAngle = currentAngle;
-                    }
                 }
 
                 Vector2 centerDelta = currentCenter - lastPinchCenter;
@@ -222,10 +163,9 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
                 }
             }
         }
-        else if ((isPinching || isRotating) && activeTouches.Count < 2)
+        else if (isPinching && activeTouches.Count < 2)
         {
             isPinching = false;
-            isRotating = false;
             NotifyUserIndicatorDragEnd();
         }
     }
@@ -344,12 +284,7 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
 
     public void CenterOnMyLocation()
     {
-        if (mapboxMap == null)
-        {
-            return;
-        }
-
-        if (GPSManager.Instance == null)
+        if (mapboxMap == null || GPSManager.Instance == null)
         {
             return;
         }
@@ -361,12 +296,12 @@ public class MapInteraction : MonoBehaviour, IDragHandler, IScrollHandler, IPoin
         var myLocation = new Mapbox.Utils.Vector2d(coords.x, coords.y);
 
         mapboxMap.UpdateMap(myLocation, myLocationZoomLevel);
-        mapboxMap.transform.rotation = Quaternion.Euler(0, currentMapBearing, 0);
     }
 
     public void ResetMapBearing()
     {
         currentMapBearing = 0f;
+        targetMapBearing = 0f;
 
         if (mapboxMap != null)
         {

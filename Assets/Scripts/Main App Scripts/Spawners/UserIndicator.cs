@@ -214,6 +214,8 @@ public class UserIndicator : MonoBehaviour
     {
         if (!isInitialized || GPSManager.Instance == null || userIndicatorInstance == null || mapboxMap == null)
             return;
+
+        // When dragging, update EVERY frame with no delay for instant response
         if (isMapDragging)
         {
             UpdateUserIndicatorPosition();
@@ -222,6 +224,7 @@ public class UserIndicator : MonoBehaviour
         }
         else
         {
+            // When not dragging, use the update interval to save performance
             if (Time.time - lastUpdateTime < updateInterval)
                 return;
 
@@ -240,6 +243,8 @@ public class UserIndicator : MonoBehaviour
         Vector3 worldPos = mapboxMap.GeoToWorldPosition(new Vector2d(gpsCoords.x, gpsCoords.y), false);
         worldPos.y = heightOffset;
 
+        // When dragging, use instant positioning (no lerp smoothing)
+        // When not dragging, use smooth lerp for natural movement
         if (isMapDragging)
         {
             userIndicatorInstance.transform.position = worldPos;
@@ -262,6 +267,8 @@ public class UserIndicator : MonoBehaviour
 
         float compassHeading = GPSManager.Instance.GetHeading();
         
+        // ✅ FIXED: Use WORLD rotation instead of local rotation
+        // This way the indicator doesn't rotate when the map rotates!
         userIndicatorInstance.transform.rotation = Quaternion.Euler(0, compassHeading, 0);
         
         lastHeading = compassHeading;
@@ -275,6 +282,7 @@ public class UserIndicator : MonoBehaviour
         shadowPos.y = heightOffset - 0.1f;
         shadowConeInstance.transform.position = shadowPos;
 
+        // ✅ FIXED: Use world rotation
         shadowConeInstance.transform.rotation = userIndicatorInstance.transform.rotation;
 
         Vector3 shadowScale = shadowConeInstance.transform.localScale;
@@ -291,6 +299,7 @@ public class UserIndicator : MonoBehaviour
 
     public void UpdatePosition()
     {
+        // This method can be called from MapInteraction during drag for immediate updates
         if (isInitialized)
         {
             UpdateUserIndicatorPosition();
