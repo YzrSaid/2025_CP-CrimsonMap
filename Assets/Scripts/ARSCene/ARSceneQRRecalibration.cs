@@ -331,16 +331,14 @@ public class ARSceneQRRecalibration : MonoBehaviour
 
         if (foundNode)
         {
-            bool isIndoorNode = scannedNodeInfo.type == "indoorinfra";
-
-            // Reject indoor QR codes
-            if (isIndoorNode)
+            if (scannedNodeInfo.type == "infrastructure")
             {
-                StartCoroutine(ShowErrorAndResume("Indoor QR codes are not supported in Navigation mode. Please scan an outdoor QR code."));
-                yield break;
+                ShowConfirmation();
             }
-
-            ShowConfirmation();
+            else
+            {
+                StartCoroutine(ShowErrorAndResume("This QR code is not for an outdoor location."));
+            }
         }
         else
         {
@@ -384,7 +382,6 @@ public class ARSceneQRRecalibration : MonoBehaviour
             canvasGroup.DOFade(1, 0.5f).SetEase(Ease.OutQuad);
         }
 
-        // Only outdoor nodes now
         string coordinateInfo = $"GPS: {scannedNodeInfo.latitude:F6}, {scannedNodeInfo.longitude:F6}";
 
         string titleText = "<b>Recalibrate GPS Position</b>";
@@ -392,7 +389,7 @@ public class ARSceneQRRecalibration : MonoBehaviour
         string bodyText = $"<b>{scannedNodeInfo.name}</b>\n\n" +
             $"{coordinateInfo}";
         
-        string noteText = "Your GPS position will be updated and locked for a few seconds.";
+        string noteText = "Your GPS position will be updated to this location.";
 
         if (confirmationTitle != null)
             confirmationTitle.text = titleText;
@@ -421,13 +418,25 @@ public class ARSceneQRRecalibration : MonoBehaviour
 
     void OnConfirmRecalibration()
     {
-        if (unifiedARManager == null)
+        if (GPSManager.Instance != null && scannedNodeInfo != null)
         {
-            OnCancelRecalibration();
-            return;
+            GPSManager.Instance.SetQRLocationOverride(
+                scannedNodeInfo.latitude,
+                scannedNodeInfo.longitude,
+                0f
+            );
         }
 
-        unifiedARManager.OnQRCodeScanned(scannedNodeInfo);
+        if (unifiedARManager != null)
+        {
+            unifiedARManager.OnQRCodeScanned(scannedNodeInfo);
+        }
+
+        UserIndicator arUserIndicator = FindObjectOfType<UserIndicator>();
+        if (arUserIndicator != null)
+        {
+            arUserIndicator.ForceUpdate();
+        }
 
         if (confirmationPanel != null)
         {

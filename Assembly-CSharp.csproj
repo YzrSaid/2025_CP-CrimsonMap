@@ -191,6 +191,7 @@
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/Response.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/RotateWithLocationProvider.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/PathfindingController.cs" />
+    <Compile Include="Assets/Scripts/ARSCene/DirectionItemUI.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/ISubLayerCustomStyleAtlas.cs" />
     <Compile Include="Assets/Mapbox/Unity/Utilities/DebugTools/ScenesList.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Geocoding/Response/GeocodeResponse.cs" />
@@ -215,6 +216,7 @@
     <Compile Include="Assets/Mapbox/Unity/Map/AbstractMap.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/MapUtils.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/SpawnPrefabOptions.cs" />
+    <Compile Include="Assets/Scripts/ARSCene/IndoorMapManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/EditorLocationProvider.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/Map/SmartMapDownloadButton.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Data/VectorFeatureUnity.cs" />
@@ -272,6 +274,7 @@
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/ISubLayerDarkStyle.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/Map.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/Map/MapDropdown.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/Map/MapModeController.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/Logging/LocationLogAbstractBase.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/CameraBoundsTileProviderOptions.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/IResource.cs" />

@@ -21,10 +21,9 @@ public class DirectionDisplayManager : MonoBehaviour
     [Header("Compass Arrow")]
     public CompassNavigationArrow compassArrow;
 
-    [Header("Debug UI")]
-    public GameObject debugPanel;
-    public TextMeshProUGUI debugAllDirectionsText;
-    public Button toggleDebugButton;
+    [Header("All Directions Panel")]
+    public Transform directionsScrollContent;
+    public GameObject directionItemPrefab;
 
     [Header("Settings")]
     public bool enableKeyboardTesting = true;
@@ -32,9 +31,9 @@ public class DirectionDisplayManager : MonoBehaviour
     public bool enableDebugLogs = true;
 
     private List<NavigationDirection> allDirections = new List<NavigationDirection>();
+    private List<DirectionItemUI> directionItemInstances = new List<DirectionItemUI>();
     private int currentDirectionIndex = 0;
     private bool isNavigationActive = false;
-    private bool debugPanelVisible = false;
 
     private Vector2 userLocation;
     private Node currentTargetNode;
@@ -53,12 +52,6 @@ public class DirectionDisplayManager : MonoBehaviour
 
         if (directionPanel != null)
             directionPanel.SetActive(false);
-
-        if (debugPanel != null)
-            debugPanel.SetActive(false);
-
-        if (toggleDebugButton != null)
-            toggleDebugButton.onClick.AddListener(ToggleDebugPanel);
 
         HideAllTurnIcons();
 
@@ -181,12 +174,46 @@ public class DirectionDisplayManager : MonoBehaviour
             allDirections.Add(dir);
         }
 
-        UpdateDebugAllDirections();
-        
+        PopulateDirectionItems();
 
         if (allDirections.Count > 0 && ARModeHelper.IsNavigationMode())
         {
             StartNavigation();
+        }
+    }
+
+    private void PopulateDirectionItems()
+    {
+        ClearDirectionItems();
+
+        if (directionItemPrefab == null || directionsScrollContent == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < allDirections.Count; i++)
+        {
+            GameObject itemObj = Instantiate(directionItemPrefab, directionsScrollContent);
+            DirectionItemUI itemUI = itemObj.GetComponent<DirectionItemUI>();
+
+            if (itemUI != null)
+            {
+                itemUI.Initialize(i, allDirections[i]);
+                directionItemInstances.Add(itemUI);
+            }
+        }
+    }
+
+    private void ClearDirectionItems()
+    {
+        directionItemInstances.Clear();
+
+        if (directionsScrollContent != null)
+        {
+            foreach (Transform child in directionsScrollContent)
+            {
+                Destroy(child.gameObject);
+            }
         }
     }
 
@@ -216,10 +243,8 @@ public class DirectionDisplayManager : MonoBehaviour
 
         NavigationDirection currentDir = allDirections[currentDirectionIndex];
 
-        // Check if this is a grouped indoor direction
         if (currentDir.isIndoorGrouped)
         {
-            // Group all consecutive indoor directions together
             string groupedInstructions = "";
             List<Node> groupedTargets = new List<Node>();
 
@@ -233,7 +258,6 @@ public class DirectionDisplayManager : MonoBehaviour
                 currentDirectionIndex++;
             }
 
-            // Display grouped instructions
             if (directionText != null)
             {
                 directionText.text = groupedInstructions.Trim();
@@ -241,7 +265,6 @@ public class DirectionDisplayManager : MonoBehaviour
 
             HideAllTurnIcons();
 
-            // Set compass to final indoor destination
             if (groupedTargets.Count > 0)
             {
                 currentTargetNode = groupedTargets[groupedTargets.Count - 1];
@@ -257,10 +280,8 @@ public class DirectionDisplayManager : MonoBehaviour
             return;
         }
 
-        // Normal outdoor direction display
         if (directionText != null)
             directionText.text = currentDir.instruction;
-
 
         ShowTurnIcon(currentDir.turn);
 
@@ -273,6 +294,7 @@ public class DirectionDisplayManager : MonoBehaviour
         }
 
         hasAutoProgressed = false;
+        UpdateDirectionItemsStatus();
     }
 
     public void ShowTurnIconContainer()
@@ -348,9 +370,6 @@ public class DirectionDisplayManager : MonoBehaviour
 
         currentDirectionIndex++;
         DisplayCurrentDirection();
-
-        if (debugPanelVisible)
-            UpdateDebugAllDirections();
     }
 
     private void UpdateDistanceToTarget()
@@ -363,7 +382,6 @@ public class DirectionDisplayManager : MonoBehaviour
 
         if (isIndoor)
         {
-            // Use X,Y distance for indoor
             Vector2 targetXY;
             if (currentTargetNode.indoor != null)
             {
@@ -377,7 +395,6 @@ public class DirectionDisplayManager : MonoBehaviour
         }
         else
         {
-            // Use GPS distance for outdoor
             Vector2 targetGPS = new Vector2(currentTargetNode.latitude, currentTargetNode.longitude);
             distanceToTarget = CalculateDistanceGPS(userLocation, targetGPS);
         }
@@ -388,13 +405,12 @@ public class DirectionDisplayManager : MonoBehaviour
         if (hasAutoProgressed)
             return;
 
-        // Don't auto-progress indoor directions (user must manually progress)
         if (currentDirectionIndex < allDirections.Count)
         {
             var currentDir = allDirections[currentDirectionIndex];
             if (currentDir.isIndoorGrouped)
             {
-                return; // Skip auto-progress for indoor
+                return;
             }
         }
 
@@ -404,6 +420,16 @@ public class DirectionDisplayManager : MonoBehaviour
             MoveToNextDirection();
         }
     }
+
+    private void UpdateDirectionItemsStatus()
+    {
+        for (int i = 0; i < directionItemInstances.Count; i++)
+        {
+            bool isCompleted = i < currentDirectionIndex;
+            directionItemInstances[i].SetCompleted(isCompleted);
+        }
+    }
+
     private void CompleteNavigation()
     {
         isNavigationActive = false;
@@ -417,43 +443,9 @@ public class DirectionDisplayManager : MonoBehaviour
 
         if (compassArrow != null)
             compassArrow.SetActive(false);
+
+        UpdateDirectionItemsStatus();
     }
-
-    private void ToggleDebugPanel()
-    {
-        debugPanelVisible = !debugPanelVisible;
-
-        if (debugPanel != null)
-            debugPanel.SetActive(debugPanelVisible);
-
-        if (debugPanelVisible)
-            UpdateDebugAllDirections();
-    }
-
-    private void UpdateDebugAllDirections()
-    {
-        if (debugAllDirectionsText == null)
-            return;
-
-        if (allDirections.Count == 0)
-        {
-            debugAllDirectionsText.text = "No directions loaded";
-            return;
-        }
-
-        string debugText = $"<b>ALL DIRECTIONS ({allDirections.Count} total)</b>\n\n";
-
-        for (int i = 0; i < allDirections.Count; i++)
-        {
-            var dir = allDirections[i];
-            string highlight = (i == currentDirectionIndex) ? "<color=yellow>→ </color>" : "  ";
-            debugText += $"     {dir.instruction}\n";
-            debugText += $"     Distance: {dir.distanceInMeters:F0}m | To: {dir.destinationNode?.name ?? "Unknown"}\n\n";
-        }
-
-        debugAllDirectionsText.text = debugText;
-    }
-
 
     private float CalculateDistanceGPS(Vector2 coord1, Vector2 coord2)
     {
@@ -488,6 +480,8 @@ public class DirectionDisplayManager : MonoBehaviour
 
         if (compassArrow != null)
             compassArrow.SetActive(false);
+
+        UpdateDirectionItemsStatus();
     }
 
     public int GetCurrentDirectionIndex()
@@ -505,11 +499,5 @@ public class DirectionDisplayManager : MonoBehaviour
     public List<NavigationDirection> GetAllDirections()
     {
         return new List<NavigationDirection>(allDirections);
-    }
-
-    void OnDestroy()
-    {
-        if (toggleDebugButton != null)
-            toggleDebugButton.onClick.RemoveListener(ToggleDebugPanel);
     }
 }

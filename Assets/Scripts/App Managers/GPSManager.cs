@@ -29,7 +29,6 @@ public class GPSManager : MonoBehaviour
     private bool sensorsInitialized = false;
     private float currentHeading = 0f;
 
-    // ✅ PlayerPrefs Keys for persistence
     private const string PREF_LOCATION_LOCKED = "GPS_LocationLocked";
     private const string PREF_LOCKED_LAT = "GPS_LockedLatitude";
     private const string PREF_LOCKED_LNG = "GPS_LockedLongitude";
@@ -51,7 +50,7 @@ public class GPSManager : MonoBehaviour
         }
 
         InitializeSensors();
-        LoadLockStateFromPlayerPrefs(); // ✅ Load saved lock state on startup
+        LoadLockStateFromPlayerPrefs(); 
     }
 
     private void InitializeSensors()
@@ -110,7 +109,6 @@ public class GPSManager : MonoBehaviour
         }
     }
 
-    // ✅ Load lock state from PlayerPrefs
     private void LoadLockStateFromPlayerPrefs()
     {
         bool isLocked = PlayerPrefs.GetInt(PREF_LOCATION_LOCKED, 0) == 1;
