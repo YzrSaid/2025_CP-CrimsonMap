@@ -7,6 +7,7 @@ using UnityEngine.XR.ARSubsystems;
 using Unity.XR.CoreUtils;
 using TMPro;
 using UnityEngine.UI;
+using DG.Tweening;
 
 public class UnifiedARManager : MonoBehaviour
 {
@@ -32,8 +33,30 @@ public class UnifiedARManager : MonoBehaviour
     private TrackingState lastTrackingState = TrackingState.None;
     public bool requireGoodTracking = true;
 
+    [Header("GPS Strength Indicators")]
+    public GameObject gpsStrongImage;
+    public GameObject gpsWeakImage;
+    public GameObject gpsNoneImage;
+
+    [Header("GPS Recalibration Panel")]
+    public GameObject recalibrationPanel;
+    public GameObject recalibrationBGPanel;
+    public float recalibrationAnimDuration = 0.3f;
+    public Ease recalibrationEaseType = Ease.OutBack;
+    private Vector3 recalibrationPanelOriginalScale;
+    private bool recalibrationPanelShown = false;
+
+    [Header("GPS Strength Thresholds")]
+    public float strongGPSAccuracyThreshold = 20f;
+    public float weakGPSAccuracyThreshold = 50f;
+    public float gpsCheckInterval = 2f;
+    private float lastGPSCheckTime = 0f;
+
+    [Header("Debug GPS Strength Testing (Editor Only)")]
+    public bool useDebugGPSStrength = false;
+    public GPSStrength debugGPSStrength = GPSStrength.Strong;
+
     [Header("Top Panel UI - Main Display")]
-    public TextMeshProUGUI gpsModeText;
     public TextMeshProUGUI fromLocationText;
     public TextMeshProUGUI toDestinationText;
     public TextMeshProUGUI currentLocationText;
@@ -62,7 +85,7 @@ public class UnifiedARManager : MonoBehaviour
     [Header("Fixed AR Origin")]
     private Vector2 referenceGPS;
     private Vector3 referenceARWorldPosition;
-    private float referenceCompassHeading; // NEW: Store compass heading at origin
+    private float referenceCompassHeading;
     private bool arOriginInitialized = false;
     private GameObject userMarkerObject;
 
@@ -74,6 +97,7 @@ public class UnifiedARManager : MonoBehaviour
     [Header("Position Tracking")]
     private Vector2 userLocation;
     private Node currentNearestNode;
+    private float currentGPSAccuracy = 0f;
 
     private bool isTrackingStarted = false;
     private bool isDebugPanelVisible = false;
@@ -89,6 +113,7 @@ public class UnifiedARManager : MonoBehaviour
         InitializeComponents();
         SetupDebugToggle();
         LoadNavigationData();
+        InitializeRecalibrationPanel();
 
         UpdateLoadingUI("Initializing AR...");
         StartCoroutine(InitializeARScene());
@@ -101,6 +126,22 @@ public class UnifiedARManager : MonoBehaviour
         if (arCameraManager == null) arCameraManager = FindObjectOfType<ARCameraManager>();
         if (arRaycastManager == null) arRaycastManager = FindObjectOfType<ARRaycastManager>();
         if (arPlaneManager == null) arPlaneManager = FindObjectOfType<ARPlaneManager>();
+    }
+
+    private void InitializeRecalibrationPanel()
+    {
+        if (recalibrationPanel != null)
+        {
+            recalibrationPanelOriginalScale = recalibrationPanel.transform.localScale;
+            recalibrationPanel.SetActive(false);
+        }
+
+        if (recalibrationBGPanel != null)
+        {
+            recalibrationBGPanel.SetActive(false);
+        }
+
+        HideAllGPSIndicators();
     }
 
     private void SetupDebugToggle()
@@ -182,33 +223,25 @@ public class UnifiedARManager : MonoBehaviour
 
     private IEnumerator InitializeFixedAROrigin()
     {
-        // Use "from" node as reference GPS
         if (!string.IsNullOrEmpty(navigationFromNodeId))
         {
             Node fromNode = currentNodes.FirstOrDefault(n => n.node_id == navigationFromNodeId);
             if (fromNode != null && fromNode.type != "indoorinfra")
             {
                 referenceGPS = new Vector2(fromNode.latitude, fromNode.longitude);
-                Debug.Log($"[UnifiedARManager] Using FROM node as AR origin: {referenceGPS}");
             }
             else
             {
                 referenceGPS = GPSManager.Instance.GetSmoothedCoordinates();
-                Debug.Log($"[UnifiedARManager] FROM node not found or indoor, using current GPS: {referenceGPS}");
             }
         }
         else
         {
             referenceGPS = GPSManager.Instance.GetSmoothedCoordinates();
-            Debug.Log($"[UnifiedARManager] Using current GPS: {referenceGPS}");
         }
 
         referenceARWorldPosition = arCamera.transform.position;
-        
-        // NEW: Store the compass heading at initialization
-        // This tells us which direction the AR camera was facing when we set the origin
         referenceCompassHeading = GPSManager.Instance.GetHeading();
-        Debug.Log($"[UnifiedARManager] AR world origin set at: {referenceARWorldPosition}, Compass: {referenceCompassHeading}°");
 
         userLocation = referenceGPS;
         lastStableGPSLocation = referenceGPS;
@@ -237,7 +270,6 @@ public class UnifiedARManager : MonoBehaviour
                 userMarkerObject.transform.position.z
             );
             userMarkerObject.transform.localScale = Vector3.one * markerScale;
-            Debug.Log("[UnifiedARManager] User marker created at origin");
         }
     }
 
@@ -265,24 +297,19 @@ public class UnifiedARManager : MonoBehaviour
 
     public void OnQRCodeScanned(Node scannedNode)
     {
-        // Only handle outdoor QR codes now (no indoor switching)
         bool isIndoorNode = scannedNode.type == "indoorinfra";
 
         if (isIndoorNode)
         {
-            Debug.LogWarning("[UnifiedARManager] Indoor QR codes are not supported in Navigation mode");
             return;
         }
 
         ClearMarkers();
 
-        // Update reference GPS and AR origin
         referenceGPS = new Vector2(scannedNode.latitude, scannedNode.longitude);
         referenceARWorldPosition = arCamera.transform.position;
-        referenceCompassHeading = GPSManager.Instance.GetHeading(); // NEW: Update compass heading
+        referenceCompassHeading = GPSManager.Instance.GetHeading();
         arOriginInitialized = true;
-
-        Debug.Log($"[UnifiedARManager] QR Recalibration - GPS: {referenceGPS}, Compass: {referenceCompassHeading}°");
 
         userLocation = referenceGPS;
         lastStableGPSLocation = referenceGPS;
@@ -302,6 +329,8 @@ public class UnifiedARManager : MonoBehaviour
         {
             CreateUserMarker();
         }
+
+        HideRecalibrationPanel();
 
         StartCoroutine(InitializeOutdoorMarkersAfterScan());
 
@@ -369,7 +398,6 @@ public class UnifiedARManager : MonoBehaviour
                 {
                     Node[] nodes = JsonHelper.FromJson<Node>(jsonData);
 
-                    // Only load infrastructure and intermediate nodes (outdoor only)
                     currentNodes = nodes.Where(n =>
                         (n.type == "infrastructure" || n.type == "intermediate") && n.is_active
                     ).ToList();
@@ -419,6 +447,15 @@ public class UnifiedARManager : MonoBehaviour
         onComplete?.Invoke(loadSuccess);
     }
 
+    void Update()
+    {
+        if (Time.time - lastGPSCheckTime >= gpsCheckInterval)
+        {
+            CheckGPSStrength();
+            lastGPSCheckTime = Time.time;
+        }
+    }
+
     void UpdateMarkers()
     {
         if (isExitingAR) return;
@@ -430,7 +467,6 @@ public class UnifiedARManager : MonoBehaviour
     {
         if (!arOriginInitialized)
         {
-            Debug.LogWarning("[UnifiedARManager] AR origin not initialized yet!");
             return;
         }
 
@@ -440,7 +476,6 @@ public class UnifiedARManager : MonoBehaviour
             if (gpsLockTimer <= 0)
             {
                 isGPSLocked = false;
-                Debug.Log("GPS unlocked, using real GPS coordinates now");
             }
         }
 
@@ -448,7 +483,6 @@ public class UnifiedARManager : MonoBehaviour
 
         if (rawGpsLocation.magnitude < 0.0001f)
         {
-            Debug.LogWarning("UpdateMarkersGPS: GPS location is zero/invalid!");
             return;
         }
 
@@ -463,6 +497,145 @@ public class UnifiedARManager : MonoBehaviour
         ReconcileVisibleMarkersGPS();
         UpdateDebugInfo();
         UpdateTopPanelUI();
+    }
+
+    private void CheckGPSStrength()
+    {
+        Vector2 gpsCoords = GPSManager.Instance.GetSmoothedCoordinates();
+
+        if (gpsCoords.magnitude < 0.0001f)
+        {
+            currentGPSAccuracy = -1f;
+            UpdateGPSStrengthIndicator(GPSStrength.None);
+            return;
+        }
+
+#if UNITY_EDITOR
+        // Use debug GPS strength if enabled in editor
+        if (useDebugGPSStrength)
+        {
+            // Set accuracy based on debug strength for display
+            switch (debugGPSStrength)
+            {
+                case GPSStrength.Strong:
+                    currentGPSAccuracy = 10f;
+                    break;
+                case GPSStrength.Weak:
+                    currentGPSAccuracy = 35f;
+                    break;
+                case GPSStrength.None:
+                    currentGPSAccuracy = 100f;
+                    break;
+            }
+            UpdateGPSStrengthIndicator(debugGPSStrength);
+        }
+        else
+        {
+            // Default editor behavior
+            currentGPSAccuracy = 10f;
+            UpdateGPSStrengthIndicator(GPSStrength.Strong);
+        }
+#else
+        if (Input.location.status == LocationServiceStatus.Running)
+        {
+            currentGPSAccuracy = Input.location.lastData.horizontalAccuracy;
+
+            if (currentGPSAccuracy <= strongGPSAccuracyThreshold)
+            {
+                UpdateGPSStrengthIndicator(GPSStrength.Strong);
+            }
+            else if (currentGPSAccuracy <= weakGPSAccuracyThreshold)
+            {
+                UpdateGPSStrengthIndicator(GPSStrength.Weak);
+            }
+            else
+            {
+                UpdateGPSStrengthIndicator(GPSStrength.None);
+            }
+        }
+        else
+        {
+            currentGPSAccuracy = -1f;
+            UpdateGPSStrengthIndicator(GPSStrength.None);
+        }
+#endif
+    }
+
+    private void UpdateGPSStrengthIndicator(GPSStrength strength)
+    {
+        HideAllGPSIndicators();
+
+        switch (strength)
+        {
+            case GPSStrength.Strong:
+                if (gpsStrongImage != null)
+                    gpsStrongImage.SetActive(true);
+                break;
+
+            case GPSStrength.Weak:
+                if (gpsWeakImage != null)
+                    gpsWeakImage.SetActive(true);
+                break;
+
+            case GPSStrength.None:
+                if (gpsNoneImage != null)
+                    gpsNoneImage.SetActive(true);
+                ShowRecalibrationPanel();
+                break;
+        }
+    }
+
+    private void HideAllGPSIndicators()
+    {
+        if (gpsStrongImage != null)
+            gpsStrongImage.SetActive(false);
+
+        if (gpsWeakImage != null)
+            gpsWeakImage.SetActive(false);
+
+        if (gpsNoneImage != null)
+            gpsNoneImage.SetActive(false);
+    }
+
+    private void ShowRecalibrationPanel()
+    {
+        if (recalibrationPanel == null || recalibrationPanelShown)
+            return;
+
+        recalibrationPanelShown = true;
+
+        if (recalibrationBGPanel != null)
+        {
+            recalibrationBGPanel.SetActive(true);
+        }
+
+        recalibrationPanel.SetActive(true);
+        recalibrationPanel.transform.localScale = Vector3.zero;
+
+        recalibrationPanel.transform.DOScale(recalibrationPanelOriginalScale, recalibrationAnimDuration)
+            .SetEase(recalibrationEaseType)
+            .SetUpdate(true);
+    }
+
+    private void HideRecalibrationPanel()
+    {
+        if (recalibrationPanel == null)
+            return;
+
+        recalibrationPanelShown = false;
+
+        recalibrationPanel.transform.DOScale(Vector3.zero, recalibrationAnimDuration)
+            .SetEase(Ease.InBack)
+            .SetUpdate(true)
+            .OnComplete(() =>
+            {
+                recalibrationPanel.SetActive(false);
+
+                if (recalibrationBGPanel != null)
+                {
+                    recalibrationBGPanel.SetActive(false);
+                }
+            });
     }
 
     private Vector2 StabilizeGPSLocation(Vector2 rawLocation)
@@ -530,7 +703,6 @@ public class UnifiedARManager : MonoBehaviour
     {
         if (currentNodes == null || currentNodes.Count == 0)
         {
-            Debug.LogWarning("ReconcileVisibleMarkersGPS: No nodes loaded!");
             return;
         }
 
@@ -553,9 +725,6 @@ public class UnifiedARManager : MonoBehaviour
             markerAnchors.Remove(nodeId);
         }
 
-        int shouldShowCount = 0;
-        int alreadyExistsCount = 0;
-        
         foreach (Node node in currentNodes)
         {
             if (node.type == "indoorinfra")
@@ -563,20 +732,13 @@ public class UnifiedARManager : MonoBehaviour
 
             if (markerAnchors.ContainsKey(node.node_id))
             {
-                alreadyExistsCount++;
                 continue;
             }
 
             if (ShouldShowMarkerGPS(node))
             {
-                shouldShowCount++;
                 CreateMarkerForNodeGPS(node);
             }
-        }
-        
-        if (shouldShowCount > 0)
-        {
-            Debug.Log($"ReconcileVisibleMarkersGPS: Created {shouldShowCount} new markers (Already exist: {alreadyExistsCount}, Total: {markerAnchors.Count})");
         }
     }
 
@@ -594,22 +756,18 @@ public class UnifiedARManager : MonoBehaviour
     {
         if (buildingMarkerPrefab == null)
         {
-            Debug.LogError("buildingMarkerPrefab is NULL! Cannot create markers!");
             return;
         }
 
         Infrastructure infra = currentInfrastructures.FirstOrDefault(i => i.infra_id == node.related_infra_id);
         if (infra == null)
         {
-            Debug.LogWarning($"No infrastructure found for node {node.node_id} with infra_id {node.related_infra_id}");
             return;
         }
 
         Vector3 worldPosition = GPSToWorldPosition(node.latitude, node.longitude);
         
         worldPosition.y = groundPlaneY + markerHeightOffset;
-
-        Debug.Log($"Creating marker for {infra.name} at fixed world position: {worldPosition}");
 
         GameObject marker = Instantiate(buildingMarkerPrefab);
         marker.transform.position = worldPosition;
@@ -628,8 +786,6 @@ public class UnifiedARManager : MonoBehaviour
         };
 
         markerAnchors[node.node_id] = anchor;
-        
-        Debug.Log($"Total markers now: {markerAnchors.Count}");
     }
 
     Vector3 GPSToWorldPosition(float latitude, float longitude)
@@ -639,20 +795,14 @@ public class UnifiedARManager : MonoBehaviour
 
         float meterPerDegree = 111000f;
         
-        // Calculate offset in meters (North/East relative to GPS coordinates)
         float offsetEast = deltaLng * meterPerDegree * Mathf.Cos(referenceGPS.x * Mathf.Deg2Rad);
         float offsetNorth = deltaLat * meterPerDegree;
 
-        // NEW: Apply compass rotation to align with real-world directions
-        // When AR world was created, the camera was facing referenceCompassHeading
-        // We need to rotate the offset to match Unity's coordinate system
         float headingRad = referenceCompassHeading * Mathf.Deg2Rad;
         
-        // Rotate the offset by the compass heading
         float rotatedX = offsetEast * Mathf.Cos(headingRad) - offsetNorth * Mathf.Sin(headingRad);
         float rotatedZ = offsetEast * Mathf.Sin(headingRad) + offsetNorth * Mathf.Cos(headingRad);
 
-        // Position relative to FIXED AR world origin
         Vector3 worldPos = referenceARWorldPosition;
         worldPos.x += rotatedX;
         worldPos.z += rotatedZ;
@@ -713,7 +863,6 @@ public class UnifiedARManager : MonoBehaviour
 
     private void UpdateTopPanelUI()
     {
-        UpdateGPSModeText();
         UpdateCurrentLocationText();
         UpdateNavigationTexts();
     }
@@ -734,13 +883,6 @@ public class UnifiedARManager : MonoBehaviour
         {
             currentLocationText.gameObject.SetActive(true);
         }
-    }
-
-    private void UpdateGPSModeText()
-    {
-        if (gpsModeText == null) return;
-
-        gpsModeText.text = "GPS | AR NAVIGATION";
     }
 
     private void UpdateCurrentLocationText()
@@ -812,16 +954,16 @@ public class UnifiedARManager : MonoBehaviour
         if (trackingStatusText != null)
         {
             Vector2 coords = GPSManager.Instance.GetCoordinates();
-            string lockStatus = isGPSLocked ? $" 🔒 Locked ({gpsLockTimer:F0}s)" : "";
+            string lockStatus = isGPSLocked ? $" Locked ({gpsLockTimer:F0}s)" : "";
 
             if (coords.magnitude > 0)
             {
-                trackingStatusText.text = $"🌍 Outdoor (GPS){lockStatus}\n{coords.x:F5}, {coords.y:F5}";
+                trackingStatusText.text = $"Outdoor (GPS){lockStatus}\n{coords.x:F5}, {coords.y:F5}\nAccuracy: {currentGPSAccuracy:F1}m";
                 trackingStatusText.color = isGPSLocked ? Color.yellow : Color.green;
             }
             else
             {
-                trackingStatusText.text = "🌍 Outdoor\nGPS: No Signal";
+                trackingStatusText.text = "Outdoor\nGPS: No Signal";
                 trackingStatusText.color = Color.red;
             }
         }
@@ -832,9 +974,19 @@ public class UnifiedARManager : MonoBehaviour
         if (debugInfoText != null)
         {
             string lockStatus = isGPSLocked ? $" (Locked: {gpsLockTimer:F1}s)" : "";
-            debugInfoText.text = $"🧭 Navigation + 🌍 Outdoor (GPS){lockStatus}\n" +
+            string debugMode = "";
+            
+#if UNITY_EDITOR
+            if (useDebugGPSStrength)
+            {
+                debugMode = $"\n[DEBUG GPS: {debugGPSStrength}]";
+            }
+#endif
+            
+            debugInfoText.text = $"Navigation + Outdoor (GPS){lockStatus}{debugMode}\n" +
                                  $"User: {userLocation.x:F5}, {userLocation.y:F5}\n" +
                                  $"Reference: {referenceGPS.x:F5}, {referenceGPS.y:F5}\n" +
+                                 $"GPS Accuracy: {currentGPSAccuracy:F1}m\n" +
                                  $"Active Markers: {markerAnchors.Count}";
         }
     }
@@ -891,12 +1043,12 @@ public class UnifiedARManager : MonoBehaviour
 
     public bool IsIndoorMode()
     {
-        return false; // Always outdoor now
+        return false;
     }
 
     public string GetCurrentIndoorInfraId()
     {
-        return ""; // No indoor mode
+        return ""; 
     }
 
     public Vector2 GetReferenceGPS()
@@ -907,5 +1059,12 @@ public class UnifiedARManager : MonoBehaviour
     public Vector3 GetReferenceARWorldPosition()
     {
         return referenceARWorldPosition;
+    }
+
+    public enum GPSStrength
+    {
+        Strong,
+        Weak,
+        None
     }
 }

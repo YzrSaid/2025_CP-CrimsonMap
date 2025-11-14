@@ -137,6 +137,230 @@
                     "isIndoorDirection": false
                 }
             ]
+        },
+        {
+            "timestamp": "2025-11-14 12:58:30",
+            "startNodeId": "ND-015",
+            "endNodeId": "ND-082",
+            "startNodeName": "College of Computing Studies",
+            "endNodeName": "Gym",
+            "totalDistance": 477.2499694824219,
+            "formattedDistance": "477.3m",
+            "walkingTime": "6 minutes",
+            "viaMode": "Via Overpass",
+            "pathNodes": [
+                "ND-015",
+                "ND-028",
+                "ND-117",
+                "ND-012",
+                "ND-009",
+                "ND-007",
+                "ND-004",
+                "ND-116",
+                "ND-042",
+                "ND-043",
+                "ND-044",
+                "ND-095",
+                "ND-094",
+                "ND-105",
+                "ND-102",
+                "ND-101",
+                "ND-082"
+            ],
+            "edges": [
+                {
+                    "fromNode": "ND-015",
+                    "toNode": "ND-028"
+                },
+                {
+                    "fromNode": "ND-028",
+                    "toNode": "ND-117"
+                },
+                {
+                    "fromNode": "ND-117",
+                    "toNode": "ND-012"
+                },
+                {
+                    "fromNode": "ND-012",
+                    "toNode": "ND-009"
+                },
+                {
+                    "fromNode": "ND-009",
+                    "toNode": "ND-007"
+                },
+                {
+                    "fromNode": "ND-007",
+                    "toNode": "ND-004"
+                },
+                {
+                    "fromNode": "ND-004",
+                    "toNode": "ND-116"
+                },
+                {
+                    "fromNode": "ND-116",
+                    "toNode": "ND-042"
+                },
+                {
+                    "fromNode": "ND-042",
+                    "toNode": "ND-043"
+                },
+                {
+                    "fromNode": "ND-043",
+                    "toNode": "ND-044"
+                },
+                {
+                    "fromNode": "ND-044",
+                    "toNode": "ND-095"
+                },
+                {
+                    "fromNode": "ND-095",
+                    "toNode": "ND-094"
+                },
+                {
+                    "fromNode": "ND-094",
+                    "toNode": "ND-105"
+                },
+                {
+                    "fromNode": "ND-105",
+                    "toNode": "ND-102"
+                },
+                {
+                    "fromNode": "ND-102",
+                    "toNode": "ND-101"
+                },
+                {
+                    "fromNode": "ND-101",
+                    "toNode": "ND-082"
+                }
+            ],
+            "directions": [
+                {
+                    "instruction": "Head straight to Intermediate 5 (12m)",
+                    "turn": "Straight",
+                    "distance": 11.939833641052246,
+                    "destNodeId": "ND-028",
+                    "destNode": "Intermediate 5",
+                    "isIndoorGrouped": false,
+                    "isIndoorDirection": false
+                },
+                {
+                    "instruction": "Turn left toward Intermediate 3 (10m)",
+                    "turn": "Left",
+                    "distance": 9.603866577148438,
+                    "destNodeId": "ND-117",
+                    "destNode": "Intermediate 3",
+                    "isIndoorGrouped": false,
+                    "isIndoorDirection": false
+                },
+                {
+                    "instruction": "Turn right toward Department of Mathematics and Statistics (7m)",
+                    "turn": "Right",
+                    "distance": 6.953884124755859,
+                    "destNodeId": "ND-012",
+                    "destNode": "Department of Mathematics and Statistics",
+                    "isIndoorGrouped": false,
+                    "isIndoorDirection": false
+                },
+                {
+                    "instruction": "Head straight to CSM Office of the Dean (6m)",
+                    "turn": "Straight",
+                    "distance": 5.982211112976074,
+                    "destNodeId": "ND-009",
+                    "destNode": "CSM Office of the Dean",
+                    "isIndoorGrouped": false,
+                    "isIndoorDirection": false
+                },
+                {
+                    "instruction": "Turn right toward Department of Biological Sciences (5m)",
+                    "turn": "Right",
+                    "distance": 5.051548480987549,
+                    "destNodeId": "ND-007",
+                    "destNode": "Department of Biological Sciences",
+                    "isIndoorGrouped": false,
+                    "isIndoorDirection": false
+                },
+                {
+                    "instruction": "Turn left toward College of Sciences and Mathematics (8m)",
+                    "turn": "Left",
+                    "distance": 8.435920715332032,
+                    "destNodeId": "ND-004",
+                    "destNode": "College of Sciences and Mathematics",
+                    "isIndoorGrouped": false,
+                    "isIndoorDirection": false
+                },
+                {
+                    "instruction": "Turn right toward Intermediate 2 (5m)",
+                    "turn": "Right",
+                    "distance": 5.219920635223389,
+                    "destNodeId": "ND-116",
+                    "destNode": "Intermediate 2",
+                    "isIndoorGrouped": false,
+                    "isIndoorDirection": false
+                },
+                {
+                    "instruction": "Turn left toward Overpass Campus A (Intermediate) (11m)",
+                    "turn": "Left",
+                    "distance": 10.676252365112305,
+                    "destNodeId": "ND-043",
+                    "destNode": "Overpass Campus A (Intermediate)",
+                    "isIndoorGrouped": false,
+                    "isIndoorDirection": false
+                },
+                {
+                    "instruction": "Head straight to Intermediate 2 (8m)",
+                    "turn": "Straight",
+                    "distance": 8.130436897277832,
+                    "destNodeId": "ND-095",
+                    "destNode": "Intermediate 2",
+                    "isIndoorGrouped": false,
+                    "isIndoorDirection": false
+                },
+                {
+                    "instruction": "Turn left toward Intermediate 1 (23m)",
+                    "turn": "Left",
+                    "distance": 22.946434020996095,
+                    "destNodeId": "ND-094",
+                    "destNode": "Intermediate 1",
+                    "isIndoorGrouped": false,
+                    "isIndoorDirection": false
+                },
+                {
+                    "instruction": "Head straight to Intermediate 14 (21m)",
+                    "turn": "Straight",
+                    "distance": 20.795230865478517,
+                    "destNodeId": "ND-105",
+                    "destNode": "Intermediate 14",
+                    "isIndoorGrouped": false,
+                    "isIndoorDirection": false
+                },
+                {
+                    "instruction": "Turn right toward Intermediate 11 (15m)",
+                    "turn": "Right",
+                    "distance": 15.005696296691895,
+                    "destNodeId": "ND-102",
+                    "destNode": "Intermediate 11",
+                    "isIndoorGrouped": false,
+                    "isIndoorDirection": false
+                },
+                {
+                    "instruction": "Turn left toward Intermediate 10 (16m)",
+                    "turn": "Left",
+                    "distance": 15.513954162597657,
+                    "destNodeId": "ND-101",
+                    "destNode": "Intermediate 10",
+                    "isIndoorGrouped": false,
+                    "isIndoorDirection": false
+                },
+                {
+                    "instruction": "Turn right toward Gym (12m)",
+                    "turn": "Right",
+                    "distance": 11.689754486083985,
+                    "destNodeId": "ND-082",
+                    "destNode": "Gym",
+                    "isIndoorGrouped": false,
+                    "isIndoorDirection": false
+                }
+            ]
         }
     ]
 }
