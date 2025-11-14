@@ -14,10 +14,12 @@ public class MapModeController : MonoBehaviour
     public Button centerOnMyLocationButton;
     public Button zoomInButton;
     public Button zoomOutButton;
+    public GameObject zoomButtonPanel;
     public Button goInsideButton;
 
     [Header("Indoor Buttons")]
     public Button goOutsideButton;
+    public GameObject floorButtonPanel;
     public Button floorUpButton;
     public Button floorDownButton;
 
@@ -67,13 +69,25 @@ public class MapModeController : MonoBehaviour
 
     private IEnumerator LoadAllData()
     {
-        if (mapManager != null && mapManager.GetCurrentMap() != null)
+        while (mapManager == null || !mapManager.IsReady())
+        {
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        if (mapManager.GetCurrentMap() != null)
         {
             string mapId = mapManager.GetCurrentMap().map_id;
+            Debug.Log($"[MapModeController] Loading nodes for map: {mapId}");
             yield return StartCoroutine(LoadNodes(mapId));
+        }
+        else
+        {
+            Debug.LogError("[MapModeController] No current map found!");
         }
 
         yield return StartCoroutine(LoadIndoorData());
+
+        Debug.Log($"[MapModeController] Loaded {allNodes.Count} nodes and {indoorInfrastructures.Count} indoor infrastructures");
 
         UpdateGoInsideButtonVisibility();
     }
@@ -163,14 +177,32 @@ public class MapModeController : MonoBehaviour
         if (goInsideButton == null || pathfindingController == null)
             return;
 
+        if (!pathfindingController.IsLocationLocked())
+        {
+            goInsideButton.gameObject.SetActive(false);
+            return;
+        }
+
         string currentLocationName = pathfindingController.GetCurrentFromLocationName();
+        Debug.Log($"[MapModeController] Current location: {currentLocationName}");
 
         Node currentNode = allNodes.Values.FirstOrDefault(n => n.name == currentLocationName);
+
+        if (currentNode != null)
+        {
+            Debug.Log($"[MapModeController] Found node: {currentNode.node_id}, type: {currentNode.type}, related_infra_id: {currentNode.related_infra_id}");
+        }
+        else
+        {
+            Debug.Log($"[MapModeController] No node found matching name: {currentLocationName}");
+        }
 
         if (currentNode != null && currentNode.type == "infrastructure" && !string.IsNullOrEmpty(currentNode.related_infra_id))
         {
             string infraId = currentNode.related_infra_id;
             bool hasIndoor = indoorInfrastructures.Values.Any(ind => ind.infra_id == infraId);
+
+            Debug.Log($"[MapModeController] Infrastructure {infraId} has indoor: {hasIndoor}");
 
             goInsideButton.gameObject.SetActive(hasIndoor);
 
@@ -233,6 +265,11 @@ public class MapModeController : MonoBehaviour
         if (centerOnMyLocationButton != null)
             centerOnMyLocationButton.gameObject.SetActive(true);
 
+        if (zoomButtonPanel != null)
+        {
+            zoomButtonPanel.SetActive(true);
+        }
+
         if (zoomInButton != null)
             zoomInButton.gameObject.SetActive(true);
 
@@ -244,6 +281,11 @@ public class MapModeController : MonoBehaviour
 
         if (goOutsideButton != null)
             goOutsideButton.gameObject.SetActive(false);
+
+        if (floorButtonPanel != null)
+        {
+            floorButtonPanel.SetActive(false);
+        }
 
         if (floorUpButton != null)
             floorUpButton.gameObject.SetActive(false);
@@ -267,6 +309,11 @@ public class MapModeController : MonoBehaviour
         if (centerOnMyLocationButton != null)
             centerOnMyLocationButton.gameObject.SetActive(false);
 
+        if (zoomButtonPanel != null)
+        {
+            zoomButtonPanel.SetActive(false);
+        }
+
         if (zoomInButton != null)
             zoomInButton.gameObject.SetActive(false);
 
@@ -278,6 +325,11 @@ public class MapModeController : MonoBehaviour
 
         if (goOutsideButton != null)
             goOutsideButton.gameObject.SetActive(true);
+
+        if (floorButtonPanel != null)
+        {
+            floorButtonPanel.SetActive(true);
+        }
 
         if (floorUpButton != null)
             floorUpButton.gameObject.SetActive(true);

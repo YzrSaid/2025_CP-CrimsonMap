@@ -129,6 +129,7 @@
     <Compile Include="Assets/Mapbox/Examples/Scripts/ImmediatePositionWithLocationProvider.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/MapMatching/MapMatchingResource.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Platform/Cache/SQLiteCache/Tiles.cs" />
+    <Compile Include="Assets/Scripts/Main App Scripts/Map/IndoorMapInteraction.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/MainAppLoader.cs" />
     <Compile Include="Assets/Mapbox/Unity/SourceLayers/ISubLayerExtrusionOptions.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/Location.cs" />
@@ -216,7 +217,6 @@
     <Compile Include="Assets/Mapbox/Unity/Map/AbstractMap.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Map/MapUtils.cs" />
     <Compile Include="Assets/Mapbox/Unity/DataContainers/SpawnPrefabOptions.cs" />
-    <Compile Include="Assets/Scripts/ARSCene/IndoorMapManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/EditorLocationProvider.cs" />
     <Compile Include="Assets/Scripts/Main App Scripts/Map/SmartMapDownloadButton.cs" />
     <Compile Include="Assets/Mapbox/Unity/MeshGeneration/Data/VectorFeatureUnity.cs" />
@@ -335,6 +335,7 @@
     <Compile Include="Assets/Scripts/App Managers/ARManagerCleanup.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Utils/CircularBuffer.cs" />
     <Compile Include="Assets/Mapbox/Examples/Scripts/FeatureUiMarker.cs" />
+    <Compile Include="Assets/Scripts/App Managers/IndoorMapManager.cs" />
     <Compile Include="Assets/Mapbox/Unity/Location/DeviceLocationProviderAndroidNative.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Utils/BearingFilter.cs" />
     <Compile Include="Assets/Mapbox/Core/mapbox-sdk-cs/Directions/Response/Intersection.cs" />
